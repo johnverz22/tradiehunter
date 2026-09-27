@@ -1,0 +1,73 @@
+/* ────────────────────────────────────────────────────
+   Fixo Design Tokens
+   Source of truth: docs/design/design-system.html
+   ──────────────────────────────────────────────────── */
+
+/* ── Light theme (default) ────────────────────────── */
+:root {
+  /* Brand — white-label knob */
+  --hue: 209;
+  --brand-900: hsl(var(--hue) 55% 22%);
+  --brand-700: hsl(var(--hue) 50% 32%);
+  --brand-500: hsl(var(--hue) 48% 45%);
+  --brand-300: hsl(var(--hue) 45% 68%);
+  --brand-100: hsl(var(--hue) 45% 92%);
+
+  /* Semantic */
+  --amber: #E38B29;
+  --amber-dark: #B96A18;
+  --green: #3A7D5C;
+  --red: #B23A2E;
+
+  /* Neutrals — light */
+  --paper: #F6F4EE;
+  --paper-line: #E4E0D4;
+  --ink: #1D2226;
+  --ink-soft: #5B6570;
+
+  /* Border radius */
+  --radius: 4px;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Type scale */
+  --text-display: 700 44px/1.05 var(--font-display);
+  --text-h2: 600 24px/1.2 var(--font-display);
+  --text-h3: 600 16px/1.4 var(--font-body);
+  --text-body: 400 15px/1.5 var(--font-body);
+  --text-mono: 400 13px/1.4 var(--font-mono);
+
+  /* Spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+}
+
+/* ── Dark theme (auto) ────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14181B;
+    --paper-line: #262C30;
+    --ink: #ECEAE3;
+    --ink-soft: #9AA4AC;
+    --brand-100: hsl(var(--hue) 35% 16%);
+  }
+}
+
+/* ── Dark theme (explicit) ────────────────────────── */
+:root[data-theme="dark"] {
+  --paper: #14181B;
+  --paper-line: #262C30;
+  --ink: #ECEAE3;
+  --ink-soft: #9AA4AC;
+  --brand-100: hsl(var(--hue) 35% 16%);
+}

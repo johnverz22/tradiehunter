@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+@import './theme/design-tokens.css';
+
+/* ── Dark mode: driven by data-theme attribute, not OS media query.
+   This makes Tailwind's dark: variants respond to the toggle button
+   (which writes data-theme to <html>) rather than the browser preference.
+   The browser preference is still read by the blocking inline script in
+   index.html and by getInitialTheme() in AdminLayout, so it is honoured
+   on first load — just not directly by Tailwind. ── */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --color-paper: var(--paper);
+  --color-paper-line: var(--paper-line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-500: var(--brand-500);
+  --color-brand-300: var(--brand-300);
+  --color-brand-100: var(--brand-100);
+  --color-amber-brand: var(--amber);
+  --color-amber-dark: var(--amber-dark);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* ── Base reset ─────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font: var(--text-body);
+  color-scheme: light dark;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Typography ─────────────────────────────────────── */
+h1 {
+  font: var(--text-display);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: var(--space-8) 0;
+}
+
+h2 {
+  font: var(--text-h2);
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+}
+
+h3 {
+  font: var(--text-h3);
+  color: var(--ink-soft);
+  margin: 0 0 var(--space-4);
+}
+
+p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ── Code / Mono ────────────────────────────────────── */
+code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.35;
+  padding: var(--space-1) var(--space-2);
+  background: var(--brand-100);
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+/* ── Focus ──────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* ── Borders ────────────────────────────────────────── */
+hr {
+  border: none;
+  border-top: 1px solid var(--paper-line);
+  margin: var(--space-6) 0;
+}

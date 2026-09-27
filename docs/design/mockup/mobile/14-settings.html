@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixo - Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --red: #B23A2E;
+    --paper: #F6F4EE;
+    --ink: #1D2226;
+    --white: #FFFFFF;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B;
+      --ink: #ECEAE3;
+      --white: #1E2328;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-body);
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: var(--paper);
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .header {
+    padding: 48px 24px 24px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .content {
+    flex: 1;
+    padding: 0 24px;
+    overflow-y: auto;
+  }
+  .section-heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 24px 0 12px;
+  }
+  .section-heading:first-child {
+    margin-top: 0;
+  }
+  .menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--brand-100);
+    cursor: pointer;
+  }
+  .menu-item:last-child {
+    border-bottom: none;
+  }
+  .menu-label {
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .menu-subtitle {
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.5;
+  }
+  .chevron {
+    color: var(--ink);
+    opacity: 0.3;
+    font-size: 16px;
+  }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: var(--brand-500);
+    border-radius: 12px;
+    position: relative;
+  }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    right: 2px;
+  }
+  .bottom-area {
+    padding: 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .btn-logout {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--brand-100);
+    color: var(--red);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    height: 48px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .version {
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink);
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="header">
+      <h1>Settings</h1>
+    </div>
+    
+    <div class="content">
+      <div class="section-heading">Account</div>
+      <div class="menu-item">
+        <div class="menu-label">Personal Details</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-label">Payment Methods</div>
+        <div class="chevron">›</div>
+      </div>
+      
+      <div class="section-heading">Preferences</div>
+      <div class="menu-item">
+        <div class="menu-label">Notifications</div>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="menu-label">Language</div>
+          <div class="menu-subtitle">English</div>
+        </div>
+        <div class="chevron">›</div>
+      </div>
+      
+      <div class="section-heading">Support</div>
+      <div class="menu-item">
+        <div class="menu-label">Help Center</div>
+        <div class="chevron">›</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-label">Terms of Service</div>
+        <div class="chevron">›</div>
+      </div>
+    </div>
+    
+    <div class="bottom-area">
+      <button class="btn-logout">Log Out</button>
+      <div class="version">v1.0.0</div>
+    </div>
+  </div>
+</body>
+</html>

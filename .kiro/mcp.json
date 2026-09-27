@@ -1,0 +1,59 @@
+{
+  "mcpServers": {
+    "dart": {
+      "command": "/Users/john/Develop/flutter/bin/dart",
+      "args": [
+        "mcp-server",
+        "--flutter-sdk",
+        "/Users/john/Develop/flutter"
+      ],
+      "env": {},
+      "autoApprove": [
+        "pub_dev_search",
+        "analyze_files",
+        "dart_format",
+        "run_tests",
+        "list_devices"
+      ]
+    },
+    "postgres-backend": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://fixo:fixo_dev@localhost:5432/fixo"
+      ],
+      "env": {},
+      "autoApprove": [
+        "query"
+      ]
+    },
+    "puppeteer-react": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "env": {},
+      "autoApprove": []
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+      },
+      "autoApprove": [
+        "list_issues",
+        "get_issue",
+        "list_pull_requests",
+        "get_pull_request",
+        "search_repositories",
+        "search_code"
+      ]
+    }
+  }
+}

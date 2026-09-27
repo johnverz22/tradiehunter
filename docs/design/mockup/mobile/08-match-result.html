@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixo - Match Result</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --green: #3A7D5C;
+    --paper: #F6F4EE;
+    --ink: #1D2226;
+    --white: #FFFFFF;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B;
+      --ink: #ECEAE3;
+      --white: #1E2328;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-body);
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: var(--paper);
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    padding: 48px 24px 24px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--brand-500);
+  }
+  .tradie-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 24px;
+  }
+  .name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .trade {
+    font-size: 14px;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--brand-100);
+  }
+  .stat {
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .stat strong {
+    color: var(--amber);
+  }
+  .bio {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+  }
+  .btn-primary {
+    background: var(--amber);
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 16px;
+    height: 48px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    width: 100%;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--brand-500);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    height: 48px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="header">
+      <h1>Match Found!</h1>
+    </div>
+    
+    <div class="tradie-card">
+      <div class="card-header">
+        <div class="avatar">DW</div>
+        <div>
+          <div class="name">David Wiremu</div>
+          <div class="trade">Master Plumber</div>
+          <div class="verified-badge">✓ Verified</div>
+        </div>
+      </div>
+      
+      <div class="stats-row">
+        <div class="stat">1.2 km away</div>
+        <div class="stat"><strong>★ 4.9</strong> (124 reviews)</div>
+      </div>
+      
+      <div class="bio">
+        Specializing in emergency leak repairs and general residential plumbing.
+      </div>
+    </div>
+    
+    <div class="actions">
+      <button class="btn-primary">Request David</button>
+      <button class="btn-ghost">See More Matches</button>
+    </div>
+  </div>
+</body>
+</html>

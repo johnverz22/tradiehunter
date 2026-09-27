@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixo - Homeowner Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --green: #3A7D5C;
+    --paper: #F6F4EE;
+    --ink: #1D2226;
+    --white: #FFFFFF;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B;
+      --ink: #ECEAE3;
+      --white: #1E2328;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-body);
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: var(--paper);
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .app-bar {
+    padding: 48px 24px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--brand-900);
+  }
+  .wordmark span { color: var(--amber); }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .content {
+    flex: 1;
+    padding: 0 24px 100px;
+    overflow-y: auto;
+  }
+  .greeting {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.7;
+    margin-bottom: 24px;
+  }
+  .job-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .job-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .job-meta {
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.6;
+    margin-bottom: 12px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .badge-green {
+    background: var(--green);
+    color: white;
+  }
+  .badge-amber {
+    background: var(--amber);
+    color: white;
+  }
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .step {
+    flex: 1;
+    height: 4px;
+    background: var(--brand-100);
+    border-radius: 2px;
+  }
+  .step.done {
+    background: var(--brand-700);
+  }
+  .step.active {
+    background: var(--green);
+  }
+  .fab {
+    position: absolute;
+    bottom: 80px;
+    right: 24px;
+    background: var(--amber);
+    color: white;
+    border: none;
+    border-radius: 100px;
+    padding: 16px 24px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    box-shadow: 0 4px 16px rgba(227, 139, 41, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--white);
+    border-top: 1px solid var(--brand-100);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ink);
+    opacity: 0.5;
+  }
+  .nav-item.active {
+    color: var(--brand-500);
+    opacity: 1;
+  }
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+    background: currentColor;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="app-bar">
+      <div class="wordmark">Fixo<span>.</span></div>
+      <div class="avatar">S</div>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">Hey Sarah,</div>
+      <div class="subtitle">Here are your active jobs.</div>
+      
+      <div class="job-card">
+        <div class="job-title">Fix leaking kitchen pipe</div>
+        <div class="job-meta">Plumbing • Mt Eden</div>
+        <div class="badge badge-green">Matched</div>
+        <div class="stepper">
+          <div class="step done"></div>
+          <div class="step active"></div>
+          <div class="step"></div>
+          <div class="step"></div>
+        </div>
+      </div>
+      
+      <div class="job-card">
+        <div class="job-title">Rewire garage lights</div>
+        <div class="job-meta">Electrical • Mt Eden</div>
+        <div class="badge badge-amber">Requested</div>
+        <div class="stepper">
+          <div class="step active"></div>
+          <div class="step"></div>
+          <div class="step"></div>
+          <div class="step"></div>
+        </div>
+      </div>
+    </div>
+    
+    <button class="fab">+ Post a Job</button>
+    
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon" style="mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z%22/></svg>'); -webkit-mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z%22/></svg>');"></div>
+        Home
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon" style="mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z%22/></svg>'); -webkit-mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z%22/></svg>');"></div>
+        Messages
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon" style="mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/></svg>'); -webkit-mask-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/></svg>');"></div>
+        Profile
+      </div>
+    </div>
+  </div>
+</body>
+</html>

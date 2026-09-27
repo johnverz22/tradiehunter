@@ -1,0 +1,23 @@
+# .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+
+# Node / React
+web/**/node_modules/
+web/**/dist/
+web/**/.vite/
+
+# Flutter
+mobile/**/.dart_tool/
+mobile/**/build/
+mobile/**/.flutter-plugin-dependencies
+
+# General
+.DS_Store
+*.log
+.env
+.env.local
+
+
+backend/firebase-service-account.json

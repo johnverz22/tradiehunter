@@ -1,0 +1,138 @@
+# Fixo — Local Development Stack (OrbStack / Docker Desktop)
+# Usage: docker compose up -d
+# Docs:  docs/ARCHITECTURE.md
+
+services:
+  # ─── Data stores ──────────────────────────────────────────────
+
+  db:
+    image: sogis/postgis:16-3.4
+    container_name: fixo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fixo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fixo_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-fixo}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fixo}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: fixo-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: fixo-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-fixo}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-fixo_dev_secret}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"      # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"   # Web console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Create default MinIO bucket on startup ──────────────────
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: fixo-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-fixo} $${MINIO_ROOT_PASSWORD:-fixo_dev_secret};
+        mc mb --ignore-existing local/fixo-photos;
+        mc anonymous set download local/fixo-photos;
+        echo 'Bucket fixo-photos ready';
+      "
+    restart: "no"
+
+  # ─── Application services ────────────────────────────────────
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fixo-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-5000}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-fixo};Username=${POSTGRES_USER:-fixo};Password=${POSTGRES_PASSWORD:-fixo_dev}"
+      ConnectionStrings__Redis: "redis:6379"
+      Storage__Endpoint: "http://minio:9000"
+      Storage__AccessKey: ${MINIO_ROOT_USER:-fixo}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:-fixo_dev_secret}
+      Storage__BucketName: fixo-photos
+      Storage__UseSSL: "false"
+      Locale__DefaultCurrency: "NZD"
+      Locale__CurrencySymbol: "$"
+      Locale__PhoneCountryCode: "+64"
+      Locale__DefaultTimezone: "Pacific/Auckland"
+      Locale__DistanceUnit: "km"
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-service-account.json
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app   # mount source for hot reload (dev)
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: fixo-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      VITE_API_URL: "http://localhost:${API_PORT:-5000}/api"
+      VITE_SIGNALR_URL: "http://localhost:${API_PORT:-5000}/hubs"
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com}
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app       # mount source for hot reload (dev)
+      - /app/node_modules # anonymous volume: keep container (linux/musl) deps, don't clobber with host (macOS) node_modules
+
+volumes:
+  pgdata:
+    name: fixo-pgdata
+  redisdata:
+    name: fixo-redisdata
+  miniodata:
+    name: fixo-miniodata

@@ -1,0 +1,15 @@
+{
+  // Pass .env.json to every flutter run / flutter test invoked by the
+  // VS Code Dart/Flutter extension (device picker, test runner, etc.).
+  // This means you never need to type --dart-define-from-file manually.
+  "dart.flutterRunAdditionalArgs": [
+    "--dart-define-from-file=${workspaceFolder}/mobile/.env.json"
+  ],
+  "dart.flutterTestAdditionalArgs": [
+    "--dart-define-from-file=${workspaceFolder}/mobile/.env.json"
+  ],
+
+  // Point the Dart SDK root at the mobile sub-project so the extension
+  // resolves packages correctly when the workspace root is the monorepo.
+  "dart.projectSearchDepth": 3
+}

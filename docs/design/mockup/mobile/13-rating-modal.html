@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixo - Rating Modal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --paper: #F6F4EE;
+    --ink: #1D2226;
+    --white: #FFFFFF;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B;
+      --ink: #ECEAE3;
+      --white: #1E2328;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: var(--font-body);
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: var(--paper);
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1;
+  }
+  .blurred-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.3;
+    filter: blur(4px);
+    padding: 48px 24px;
+  }
+  .mock-job-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .modal {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-radius: 16px 16px 0 0;
+    padding: 32px 24px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+  }
+  .modal-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .job-summary {
+    font-size: 14px;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .rating-section {
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .rating-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .star {
+    font-size: 32px;
+    color: var(--brand-100);
+  }
+  .star.filled {
+    color: var(--amber);
+  }
+  textarea {
+    width: 100%;
+    height: 100px;
+    padding: 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    border: 1px solid var(--brand-100);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    resize: none;
+    margin-bottom: 24px;
+  }
+  textarea:focus {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+  }
+  .btn-primary {
+    background: var(--amber);
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 16px;
+    height: 48px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .skip-link {
+    display: block;
+    text-align: center;
+    color: var(--ink);
+    font-size: 14px;
+    opacity: 0.7;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="backdrop"></div>
+    
+    <div class="blurred-content">
+      <div class="mock-job-card">
+        <div style="font-weight: 600; margin-bottom: 8px;">Fix leaking kitchen pipe</div>
+        <div style="font-size: 13px; opacity: 0.6;">Plumbing • Mt Eden</div>
+      </div>
+      <div class="mock-job-card">
+        <div style="font-weight: 600; margin-bottom: 8px;">Rewire garage lights</div>
+        <div style="font-size: 13px; opacity: 0.6;">Electrical • Mt Eden</div>
+      </div>
+    </div>
+    
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Job Complete!</h2>
+        <div class="job-summary">Fix leaking kitchen pipe with David (Plumber)</div>
+      </div>
+      
+      <div class="rating-section">
+        <div class="rating-label">How was the service?</div>
+        <div class="stars">
+          <div class="star filled">★</div>
+          <div class="star filled">★</div>
+          <div class="star filled">★</div>
+          <div class="star filled">★</div>
+          <div class="star">★</div>
+        </div>
+      </div>
+      
+      <textarea placeholder="Write a review... (Optional)"></textarea>
+      
+      <button class="btn-primary">Submit Review</button>
+      <a href="#" class="skip-link">Skip for now</a>
+    </div>
+  </div>
+</body>
+</html>

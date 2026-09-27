@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "951181066529",
+    "project_id": "fixo-dev-75df4",
+    "storage_bucket": "fixo-dev-75df4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:951181066529:android:ad5056fdb530673c57be60",
+        "android_client_info": {
+          "package_name": "nz.co.fixo.fixo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "951181066529-qtdomsvfngs18581g3j4cs11jsr7267h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "nz.co.fixo.fixo",
+            "certificate_hash": "42fae6bd4188ecc16575bd2ae9d0771fadce8db2"
+          }
+        },
+        {
+          "client_id": "951181066529-26vvgou6td31l4p0qdbcqoqs1deoguqq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2p9pkVHHmp2klyX_oOHzLrbTJWl-0s50"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "951181066529-1fmss7vpubhqgdtcdt71vnlgv8qjmbhc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "951181066529-plpht1sdoj0ttjqc1bjma68vas3mikcq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "nz.co.fixo.fixo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

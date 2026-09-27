@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "dart": {
+      "command": "/Users/john/Develop/flutter/bin/dart",
+      "args": ["mcp-server", "--flutter-sdk", "/Users/john/Develop/flutter"]
+    },
+    "postgres-backend": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://fixo:fixo_dev@localhost:5432/fixo"
+      ]
+    },
+    "puppeteer-react": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    }
+  }
+}

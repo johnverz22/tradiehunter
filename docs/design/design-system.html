@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blueprint — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;               /* brand hue — the white-label knob */
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --amber-dark: #B96A18;
+    --green: #3A7D5C;
+    --red: #B23A2E;
+    --paper: #F6F4EE;
+    --paper-line: #E4E0D4;
+    --ink: #1D2226;
+    --ink-soft: #5B6570;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B; --paper-line: #262C30; --ink: #ECEAE3; --ink-soft: #9AA4AC;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181B; --paper-line: #262C30; --ink: #ECEAE3; --ink-soft: #9AA4AC;
+    --brand-100: hsl(var(--hue) 35% 16%);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-body); line-height: 1.5;
+    background-image: radial-gradient(circle, var(--paper-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 28px 120px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    padding-bottom: 18px;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .head-row { max-width: 980px; margin: 0 auto; padding: 0 28px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; color: var(--brand-900); }
+  .wordmark span { color: var(--amber); }
+  nav { display: flex; gap: 22px; font-size: 14px; color: var(--ink-soft); }
+  nav a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+  nav a:hover, nav a:focus-visible { color: var(--brand-700); border-color: var(--brand-500); }
+
+  .hero { padding: 64px 0 40px; border-bottom: 1px solid var(--paper-line); }
+  .hero-label { font-size: 13px; color: var(--ink-soft); font-family: var(--font-mono); }
+  h1 { font-family: var(--font-display); font-size: clamp(34px, 5vw, 50px); line-height: 1.05; margin: 10px 0 16px; max-width: 15ch; letter-spacing: -0.01em; }
+  .hero p { max-width: 56ch; color: var(--ink-soft); font-size: 16px; }
+
+  section { padding: 52px 0; border-bottom: 1px solid var(--paper-line); }
+  section:last-child { border-bottom: none; }
+  h2 { font-family: var(--font-display); font-size: 24px; margin: 0 0 6px; }
+  .section-note { color: var(--ink-soft); font-size: 14px; margin: 0 0 28px; max-width: 60ch; }
+
+  /* color swatches */
+  .swatch-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .swatch { border: 1px solid var(--paper-line); border-radius: var(--radius); overflow: hidden; }
+  .swatch-fill { height: 64px; }
+  .swatch-label { padding: 8px 10px; font-family: var(--font-mono); font-size: 12px; background: var(--paper); }
+  .swatch-label b { display: block; font-family: var(--font-body); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+
+  .controls { display: flex; align-items: center; gap: 14px; background: var(--brand-100); border: 1px solid var(--paper-line); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 28px; flex-wrap: wrap; }
+  .controls label { font-size: 13px; font-weight: 600; color: var(--brand-900); }
+  .presets { display: flex; gap: 8px; }
+  .preset-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+  .preset-dot[aria-pressed="true"] { border-color: var(--ink); }
+  input[type="range"] { accent-color: var(--brand-500); flex: 1; min-width: 140px; }
+
+  /* type scale */
+  .type-row { display: flex; align-items: baseline; gap: 18px; padding: 14px 0; border-top: 1px solid var(--paper-line); }
+  .type-row:first-of-type { border-top: none; }
+  .type-meta { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); width: 130px; flex-shrink: 0; }
+  .type-sample { font-family: var(--font-display); }
+
+  /* spacing scale */
+  .space-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+  .space-bar { background: var(--brand-500); height: 10px; border-radius: 2px; }
+  .space-meta { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); width: 60px; }
+
+  /* components */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  .demo-card { border: 1px solid var(--paper-line); border-radius: var(--radius); padding: 20px; background: var(--paper); }
+  .demo-card h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 14px; color: var(--ink-soft); font-weight: 500; }
+  .btn { font-family: var(--font-body); font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: var(--radius); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: var(--brand-700); color: white; }
+  .btn-primary:hover { background: var(--brand-900); }
+  .btn-accent { background: var(--amber); color: #241300; }
+  .btn-accent:hover { background: var(--amber-dark); color: white; }
+  .btn-ghost { background: transparent; border: 1px solid var(--paper-line); color: var(--ink); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; padding: 4px 9px; border-radius: 100px; }
+  .badge-verified { background: var(--brand-100); color: var(--brand-900); }
+  .badge-live { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+  .badge-hold { background: color-mix(in srgb, var(--amber) 20%, transparent); color: var(--amber-dark); }
+
+  .tradie-card { border: 1px solid var(--paper-line); border-radius: var(--radius); padding: 16px; display: flex; gap: 14px; align-items: flex-start; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--brand-500); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-family: var(--font-display); font-weight: 600; }
+  .tradie-name { font-weight: 600; font-size: 15px; }
+  .tradie-meta { font-size: 13px; color: var(--ink-soft); margin: 2px 0 8px; }
+  .stars { color: var(--amber-dark); font-size: 13px; }
+
+  .stepper { display: flex; align-items: center; margin: 6px 0 4px; }
+  .step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .step-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--paper-line); border: 2px solid var(--paper-line); z-index: 1; }
+  .step.done .step-dot { background: var(--brand-700); border-color: var(--brand-700); }
+  .step.active .step-dot { background: var(--amber); border-color: var(--amber); }
+  .step-line { position: absolute; top: 6px; left: 50%; width: 100%; height: 2px; background: var(--paper-line); z-index: 0; }
+  .step.done .step-line { background: var(--brand-700); }
+  .step-label { font-size: 11px; color: var(--ink-soft); margin-top: 8px; font-family: var(--font-mono); }
+
+  input.field { font-family: var(--font-body); font-size: 14px; padding: 10px 12px; border: 1px solid var(--paper-line); border-radius: var(--radius); width: 100%; background: var(--paper); color: var(--ink); }
+  input.field:focus-visible, .btn:focus-visible, a:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+
+  footer { padding: 32px 0; font-size: 13px; color: var(--ink-soft); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <div class="wordmark">Blueprint<span>.</span></div>
+    <nav>
+      <a href="#color">Color</a>
+      <a href="#type">Type</a>
+      <a href="#space">Spacing</a>
+      <a href="#components">Components</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-label">DESIGN SYSTEM — V1</div>
+    <h1>One system, any trade brand.</h1>
+    <p>Built for the homeowner–tradie marketplace. Every color below is a token, not a hardcode — swap the brand hue in the panel and the whole system, buttons, badges, and cards included, updates instantly. That's how white-labeling works here: one hue variable per partner brand.</p>
+  </div>
+
+  <section id="color">
+    <h2>Color</h2>
+    <p class="section-note">Blueprint blue is the brand base — drawn from drafting paper and technical drawings, not generic SaaS blue. Amber stands in for hi-vis tape: it's reserved for the one action that matters most on a screen.</p>
+
+    <div class="controls">
+      <label for="hue">Brand hue</label>
+      <input type="range" id="hue" min="0" max="360" value="209" aria-label="Brand hue slider">
+      <div class="presets">
+        <button class="preset-dot" style="background:hsl(209 48% 45%)" data-hue="209" aria-label="Blueprint blue" aria-pressed="true"></button>
+        <button class="preset-dot" style="background:hsl(150 40% 38%)" data-hue="150" aria-label="Forest green" aria-pressed="false"></button>
+        <button class="preset-dot" style="background:hsl(265 35% 45%)" data-hue="265" aria-label="Plum" aria-pressed="false"></button>
+        <button class="preset-dot" style="background:hsl(10 55% 45%)" data-hue="10" aria-label="Clay" aria-pressed="false"></button>
+      </div>
+    </div>
+
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-fill" style="background:var(--brand-900)"></div><div class="swatch-label"><b>Brand 900</b>hsl(var(--hue) 55% 22%)</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--brand-700)"></div><div class="swatch-label"><b>Brand 700</b>hsl(var(--hue) 50% 32%)</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--brand-500)"></div><div class="swatch-label"><b>Brand 500</b>hsl(var(--hue) 48% 45%)</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--brand-300)"></div><div class="swatch-label"><b>Brand 300</b>hsl(var(--hue) 45% 68%)</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--brand-100)"></div><div class="swatch-label"><b>Brand 100</b>hsl(var(--hue) 45% 92%)</div></div>
+    </div>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-fill" style="background:var(--amber)"></div><div class="swatch-label"><b>Amber</b>#E38B29 — primary CTA</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--green)"></div><div class="swatch-label"><b>Green</b>#3A7D5C — complete</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--red)"></div><div class="swatch-label"><b>Red</b>#B23A2E — cancelled</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--paper);border-bottom:1px solid var(--paper-line)"></div><div class="swatch-label"><b>Paper</b>#F6F4EE — background</div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--ink)"></div><div class="swatch-label" style="color:white;background:var(--ink)"><b style="color:white">Ink</b>#1D2226 — text</div></div>
+    </div>
+  </section>
+
+  <section id="type">
+    <h2>Type</h2>
+    <p class="section-note">Space Grotesk for headlines and structural labels — it has the geometric, drafted quality of technical lettering. IBM Plex Sans for body copy. IBM Plex Mono only for functional data: job IDs, timestamps, prices — never decoration.</p>
+
+    <div class="type-row"><div class="type-meta">Display / 44</div><div class="type-sample" style="font-size:44px;font-weight:700">Get it sorted</div></div>
+    <div class="type-row"><div class="type-meta">H2 / 24</div><div class="type-sample" style="font-size:24px;font-weight:600">Confirmed for Tuesday</div></div>
+    <div class="type-row"><div class="type-meta">H3 / 16</div><div class="type-sample" style="font-size:16px;font-weight:600;font-family:var(--font-body)">James accepted your job</div></div>
+    <div class="type-row"><div class="type-meta">Body / 15</div><div class="type-sample" style="font-size:15px;font-weight:400;font-family:var(--font-body)">A licensed electrician near you is available today.</div></div>
+    <div class="type-row"><div class="type-meta">Mono / 13</div><div class="type-sample" style="font-size:13px;font-family:var(--font-mono)">JOB-00214 · $85–120 · 9:00 AM</div></div>
+  </section>
+
+  <section id="space">
+    <h2>Spacing</h2>
+    <p class="section-note">4px base unit. Used consistently for padding, gaps, and card rhythm.</p>
+    <div class="space-row"><div class="space-meta">4</div><div class="space-bar" style="width:4px"></div></div>
+    <div class="space-row"><div class="space-meta">8</div><div class="space-bar" style="width:8px"></div></div>
+    <div class="space-row"><div class="space-meta">16</div><div class="space-bar" style="width:16px"></div></div>
+    <div class="space-row"><div class="space-meta">24</div><div class="space-bar" style="width:24px"></div></div>
+    <div class="space-row"><div class="space-meta">32</div><div class="space-bar" style="width:32px"></div></div>
+    <div class="space-row"><div class="space-meta">48</div><div class="space-bar" style="width:48px"></div></div>
+  </section>
+
+  <section id="components">
+    <h2>Components</h2>
+    <p class="section-note">Core pieces from the job-request flow — buttons, status, tradie cards, badges.</p>
+
+    <div class="grid-2">
+      <div class="demo-card">
+        <h3>Buttons</h3>
+        <div class="btn-row">
+          <button class="btn btn-accent">Request tradie</button>
+          <button class="btn btn-primary">View profile</button>
+        </div>
+        <div class="btn-row"><button class="btn btn-ghost">Decline</button></div>
+      </div>
+
+      <div class="demo-card">
+        <h3>Badges</h3>
+        <div class="btn-row">
+          <span class="badge badge-verified">✓ Verified NZBN</span>
+          <span class="badge badge-live">Live now</span>
+          <span class="badge badge-hold">Awaiting quote</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>Tradie card</h3>
+        <div class="tradie-card">
+          <div class="avatar">JW</div>
+          <div>
+            <div class="tradie-name">James Wilson</div>
+            <div class="tradie-meta">Licensed Electrician · 2.4km away</div>
+            <div class="stars">★★★★★ <span style="color:var(--ink-soft)">(128)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>Job status</h3>
+        <div class="stepper">
+          <div class="step done"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">Requested</div></div>
+          <div class="step done"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">Matched</div></div>
+          <div class="step active"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">Confirmed</div></div>
+          <div class="step"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">Complete</div></div>
+        </div>
+      </div>
+
+      <div class="demo-card" style="grid-column: 1 / -1;">
+        <h3>Job request field</h3>
+        <input class="field" type="text" placeholder="What needs doing? e.g. Leaking kitchen tap" aria-label="Job description">
+      </div>
+    </div>
+  </section>
+
+  <footer>Blueprint Design System — v1 · white-label token: --hue</footer>
+</div>
+
+<script>
+  const hueInput = document.getElementById('hue');
+  const dots = document.querySelectorAll('.preset-dot');
+  function setHue(h) {
+    document.documentElement.style.setProperty('--hue', h);
+    hueInput.value = h;
+    dots.forEach(d => d.setAttribute('aria-pressed', String(d.dataset.hue === String(h))));
+  }
+  hueInput.addEventListener('input', e => setHue(e.target.value));
+  dots.forEach(d => d.addEventListener('click', () => setHue(d.dataset.hue)));
+</script>
+
+</body>
+</html>

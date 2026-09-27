@@ -1,0 +1,34 @@
+# Fixo — .dockerignore (shared patterns)
+# Place a copy in backend/ and web/ if needed, or reference from root.
+
+.git
+.gitignore
+*.md
+docs/
+.agent/
+.kiro/
+.env
+.env.*
+!.env.example
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Flutter (not containerized)
+mobile/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

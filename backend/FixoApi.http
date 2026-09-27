@@ -1,0 +1,6 @@
+@FixoApi_HostAddress = http://localhost:5181
+
+GET {{FixoApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

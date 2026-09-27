@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixo Admin - Disputes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --hue: 209;
+    --brand-900: hsl(var(--hue) 55% 22%);
+    --brand-700: hsl(var(--hue) 50% 32%);
+    --brand-500: hsl(var(--hue) 48% 45%);
+    --brand-300: hsl(var(--hue) 45% 68%);
+    --brand-100: hsl(var(--hue) 45% 92%);
+    --amber: #E38B29;
+    --green: #3A7D5C;
+    --red: #B23A2E;
+    --paper: #F6F4EE;
+    --ink: #1D2226;
+    --white: #FFFFFF;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181B;
+      --ink: #ECEAE3;
+      --white: #1E2328;
+      --brand-100: hsl(var(--hue) 35% 16%);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    font-family: var(--font-body);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+  }
+  .sidebar {
+    width: 240px;
+    background: var(--brand-900);
+    color: white;
+    padding: 24px 0;
+    flex-shrink: 0;
+  }
+  .sidebar-wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    padding: 0 24px;
+    margin-bottom: 32px;
+  }
+  .sidebar-wordmark span { color: var(--amber); }
+  .nav-item {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.7;
+    cursor: pointer;
+  }
+  .nav-item:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+  .nav-item.active { opacity: 1; background: rgba(255,255,255,0.15); border-left: 3px solid var(--amber); }
+  .main-content {
+    flex: 1;
+    padding: 32px;
+    overflow-y: auto;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .stat-pill {
+    padding: 8px 16px;
+    background: var(--white);
+    border-radius: var(--radius);
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .stat-pill strong {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .stat-pill.alert strong {
+    color: var(--red);
+  }
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .filter-select {
+    height: 40px;
+    padding: 0 32px 0 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    border: 1px solid var(--brand-100);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--ink);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231D2226' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .dispute-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 24px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--red);
+  }
+  .dispute-card.in-progress {
+    border-left-color: var(--amber);
+  }
+  .dispute-card.resolved {
+    border-left-color: var(--green);
+  }
+  .dispute-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .dispute-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .dispute-meta {
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-green {
+    background: rgba(58, 125, 92, 0.15);
+    color: var(--green);
+  }
+  .badge-amber {
+    background: rgba(227, 139, 41, 0.15);
+    color: var(--amber);
+  }
+  .badge-red {
+    background: rgba(178, 58, 46, 0.15);
+    color: var(--red);
+  }
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .dispute-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+  .detail-section h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--ink);
+    opacity: 0.8;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--brand-100);
+    font-size: 14px;
+  }
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+  .detail-label {
+    color: var(--ink);
+    opacity: 0.6;
+  }
+  .detail-value {
+    font-weight: 500;
+  }
+  .chat-preview {
+    background: var(--paper);
+    border-radius: var(--radius);
+    padding: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .chat-message {
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .chat-message:last-child {
+    margin-bottom: 0;
+  }
+  .chat-author {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  .chat-author.homeowner {
+    color: var(--brand-700);
+  }
+  .chat-author.tradie {
+    color: var(--green);
+  }
+  .chat-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink);
+    opacity: 0.5;
+    margin-left: 8px;
+  }
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--brand-100);
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--brand-700);
+    color: white;
+  }
+  .btn-primary:hover {
+    background: var(--brand-900);
+  }
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+  .btn-danger:hover {
+    background: var(--red);
+    color: white;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--brand-100);
+    color: var(--ink);
+  }
+  .user-link {
+    color: var(--brand-500);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .user-link:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-wordmark">Fixo<span>.</span></div>
+    <div class="nav-item">Dashboard</div>
+    <div class="nav-item">Users</div>
+    <div class="nav-item">Jobs</div>
+    <div class="nav-item active">Disputes</div>
+    <div class="nav-item">Settings</div>
+  </div>
+  
+  <div class="main-content">
+    <div class="header">
+      <h1>Disputes</h1>
+    </div>
+    
+    <div class="stats-row">
+      <div class="stat-pill alert"><strong>3</strong> Open</div>
+      <div class="stat-pill"><strong>5</strong> In Progress</div>
+      <div class="stat-pill"><strong>28</strong> Resolved</div>
+      <div class="stat-pill"><strong>2.4 days</strong> Avg Resolution</div>
+    </div>
+    
+    <div class="filters">
+      <select class="filter-select">
+        <option>All Status</option>
+        <option>Open</option>
+        <option>In Progress</option>
+        <option>Resolved</option>
+      </select>
+      <select class="filter-select">
+        <option>All Types</option>
+        <option>No-show</option>
+        <option>Pricing Dispute</option>
+        <option>Quality Issue</option>
+        <option>Cancellation</option>
+      </select>
+    </div>
+    
+    <div class="dispute-card">
+      <div class="dispute-header">
+        <div>
+          <div class="dispute-title">No-show by tradie</div>
+          <div class="dispute-meta"><span class="mono">JOB-00892</span> • Reported 2 hours ago</div>
+        </div>
+        <span class="badge badge-red">Open</span>
+      </div>
+      
+      <div class="dispute-body">
+        <div class="detail-section">
+          <h3>Parties</h3>
+          <div class="detail-row">
+            <span class="detail-label">Homeowner</span>
+            <a href="#" class="user-link">Michael Thompson</a>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Tradie</span>
+            <a href="#" class="user-link">Steve Roberts</a>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Job</span>
+            <span class="detail-value">Fix garden tap</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Scheduled</span>
+            <span class="detail-value">Today, 9:00 AM</span>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Recent Chat</h3>
+          <div class="chat-preview">
+            <div class="chat-message">
+              <div class="chat-author homeowner">Michael T. <span class="chat-time">8:45 AM</span></div>
+              Hi Steve, are you still coming this morning?
+            </div>
+            <div class="chat-message">
+              <div class="chat-author homeowner">Michael T. <span class="chat-time">9:15 AM</span></div>
+              It's been 15 minutes, is everything okay?
+            </div>
+            <div class="chat-message">
+              <div class="chat-author homeowner">Michael T. <span class="chat-time">9:32 AM</span></div>
+              I'm reporting a no-show. Very disappointed.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="action-bar">
+        <button class="btn btn-primary">Contact Tradie</button>
+        <button class="btn btn-success">Resolve: Refund Homeowner</button>
+        <button class="btn btn-danger">Flag Tradie Account</button>
+        <button class="btn btn-ghost">View Full Job</button>
+      </div>
+    </div>
+    
+    <div class="dispute-card in-progress">
+      <div class="dispute-header">
+        <div>
+          <div class="dispute-title">Pricing dispute</div>
+          <div class="dispute-meta"><span class="mono">JOB-00887</span> • Reported yesterday</div>
+        </div>
+        <span class="badge badge-amber">In Progress</span>
+      </div>
+      
+      <div class="dispute-body">
+        <div class="detail-section">
+          <h3>Parties</h3>
+          <div class="detail-row">
+            <span class="detail-label">Homeowner</span>
+            <a href="#" class="user-link">Emma Johnson</a>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Tradie</span>
+            <a href="#" class="user-link">David Wiremu</a>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Job</span>
+            <span class="detail-value">Install kitchen mixer</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Quoted</span>
+            <span class="detail-value mono">$180.00</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Charged</span>
+            <span class="detail-value mono" style="color: var(--red);">$320.00</span>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Notes</h3>
+          <div class="chat-preview">
+            <div class="chat-message">
+              <div class="chat-author homeowner">Emma J.</div>
+              Was quoted $180.00 over chat but invoice shows $320.00. Tradie says additional parts were needed but didn't discuss price first.
+            </div>
+            <div class="chat-message">
+              <div class="chat-author tradie">Admin (Sarah K.) <span class="chat-time">Yesterday</span></div>
+              Reviewing chat logs and job photos. Will contact both parties.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="action-bar">
+        <button class="btn btn-primary">Add Note</button>
+        <button class="btn btn-success">Resolve: Partial Refund</button>
+        <button class="btn btn-ghost">View Full Chat</button>
+      </div>
+    </div>
+    
+    <div class="dispute-card resolved">
+      <div class="dispute-header">
+        <div>
+          <div class="dispute-title">Quality issue — paint job</div>
+          <div class="dispute-meta"><span class="mono">JOB-00879</span> • Resolved 3 days ago</div>
+        </div>
+        <span class="badge badge-green">Resolved</span>
+      </div>
+      
+      <div class="dispute-body">
+        <div class="detail-section">
+          <h3>Resolution</h3>
+          <div class="detail-row">
+            <span class="detail-label">Outcome</span>
+            <span class="detail-value">Tradie returned to fix</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Resolved by</span>
+            <span class="detail-value">Sarah K. (Admin)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Time to resolve</span>
+            <span class="detail-value">1.5 days</span>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Summary</h3>
+          <div class="chat-preview">
+            <div class="chat-message">
+              Homeowner reported uneven paint coverage. Tradie acknowledged and returned next day to apply second coat at no charge. Both parties confirmed satisfied.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="action-bar">
+        <button class="btn btn-ghost">View Full Record</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
