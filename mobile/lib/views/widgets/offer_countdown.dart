@@ -148,14 +148,20 @@ class _OfferCountdownState extends State<OfferCountdown> {
   Widget _compact(bool expired) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final color = expired
-        ? DesignTokens.inkSoft(isDark)
-        : DesignTokens.inkAccent(isDark);
+    final colors = theme.extension<THColors>()!;
+    final Color color;
+    if (expired || _remaining <= const Duration(seconds: 30)) {
+      color = DesignTokens.inkDanger(isDark);
+    } else if (_remaining <= const Duration(minutes: 2)) {
+      color = colors.accent;
+    } else {
+      color = DesignTokens.inkAccent(isDark);
+    }
     return Row(
       children: [
         Icon(
           expired ? Icons.timer_off_outlined : Icons.timer_outlined,
-          size: 14,
+          size: Sizes.iconXs,
           color: color,
         ),
         const SizedBox(width: Space.s1),
@@ -177,12 +183,14 @@ class _OfferCountdownState extends State<OfferCountdown> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final colors = theme.extension<THColors>()!;
-    final isUrgent = !expired && _remaining.inMinutes < 5;
-    final fillColor = expired
-        ? DesignTokens.inkDanger(isDark)
-        : (isUrgent
-            ? DesignTokens.inkDanger(isDark)
-            : colors.brand);
+    final Color fillColor;
+    if (expired || _remaining <= const Duration(seconds: 30)) {
+      fillColor = DesignTokens.inkDanger(isDark);
+    } else if (_remaining <= const Duration(minutes: 2)) {
+      fillColor = colors.accent;
+    } else {
+      fillColor = colors.brand;
+    }
     final totalSeconds =
         widget.offer.expiresAtUtc.difference(DateTime.now().toUtc()).inSeconds +
         _remaining.inSeconds;
@@ -232,11 +240,11 @@ class _OfferCountdownState extends State<OfferCountdown> {
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: Space.s1),
               ClipRRect(
                 borderRadius: BorderRadius.circular(DesignTokens.radius),
                 child: SizedBox(
-                  height: 8,
+                  height: Sizes.expiryProgressH,
                   child: LinearProgressIndicator(
                     value: expired ? 0.0 : progress,
                     backgroundColor: colors.track,

@@ -18,8 +18,8 @@
 | **Homeowner UI** | **Task 3** | Match Result Screen (H11) | `mobile/lib/views/matching/match_result_screen.dart` | **Completed** ✅ | `c67fae7` |
 | **Homeowner UI** | **Task 4** | Chat `sentByMe` User ID Resolution & Tokens | `mobile/lib/viewmodels/chat_viewmodel.dart`, `mobile/lib/views/chat/chat_screen.dart`, `mobile/lib/views/widgets/chat_widgets.dart` | **Completed** ✅ | `82d44ae` |
 | **Homeowner UI** | **Task 5** | Job Detail Progress Banner & On-Dark Badge | `mobile/lib/widgets/fixo_cards.dart`, `mobile/lib/views/widgets/status_strip.dart`, `mobile/lib/views/homeowner/homeowner_job_detail_screen.dart` | **Completed** ✅ | `bc2540e` |
-| **Tradie UI** | **Task 6** | Tradie Request Detail Screen | `mobile/lib/views/tradie/request_detail_screen.dart` | **Next Up** ⏳ | Pending |
-| **Tradie UI** | **Task 7** | Tradie Active Job Screen | `mobile/lib/views/tradie/tradie_job_detail_screen.dart` | Pending ⏳ | Pending |
+| **Tradie UI** | **Task 6** | Tradie Request Detail Screen | `mobile/lib/views/tradie/request_detail_screen.dart` | **Completed** ✅ | `02662b6` |
+| **Tradie UI** | **Task 7** | Tradie Active Job Screen | `mobile/lib/views/tradie/tradie_job_detail_screen.dart` | **Next Up** ⏳ | Pending |
 | **Notice System** | **Task 8** | FixoNotice Feedback System (48 SnackBar replacements) | `mobile/lib/feedback/*`, call sites | Pending ⏳ | Pending |
 
 ---
@@ -57,20 +57,20 @@
 - Tokenised hardcoded numeric literals in `mobile/lib/views/homeowner/homeowner_job_detail_screen.dart`.
 - Added widget test coverage for `StatusBadge` `onDark` variant in `mobile/test/status_badge_test.dart`.
 
+### ✅ Task 6: Tradie Request Detail Screen
+- **Target File:** `mobile/lib/views/tradie/request_detail_screen.dart`, `mobile/lib/views/widgets/offer_countdown.dart`
+- **Tokens Added:** `Sizes.iconAction = 20.0`, `Sizes.photoThumb = 90.0`, `Sizes.photoThumbW = 120.0`, `Sizes.expiryBarHeight = 48.0`, `Sizes.expiryProgressH = 8.0`, `Sizes.iconEmpty = 72.0`, `Sizes.photoMinScale = 1.0`, `Sizes.photoMaxScale = 4.0`.
+- **Implemented:**
+  1. Redesigned layout hierarchy per T21 frame: prominent display price, live offer countdown, title + category badge, estimated rate breakdown, address card with truthful privacy notice, schedule card, description, photo gallery, and sticky action bar.
+  2. Implemented expiry colour thresholds in `OfferCountdown`: `> 2 min` neutral/brand (`colors.brand`), `≤ 2 min` amber/urgent (`colors.accent`), `≤ 30s` danger (`DesignTokens.inkDanger(isDark)`).
+  3. Photo horizontal scroll with full-screen `InteractiveViewer` image inspection and accessible close button (zero new 3rd-party dependencies).
+  4. Sticky bottom action bar: Decline (1/3 width, flex: 1, `FixoGhostButton`) | Accept Job (2/3 width, flex: 2, `FixoPrimaryButton`, amber primary).
+  5. 100% tokenised numeric literals across `request_detail_screen.dart` and `offer_countdown.dart`.
+  6. Verified with 23/23 tests passing in `offer_response_test.dart` and 0 `flutter analyze` errors.
+
 ---
 
 ## 3. Pending Tasks
-
-### ⏳ Task 6: Tradie Request Detail Screen
-- **Target File:** `mobile/lib/views/tradie/request_detail_screen.dart`
-- **Tokens to Add / Verify:** `Sizes.photoThumb = 90.0`, `Sizes.iconAction = 20.0`, `Sizes.expiryBarHeight = 48.0`.
-- **Requirements:**
-  1. Redesign layout hierarchy per H11/T21 tradie frame.
-  2. Implement expiry colour thresholds: `> 2 min` neutral, `≤ 2 min` amber, `≤ 30s` danger.
-  3. Photo horizontal scroll with `InteractiveViewer` for full-screen photo inspect (zero new packages).
-  4. StickyActionBar: Decline (1/3 width) \| Accept Job (2/3 width, amber primary).
-  5. Zero hardcoded numeric literals.
-- **Commit Target:** `tradie-request: redesign hierarchy, expiry bar, tokenise literals`
 
 ### ⏳ Task 7: Tradie Active Job Screen
 - **Target File:** `mobile/lib/views/tradie/tradie_job_detail_screen.dart`

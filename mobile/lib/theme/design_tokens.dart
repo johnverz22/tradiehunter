@@ -144,6 +144,16 @@ abstract class Sizes {
   static const double inboxAvatarSmBadge   = 16.0;  // verified badge on inbox avatar
   static const double inboxTileMin         = 72.0;  // ConversationTile minimum height
   static const double unreadBadgeMin       = 20.0;  // _UnreadBadge minimum size
+
+  // Tradie request detail & gallery tokens
+  static const double iconAction           = 20.0;  // action icon size (location pin, calendar)
+  static const double photoThumb           = 90.0;  // photo thumbnail height in galleries
+  static const double photoThumbW          = 120.0; // photo thumbnail width in galleries
+  static const double expiryBarHeight      = 48.0;  // expiry bar min height (satisfies tapMin)
+  static const double expiryProgressH      = 8.0;   // expiry progress indicator height
+  static const double iconEmpty            = 72.0;  // empty state icon size
+  static const double photoMinScale        = 1.0;   // InteractiveViewer min scale
+  static const double photoMaxScale        = 4.0;   // InteractiveViewer max zoom scale
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────

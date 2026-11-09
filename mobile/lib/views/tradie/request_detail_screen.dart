@@ -8,17 +8,19 @@ import 'package:intl/intl.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
-import '../widgets/sticky_action_bar.dart';
 import '../widgets/offer_countdown.dart';
+import '../widgets/sticky_action_bar.dart';
 
-/// Mockup 10-request-detail (tradie): price + live offer countdown above the
-/// details, address fallback (exact address is masked until Booked, P5-01),
-/// info grid, description, photo strip, Decline / Accept bar.
+/// Tradie request detail screen (T21): price + live offer countdown above
+/// the details, address fallback (exact address is masked until Booked, P5-01),
+/// info cards, description, photo gallery with full-screen inspector, and
+/// Decline / Accept sticky action bar.
 ///
 /// Sequential offers (P3-07 / P3-08): when the backend has a pending offer
 /// for this tradie the screen counts down to `expiresAtUtc` (UTC on the
@@ -158,6 +160,23 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
     return '${resolveBaseUrl()}$url';
   }
 
+  /// Opens full-screen photo gallery viewer using Flutter's built-in InteractiveViewer.
+  void _openPhotoViewer(BuildContext context, int initialIndex) {
+    final job = _job;
+    if (job == null || job.photoUrls.isEmpty) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _PhotoGalleryViewer(
+          photoUrls: job.photoUrls,
+          initialIndex: initialIndex,
+          resolveUrl: _resolvePhotoUrl,
+        ),
+      ),
+    );
+  }
+
   /// Accept or decline through the shared [OfferResponder] command path —
   /// exactly one authorized request per job, and a stale or rejected response
   /// reconciles the offer against the server rather than guessing (V15-14).
@@ -209,13 +228,14 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
     final job = _job;
     if (job == null) {
       return Scaffold(
-        appBar: FixoGradientAppBar(
+        appBar: FixoAppBar(
           title: 'Job Request',
           showBack: !widget.embedded,
         ),
         body: _RequestNotFoundBody(
           heading: 'This request expired',
-          subtext: 'Another tradie may have accepted this job, or the offer window closed.',
+          subtext:
+              'Another tradie may have accepted this job, or the offer window closed.',
           onAction: () {
             if (context.canPop()) {
               context.pop();
@@ -238,12 +258,17 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
     final canRespond = !_busy && offer != null && !expired;
 
     return Scaffold(
-      appBar: FixoGradientAppBar(
+      appBar: FixoAppBar(
         title: 'Job Request',
         showBack: !widget.embedded,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.s6, Space.s2, Space.s6, Space.s6),
+        padding: const EdgeInsets.fromLTRB(
+          Space.s6,
+          Space.s2,
+          Space.s6,
+          Space.s6,
+        ),
         children: [
           // 1. Title row with category chip
           Row(
@@ -252,7 +277,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
               Expanded(
                 child: Text(
                   job.title,
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FW.bold,
                   ),
                 ),
@@ -267,9 +292,11 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
             ],
           ),
           const SizedBox(height: Space.s3),
-          // 2. Price block: large total + hours/rate breakdown beneath
+
+          // 2. Prominent price block: large total + hours/rate breakdown
           _PriceBlock(job: job, isDark: isDark),
           const SizedBox(height: Space.s3),
+
           // 3. Countdown / offer state
           if (_offerError)
             _OfferCheckError(
@@ -281,8 +308,9 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
           else if (offer != null)
             OfferCountdown(offer: offer, onExpired: _onCountdownExpired)
           else if (_offerChecked)
-            _OfferGone(),
+            const _OfferGone(),
           const SizedBox(height: Space.s4),
+
           // 4. Address card
           FixoCard(
             child: Row(
@@ -291,7 +319,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
                 Icon(
                   Icons.location_on_outlined,
                   color: DesignTokens.brand500,
-                  size: 20,
+                  size: Sizes.iconAction,
                 ),
                 const SizedBox(width: Space.s2),
                 Expanded(
@@ -318,12 +346,14 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
               ],
             ),
           ),
+
           // 5. Schedule card — only when scheduledStartUtc is set
           if (job.scheduledStartUtc != null) ...[
             const SizedBox(height: Space.s3),
             _ScheduleCard(job: job),
           ],
           const SizedBox(height: Space.s5),
+
           // 6. Description
           Text(
             job.description?.isNotEmpty == true
@@ -332,7 +362,8 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: Space.s4),
-          // 7. Photos
+
+          // 7. Photos gallery with tap-to-inspect
           if (job.photoUrls.isEmpty)
             Text(
               'No photos attached.',
@@ -342,31 +373,52 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
             )
           else
             SizedBox(
-              height: 90,
+              height: Sizes.photoThumb,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: job.photoUrls.length,
                 separatorBuilder: (_, _) => const SizedBox(width: Space.s2),
-                itemBuilder: (_, i) => ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    DesignTokens.radiusControl,
-                  ),
-                  child: Image.network(
-                    _resolvePhotoUrl(job.photoUrls[i]),
-                    width: 120,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: 120,
-                      alignment: Alignment.center,
-                      color: isDark
-                          ? DesignTokens.brand100Dark
-                          : DesignTokens.brand100Light,
-                      child: Text(
-                        'Photo ${i + 1}',
-                        style: TextStyle(
-                          fontSize: DesignTokens.fontSizeCaption,
-                          color: DesignTokens.brand500,
+                itemBuilder: (ctx, i) => Semantics(
+                  button: true,
+                  label:
+                      'Photo ${i + 1} of ${job.photoUrls.length}, tap to view full screen',
+                  child: GestureDetector(
+                    key: ValueKey('photo_thumb_$i'),
+                    onTap: () => _openPhotoViewer(context, i),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        Radii.control,
+                      ),
+                      child: Image.network(
+                        _resolvePhotoUrl(job.photoUrls[i]),
+                        width: Sizes.photoThumbW,
+                        height: Sizes.photoThumb,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          width: Sizes.photoThumbW,
+                          height: Sizes.photoThumb,
+                          alignment: Alignment.center,
+                          color: isDark
+                              ? DesignTokens.brand100Dark
+                              : DesignTokens.brand100Light,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_outlined,
+                                size: Sizes.iconAction,
+                                color: DesignTokens.brand500,
+                              ),
+                              const SizedBox(height: Space.s1),
+                              Text(
+                                'Photo ${i + 1}',
+                                style: TextStyle(
+                                  fontSize: DesignTokens.fontSizeCaption,
+                                  color: DesignTokens.brand500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -422,9 +474,8 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
   }
 }
 
-/// Prominent price block (V16-08): large total at 24/700 in dark foreground
-/// ink, with hours × rate breakdown on the line below when available.
-/// Missing values show '—' rather than a fabricated figure.
+/// Prominent price block (V16-08 / T21): large total in display typography,
+/// with estimated hours × rate breakdown beneath when available.
 class _PriceBlock extends StatelessWidget {
   final Job job;
   final bool isDark;
@@ -436,15 +487,16 @@ class _PriceBlock extends StatelessWidget {
     final total = job.totalAmount;
     final rate = job.hourlyRate;
     final breakdown = rate != null && job.hours > 0
-        ? '${job.hours}h at \$${rate.toStringAsFixed(2)}/h'
+        ? '${job.hours} h × ${formatRate(rate)}'
         : (job.hours > 0 ? '${job.hours}h' : null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          total != null ? '\$${total.toStringAsFixed(2)}' : '—',
+          total != null ? formatMoney(total) : '—',
           style: TextStyle(
+            fontFamily: TypeTokens.fontDisplay,
             fontSize: DesignTokens.fontSizeH1,
             fontWeight: FW.bold,
             color: DesignTokens.foreground(isDark),
@@ -474,7 +526,8 @@ class _ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheduledUtc = job.scheduledStartUtc!;
-    var dateStr = DateFormat('EEEE d MMMM · h:mm a').format(scheduledUtc.toLocal());
+    var dateStr =
+        DateFormat('EEEE d MMMM · h:mm a').format(scheduledUtc.toLocal());
     if (job.hours > 0) dateStr += ' · ${job.hours}h';
     return FixoCard(
       child: Row(
@@ -482,7 +535,7 @@ class _ScheduleCard extends StatelessWidget {
           Icon(
             Icons.calendar_today_outlined,
             color: DesignTokens.brand500,
-            size: 20,
+            size: Sizes.iconAction,
           ),
           const SizedBox(width: Space.s2),
           Expanded(
@@ -495,6 +548,107 @@ class _ScheduleCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Full-screen photo gallery viewer using Flutter's built-in InteractiveViewer.
+class _PhotoGalleryViewer extends StatefulWidget {
+  final List<String> photoUrls;
+  final int initialIndex;
+  final String Function(String) resolveUrl;
+
+  const _PhotoGalleryViewer({
+    required this.photoUrls,
+    required this.initialIndex,
+    required this.resolveUrl,
+  });
+
+  @override
+  State<_PhotoGalleryViewer> createState() => _PhotoGalleryViewerState();
+}
+
+class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: SizedBox(
+          width: Sizes.tapMin,
+          height: Sizes.tapMin,
+          child: IconButton(
+            icon: const Icon(Icons.close, size: Sizes.iconLg),
+            tooltip: 'Close photo viewer',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        title: Text(
+          'Photo ${_currentIndex + 1} of ${widget.photoUrls.length}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: DesignTokens.fontSizeBody,
+            fontWeight: FW.semibold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photoUrls.length,
+        onPageChanged: (index) => setState(() => _currentIndex = index),
+        itemBuilder: (context, index) {
+          final url = widget.resolveUrl(widget.photoUrls[index]);
+          return Center(
+            child: InteractiveViewer(
+              minScale: Sizes.photoMinScale,
+              maxScale: Sizes.photoMaxScale,
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => Container(
+                  padding: const EdgeInsets.all(Space.s6),
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.broken_image_outlined,
+                        size: Sizes.iconHero,
+                        color: Colors.white54,
+                      ),
+                      const SizedBox(height: Space.s3),
+                      Text(
+                        'Failed to load photo ${index + 1}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -516,7 +670,7 @@ class _OfferCheckError extends StatelessWidget {
           Icon(
             Icons.cloud_off_outlined,
             color: DesignTokens.inkAccent(isDark),
-            size: 22,
+            size: Sizes.iconMd,
           ),
           const SizedBox(width: Space.s3),
           Expanded(
@@ -553,7 +707,7 @@ class _OfferGone extends StatelessWidget {
           Icon(
             Icons.timer_off_outlined,
             color: theme.colorScheme.onSurfaceVariant,
-            size: 22,
+            size: Sizes.iconMd,
           ),
           const SizedBox(width: Space.s3),
           Expanded(
@@ -592,13 +746,16 @@ class _RequestNotFoundBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Space.s7, vertical: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s7,
+        vertical: Space.s9,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.hourglass_disabled_outlined,
-            size: 72,
+            size: Sizes.iconEmpty,
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: Space.s6),
@@ -618,6 +775,7 @@ class _RequestNotFoundBody extends StatelessWidget {
           const SizedBox(height: Space.s8),
           SizedBox(
             width: double.infinity,
+            height: Sizes.button,
             child: FilledButton(
               onPressed: onAction,
               child: Text(actionLabel),

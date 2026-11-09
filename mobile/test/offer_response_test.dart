@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
+import 'package:fixo/theme/design_tokens.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/offer_responder.dart';
@@ -31,22 +32,24 @@ class _Repo extends JobsRepository {
   bool respondOk = true;
   Completer<bool>? respondGate;
   bool jobReturnsNull = false;
+  Job? jobOverride;
 
   @override
   Future<Job?> getJobById(String id) async => jobReturnsNull
       ? null
-      : Job(
-          id: id,
-          title: 'Repair kitchen tap',
-          category: 'Plumbing',
-          suburb: 'Ponsonby',
-          status: 'Requested',
-          stage: 0,
-          hours: 2,
-          hourlyRate: Decimal.parse('85.50'),
-          totalAmount: Decimal.parse('171.00'),
-          description: 'Fix the tap.',
-        );
+      : (jobOverride ??
+          Job(
+            id: id,
+            title: 'Repair kitchen tap',
+            category: 'Plumbing',
+            suburb: 'Ponsonby',
+            status: 'Requested',
+            stage: 0,
+            hours: 2,
+            hourlyRate: Decimal.parse('85.50'),
+            totalAmount: Decimal.parse('171.00'),
+            description: 'Fix the tap.',
+          ));
 
   @override
   Future<JobOffer?> getPendingOffer(String jobId) async {
@@ -276,6 +279,28 @@ void main() {
       expect(find.text('Offer expired'), findsOneWidget);
       expect(expiredCalls, 1);
     });
+
+    testWidgets('expiry colour thresholds: > 2 min brand, <= 2 min amber, <= 30s danger', (
+      tester,
+    ) async {
+      fakeNow = DateTime.utc(2026, 7, 8, 12);
+      const colors = THColors.light;
+
+      // 1. > 2 min -> brand colour
+      await tester.pumpWidget(mount(fakeClockOffer(const Duration(minutes: 3))));
+      final ind1 = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+      expect((ind1.valueColor as AlwaysStoppedAnimation<Color>).value, colors.brand);
+
+      // 2. <= 2 min -> amber colour (colors.accent)
+      await tester.pumpWidget(mount(fakeClockOffer(const Duration(seconds: 90))));
+      final ind2 = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+      expect((ind2.valueColor as AlwaysStoppedAnimation<Color>).value, colors.accent);
+
+      // 3. <= 30s -> danger colour (DesignTokens.inkDanger(false))
+      await tester.pumpWidget(mount(fakeClockOffer(const Duration(seconds: 25))));
+      final ind3 = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+      expect((ind3.valueColor as AlwaysStoppedAnimation<Color>).value, DesignTokens.inkDanger(false));
+    });
   });
 
   group('RequestDetailScreen offer flow', () {
@@ -320,7 +345,7 @@ void main() {
       final repo = _Repo()..offer = liveOffer();
       await mountDetail(tester, repo);
       expect(find.text(r'$171.00'), findsOneWidget);
-      expect(find.text(r'2h at $85.50/h'), findsOneWidget);
+      expect(find.text(r'2 h × $85.50/h'), findsOneWidget);
       expect(find.textContaining('Respond within'), findsOneWidget);
       // Price and countdown come before the description.
       final priceTop = tester.getTopLeft(find.text(r'$171.00')).dy;
@@ -476,6 +501,66 @@ void main() {
       await tester.tap(find.text('View open leads'));
       await tester.pumpAndSettle();
       expect(find.text('Tradie dashboard'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('photo gallery renders thumbnails and opens InteractiveViewer on tap', (
+      tester,
+    ) async {
+      final repo = _Repo()
+        ..offer = liveOffer()
+        ..jobOverride = Job(
+          id: '42',
+          title: 'Repair kitchen tap',
+          category: 'Plumbing',
+          suburb: 'Ponsonby',
+          status: 'Requested',
+          stage: 0,
+          hours: 2,
+          hourlyRate: Decimal.parse('85.50'),
+          totalAmount: Decimal.parse('171.00'),
+          description: 'Fix the tap.',
+          photoUrls: const ['https://example.com/tap.jpg'],
+        );
+      await mountDetail(tester, repo);
+      expect(find.byType(InteractiveViewer), findsNothing);
+      final thumbFinder = find.byKey(const ValueKey('photo_thumb_0'));
+      await tester.scrollUntilVisible(
+        thumbFinder,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(thumbFinder);
+      await tester.pumpAndSettle();
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      expect(find.text('Photo 1 of 1'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close photo viewer'));
+      await tester.pumpAndSettle();
+      expect(find.byType(InteractiveViewer), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('sticky action bar has 1/3 Decline and 2/3 Accept Job button ratio', (
+      tester,
+    ) async {
+      final repo = _Repo()..offer = liveOffer();
+      await mountDetail(tester, repo);
+      final declineExpanded = tester.widget<Expanded>(
+        find.ancestor(
+          of: find.widgetWithText(FixoGhostButton, 'Decline'),
+          matching: find.byType(Expanded),
+        ),
+      );
+      expect(declineExpanded.flex, 1);
+      final acceptExpanded = tester.widget<Expanded>(
+        find.ancestor(
+          of: find.widgetWithText(FixoPrimaryButton, 'Accept Job'),
+          matching: find.byType(Expanded),
+        ),
+      );
+      expect(acceptExpanded.flex, 2);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
     });
