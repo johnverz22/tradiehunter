@@ -65,6 +65,7 @@ Widget homeownerJobSummary(
     statusKind: presentation.kind,
     actionLabel: actionLabel,
     actionIsTonal: isBooked,
+    actionIsSecondary: job.status == 'AwaitingPayment',
     progressStatus: job.status,
     isAttention: isAttention,
     onTap: isBooked ? onActionTap : onCardTap,
@@ -193,7 +194,7 @@ class _BookedJobCard extends StatelessWidget {
                         ),
                       if (scheduleLabel != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.only(top: Space.s0_5),
                           child: Text(
                             scheduleLabel,
                             style: TextStyle(
@@ -214,8 +215,9 @@ class _BookedJobCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: Space.s3),
                 child: FixoTonalButton(
                   label: 'Open chat',
+                  icon: Icons.chat_bubble_outline,
                   fullWidth: true,
-                  height: 44,
+                  height: Sizes.buttonTonalSm,
                   onPressed: job.matchedTradieId == null
                       ? null
                       : () => context.push('/chat/${job.id}'),

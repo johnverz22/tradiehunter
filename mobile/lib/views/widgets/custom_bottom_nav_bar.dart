@@ -319,6 +319,7 @@ class _NewJobNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Transform.translate(
       offset: const Offset(0, -8),
       child: Semantics(
@@ -330,25 +331,32 @@ class _NewJobNavItem extends StatelessWidget {
             key: const Key('post_job_fab'),
             onTap: onTap,
             child: Container(
-              width: 56,
-              height: 56,
+              width: Sizes.fab,
+              height: Sizes.fab,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: DesignTokens.amber,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
+                color: DesignTokens.brand900,
                 boxShadow: [
                   BoxShadow(
-                    color: DesignTokens.shadowCard,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.5)
+                        : DesignTokens.brand900.withValues(alpha: 0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
-                border: Border.all(color: DesignTokens.amber, width: 2),
+                border: Border.all(
+                  color: isDark
+                      ? DesignTokens.paperDark
+                      : DesignTokens.paperLight,
+                  width: 3,
+                ),
               ),
               alignment: Alignment.center,
-              child: Icon(
-                CustomBottomNavBar.postJobTab.icon,
+              child: const Icon(
+                Icons.add,
                 size: 28,
-                color: DesignTokens.onAmber,
+                color: Colors.white,
               ),
             ),
           ),

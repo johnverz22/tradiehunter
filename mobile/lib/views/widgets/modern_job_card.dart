@@ -37,6 +37,10 @@ class ModernJobCard extends StatelessWidget {
   /// "Open chat" on Booked/InProgress cards.
   final bool actionIsTonal;
 
+  /// When true the action button uses secondary / outline style (e.g. "Pay now"
+  /// on AwaitingPayment cards per mockup).
+  final bool actionIsSecondary;
+
   final bool isAttention;
 
   const ModernJobCard({
@@ -56,6 +60,7 @@ class ModernJobCard extends StatelessWidget {
     this.identityLabel,
     this.actionLabel,
     this.actionIsTonal = false,
+    this.actionIsSecondary = false,
     this.isAttention = false,
   });
 
@@ -82,32 +87,32 @@ class ModernJobCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(DesignTokens.space5),
-              // Attention card decoration matches .attcard in kit.css exactly:
-              // background: linear-gradient(180deg,
-              //   rgba(60,117,170,.18) 0%, rgba(60,117,170,.06) 40%, transparent 100%)
-              // border-top: none; border-left: none (inherits .card border on right+bottom only)
-              decoration: isAttention
-                  ? BoxDecoration(
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0, 0.4, 1],
-                        colors: [
-                          DesignTokens.brand500.withValues(alpha: 0.18),
-                          DesignTokens.brand500.withValues(alpha: 0.06),
-                          DesignTokens.brand500.withValues(alpha: 0),
-                        ],
-                      ),
-                      boxShadow: DesignTokens.cardShadow(isDark),
-                    )
-                  : BoxDecoration(
-                      color: DesignTokens.surfaceCard(isDark),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
-                      border: Border.all(color: DesignTokens.paperLine(isDark)),
-                      boxShadow: DesignTokens.cardShadow(isDark),
+          decoration: BoxDecoration(
+            color: DesignTokens.surfaceCard(isDark),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
+            boxShadow: DesignTokens.cardShadow(isDark),
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(DesignTokens.space5),
+            decoration: isAttention
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0, 0.4, 1],
+                      colors: [
+                        DesignTokens.brand500.withValues(alpha: 0.18),
+                        DesignTokens.brand500.withValues(alpha: 0.06),
+                        DesignTokens.brand500.withValues(alpha: 0),
+                      ],
                     ),
+                  )
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
+                    border: Border.all(color: DesignTokens.paperLine(isDark)),
+                  ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -153,16 +158,24 @@ class ModernJobCard extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: DesignTokens.brand500,
+                            color: isAttention
+                                ? (isDark
+                                    ? DesignTokens.surfaceCard(isDark)
+                                    : Colors.white)
+                                : DesignTokens.brand500,
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             _initials(identityLabel!),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: DesignTokens.fontDisplay,
                               fontSize: DesignTokens.fontSizeCaption,
                               fontWeight: FW.bold,
-                              color: Colors.white,
+                              color: isAttention
+                                  ? (isDark
+                                      ? Colors.white
+                                      : DesignTokens.brand900)
+                                  : Colors.white,
                             ),
                           ),
                         ),
@@ -258,7 +271,7 @@ class ModernJobCard extends StatelessWidget {
               // ── 3. Price + date row ────────────────────────────────────────
               if (priceLabel != null || scheduleLabel != null) ...[
                 if (isAttention) ...[
-                  const SizedBox(height: 14),
+                  const SizedBox(height: Space.s3_5),
                   Divider(height: 1, color: DesignTokens.paperLine(isDark)),
                 ],
                 const SizedBox(height: Space.s3),
@@ -347,7 +360,7 @@ class ModernJobCard extends StatelessWidget {
               ],
               // ── 4. Single 48px primary button matching state ───────────────
               if (actionLabel != null && onTap != null) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: Space.s3_5),
                 SizedBox(
                   width: double.infinity,
                   height: DesignTokens.targetMinimum,
@@ -373,6 +386,38 @@ class ModernJobCard extends StatelessWidget {
                           ),
                           textStyle: const TextStyle(
                             fontFamily: DesignTokens.fontBody,
+                            fontSize: DesignTokens.fontSizeBody,
+                            fontWeight: FW.semibold,
+                          ),
+                        ),
+                        child: Text(actionLabel!),
+                      );
+                    }
+                    if (actionIsSecondary) {
+                      // Secondary / ghost: outline button with brand text
+                      // (e.g. "Pay now" in mockup).
+                      return TextButton(
+                        key: const Key('job_card_primary_action'),
+                        onPressed: onTap,
+                        style: TextButton.styleFrom(
+                          backgroundColor: isDark
+                              ? Colors.transparent
+                              : DesignTokens.surfaceCard(isDark),
+                          foregroundColor: DesignTokens.foregroundBrand(isDark),
+                          side: BorderSide(
+                            color: DesignTokens.borderControl(isDark),
+                            width: DesignTokens.borderWidthFor(isDark),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusControl,
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s4,
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: DesignTokens.fontDisplay,
                             fontSize: DesignTokens.fontSizeBody,
                             fontWeight: FW.semibold,
                           ),
@@ -416,6 +461,7 @@ class ModernJobCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/theme/design_tokens.dart';
 import 'package:fixo/theme/fixo_theme.dart';
+import 'package:fixo/views/widgets/custom_bottom_nav_bar.dart';
 import 'package:fixo/views/widgets/homeowner_dashboard_header.dart';
 import 'package:fixo/views/widgets/homeowner_job_summary.dart';
 import 'package:fixo/views/widgets/job_progress_dots.dart';
@@ -55,7 +56,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('GOOD EVENING'), findsOneWidget);
+          expect(find.text('KIA ORA'), findsOneWidget);
           expect(find.text('Sarah'), findsOneWidget);
           expect(find.text('Grey Lynn, Auckland'), findsOneWidget);
           expect(find.text('Fixed price'), findsNothing);
@@ -201,6 +202,105 @@ void main() {
     final button = tester.widget<FixoTonalButton>(find.byType(FixoTonalButton));
     expect(button.onPressed, isNull);
     expect(find.text('?'), findsOneWidget);
+  });
+
+  testWidgets('HomeownerDashboardHeader empty name fallback and location chip', (
+    tester,
+  ) async {
+    // 1. Empty name -> title is "Kia ora", no eyebrow, no "Homeowner"
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FixoTheme.light(),
+        home: const Scaffold(
+          body: HomeownerDashboardHeader(
+            firstName: '',
+            location: null,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Kia ora'), findsOneWidget);
+    expect(find.text('KIA ORA'), findsNothing);
+    expect(find.text('Homeowner'), findsNothing);
+    expect(find.text('Welcome back'), findsNothing);
+    expect(find.byIcon(Icons.location_on_outlined), findsNothing);
+
+    // 2. Name provided without location -> eyebrow + name, location chip hidden
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FixoTheme.dark(),
+        home: const Scaffold(
+          body: HomeownerDashboardHeader(
+            firstName: 'Sarah',
+            location: '',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('KIA ORA'), findsOneWidget);
+    expect(find.text('Sarah'), findsOneWidget);
+    expect(find.byIcon(Icons.location_on_outlined), findsNothing);
+
+    // 3. Name provided with location -> eyebrow + name + location chip with icon
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FixoTheme.light(),
+        home: const Scaffold(
+          body: HomeownerDashboardHeader(
+            firstName: 'Sarah',
+            location: 'Grey Lynn, Auckland',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('KIA ORA'), findsOneWidget);
+    expect(find.text('Sarah'), findsOneWidget);
+    expect(find.text('Grey Lynn, Auckland'), findsOneWidget);
+    expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
+  });
+
+  testWidgets('navy FAB matches mockup with white add icon and 56dp size', (
+    tester,
+  ) async {
+    for (final dark in [false, true]) {
+      var posted = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? FixoTheme.dark() : FixoTheme.light(),
+          home: Scaffold(
+            bottomNavigationBar: CustomBottomNavBar(
+              currentIndex: 0,
+              showFab: true,
+              tabs: CustomBottomNavBar.homeownerTabs,
+              onDestinationSelected: (_) {},
+              onPostJob: () => posted = true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fabFinder = find.byKey(const Key('post_job_fab'));
+      expect(fabFinder, findsOneWidget);
+      expect(find.byIcon(Icons.add), findsOneWidget);
+
+      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(icon.color, Colors.white);
+
+      final container = tester.widget<Container>(
+        find.descendant(of: fabFinder, matching: find.byType(Container)),
+      );
+      final decoration = container.decoration as BoxDecoration;
+      expect(decoration.color, DesignTokens.brand900);
+      expect(container.constraints?.minWidth ?? 56.0, greaterThanOrEqualTo(48.0));
+      expect(container.constraints?.minHeight ?? 56.0, greaterThanOrEqualTo(48.0));
+
+      await tester.tap(fabFinder);
+      expect(posted, isTrue);
+    }
   });
 
   test('caption token meets minimum typography size', () {

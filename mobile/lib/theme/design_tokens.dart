@@ -20,8 +20,10 @@ abstract class Space {
   static const double s2 = 8.0;
   static const double s2_5 = 10.0;
   static const double s3 = 12.0;
+  static const double s3_5 = 14.0;
   static const double s4 = 16.0;
   static const double s5 = 20.0;
+  static const double s5_5 = 22.0;
   static const double s6 = 24.0;
   static const double s7 = 32.0;
   static const double s8 = 40.0;
@@ -47,6 +49,7 @@ abstract class Radii {
   static const double tile = 16.0;
   static const double card = 20.0;
   static const double sheet = 28.0;
+  static const double hero = 32.0;
   static const double pill = 999.0;
 }
 
@@ -60,8 +63,10 @@ abstract class Sizes {
   static const double buttonSecondary = 52.0;
   static const double input = 56.0;
   static const double chipVisual = 40.0;
+  static const double iconXs = 14.0;
   static const double iconSm = 18.0;
   static const double iconMd = 22.0;
+  static const double buttonTonalSm = 44.0;
   static const double segmentMin = 80.0;
   static const double dot = 10.0;
   static const double dotActive = 32.0;

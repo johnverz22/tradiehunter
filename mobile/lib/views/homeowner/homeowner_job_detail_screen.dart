@@ -9,6 +9,7 @@ import '../../models/marketplace.dart';
 import '../../network/external_launcher.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/locale_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
@@ -438,7 +439,7 @@ class _HomeownerJobDetailScreenState
         : null;
 
     final priceLabel = job.totalAmount != null
-        ? '\$${job.totalAmount!.toStringAsFixed(2)}'
+        ? formatMoney(job.totalAmount!)
         : null;
 
     // P10-22: materials disclaimer from locale config
@@ -569,20 +570,27 @@ class _HomeownerJobDetailScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Total',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: DesignTokens.inkSoft(isDark),
+                      Expanded(
+                        child: Text(
+                          'Total',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: DesignTokens.inkSoft(isDark),
+                          ),
                         ),
                       ),
-                      Text(
-                        priceLabel,
-                        style: TextStyle(
-                          fontFamily: DesignTokens.fontBody,
-                          fontSize: 22,
-                          fontWeight: FW.bold,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                          color: DesignTokens.foreground(isDark),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            priceLabel,
+                            style: TextStyle(
+                              fontFamily: DesignTokens.fontBody,
+                              fontSize: DesignTokens.fontSizeAmount,
+                              fontWeight: FW.bold,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                              color: DesignTokens.foreground(isDark),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -603,6 +611,8 @@ class _HomeownerJobDetailScreenState
                 const SizedBox(height: Space.s3),
                 Divider(height: 1, color: theme.extension<THColors>()!.line),
                 const SizedBox(height: Space.s3),
+                Text('Job Description', style: theme.textTheme.titleSmall),
+                const SizedBox(height: Space.s2),
                 Text(
                   job.description?.isNotEmpty == true
                       ? job.description!
@@ -784,7 +794,7 @@ class _HomeownerJobDetailScreenState
         return StickyActionBar(
           child: FixoPrimaryButton(
             key: const Key('open_chat_button'),
-            label: 'Open chat',
+            label: 'Open Chat',
             onPressed: _openChat,
           ),
         );
@@ -871,12 +881,35 @@ class _MatchedTradieCard extends StatelessWidget {
     }
 
     final isVerified = p?.isVerified == true;
+    final isNarrow = MediaQuery.sizeOf(context).width <= 340;
+    final isLargeText = isNarrow ||
+        MediaQuery.textScalerOf(context).scale(DesignTokens.fontSizeSecondary) > 17;
+
+    final viewProfileButton = InkWell(
+      onTap: onViewProfile,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.s1,
+          vertical: Space.s0_5,
+        ),
+        child: Text(
+          'View profile',
+          style: TextStyle(
+            fontSize: DesignTokens.fontSizeCaption,
+            fontWeight: FW.semibold,
+            color: DesignTokens.foregroundBrand(isDark),
+          ),
+        ),
+      ),
+    );
 
     return FixoCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar with optional verified check badge overlay
               Stack(
@@ -926,36 +959,37 @@ class _MatchedTradieCard extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                    if (isLargeText) ...[
+                      const SizedBox(height: Space.s1),
+                      viewProfileButton,
+                    ],
                   ],
                 ),
               ),
-              // View profile link (right side, opposite name)
-              InkWell(
-                onTap: onViewProfile,
-                borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Space.s1,
-                    vertical: Space.s0_5,
-                  ),
-                  child: Text(
-                    'View profile',
-                    style: TextStyle(
-                      fontSize: DesignTokens.fontSizeCaption,
-                      fontWeight: FW.semibold,
-                      color: DesignTokens.foregroundBrand(isDark),
-                    ),
-                  ),
-                ),
-              ),
+              if (!isLargeText) viewProfileButton,
             ],
           ),
-          if (p != null && p.hasInsurance == true) ...[
+          if (isVerified || (p != null && p.hasInsurance == true)) ...[
             const SizedBox(height: Space.s2_5),
-            FixoPillChip(
-              icon: Icons.shield_outlined,
-              label: 'Insured',
-              color: DesignTokens.foregroundBrand(isDark),
+            Wrap(
+              spacing: Space.s2,
+              runSpacing: Space.s2,
+              children: [
+                if (isVerified)
+                  FixoPillChip(
+                    icon: Icons.check_circle_outline,
+                    label: 'Verified',
+                    color: DesignTokens.inkSuccess(isDark),
+                    bordered: false,
+                  ),
+                if (p != null && p.hasInsurance == true)
+                  FixoPillChip(
+                    icon: Icons.shield_outlined,
+                    label: 'Insured',
+                    color: DesignTokens.foregroundBrand(isDark),
+                    bordered: false,
+                  ),
+              ],
             ),
           ],
           const SizedBox(height: Space.s3),

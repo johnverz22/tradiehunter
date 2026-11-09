@@ -7,13 +7,17 @@ import '../../theme/fixo_theme.dart';
 class HomeownerDashboardHeader extends StatelessWidget {
   final String firstName;
   final String? location;
-  final DateTime now;
+  @Deprecated('Time-of-day greeting removed; "Kia ora" is used regardless of time.')
+  final DateTime? now;
   final Widget? child;
+
+  static const String greetingEyebrow = 'KIA ORA';
+  static const String greetingFallback = 'Kia ora';
 
   const HomeownerDashboardHeader({
     super.key,
     required this.firstName,
-    required this.now,
+    this.now,
     this.location,
     this.child,
   });
@@ -21,11 +25,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final greeting = now.hour < 12
-        ? 'GOOD MORNING'
-        : now.hour < 18
-        ? 'GOOD AFTERNOON'
-        : 'GOOD EVENING';
+    final hasName = firstName.trim().isNotEmpty;
+    final displayName = firstName.trim();
+
     return Container(
       key: const Key('homeowner_hero'),
       clipBehavior: Clip.antiAlias,
@@ -37,7 +39,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
               ? [THColors.light.brand, DesignTokens.brand700]
               : [THColors.light.brand, DesignTokens.brand500],
         ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(Radii.hero),
+        ),
       ),
       child: Stack(
         children: [
@@ -72,29 +76,47 @@ class HomeownerDashboardHeader extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              greeting,
-                              style: TextStyle(
-                                fontSize: DesignTokens.fontSizeSecondary,
-                                letterSpacing: Tracking.emphasis,
-                                color: Colors.white.withValues(alpha: Alpha.textOnGradient),
+                            if (hasName) ...[
+                              Text(
+                                greetingEyebrow,
+                                style: TextStyle(
+                                  fontFamily: DesignTokens.fontBody,
+                                  fontSize: DesignTokens.fontSizeCaption,
+                                  fontWeight: FW.semibold,
+                                  letterSpacing: Tracking.emphasis,
+                                  color: Colors.white.withValues(alpha: Alpha.textOnGradient),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: Space.s1),
-                            Text(
-                              firstName.isEmpty ? 'Welcome back' : firstName,
-                              style: const TextStyle(
-                                fontFamily: TypeTokens.fontDisplay,
-                                fontSize: DesignTokens.fontSizeNameDisplay,
-                                fontWeight: FW.bold,
-                                color: Colors.white,
+                              const SizedBox(height: Space.s1),
+                              Text(
+                                displayName,
+                                style: const TextStyle(
+                                  fontFamily: TypeTokens.fontDisplay,
+                                  fontSize: DesignTokens.fontSizeNameDisplay,
+                                  fontWeight: FW.bold,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
                               ),
-                            ),
+                            ] else
+                              Text(
+                                greetingFallback,
+                                style: const TextStyle(
+                                  fontFamily: TypeTokens.fontDisplay,
+                                  fontSize: DesignTokens.fontSizeNameDisplay,
+                                  fontWeight: FW.bold,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
                             if (location != null &&
                                 location!.trim().isNotEmpty) ...[
-                              const SizedBox(height: Space.s3),
+                              const SizedBox(height: Space.s2_5),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: Space.s3, vertical: Space.s2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: Space.s3,
+                                  vertical: Space.s1_5,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: Alpha.tintMid),
                                   borderRadius: BorderRadius.circular(
@@ -106,15 +128,17 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                   children: [
                                     const Icon(
                                       Icons.location_on_outlined,
-                                      size: 16,
+                                      size: Sizes.iconSm,
                                       color: Colors.white,
                                     ),
                                     const SizedBox(width: Space.s1),
                                     Flexible(
                                       child: Text(
-                                        location!,
+                                        location!.trim(),
                                         style: const TextStyle(
+                                          fontFamily: DesignTokens.fontBody,
                                           fontSize: DesignTokens.fontSizeCaption,
+                                          fontWeight: FW.medium,
                                           color: Colors.white,
                                         ),
                                       ),
@@ -132,9 +156,31 @@ class HomeownerDashboardHeader extends StatelessWidget {
                           minWidth: Sizes.tapMin,
                           minHeight: Sizes.tapMin,
                         ),
-                        icon: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: Sizes.iconMd,
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: Container(
+                                width: Sizes.heroDot,
+                                height: Sizes.heroDot,
+                                decoration: BoxDecoration(
+                                  color: DesignTokens.amber,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: dark ? THColors.dark.brand : THColors.light.brand,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         onPressed: () => showDialog<void>(
                           context: context,

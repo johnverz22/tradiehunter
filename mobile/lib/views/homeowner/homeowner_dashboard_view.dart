@@ -60,13 +60,14 @@ class _HomeownerDashboardViewState
   }
 
   Widget _eyebrow(String title) => Padding(
-    padding: const EdgeInsets.only(top: 22, bottom: 14),
+    padding: const EdgeInsets.only(top: Space.s5_5, bottom: Space.s3_5),
     child: Text(
       title,
       style: TextStyle(
         fontFamily: DesignTokens.fontBody,
         fontSize: DesignTokens.fontSizeCaption,
         fontWeight: FW.semibold,
+        letterSpacing: Tracking.emphasis,
         color: DesignTokens.inkSoft(
           Theme.of(context).brightness == Brightness.dark,
         ),
@@ -89,6 +90,10 @@ class _HomeownerDashboardViewState
     final profileState = ref.watch(profileViewModelProvider);
     final firstName = (profileState.profile?['firstName'] as String? ?? '')
         .trim();
+    final location = (profileState.profile?['address'] as String? ??
+            profileState.profile?['suburb'] as String? ??
+            profileState.profile?['location'] as String?)
+        ?.trim();
     final attention = jobsState.jobs
         .where((j) => needsHomeownerAttention(j.status))
         .toList();
@@ -151,7 +156,10 @@ class _HomeownerDashboardViewState
           children: [
             // ── Brand header — light-blue abstract bg shared with every
             // app bar ─────────────────────────────────────────────────
-            HomeownerDashboardHeader(firstName: firstName, now: DateTime.now()),
+            HomeownerDashboardHeader(
+              firstName: firstName,
+              location: (location != null && location.isNotEmpty) ? location : null,
+            ),
             Expanded(
               child: jobsState.isLoading && jobsState.jobs.isEmpty
                   ? const FixoLoading(label: 'Loading your jobs...')
@@ -222,7 +230,7 @@ class _HomeownerDashboardViewState
                                     if (past.isNotEmpty) ...[
                                       SliverToBoxAdapter(
                                         child: Padding(
-                                          padding: const EdgeInsets.only(top: 22),
+                                          padding: const EdgeInsets.only(top: Space.s5_5),
                                           child: Semantics(
                                             expanded: _showPast,
                                             child: TextButton.icon(
