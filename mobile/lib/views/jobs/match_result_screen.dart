@@ -179,7 +179,7 @@ class _MatchResultScreenState extends ConsumerState<MatchResultScreen> {
                           if (_job != null &&
                               (_job!.totalAmount != null ||
                                   _job!.hourlyRate != null)) ...[
-                            const SizedBox(height: 14),
+                            const SizedBox(height: Space.s3_5),
                             _PriceSummaryCard(job: _job!, isDark: isDark),
                           ],
                           const SizedBox(height: Space.s6),
@@ -323,23 +323,71 @@ class _MatchCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.s5),
             child: Column(
               children: [
-                // Avatar — sits at top, overlaps heroband via parent translate
-                Container(
-                  width: Sizes.avatarLg,
-                  height: Sizes.avatarLg,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: DesignTokens.brand500,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      fontFamily: DesignTokens.fontDisplay,
-                      fontSize: DesignTokens.fontSizeAvatarInitials,
-                      fontWeight: FW.semibold,
-                      color: Colors.white,
-                    ),
+                // Avatar — white surface ring + optional verified checkmark badge.
+                // Sits at card top; parent column is translated up by _avatarOverlap
+                // so exactly half the avatar protrudes into the heroband.
+                SizedBox(
+                  width: Sizes.avatarLg + Sizes.avatarRingW * 2,
+                  height: Sizes.avatarLg + Sizes.avatarRingW * 2,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // White ring
+                      Container(
+                        width: Sizes.avatarLg + Sizes.avatarRingW * 2,
+                        height: Sizes.avatarLg + Sizes.avatarRingW * 2,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                      // Avatar circle
+                      Positioned(
+                        left: Sizes.avatarRingW,
+                        top: Sizes.avatarRingW,
+                        child: Container(
+                          width: Sizes.avatarLg,
+                          height: Sizes.avatarLg,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: DesignTokens.brand500,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            initials,
+                            style: const TextStyle(
+                              fontFamily: DesignTokens.fontDisplay,
+                              fontSize: DesignTokens.fontSizeAvatarInitials,
+                              fontWeight: FW.semibold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Verified badge (bottom-right of avatar ring)
+                      if (match.verified)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: Sizes.avatarBadge,
+                            height: Sizes.avatarBadge,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: DesignTokens.inkSuccess(isDark),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: Sizes.borderWidthThin,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              size: Sizes.avatarBadgeIco,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 
@@ -370,8 +418,8 @@ class _MatchCard extends StatelessWidget {
                 if (match.verified || match.hasInsurance) ...[
                   const SizedBox(height: Space.s2_5),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
+                    spacing: Sizes.chipGap,
+                    runSpacing: Space.s1,
                     alignment: WrapAlignment.center,
                     children: [
                       if (match.verified)
@@ -398,15 +446,15 @@ class _MatchCard extends StatelessWidget {
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: 0,
-                  runSpacing: 4,
+                  runSpacing: Space.s1,
                   children: [
                     if (match.rating != null && (match.rating ?? 0) > 0) ...[
                       Icon(
                         Icons.star_rounded,
-                        size: 16,
+                        size: Sizes.iconRating,
                         color: DesignTokens.amber,
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: Sizes.ratingGap),
                       Text(
                         match.rating!.toStringAsFixed(1),
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -475,11 +523,11 @@ class _MatchCard extends StatelessWidget {
           // Bio (if present) — separated by hairline
           if (match.bio != null && match.bio!.trim().isNotEmpty) ...[
             Divider(
-              height: 1,
+              height: Sizes.borderWidthThin,
               color: DesignTokens.paperLine(isDark),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(Space.gutter, 14, Space.gutter, Space.s4),
+              padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s3_5, Space.gutter, Space.s4),
               child: Text(
                 match.bio!,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -517,7 +565,7 @@ class _PriceSummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
         border: Border.all(
           color: DesignTokens.paperLine(isDark),
-          width: 0.5,
+          width: Sizes.borderWidthHair,
         ),
       ),
       child: Column(
@@ -528,12 +576,12 @@ class _PriceSummaryCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s4, Space.gutter, 0),
               child: Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 4,
-                runSpacing: 4,
+                spacing: Space.s1,
+                runSpacing: Space.s1,
                 children: [
                   Icon(
                     Icons.schedule_outlined,
-                    size: 16,
+                    size: Sizes.iconRating,
                     color: DesignTokens.inkSoft(isDark),
                   ),
                   Text(
@@ -561,7 +609,7 @@ class _PriceSummaryCard extends StatelessWidget {
           if (hasBreakdown && hasTotal)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
-              child: Divider(height: 1, color: DesignTokens.paperLine(isDark)),
+              child: Divider(height: Sizes.borderWidthThin, color: DesignTokens.paperLine(isDark)),
             ),
 
           if (hasTotal)
@@ -570,8 +618,8 @@ class _PriceSummaryCard extends StatelessWidget {
               child: Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
+                spacing: Space.s2,
+                runSpacing: Space.s1,
                 children: [
                   Text(
                     'Estimated total',
@@ -599,7 +647,7 @@ class _PriceSummaryCard extends StatelessWidget {
             ),
 
           Padding(
-            padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s1, Space.gutter, 14),
+            padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s1, Space.gutter, Space.s3_5),
             child: Text(
               'Pay after the job — by bank transfer, checked by us',
               style: theme.textTheme.bodySmall?.copyWith(

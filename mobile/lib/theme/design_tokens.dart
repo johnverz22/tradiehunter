@@ -100,6 +100,23 @@ abstract class Sizes {
   static const double iconHero = 80.0;
   static const double borderWidthThick = 2.0;
   static const int radarRingCount = 3;
+
+  // Border / divider widths
+  static const double borderWidthHair = 0.5; // hairline card border
+  static const double borderWidthThin = 1.0; // hairline divider
+
+  // Icon sizes (between iconXs=14 and iconSm=18)
+  static const double iconRating = 16.0;   // star in rating rows
+  static const double iconChip  = 14.0;    // icon inside pill chips — matches iconXs
+
+  // Spacing constants for Wrap / row gaps
+  static const double chipGap   = 6.0;     // horizontal gap between pill chips
+  static const double ratingGap = 3.0;     // gap between star icon and rating text
+
+  // Avatar overlay badge (verified checkmark badge on avatar corner)
+  static const double avatarBadge    = 22.0; // badge circle diameter
+  static const double avatarBadgeIco = 13.0; // inner icon size within badge
+  static const double avatarRingW    = 3.0;  // white surface ring around avatar
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────
