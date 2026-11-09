@@ -296,9 +296,62 @@ void notifierTests() {
 // ── Widget tests ──────────────────────────────────────────────────────────────
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    FlutterSecureStorage.setMockInitialValues({});
+  });
 
   group('ChatNotifier', notifierTests);
+
+  group('sentByMe tagging', () {
+    test('updateUserId with uppercase GUID correctly tags lowercase senderId',
+        () async {
+      final repo = _ChatRepo();
+      final notifier =
+          ChatNotifier(jobId: '7', repo: repo, myUserId: '');
+      addTearDown(notifier.dispose);
+      repo.history = [_msg('1', senderId: 'abc-123', sentByMe: false)];
+      await notifier.init('http://x');
+
+      // Before updateUserId: not mine (empty myUserId).
+      expect(notifier.state.messages.single.sentByMe, isFalse);
+
+      // updateUserId with uppercase variant — case-insensitive match.
+      notifier.updateUserId('ABC-123');
+      expect(notifier.state.messages.single.sentByMe, isTrue);
+    });
+
+    test('updateUserId with lowercase GUID correctly tags uppercase senderId',
+        () async {
+      final repo = _ChatRepo();
+      final notifier =
+          ChatNotifier(jobId: '7', repo: repo, myUserId: '');
+      addTearDown(notifier.dispose);
+      repo.history = [_msg('1', senderId: 'ABC-123', sentByMe: false)];
+      await notifier.init('http://x');
+
+      expect(notifier.state.messages.single.sentByMe, isFalse);
+
+      notifier.updateUserId('abc-123');
+      expect(notifier.state.messages.single.sentByMe, isTrue);
+    });
+
+    test('pre-tagged sentByMe=true is preserved after updateUserId', () async {
+      final repo = _ChatRepo();
+      final notifier =
+          ChatNotifier(jobId: '7', repo: repo, myUserId: 'me');
+      addTearDown(notifier.dispose);
+      // Message is already tagged sentByMe=true from the server.
+      repo.history = [_msg('1', senderId: 'other', sentByMe: true)];
+      await notifier.init('http://x');
+
+      expect(notifier.state.messages.single.sentByMe, isTrue);
+
+      // Calling updateUserId must not flip the already-tagged message.
+      notifier.updateUserId('some-other-id');
+      expect(notifier.state.messages.single.sentByMe, isTrue);
+    });
+  });
 
   Future<void> mountInbox(
     WidgetTester tester,

@@ -117,6 +117,21 @@ abstract class Sizes {
   static const double avatarBadge    = 22.0; // badge circle diameter
   static const double avatarBadgeIco = 13.0; // inner icon size within badge
   static const double avatarRingW    = 3.0;  // white surface ring around avatar
+
+  // Chat-specific
+  static const double chatVerifiedBadge    = 16.0;  // small verified badge on chat header avatar
+  static const double chatVerifiedBadgeIco = 9.0;   // icon inside the small badge
+  static const double borderWidthVerified  = 1.5;   // border around verified badge circles
+  static const double chatBubbleFullR      = 20.0;  // full corner radius for chat bubbles
+  static const double chatBubbleTailR      = 4.0;   // tail corner radius for chat bubbles
+  static const double dotPatternSpacing    = 20.0;  // dot-texture step in chat background
+  static const double dotPatternRadius     = 1.5;   // dot radius in chat background painter
+  static const double fabSend              = 48.0;  // send button diameter (tapMin)
+  static const double iconSend             = 24.0;  // send arrow icon size
+  static const double inboxAvatarSm        = 44.0;  // inbox conversation avatar (matches avatarMd)
+  static const double inboxAvatarSmBadge   = 16.0;  // verified badge on inbox avatar
+  static const double inboxTileMin         = 72.0;  // ConversationTile minimum height
+  static const double unreadBadgeMin       = 20.0;  // _UnreadBadge minimum size
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────
@@ -526,6 +541,11 @@ abstract class DesignTokens {
           BoxShadow(color: Color(0x0F193957), blurRadius: 2, offset: Offset(0, 1)),
           BoxShadow(color: Color(0x14193957), blurRadius: 24, offset: Offset(0, 8)),
         ];
+
+  /// Chat send-button amber glow shadow (blurRadius 10, offset 4dp down).
+  static const List<BoxShadow> chatSendShadow = [
+    BoxShadow(color: Color(0x40E38B29), blurRadius: 10, offset: Offset(0, 4)),
+  ];
 
   // ── Typography ────────────────────────────────────────────────────────────
   static const String fontDisplay = TypeTokens.fontDisplay;

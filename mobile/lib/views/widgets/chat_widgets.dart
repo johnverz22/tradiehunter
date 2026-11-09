@@ -55,7 +55,7 @@ class ConversationTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
           onTap: onTap,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 72),
+            constraints: const BoxConstraints(minHeight: Sizes.inboxTileMin),
             padding: const EdgeInsets.symmetric(horizontal: Space.s3, vertical: Space.s2),
             decoration: BoxDecoration(
               color: selected
@@ -70,7 +70,7 @@ class ConversationTile extends StatelessWidget {
                     : (isDark
                         ? DesignTokens.paperLineDark
                         : DesignTokens.paperLineLight),
-                width: selected ? 1.5 : 1.0,
+                width: selected ? Sizes.borderWidthVerified : Sizes.borderWidthThin,
               ),
               boxShadow: isDark || selected
                   ? null
@@ -215,8 +215,8 @@ class _UnreadBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = count > 99 ? '99+' : '$count';
     return Container(
-      constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-      padding: const EdgeInsets.symmetric(horizontal: Space.s1_5, vertical: 2),
+      constraints: const BoxConstraints(minWidth: Sizes.unreadBadgeMin, minHeight: Sizes.unreadBadgeMin),
+      padding: const EdgeInsets.symmetric(horizontal: Space.s1_5, vertical: Space.s0_5),
       decoration: BoxDecoration(
         color: DesignTokens.brand500,
         borderRadius: BorderRadius.circular(Radii.pill),
@@ -253,8 +253,8 @@ class _ConversationAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final circle = Container(
-      width: 44,
-      height: 44,
+      width: Sizes.inboxAvatarSm,
+      height: Sizes.inboxAvatarSm,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isActive
@@ -287,8 +287,8 @@ class _ConversationAvatar extends StatelessWidget {
 
     // Verified badge — small green checkmark overlaid on the bottom-right.
     return SizedBox(
-      width: 48,
-      height: 48,
+      width: Sizes.inboxAvatarSm + Space.s1,
+      height: Sizes.inboxAvatarSm + Space.s1,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -297,8 +297,8 @@ class _ConversationAvatar extends StatelessWidget {
             right: 0,
             bottom: 0,
             child: Container(
-              width: 16,
-              height: 16,
+              width: Sizes.inboxAvatarSmBadge,
+              height: Sizes.inboxAvatarSmBadge,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: DesignTokens.green,
@@ -306,12 +306,12 @@ class _ConversationAvatar extends StatelessWidget {
                   color: isDark
                       ? DesignTokens.paperDark
                       : DesignTokens.paperLight,
-                  width: 1.5,
+                  width: Sizes.borderWidthVerified,
                 ),
               ),
               child: const Icon(
                 Icons.check,
-                size: 9,
+                size: Sizes.chatVerifiedBadgeIco,
                 color: Colors.white,
               ),
             ),
@@ -351,7 +351,7 @@ class ChatDateSeparator extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              height: 0.5,
+              height: Sizes.borderWidthHair,
               color: DesignTokens.paperLine(isDark),
             ),
           ),
@@ -375,7 +375,7 @@ class ChatDateSeparator extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              height: 0.5,
+              height: Sizes.borderWidthHair,
               color: DesignTokens.paperLine(isDark),
             ),
           ),
@@ -421,22 +421,20 @@ class ChatBubble extends StatelessWidget {
         ? Colors.white
         : DesignTokens.foreground(isDark);
 
-    // Tail: the corner closest to the tail is tighter (4px),
-    // the rest are fully round (20px) for a modern bubble shape.
-    const double fullR = 20.0;
-    const double tailR = 4.0;
+    // Tail: the corner closest to the tail is tighter (chatBubbleTailR),
+    // the rest are fully round (chatBubbleFullR) for a modern bubble shape.
     final BorderRadius radius = m.sentByMe
         ? const BorderRadius.only(
-            topLeft:     Radius.circular(fullR),
-            topRight:    Radius.circular(fullR),
-            bottomLeft:  Radius.circular(fullR),
-            bottomRight: Radius.circular(tailR),
+            topLeft:     Radius.circular(Sizes.chatBubbleFullR),
+            topRight:    Radius.circular(Sizes.chatBubbleFullR),
+            bottomLeft:  Radius.circular(Sizes.chatBubbleFullR),
+            bottomRight: Radius.circular(Sizes.chatBubbleTailR),
           )
         : const BorderRadius.only(
-            topLeft:     Radius.circular(tailR),
-            topRight:    Radius.circular(fullR),
-            bottomLeft:  Radius.circular(fullR),
-            bottomRight: Radius.circular(fullR),
+            topLeft:     Radius.circular(Sizes.chatBubbleTailR),
+            topRight:    Radius.circular(Sizes.chatBubbleFullR),
+            bottomLeft:  Radius.circular(Sizes.chatBubbleFullR),
+            bottomRight: Radius.circular(Sizes.chatBubbleFullR),
           );
 
     return Align(
@@ -510,7 +508,7 @@ class ChatBubble extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.error_outline,
-                      size: 14,
+                      size: Sizes.iconXs,
                       color: DesignTokens.inkDanger(isDark),
                     ),
                     const SizedBox(width: Space.s1),
@@ -658,7 +656,7 @@ class ChatComposer extends StatelessWidget {
                 onPressed: onAttach,
                 icon: Icon(
                   Icons.image_outlined,
-                  size: 22,
+                  size: Sizes.iconMd,
                   color: DesignTokens.inkSoft(isDark),
                 ),
               ),
@@ -715,23 +713,17 @@ class ChatComposer extends StatelessWidget {
                 key: const Key('send_message_button'),
                 onTap: onSend,
                 child: Container(
-                  width: Sizes.fab - Space.s2,  // 48px
-                  height: Sizes.fab - Space.s2,
+                  width: Sizes.fabSend,
+                  height: Sizes.fabSend,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: DesignTokens.amber,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x40E38B29),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: DesignTokens.chatSendShadow,
                   ),
                   child: const Icon(
                     Icons.arrow_forward_rounded,
                     color: DesignTokens.onAmber,
-                    size: Space.s6,
+                    size: Sizes.iconSend,
                   ),
                 ),
               ),

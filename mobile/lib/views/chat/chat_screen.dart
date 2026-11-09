@@ -550,8 +550,8 @@ class _ChatAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const double size = 36;
-    const double badgeSize = 16;
+    const double size = Sizes.avatarSm;
+    const double badgeSize = Sizes.chatVerifiedBadge;
     return SizedBox(
       width: size,
       height: size,
@@ -578,8 +578,8 @@ class _ChatAvatar extends StatelessWidget {
           ),
           if (verified)
             Positioned(
-              right: -2,
-              bottom: -2,
+              right: -Sizes.borderWidthVerified,
+              bottom: -Sizes.borderWidthVerified,
               child: Container(
                 width: badgeSize,
                 height: badgeSize,
@@ -590,12 +590,12 @@ class _ChatAvatar extends StatelessWidget {
                     color: isDark
                         ? DesignTokens.cardDark
                         : Colors.white,
-                    width: 1.5,
+                    width: Sizes.borderWidthVerified,
                   ),
                 ),
                 child: const Icon(
                   Icons.check,
-                  size: 9,
+                  size: Sizes.chatVerifiedBadgeIco,
                   color: Colors.white,
                 ),
               ),
@@ -715,12 +715,12 @@ class _DotPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = (isDark
-              ? Colors.white.withValues(alpha: 0.04)
-              : Colors.black.withValues(alpha: 0.06))
+              ? Colors.white.withValues(alpha: Alpha.subtle)
+              : Colors.black.withValues(alpha: Alpha.wash))
       ..style = PaintingStyle.fill;
 
-    const double spacing = 20.0;
-    const double radius = 1.5;
+    const double spacing = Sizes.dotPatternSpacing;
+    const double radius = Sizes.dotPatternRadius;
 
     for (double y = spacing / 2; y < size.height; y += spacing) {
       for (double x = spacing / 2; x < size.width; x += spacing) {

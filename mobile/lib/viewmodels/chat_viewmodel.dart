@@ -99,7 +99,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   ChatMessage _tag(ChatMessage m) {
-    if (m.sentByMe || _myUserId.isEmpty || m.senderId != _myUserId) return m;
+    // Compare case-insensitively — server GUIDs may differ in case from JWT claims.
+    if (m.sentByMe || _myUserId.isEmpty ||
+        m.senderId.toLowerCase() != _myUserId.toLowerCase()) return m;
     return ChatMessage(
       id: m.id,
       jobId: m.jobId,
@@ -145,12 +147,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   void _onHubMessage(ChatMessage msg) {
     // Tag sentByMe using our own userId since hub broadcasts don't carry it.
+    // Compare case-insensitively — server GUIDs may differ in case from JWT claims.
     final tagged = ChatMessage(
       id: msg.id,
       jobId: msg.jobId,
       senderId: msg.senderId,
       senderName: msg.senderName,
-      sentByMe: msg.senderId == _myUserId,
+      sentByMe: msg.senderId.toLowerCase() == _myUserId.toLowerCase(),
       text: msg.text,
       imageUrl: msg.imageUrl,
       sentAtUtc: msg.sentAtUtc,
@@ -229,7 +232,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _markIncomingRead(List<ChatMessage> messages) {
     if (!_hubReady) return;
     for (final m in messages) {
-      if (m.senderId == _myUserId || m.readAtUtc != null) continue;
+      if (m.senderId.toLowerCase() == _myUserId.toLowerCase() || m.readAtUtc != null) continue;
       final id = int.tryParse(m.id);
       if (id == null) continue; // optimistic local row — nothing to mark
       if (!_markedReadIds.add(id)) continue;
@@ -367,6 +370,7 @@ Future<String> _decodeUserId(Ref ref) async {
     return map['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
             ?.toString() ??
         map['nameid']?.toString() ??
+        map['sub']?.toString() ??
         '';
   } catch (_) {
     return '';
@@ -380,8 +384,9 @@ final chatNotifierProvider = StateNotifierProvider.autoDispose
       final notifier = ChatNotifier(jobId: jobId, repo: repo, myUserId: '');
 
       Future.microtask(() async {
-        // Decode user id first so that hub echoes of our own messages are
-        // correctly tagged sentByMe=true before the initial history arrives.
+        // Resolve the user id BEFORE init() starts — history is tagged
+        // sentByMe immediately on load, so hub echoes of our own messages
+        // are never misclassified as incoming.
         final userId = await _decodeUserId(ref).catchError((_) => '');
         notifier.updateUserId(userId);
         await notifier.init(resolveBaseUrl());
