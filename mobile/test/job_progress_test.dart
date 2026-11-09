@@ -35,7 +35,7 @@ void main() {
           home: Scaffold(body: JobProgress(status: 'AwaitingConfirmation')),
         ),
       );
-      expect(find.text('Step 3 of 4 · In progress'), findsOneWidget);
+      expect(find.text('Step 3 of 4'), findsOneWidget);
       expect(find.text('View all steps'), findsOneWidget);
       await tester.tap(find.text('View all steps'));
       await tester.pumpAndSettle();

@@ -241,7 +241,7 @@ class _ProfileBody extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: DesignTokens.fontDisplay,
                   fontWeight: FW.semibold,
-                  fontSize: 28,
+                  fontSize: DesignTokens.fontSizeAvatarInitialsLg,
                   color: Colors.white,
                 ),
               ),
@@ -571,7 +571,7 @@ class _ContextualActionsState extends State<_ContextualActions> {
             Padding(
               padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s2),
               child: Text(
-                'Request for a job',
+                'Request this tradie',
                 style: Theme.of(ctx).textTheme.titleMedium
                     ?.copyWith(fontWeight: FW.semibold),
               ),
@@ -631,7 +631,7 @@ class _ContextualActionsState extends State<_ContextualActions> {
         FilledButton.icon(
           onPressed: _sending ? null : _request,
           icon: const Icon(Icons.handshake_outlined, size: 18),
-          label: const Text('Request for a job'),
+          label: const Text('Request this tradie'),
           style: FilledButton.styleFrom(
             minimumSize: const Size(0, DesignTokens.heightPrimary),
             shape: RoundedRectangleBorder(

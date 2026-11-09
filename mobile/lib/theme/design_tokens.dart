@@ -25,6 +25,7 @@ abstract class Space {
   static const double s6 = 24.0;
   static const double s7 = 32.0;
   static const double s8 = 40.0;
+  static const double s9 = 48.0;
   static const double gutter = 20.0;
 
   /// Bottom padding so list content clears the floating bottom nav bar.
@@ -59,11 +60,26 @@ abstract class Sizes {
   static const double buttonSecondary = 52.0;
   static const double input = 56.0;
   static const double chipVisual = 40.0;
+  static const double iconSm = 18.0;
+  static const double iconMd = 22.0;
+  static const double segmentMin = 80.0;
+  static const double dot = 10.0;
+  static const double dotActive = 32.0;
   static const double nav = 68.0;
   static const double appBar = 56.0;
   static const double fab = 56.0;
   static const double switchW = 52.0;
   static const double switchH = 32.0;
+
+  /// Pill status button (Online/Offline) — min height 44dp, satisfies 48dp
+  /// tap target via internal padding.
+  static const double statusButton = 44.0;
+
+  /// Animated presence dot in the status button — drawn at 8dp.
+  static const double heroDot = 8.0;
+
+  /// Status chip height (used in job cards and job detail).
+  static const double statusChip = 26.0;
 
   // Avatar sizes
   static const double avatarSm = 36.0;
@@ -109,6 +125,8 @@ abstract class FixoDurations {
   static const Duration addressDebounce = Duration(milliseconds: 400);
   static const Duration splashRing = Duration(milliseconds: 600);
   static const Duration sheetDelay = Duration(milliseconds: 800);      // rating sheet
+  /// Online dot pulse — one full pulsation cycle. Respect reduce-motion.
+  static const Duration pulse = Duration(milliseconds: 900);
   static const Duration sheetDelayLong = Duration(milliseconds: 1000); // schedule sheet
   static const Duration splashRingLate = Duration(milliseconds: 1200);
   static const Duration splash = Duration(milliseconds: 2800);
@@ -487,18 +505,32 @@ abstract class DesignTokens {
   static const double fontSizeH1        = 24.0;
   static const double fontSizeH2        = 20.0;
   static const double fontSizeH2Small   = 18.0;
-  static const double fontSizeH3        = 16.0;
-  static const double fontSizeBody      = 15.0;
-  static const double fontSizeSm        = 14.0;
-  static const double fontSizeSecondary = 13.0;
-  static const double fontSizeCaption   = 12.0;
-  static const double fontSizeTiny      = 11.0;
-  static const double fontSizeControl   = 15.0;
-  static const double fontSizeStatus    = 12.0;
-  static const double fontSizeAmount    = 24.0;
-  static const double fontSizeAmountLg  = 36.0;
-  static const double fontSizeMono      = 13.0;
-  static const double fontSizeStep      = 15.0; // status strip "Step X of 4"
+  static const double fontSizeH3        = 17.0; // was 16; one clear step above new body (16)
+  // ── Specialised sizes (not part of the main scale) ──────────────────────
+  /// Hero display name in the dashboard header (larger than H1).
+  static const double fontSizeNameDisplay    = 28.0;
+  /// Avatar initials at medium size (match-result hero).
+  static const double fontSizeAvatarInitials = 26.0;
+  /// Avatar initials at large size (public profile hero).
+  static const double fontSizeAvatarInitialsLg = 28.0;
+  /// Sub-amount price display — reference code, compact price hero.
+  static const double fontSizeAmountSm       = 22.0;
+  /// Splash / wordmark display — one-off, not in the content scale.
+  static const double fontSizeSplash         = 40.0;
+  // ── Type scale (v1.7) ───────────────────────────────────────────────────────
+  // Bumped from v1.6 to improve readability at 1.0×; floor is 12 sp (fontSizeTiny).
+  // Line heights: ~1.4 for body, ~1.25 for headings (set in fixo_theme.dart).
+  static const double fontSizeBody      = 16.0; // was 15
+  static const double fontSizeSm        = 15.0; // was 14
+  static const double fontSizeSecondary = 14.0; // was 13
+  static const double fontSizeCaption   = 13.0; // was 12
+  static const double fontSizeTiny      = 12.0; // was 11 — hard floor, nothing below 12
+  static const double fontSizeControl   = 16.0; // was 15; matches new body
+  static const double fontSizeStatus    = 13.0; // was 12; chip legibility
+  static const double fontSizeAmount    = 24.0; // unchanged
+  static const double fontSizeAmountLg  = 36.0; // unchanged
+  static const double fontSizeMono      = 13.0; // unchanged — opt-in for reference codes
+  static const double fontSizeStep      = 15.0; // status strip "Step X of 4" — unchanged
 
   // ── Radii ─────────────────────────────────────────────────────────────────
   static const double radius        = 4.0;   // legacy base radius (v1.5 contract)

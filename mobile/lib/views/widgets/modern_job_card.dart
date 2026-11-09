@@ -97,12 +97,8 @@ class ModernJobCard extends StatelessWidget {
                         colors: [
                           DesignTokens.brand500.withValues(alpha: 0.18),
                           DesignTokens.brand500.withValues(alpha: 0.06),
-                          Colors.transparent,
+                          DesignTokens.brand500.withValues(alpha: 0),
                         ],
-                      ),
-                      border: Border(
-                        right: BorderSide(color: DesignTokens.paperLine(isDark)),
-                        bottom: BorderSide(color: DesignTokens.paperLine(isDark)),
                       ),
                       boxShadow: DesignTokens.cardShadow(isDark),
                     )
@@ -122,7 +118,7 @@ class ModernJobCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontFamily: TypeTokens.fontDisplay,
-                    fontSize: 17,
+                    fontSize: DesignTokens.fontSizeH3,
                     fontWeight: FW.bold,
                   ),
                 ),
@@ -279,7 +275,7 @@ class ModernJobCard extends StatelessWidget {
                           priceLabel!,
                           style: TextStyle(
                             fontFamily: DesignTokens.fontBody,
-                            fontSize: 22,
+                            fontSize: DesignTokens.fontSizeAmountSm,
                             fontWeight: FW.bold,
                             fontFeatures: const [FontFeature.tabularFigures()],
                             color: DesignTokens.foreground(isDark),

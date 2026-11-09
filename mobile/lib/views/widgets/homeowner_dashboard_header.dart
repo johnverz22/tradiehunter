@@ -85,7 +85,7 @@ class HomeownerDashboardHeader extends StatelessWidget {
                               firstName.isEmpty ? 'Welcome back' : firstName,
                               style: const TextStyle(
                                 fontFamily: TypeTokens.fontDisplay,
-                                fontSize: 28,
+                                fontSize: DesignTokens.fontSizeNameDisplay,
                                 fontWeight: FW.bold,
                                 color: Colors.white,
                               ),

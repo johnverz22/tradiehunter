@@ -1,13 +1,12 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/payment.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/locale_viewmodel.dart';
 import '../../viewmodels/payment_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
@@ -95,15 +94,45 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       ),
       body: _body(context, theme, isDark, state, payment),
       bottomNavigationBar: (payment != null && payment.canUploadReceipt)
-          ? StickyActionBar(
-              child: FixoPrimaryButton(
-                key: const Key('upload_receipt_button'),
-                label: state.isUploading ? 'Uploading…' : 'Upload bank receipt',
-                isLoading: state.isUploading,
-                onPressed: _pickAndUpload,
-              ),
-            )
+          ? StickyActionBar(child: _actionBar(state, payment))
           : null,
+    );
+  }
+
+  /// State B (details usable): upload is the primary action. State A (details
+  /// missing or sentinel): uploading is withheld — a receipt for a transfer
+  /// the homeowner was told not to make is meaningless — so refreshing the
+  /// details becomes the primary action instead.
+  Widget _actionBar(PaymentState state, PaymentStatus payment) {
+    final bankReady = payment.bankDetails?.isAvailable ?? false;
+    if (bankReady) {
+      return FixoPrimaryButton(
+        key: const Key('upload_receipt_button'),
+        label: state.isUploading ? 'Uploading…' : 'Upload bank receipt',
+        isLoading: state.isUploading,
+        onPressed: _pickAndUpload,
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Upload is available once bank details are shown.',
+          key: const Key('upload_disabled_hint'),
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: Space.s2),
+        FixoPrimaryButton(
+          key: const Key('refresh_payment_button'),
+          label: state.isLoading ? 'Refreshing…' : 'Refresh payment details',
+          isLoading: state.isLoading,
+          onPressed: () => ref
+              .read(paymentViewModelProvider(widget.jobId).notifier)
+              .load(),
+        ),
+      ],
     );
   }
 
@@ -189,7 +218,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               ),
               const SizedBox(height: Space.s1),
               Text(
-                '${_money(payment.amount)} ${payment.currency}',
+                formatMoney(payment.amount),
                 style: const TextStyle(
                   fontFamily: DesignTokens.fontDisplay,
                   fontSize: DesignTokens.fontSizeAmountLg,
@@ -221,14 +250,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 FixoSummaryRow(
                   label: 'Labour',
                   value:
-                      '${job.hours} ${job.hours == 1 ? 'hour' : 'hours'} × '
-                      '${_money(job.hourlyRate!)} ${payment.currency}/h',
+                      '${job.hours} h × ${formatRate(job.hourlyRate!)}',
                 ),
               if (job != null && job.hours > 0 && job.hourlyRate != null)
                 const FixoListDivider(),
               FixoSummaryRow(
                 label: 'Job total',
-                value: '${_money(payment.amount)} ${payment.currency}',
+                value: formatMoney(payment.amount),
                 emphasize: true,
               ),
               const FixoListDivider(),
@@ -271,7 +299,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                               payment.reference,
                               style: const TextStyle(
                                 fontFamily: DesignTokens.fontMono,
-                                fontSize: 22,
+                                fontSize: DesignTokens.fontSizeAmountSm,
                                 fontWeight: FW.semibold,
                               ),
                             ),
@@ -296,8 +324,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 const FixoListDivider(spacing: 29),
                 FixoStepRow(
                   number: 2,
-                  title:
-                      'Transfer ${_money(payment.amount)} ${payment.currency}',
+                  title: 'Transfer ${formatMoney(payment.amount)}',
                   child: Column(
                     children: [
                       FixoDetailRow(
@@ -311,6 +338,22 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         mono: true,
                         onCopy: () =>
                             _copy(bank.accountNumber, 'Account number'),
+                      ),
+                      const SizedBox(height: Space.s2),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          key: const Key('copy_all_button'),
+                          icon: const Icon(Icons.copy_all_outlined),
+                          label: const Text('Copy all'),
+                          onPressed: () => _copy(
+                            'Account name: ${bank.accountName}\n'
+                            'Account number: ${bank.accountNumber}\n'
+                            'Amount: ${formatMoney(payment.amount)}\n'
+                            'Reference: ${payment.reference}',
+                            'Payment details',
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -362,13 +405,15 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: Space.s3),
-                FixoGhostButton(
-                  label: 'Refresh payment details',
-                  onPressed: () => ref
-                      .read(paymentViewModelProvider(widget.jobId).notifier)
-                      .load(),
-                ),
+                if (!payment.canUploadReceipt) ...[
+                  const SizedBox(height: Space.s3),
+                  FixoGhostButton(
+                    label: 'Refresh payment details',
+                    onPressed: () => ref
+                        .read(paymentViewModelProvider(widget.jobId).notifier)
+                        .load(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -424,19 +469,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
         ],
 
-        // ── Link to the full status view ────────────────────────────────
         const SizedBox(height: Space.s5),
-        OutlinedButton.icon(
-          onPressed: () => context.push('/jobs/${widget.jobId}/payment/status'),
-          icon: const Icon(Icons.receipt_long_outlined, size: 18),
-          label: const Text('View payment status'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(DesignTokens.heightSecondary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -448,11 +481,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     PaymentStage.expired => FixoBadgeKind.cancelled,
     PaymentStage.pending || PaymentStage.unknown => FixoBadgeKind.actionNeeded,
   };
-
-  static String _money(Decimal amount) => NumberFormat.currency(
-    symbol: '',
-    decimalDigits: 2,
-  ).format(double.tryParse(amount.toString()) ?? 0);
 
   static String _method(String method) => switch (method) {
     'BankTransfer' => 'Bank transfer',

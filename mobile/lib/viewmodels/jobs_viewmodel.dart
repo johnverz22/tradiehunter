@@ -1,12 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:async';
+
 import '../models/marketplace.dart';
 import '../models/address.dart';
 import '../repositories/profile_repository.dart';
 import '../repositories/jobs_repository.dart';
+import '../repositories/address_repository.dart';
 import '../repositories/job_hub_client.dart';
 import '../repositories/chat_reviews_repository.dart';
 import 'auth_viewmodel.dart';
+import 'address_viewmodel.dart' show addressRepositoryProvider;
 
 final jobsRepositoryProvider = Provider<JobsRepository>((ref) {
   return JobsRepository(
@@ -415,9 +419,23 @@ class PostJobState {
 
 class PostJobNotifier extends StateNotifier<PostJobState> {
   final JobsRepository _repo;
+  final AddressRepository? _addressRepo;
   int _rateGeneration = 0;
-  PostJobNotifier(this._repo) : super(const PostJobState()) {
+  PostJobNotifier(this._repo, [this._addressRepo]) : super(const PostJobState()) {
     loadServices();
+    _loadCachedAddress();
+  }
+
+  Future<void> _loadCachedAddress() async {
+    final cached = await _addressRepo?.loadCachedAddress();
+    if (!mounted || cached == null) return;
+    state = state.copyWith(
+      address: cached.address,
+      resolvedAddress: cached,
+      // No attribution stored — it's not needed after selection.
+      latitude: cached.latitude,
+      longitude: cached.longitude,
+    );
   }
 
   Future<void> loadServices() async {
@@ -523,6 +541,9 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
       rateOptions: const [],
       clearSelectedRate: true,
     );
+    if (_addressRepo != null) {
+      unawaited(_addressRepo.cacheAddress(address));
+    }
     await searchRates();
   }
 
@@ -594,5 +615,8 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
 
 final postJobProvider =
     StateNotifierProvider.autoDispose<PostJobNotifier, PostJobState>((ref) {
-      return PostJobNotifier(ref.watch(jobsRepositoryProvider));
+      return PostJobNotifier(
+        ref.watch(jobsRepositoryProvider),
+        ref.watch(addressRepositoryProvider),
+      );
     });

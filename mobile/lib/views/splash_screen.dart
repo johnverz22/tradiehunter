@@ -130,8 +130,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       style: const TextStyle(
                         fontFamily: DesignTokens.fontDisplay,
                         fontWeight: FW.bold,
-                        fontSize: 40,
-                        letterSpacing: Tracking.tight * 40,
+                        fontSize: DesignTokens.fontSizeSplash,
+                        letterSpacing: Tracking.tight * DesignTokens.fontSizeSplash,
                         color: DesignTokens.paperLight,
                       ),
                       children: const [

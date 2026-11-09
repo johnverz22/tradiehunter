@@ -565,8 +565,8 @@ class _UrgencySegmentedControl extends StatelessWidget {
       runSpacing: 8,
       children: _urgencies.map((u) {
         final isSelected = u == selected;
-        return SizedBox(
-          height: 48,
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
           child: ChoiceChip(
             label: Text(
               u,
@@ -804,23 +804,29 @@ class _PhotoGrid extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_a_photo_outlined,
-                    size: 24,
-                    color: theme.colorScheme.onSurfaceVariant,
+              child: Padding(
+                padding: const EdgeInsets.all(Space.s1),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo_outlined,
+                        size: 24,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: Space.s1),
+                      Text(
+                        'Add',
+                        style: TextStyle(
+                          fontSize: DesignTokens.fontSizeCaption,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: Space.s1),
-                  Text(
-                    'Add',
-                    style: TextStyle(
-                      fontSize: DesignTokens.fontSizeCaption,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -893,6 +899,7 @@ class _AddressField extends ConsumerStatefulWidget {
 
 class _AddressFieldState extends ConsumerState<_AddressField> {
   late final TextEditingController _controller;
+  bool _userHasEdited = false;
 
   @override
   void initState() {
@@ -910,6 +917,19 @@ class _AddressFieldState extends ConsumerState<_AddressField> {
 
   @override
   Widget build(BuildContext context) {
+    // When the ViewModel loads a cached address asynchronously, update the
+    // controller — but only if the user hasn't started typing yet.
+    ref.listen<PostJobState>(postJobProvider, (prev, next) {
+      if (!_userHasEdited &&
+          next.address.isNotEmpty &&
+          _controller.text != next.address) {
+        _controller.text = next.address;
+        _controller.selection = TextSelection.collapsed(
+          offset: next.address.length,
+        );
+      }
+    });
+
     final search = ref.watch(addressSearchProvider);
     final job = ref.watch(postJobProvider);
     return Column(
@@ -928,6 +948,7 @@ class _AddressFieldState extends ConsumerState<_AddressField> {
             helperMaxLines: 3,
           ),
           onChanged: (value) {
+            _userHasEdited = true;
             ref.read(postJobProvider.notifier).setAddress(value);
             ref.read(addressSearchProvider.notifier).edit(value);
           },
@@ -959,6 +980,7 @@ class _AddressFieldState extends ConsumerState<_AddressField> {
             title: Text(address.address),
             minVerticalPadding: 16,
             onTap: () {
+              _userHasEdited = false;
               _controller.text = address.address;
               ref
                   .read(postJobProvider.notifier)
@@ -977,13 +999,6 @@ class _AddressFieldState extends ConsumerState<_AddressField> {
               'Address selected',
               semanticsLabel: 'Job address selected',
             ),
-          ),
-        if (search.result != null || job.addressAttribution != null)
-          SelectableText(
-            search.result == null
-                ? job.addressAttribution!
-                : '${search.result!.attribution}\n${search.result!.attributionUrl}',
-            style: Theme.of(context).textTheme.bodySmall,
           ),
       ],
     );

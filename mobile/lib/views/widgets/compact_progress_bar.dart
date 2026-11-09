@@ -58,8 +58,6 @@ class CompactProgressBar extends StatelessWidget {
 
   // ── Derived values ────────────────────────────────────────────────────────
 
-  static const _segmentLabels = ['Requested', 'Booked', 'In progress', 'Done'];
-
   bool get _isTerminal {
     if (isTerminal != null) return isTerminal!;
     return switch (status) {
@@ -108,11 +106,15 @@ class CompactProgressBar extends StatelessWidget {
     return 'Step ${_stepIndex + 1} of $_total';
   }
 
+  /// Sub-caption is suppressed for the common case — the status chip in the
+  /// card already communicates "In progress" / "Booked" etc., so repeating it
+  /// in the progress bar caption makes hierarchy flat and wastes height.
+  ///
+  /// Pass an explicit [sublabel] to restore a sub-caption when needed (e.g.
+  /// detail pages that omit the chip).
   String? get _captionSub {
     if (sublabel != null) return sublabel;
-    if (!_isTerminal && label == null) {
-      return _segmentLabels[_stepIndex.clamp(0, 3)];
-    }
+    // Never auto-generate the segment label — rely on the StatusChip for that.
     return null;
   }
 
@@ -207,17 +209,30 @@ class CompactProgressBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Flexible(
-                    child: Text.rich(
-                      TextSpan(
-                        text: _captionMain,
-                        style: captionMainStyle,
-                        children: [
-                          if (_captionSub != null) ...[
-                            TextSpan(text: ' · ', style: captionSubStyle),
-                            TextSpan(text: _captionSub!, style: captionSubStyle),
-                          ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _captionMain,
+                            style: captionMainStyle,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (_captionSub != null) ...[
+                          Text(
+                            ' · ',
+                            style: captionSubStyle,
+                          ),
+                          Flexible(
+                            child: Text(
+                              _captionSub!,
+                              style: captionSubStyle,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                   ?trailing,

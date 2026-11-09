@@ -177,7 +177,7 @@ class ConversationTile extends StatelessWidget {
                             ),
                           ] else if (hasUnread) ...[
                             const SizedBox(width: Space.s2),
-                            _UnreadDot(),
+                            _UnreadBadge(count: c.unreadCount),
                           ],
                         ],
                       ),
@@ -195,7 +195,7 @@ class ConversationTile extends StatelessWidget {
   static String _preview(ConversationSummary c) {
     final text = c.lastMessage;
     if (text == null || text.isEmpty) return 'No messages yet';
-    // No "You:" prefix — the trailing arrow icon already signals it was sent by me.
+    if (c.lastMessageMine) return 'You: $text';
     return text;
   }
 
@@ -206,18 +206,32 @@ class ConversationTile extends StatelessWidget {
       status == 'AwaitingConfirmation';
 }
 
-/// 8px brand-blue unread indicator dot — matches the mockup.
-class _UnreadDot extends StatelessWidget {
-  const _UnreadDot();
+/// Brand-blue unread indicator badge showing the unread count.
+class _UnreadBadge extends StatelessWidget {
+  final int count;
+  const _UnreadBadge({required this.count});
 
   @override
   Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : '$count';
     return Container(
-      width: 8,
-      height: 8,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
+      constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+      padding: const EdgeInsets.symmetric(horizontal: Space.s1_5, vertical: 2),
+      decoration: BoxDecoration(
         color: DesignTokens.brand500,
+        borderRadius: BorderRadius.circular(Radii.pill),
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: DesignTokens.fontBody,
+            fontSize: DesignTokens.fontSizeTiny,
+            fontWeight: FW.bold,
+            color: Colors.white,
+            height: 1.0,
+          ),
+        ),
       ),
     );
   }
@@ -341,15 +355,21 @@ class ChatDateSeparator extends StatelessWidget {
               color: DesignTokens.paperLine(isDark),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Space.s3),
-            child: Text(
-              _label(),
-              style: TextStyle(
-                fontFamily: DesignTokens.fontBody,
-                fontSize: DesignTokens.fontSizeCaption,
-                fontWeight: FW.medium,
-                color: DesignTokens.inkSoft(isDark),
+          Flexible(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.s3),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _label(),
+                  style: TextStyle(
+                    fontFamily: DesignTokens.fontBody,
+                    fontSize: DesignTokens.fontSizeCaption,
+                    fontWeight: FW.medium,
+                    color: DesignTokens.inkSoft(isDark),
+                  ),
+                ),
               ),
             ),
           ),
@@ -689,26 +709,30 @@ class ChatComposer extends StatelessWidget {
             const SizedBox(width: Space.s2_5),
 
             // Send button — amber circle with arrow icon
-            GestureDetector(
-              onTap: onSend,
-              child: Container(
-                width: Sizes.fab - Space.s2,  // 48px
-                height: Sizes.fab - Space.s2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: DesignTokens.amber,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x40E38B29),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: DesignTokens.onAmber,
-                  size: Space.s6,
+            Tooltip(
+              message: 'Send message',
+              child: GestureDetector(
+                key: const Key('send_message_button'),
+                onTap: onSend,
+                child: Container(
+                  width: Sizes.fab - Space.s2,  // 48px
+                  height: Sizes.fab - Space.s2,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: DesignTokens.amber,
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x40E38B29),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: DesignTokens.onAmber,
+                    size: Space.s6,
+                  ),
                 ),
               ),
             ),

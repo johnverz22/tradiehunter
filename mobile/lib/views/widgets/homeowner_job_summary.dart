@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
+import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
 import 'job_progress_dots.dart';
 
@@ -54,7 +56,7 @@ Widget homeownerJobSummary(
     reference: job.referenceCode,
     priceLabel: job.totalAmount == null
         ? null
-        : '\$${job.totalAmount!.toStringAsFixed(2)}',
+        : formatMoney(job.totalAmount!),
     scheduleLabel: job.scheduledStartUtc == null
         ? null
         : '${DateFormat.MMMd().add_jm().format(job.scheduledStartUtc!.toLocal())}${job.hours > 0 ? ' · ${job.hours}h' : ''}',
@@ -130,7 +132,7 @@ class _BookedJobCard extends StatelessWidget {
                       _initials(job.matchedTradieName),
                       style: const TextStyle(
                         fontFamily: DesignTokens.fontDisplay,
-                        fontSize: 15,
+                        fontSize: DesignTokens.fontSizeSm,
                         fontWeight: FW.bold,
                       ),
                     ),
@@ -147,7 +149,7 @@ class _BookedJobCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: DesignTokens.fontDisplay,
-                            fontSize: 15,
+                            fontSize: DesignTokens.fontSizeSm,
                             fontWeight: FW.bold,
                             height: 1.2,
                             color: DesignTokens.foreground(isDark),
@@ -160,7 +162,7 @@ class _BookedJobCard extends StatelessWidget {
                               job.matchedTradieName!,
                               style: TextStyle(
                                 fontFamily: DesignTokens.fontBody,
-                                fontSize: 13,
+                                fontSize: DesignTokens.fontSizeSecondary,
                                 fontWeight: FW.medium,
                                 color: DesignTokens.inkSoft(isDark),
                               ),
@@ -178,10 +180,10 @@ class _BookedJobCard extends StatelessWidget {
                     children: [
                       if (job.totalAmount != null)
                         Text(
-                          '\$${job.totalAmount!.toStringAsFixed(2)}',
+                          formatMoney(job.totalAmount!),
                           style: TextStyle(
                             fontFamily: DesignTokens.fontBody,
-                            fontSize: 16,
+                            fontSize: DesignTokens.fontSizeBody,
                             fontWeight: FW.bold,
                             fontFeatures: const [
                               FontFeature.tabularFigures(),
@@ -196,7 +198,7 @@ class _BookedJobCard extends StatelessWidget {
                             scheduleLabel,
                             style: TextStyle(
                               fontFamily: DesignTokens.fontBody,
-                              fontSize: 12,
+                              fontSize: DesignTokens.fontSizeTiny,
                               color: DesignTokens.inkSoft(isDark),
                             ),
                           ),
@@ -210,29 +212,13 @@ class _BookedJobCard extends StatelessWidget {
               Divider(height: 1, color: colors.line),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Space.s3),
-                child: SizedBox(
-                  width: double.infinity,
+                child: FixoTonalButton(
+                  label: 'Open chat',
+                  fullWidth: true,
                   height: 44,
-                  child: TextButton(
-                    onPressed: job.matchedTradieId == null
-                        ? null
-                        : () => context.push('/chat/${job.id}'),
-                    style: TextButton.styleFrom(
-                      backgroundColor: colors.tintBrand,
-                      foregroundColor: colors.textBrand,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.radiusControl,
-                        ),
-                      ),
-                      textStyle: const TextStyle(
-                        fontFamily: DesignTokens.fontBody,
-                        fontSize: 14,
-                        fontWeight: FW.semibold,
-                      ),
-                    ),
-                    child: const Text('Open chat'),
-                  ),
+                  onPressed: job.matchedTradieId == null
+                      ? null
+                      : () => context.push('/chat/${job.id}'),
                 ),
               ),
             ],

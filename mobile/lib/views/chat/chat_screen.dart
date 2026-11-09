@@ -571,7 +571,7 @@ class _ChatAvatar extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: DesignTokens.fontDisplay,
                 fontWeight: FW.semibold,
-                fontSize: 14,
+                fontSize: DesignTokens.fontSizeSecondary,
                 color: Colors.white,
               ),
             ),
@@ -642,41 +642,46 @@ class _ChatStatusPill extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Space.s5,
-              vertical: Space.s1_5,
-            ),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
-              border: Border.all(
-                color: isDark
-                    ? DesignTokens.paperLineDark
-                    : DesignTokens.paperLineLight,
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.s3,
+                vertical: Space.s1_5,
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isAlert
-                      ? Icons.warning_amber_rounded
-                      : Icons.access_time_rounded,
-                  size: 14,
-                  color: fg,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
+                border: Border.all(
+                  color: isDark
+                      ? DesignTokens.paperLineDark
+                      : DesignTokens.paperLineLight,
                 ),
-                const SizedBox(width: Space.s1_5),
-                Text(
-                  _label(status),
-                  style: TextStyle(
-                    fontFamily: DesignTokens.fontBody,
-                    fontSize: DesignTokens.fontSizeCaption,
-                    fontWeight: FW.medium,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isAlert
+                        ? Icons.warning_amber_rounded
+                        : Icons.access_time_rounded,
+                    size: 14,
                     color: fg,
                   ),
-                ),
-              ],
+                  const SizedBox(width: Space.s1_5),
+                  Flexible(
+                    child: Text(
+                      _label(status),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: DesignTokens.fontBody,
+                        fontSize: DesignTokens.fontSizeCaption,
+                        fontWeight: FW.medium,
+                        color: fg,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

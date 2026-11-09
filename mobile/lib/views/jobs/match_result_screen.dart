@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
@@ -153,7 +154,7 @@ class _MatchResultScreenState extends ConsumerState<MatchResultScreen> {
         child: Column(
           children: [
             // ── H11 heroband ──────────────────────────────────────────
-            _HeroBand(isDark: isDark),
+            const _HeroBand(),
 
             // ── Tradie card with overlapping avatar ───────────────────
             Expanded(
@@ -162,7 +163,7 @@ class _MatchResultScreenState extends ConsumerState<MatchResultScreen> {
                 children: [
                   // Avatar overlaps the heroband bottom by 36px (half of 72px avatar)
                   Transform.translate(
-                    offset: const Offset(0, -36),
+                    offset: const Offset(0, -_avatarOverlap),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
                       child: Column(
@@ -170,6 +171,10 @@ class _MatchResultScreenState extends ConsumerState<MatchResultScreen> {
                           _MatchCard(
                             match: currentMatch,
                             isDark: isDark,
+                            onViewProfile: currentMatch.tradieId.isEmpty
+                                ? null
+                                : () => context
+                                    .push('/tradie/${currentMatch.tradieId}'),
                           ),
                           if (_job != null &&
                               (_job!.totalAmount != null ||
@@ -231,117 +236,62 @@ class _MatchResultScreenState extends ConsumerState<MatchResultScreen> {
 
 // ── H11 hero band ─────────────────────────────────────────────────────────────
 
-/// Navy gradient heroband with rings watermark, route-line SVG, and title.
-/// Mirrors the HTML `.heroband` pattern used across all v1.6 screens.
+/// Flat brand band holding the back button and the headline. The headline is
+/// in normal flow (not absolutely positioned) so it can wrap at any text
+/// scale, and the bottom padding reserves the avatar overlap so the card
+/// never covers it.
 class _HeroBand extends StatelessWidget {
-  final bool isDark;
-  const _HeroBand({required this.isDark});
+  const _HeroBand();
 
   @override
   Widget build(BuildContext context) {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final top = MediaQuery.paddingOf(context).top;
     return Container(
       width: double.infinity,
-      // 52px content + status bar + 36px overlap allowance for the avatar
-      padding: EdgeInsets.only(top: statusBarHeight),
-      decoration: BoxDecoration(
+      padding: EdgeInsets.fromLTRB(
+        Space.s2,
+        top + Space.s2,
+        Space.gutter,
+        _avatarOverlap + Space.s4,
+      ),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            DesignTokens.brand700,
-            DesignTokens.brand500,
-          ],
+          colors: [DesignTokens.brand700, DesignTokens.brand500],
         ),
       ),
-      child: SizedBox(
-        height: 130,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Rings watermark — white, centred, slightly above
-            Positioned(
-              top: -40,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Opacity(
-                  opacity: 0.22,
-                  child: Image.asset(
-                    'assets/illustrations/rings-3-white.svg',
-                    width: 300,
-                    excludeFromSemantics: true,
-                    errorBuilder: (ctx, err, st) => Image.asset(
-                      'assets/illustrations/rings-3-navy.png',
-                      width: 300,
-                      color: Colors.white,
-                      colorBlendMode: BlendMode.srcIn,
-                      excludeFromSemantics: true,
-                    ),
-                  ),
-                ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Back',
+            constraints: const BoxConstraints(
+              minWidth: Sizes.tapMin,
+              minHeight: Sizes.tapMin,
+            ),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          const SizedBox(width: Space.s1),
+          const Expanded(
+            child: Text(
+              'We found your tradie',
+              style: TextStyle(
+                fontFamily: DesignTokens.fontDisplay,
+                fontSize: DesignTokens.fontSizeH2Small,
+                fontWeight: FW.semibold,
+                color: Colors.white,
               ),
             ),
-
-            // Back button top-left
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => Navigator.of(context).maybePop(),
-                  child: const Padding(
-                    padding: EdgeInsets.all(Space.s2_5),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Route-line SVG + "We found your tradie" headline
-            Positioned(
-              bottom: 28,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Opacity(
-                    opacity: 0.50,
-                    child: Image.asset(
-                      'assets/illustrations/route-line.svg',
-                      width: 240,
-                      color: Colors.white,
-                      colorBlendMode: BlendMode.srcIn,
-                      excludeFromSemantics: true,
-                      errorBuilder: (ctx, err, st) => const SizedBox(height: Space.s6),
-                    ),
-                  ),
-                  const SizedBox(height: Space.s1_5),
-                  const Text(
-                    'We found your tradie',
-                    style: TextStyle(
-                      fontFamily: DesignTokens.fontDisplay,
-                      fontSize: DesignTokens.fontSizeH2Small,
-                      fontWeight: FW.semibold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
+
+/// How far the tradie card (and its avatar) rides up over the hero band.
+const double _avatarOverlap = Sizes.avatarLg / 2;
 
 // ── Tradie card with overlapping avatar ───────────────────────────────────────
 
@@ -351,7 +301,12 @@ class _HeroBand extends StatelessWidget {
 class _MatchCard extends StatelessWidget {
   final TradieMatch match;
   final bool isDark;
-  const _MatchCard({required this.match, required this.isDark});
+  final VoidCallback? onViewProfile;
+  const _MatchCard({
+    required this.match,
+    required this.isDark,
+    this.onViewProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -370,8 +325,8 @@ class _MatchCard extends StatelessWidget {
               children: [
                 // Avatar — sits at top, overlaps heroband via parent translate
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: Sizes.avatarLg,
+                  height: Sizes.avatarLg,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: DesignTokens.brand500,
@@ -381,7 +336,7 @@ class _MatchCard extends StatelessWidget {
                     initials,
                     style: const TextStyle(
                       fontFamily: DesignTokens.fontDisplay,
-                      fontSize: 26,
+                      fontSize: DesignTokens.fontSizeAvatarInitials,
                       fontWeight: FW.semibold,
                       color: Colors.white,
                     ),
@@ -467,7 +422,7 @@ class _MatchCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                      if (match.distance.trim().isNotEmpty) ...[
+                      if (match.hasDistance) ...[
                         Text(
                           ' · ',
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -483,7 +438,7 @@ class _MatchCard extends StatelessWidget {
                           fontWeight: FW.semibold,
                         ),
                       ),
-                      if (match.distance.trim().isNotEmpty)
+                      if (match.hasDistance)
                         Text(
                           ' · ',
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -491,7 +446,7 @@ class _MatchCard extends StatelessWidget {
                           ),
                         ),
                     ],
-                    if (match.distance.trim().isNotEmpty)
+                    if (match.hasDistance)
                       Text(
                         match.distance,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -503,6 +458,19 @@ class _MatchCard extends StatelessWidget {
               ],
             ),
           ),
+
+          if (onViewProfile != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.s2),
+              child: TextButton(
+                key: const Key('view_profile_button'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                ),
+                onPressed: onViewProfile,
+                child: const Text('View profile'),
+              ),
+            ),
 
           // Bio (if present) — separated by hairline
           if (match.bio != null && match.bio!.trim().isNotEmpty) ...[
@@ -581,7 +549,7 @@ class _PriceSummaryCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '\$${job.hourlyRate!.toStringAsFixed(2)}/hr',
+                    formatRate(job.hourlyRate!),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: DesignTokens.inkSoft(isDark),
                     ),
@@ -617,7 +585,7 @@ class _PriceSummaryCard extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '\$${job.totalAmount!.toStringAsFixed(2)}',
+                      formatMoney(job.totalAmount!),
                       style: TextStyle(
                         fontFamily: DesignTokens.fontDisplay,
                         fontSize: DesignTokens.fontSizeAmount,
