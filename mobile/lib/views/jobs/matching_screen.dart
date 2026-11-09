@@ -252,27 +252,43 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               // Sequential offer progress — "Contacting Tradie 2…" (P3-09).
               Semantics(
                 liveRegion: true,
-                child: Column(
-                  children: [
-                    Text(
-                      progress.headline,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FW.bold,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: Sizes.matchingTextBlock,
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: FixoDurations.toggle,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(
+                      key: ValueKey(progress.headline),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            progress.headline,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FW.bold,
+                            ),
+                          ),
+                          const SizedBox(height: Space.s2),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Space.s6,
+                            ),
+                            child: Text(
+                              progress.subhead,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: Space.s2),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Space.s6),
-                      child: Text(
-                        progress.subhead,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               if (_reconnecting) ...[
@@ -308,7 +324,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
             ] else if (matched) ...[
               const Icon(
                 Icons.check_circle,
-                size: 80,
+                size: Sizes.iconHero,
                 color: DesignTokens.green,
               ),
               const SizedBox(height: Space.s6),
@@ -319,7 +335,11 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
                 ),
               ),
             ] else ...[
-              Icon(Icons.search_off, size: 80, color: theme.colorScheme.error),
+              Icon(
+                Icons.search_off,
+                size: Sizes.iconHero,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: Space.s6),
               Text(
                 progress.headline,
@@ -364,7 +384,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               TextButton(
                 onPressed: _busy ? null : _dispatch,
                 style: TextButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
+                  minimumSize: const Size.fromHeight(Sizes.tapMin),
                 ),
                 child: const Text('Try again'),
               ),
@@ -377,7 +397,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
                 if (context.mounted) context.pop();
               },
               style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
+                minimumSize: const Size.fromHeight(Sizes.tapMin),
               ),
               child: Text(done ? 'Go Back' : 'Cancel'),
             ),
@@ -398,26 +418,45 @@ class _RadarRipple extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    alignment: Alignment.center,
-    children: [
-      for (var i = 0; i < 3; i++)
-        Container(
-          width: 120 + (((progress + i / 3) % 1) * 120),
-          height: 120 + (((progress + i / 3) % 1) * 120),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: DesignTokens.brand500.withValues(
-                alpha: 0.5 * (1 - ((progress + i / 3) % 1)),
-              ),
-              width: 2,
-            ),
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: SizedBox(
+          width: Sizes.radarMaxDiameter,
+          height: Sizes.radarMaxDiameter,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              for (var i = 0; i < Sizes.radarRingCount; i++)
+                Builder(
+                  builder: (context) {
+                    final cycleProgress =
+                        (progress + i / Sizes.radarRingCount) % 1;
+                    final scale = 0.5 + (cycleProgress * 0.5);
+                    final fadeValue =
+                        (Alpha.divider * (1 - cycleProgress)).clamp(0.0, 1.0);
+                    return Opacity(
+                      opacity: fadeValue,
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          width: Sizes.radarMaxDiameter,
+                          height: Sizes.radarMaxDiameter,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: DesignTokens.brand500,
+                              width: Sizes.borderWidthThick,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              const _StaticSearchBadge(),
+            ],
           ),
         ),
-      const _StaticSearchBadge(),
-    ],
-  );
+      );
 }
 
 /// Reduced-motion alternative to [_RadarRipple]: same centre badge without
@@ -426,15 +465,25 @@ class _StaticSearchBadge extends StatelessWidget {
   const _StaticSearchBadge();
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: 96,
-    height: 96,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: DesignTokens.brand500,
-    ),
-    child: const Icon(Icons.search, size: 48, color: Colors.white),
-  );
+  Widget build(BuildContext context) => SizedBox(
+        width: Sizes.radarMaxDiameter,
+        height: Sizes.radarMaxDiameter,
+        child: Center(
+          child: Container(
+            width: Sizes.radarCenter,
+            height: Sizes.radarCenter,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: DesignTokens.brand500,
+            ),
+            child: const Icon(
+              Icons.search,
+              size: Sizes.radarIcon,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
 }
 
 /// Three dots that fill as more tradies are contacted — one dot per offer the
@@ -455,8 +504,8 @@ class _OfferProgressDots extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.s1),
             child: Container(
-              width: 8,
-              height: 8,
+              width: Sizes.heroDot,
+              height: Sizes.heroDot,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: i == shown - 1

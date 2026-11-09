@@ -9,6 +9,7 @@ import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/views/jobs/match_result_screen.dart';
 import 'package:fixo/views/jobs/matching_screen.dart';
+import 'package:fixo/widgets/fixo_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -250,7 +251,7 @@ void main() {
         expect(find.text('We found your tradie'), findsOneWidget);
         expect(find.text('Estimated total'), findsOneWidget);
         expect(find.text('\$171.00'), findsOneWidget);
-        expect(find.text('\$85.50/hr'), findsOneWidget);
+        expect(find.text('\$85.50/h'), findsOneWidget);
         expect(find.text('2 h'), findsOneWidget);
         expect(find.text('Request Sam'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -451,6 +452,48 @@ void main() {
       expect(find.byKey(const ValueKey('matching-radar')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('radar animation keeps headline text vertically stable', (
+      tester,
+    ) async {
+      final repo = MatchRepo();
+      final hub = MatchHub();
+      await mount(
+        tester,
+        const MatchingScreen(jobId: '42'),
+        repo: repo,
+        hub: hub,
+        settle: false,
+      );
+
+      hub.offerEvents.add(
+        const OfferLifecycleEvent(
+          jobId: '42',
+          offerId: 'off-1',
+          tradieId: 'tr-1',
+          eventType: OfferEventType.created,
+          offerIndex: 1,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Contacting Tradie 1…'), findsOneWidget);
+
+      final initialY = tester.getTopLeft(find.text('Contacting Tradie 1…')).dy;
+
+      // Pump 60 frames across a full 2-second animation cycle (~33ms per frame)
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 33));
+        final currentY = tester.getTopLeft(find.text('Contacting Tradie 1…')).dy;
+        expect(
+          (currentY - initialY).abs(),
+          lessThanOrEqualTo(0.5),
+          reason:
+              'Headline shifted vertically at frame $i from $initialY to $currentY',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('MatchResultScreen', () {
@@ -551,6 +594,67 @@ void main() {
       expect(find.text('Request Sam'), findsNothing);
       expect(find.text('View job'), findsNothing);
       expect(find.text('Continue to payment'), findsNothing);
+    });
+
+    for (final scale in [1.0, 1.3, 2.0]) {
+      testWidgets('headline is not covered by the card at scale $scale', (
+        tester,
+      ) async {
+        final repo = MatchRepo()
+          ..job = pricedJob()
+          ..matches = [matchFixture()];
+        await mount(
+          tester,
+          const MatchResultScreen(jobId: '42'),
+          repo: repo,
+          hub: MatchHub(),
+          scale: scale,
+        );
+        final headline = tester.getRect(find.text('We found your tradie'));
+        final card = tester.getRect(find.byType(FixoCard).first);
+        expect(headline.bottom, lessThanOrEqualTo(card.top));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('unknown or zero distance is hidden, not shown as 0.0 km', (
+      tester,
+    ) async {
+      final repo = MatchRepo()
+        ..job = pricedJob()
+        ..matches = [
+          const TradieMatch(
+            tradieId: 't1',
+            initials: 'SC',
+            name: 'Sam Carter',
+            trade: 'Plumber',
+            distance: '0.0 km away',
+            distanceKm: 0,
+            rating: null,
+            reviewCount: 0,
+          ),
+        ];
+      await mount(
+        tester,
+        const MatchResultScreen(jobId: '42'),
+        repo: repo,
+        hub: MatchHub(),
+      );
+      expect(find.textContaining('0.0 km'), findsNothing);
+      expect(find.byKey(const Key('view_profile_button')), findsOneWidget);
+    });
+
+    testWidgets('known distance is still shown', (tester) async {
+      final repo = MatchRepo()
+        ..job = pricedJob()
+        ..matches = [matchFixture()];
+      await mount(
+        tester,
+        const MatchResultScreen(jobId: '42'),
+        repo: repo,
+        hub: MatchHub(),
+      );
+      expect(find.text('1.2 km away'), findsOneWidget);
     });
 
     testWidgets('empty matches renders the no-match state', (tester) async {

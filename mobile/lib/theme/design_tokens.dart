@@ -91,6 +91,15 @@ abstract class Sizes {
   static const double avatarMd = 44.0;
   static const double avatarLg = 72.0;
   static const double avatarXl = 88.0;
+
+  // Matching screen tokens
+  static const double radarMaxDiameter = 240.0;
+  static const double radarCenter = 96.0;
+  static const double radarIcon = 48.0;
+  static const double matchingTextBlock = 56.0;
+  static const double iconHero = 80.0;
+  static const double borderWidthThick = 2.0;
+  static const int radarRingCount = 3;
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────
