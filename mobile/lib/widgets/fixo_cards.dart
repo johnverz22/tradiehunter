@@ -38,12 +38,19 @@ class StatusBadge extends StatelessWidget {
   final IconData? icon;
   final AlignmentGeometry? alignment;
 
+  /// When [onDark] is `true`, the badge uses the on-gradient colour palette
+  /// (kit.css `.status-strip .pill` rules): white-16% fill + white text for
+  /// all kinds, except [FixoBadgeKind.problem] which uses surface/white fill
+  /// + danger text so the badge is visually distinct on the navy gradient.
+  final bool onDark;
+
   const StatusBadge({
     super.key,
     required this.label,
     required this.kind,
     this.icon,
     this.alignment,
+    this.onDark = false,
   });
 
   static (Color bg, Color fg, IconData defaultIcon) resolveVisuals(
@@ -100,14 +107,56 @@ class StatusBadge extends StatelessWidget {
     }
   }
 
+  /// On-gradient colour palette — kit.css `.status-strip .pill` rules.
+  ///
+  /// - Normal kinds: `rgba(255,255,255, 0.16)` fill + white text.
+  /// - Problem/disputed: surface/white fill + light-mode danger text so it
+  ///   pops visually against the navy gradient (matches `.pill-problem` rule).
+  static (Color bg, Color fg, IconData defaultIcon) resolveVisualsOnDark(
+    FixoBadgeKind kind,
+  ) {
+    switch (kind) {
+      case FixoBadgeKind.problem:
+      case FixoBadgeKind.urgent:
+        // kit.css: `.status-strip .pill-problem { background: var(--surface); color: var(--ink-danger); }`
+        return (
+          Colors.white,
+          DesignTokens.inkDanger(false),
+          Icons.warning_amber_rounded,
+        );
+      default:
+        // All other kinds use white-16% fill + white text on the gradient strip.
+        return (
+          Colors.white.withValues(alpha: Alpha.tintStrong),
+          Colors.white,
+          _defaultIconForKind(kind),
+        );
+    }
+  }
+
+  static IconData _defaultIconForKind(FixoBadgeKind kind) => switch (kind) {
+        FixoBadgeKind.actionNeeded || FixoBadgeKind.hold => Icons.error_outline,
+        FixoBadgeKind.active || FixoBadgeKind.live => Icons.play_arrow_rounded,
+        FixoBadgeKind.waiting => Icons.schedule_rounded,
+        FixoBadgeKind.done || FixoBadgeKind.verified => Icons.check_rounded,
+        FixoBadgeKind.cancelled || FixoBadgeKind.neutral => Icons.close_rounded,
+        FixoBadgeKind.problem || FixoBadgeKind.urgent =>
+          Icons.warning_amber_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final (bg, fg, defaultIcon) = resolveVisuals(kind, isDark);
+    final (bg, fg, defaultIcon) = onDark
+        ? resolveVisualsOnDark(kind)
+        : resolveVisuals(kind, isDark);
     final badgeIcon = icon ?? defaultIcon;
 
     final badge = Container(
-      constraints: const BoxConstraints(minHeight: 28, maxHeight: 28),
+      constraints: const BoxConstraints(
+        minHeight: Sizes.statusBadgeH,
+        maxHeight: Sizes.statusBadgeH,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: Space.s2_5),
       decoration: BoxDecoration(
         color: bg,
@@ -117,8 +166,8 @@ class StatusBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(badgeIcon, size: 14, color: fg),
-          const SizedBox(width: 5),
+          Icon(badgeIcon, size: Sizes.iconXs, color: fg),
+          const SizedBox(width: Sizes.chipIconGap),
           Flexible(
             child: Text(
               label,

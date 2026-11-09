@@ -233,5 +233,45 @@ void main() {
       expect(find.byType(StatusBadge), findsNWidgets(6));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('onDark: true renders kit.css status-strip pill styles', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                StatusBadge(
+                  label: 'In progress',
+                  kind: FixoBadgeKind.active,
+                  onDark: true,
+                ),
+                StatusBadge(
+                  label: 'Disputed',
+                  kind: FixoBadgeKind.problem,
+                  onDark: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Normal kind onDark: white-16% fill, white text
+      final (activeBg, activeFg, _) = StatusBadge.resolveVisualsOnDark(
+        FixoBadgeKind.active,
+      );
+      expect(activeBg, Colors.white.withValues(alpha: Alpha.tintStrong));
+      expect(activeFg, Colors.white);
+
+      // Problem kind onDark: white surface fill, danger text
+      final (probBg, probFg, _) = StatusBadge.resolveVisualsOnDark(
+        FixoBadgeKind.problem,
+      );
+      expect(probBg, Colors.white);
+      expect(probFg, DesignTokens.inkDanger(false));
+    });
   });
 }

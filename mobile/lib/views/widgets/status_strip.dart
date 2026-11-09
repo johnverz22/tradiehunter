@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/design_tokens.dart';
+import '../../widgets/fixo_cards.dart';
 import 'compact_progress_bar.dart';
 import 'job_status_presentation.dart';
 
@@ -63,24 +64,20 @@ class _StatusStripState extends State<StatusStrip>
   Widget build(BuildContext context) {
     final presentation = JobStatusPresentation.forStatus(widget.status);
     final isDisputed = widget.status == 'Disputed';
+    final hasProgress = presentation.progressStage != null;
     final stepIndex = presentation.progressStage ?? 0;
     final completedSteps = stepIndex + 1;
 
     // Step label for cpb caption
-    final stepLabel = switch (widget.status) {
-      'Booked' => 'Booked',
-      'InProgress' => 'In progress',
-      'AwaitingConfirmation' => 'Awaiting confirmation',
-      'Completed' => 'Done',
-      'Disputed' => 'Awaiting confirmation',
-      _ => presentation.label,
-    };
+    final stepLabel = hasProgress
+        ? JobStatusPresentation.progressLabels[stepIndex]
+        : presentation.label;
 
     final muted = isDisputed || widget.status == 'Cancelled';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(Space.gutter, 14, Space.gutter, Space.s4),
+      padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s3_5, Space.gutter, Space.s4),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -91,63 +88,82 @@ class _StatusStripState extends State<StatusStrip>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row: compact progress bar (with chevron in caption) + reference code
+          // Row 1: status pill + reference code
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: CompactProgressBar(
-                  completedSteps: completedSteps,
-                  totalSteps: 4,
-                  label: 'Step $completedSteps of 4',
-                  sublabel: stepLabel,
-                  muted: muted,
-                  onDark: true,
-                  onCaptionTap: _toggle,
-                  trailing: Padding(
-                    padding: const EdgeInsets.only(left: Space.s1),
-                    child: AnimatedRotation(
-                      duration: FixoDurations.expand,
-                      curve: Curves.easeInOut,
-                      turns: _expanded ? 0.5 : 0,
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 24,
-                        color: Colors.white
-                            .withValues(alpha: Alpha.iconOnGradient),
-                      ),
-                    ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: StatusBadge(
+                    label: presentation.label,
+                    kind: presentation.kind,
+                    onDark: true,
                   ),
                 ),
               ),
               if (widget.referenceCode != null &&
                   widget.referenceCode!.isNotEmpty) ...[
-                const SizedBox(width: Space.s3),
-                Text(
-                  widget.referenceCode!,
-                  style: TextStyle(
-                    fontFamily: DesignTokens.fontMono,
-                    fontSize: DesignTokens.fontSizeCaption,
-                    fontWeight: FW.medium,
-                    color:
-                        Colors.white.withValues(alpha: Alpha.textOnGradient),
+                const SizedBox(width: Space.s2),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      widget.referenceCode!,
+                      style: TextStyle(
+                        fontFamily: DesignTokens.fontMono,
+                        fontSize: DesignTokens.fontSizeCaption,
+                        fontWeight: FW.medium,
+                        color:
+                            Colors.white.withValues(alpha: Alpha.textOnGradient),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ],
           ),
-          // Expandable step list — animated
-          AnimatedSize(
-            duration: FixoDurations.expand,
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? Padding(
-                    padding: const EdgeInsets.only(top: Space.s3),
-                    child: _buildStepList(),
-                  )
-                : const SizedBox.shrink(),
-          ),
+          if (hasProgress) ...[
+            const SizedBox(height: Space.s2_5),
+            CompactProgressBar(
+              completedSteps: completedSteps,
+              totalSteps: 4,
+              label: 'Step $completedSteps of 4',
+              sublabel: stepLabel,
+              muted: muted,
+              onDark: true,
+              onCaptionTap: _toggle,
+              trailing: Padding(
+                padding: const EdgeInsets.only(left: Space.s1),
+                child: AnimatedRotation(
+                  duration: FixoDurations.expand,
+                  curve: Curves.easeInOut,
+                  turns: _expanded ? 0.5 : 0,
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: Sizes.iconLg,
+                    color: Colors.white
+                        .withValues(alpha: Alpha.iconOnGradient),
+                  ),
+                ),
+              ),
+            ),
+            // Expandable step list — animated
+            AnimatedSize(
+              duration: FixoDurations.expand,
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _expanded
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: Space.s3),
+                      child: _buildStepList(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ],
       ),
     );
@@ -184,7 +200,7 @@ class _StatusStripState extends State<StatusStrip>
             children: [
               // Step node + connecting line
               SizedBox(
-                width: 28,
+                width: Sizes.stepNodeCol,
                 child: Column(
                   children: [
                     _buildStepNode(
@@ -196,7 +212,7 @@ class _StatusStripState extends State<StatusStrip>
                     if (!isLast)
                       Expanded(
                         child: Container(
-                          width: 2,
+                          width: Sizes.borderWidthThick,
                           margin:
                               const EdgeInsets.symmetric(vertical: Space.s0_5),
                           color: isCompleted ? activeLineColor : lineColor,
@@ -210,7 +226,7 @@ class _StatusStripState extends State<StatusStrip>
               Expanded(
                 child: Padding(
                   padding:
-                      EdgeInsets.only(top: Space.s0_5, bottom: isLast ? 0 : 20),
+                      EdgeInsets.only(top: Space.s0_5, bottom: isLast ? 0 : Space.s5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -256,15 +272,15 @@ class _StatusStripState extends State<StatusStrip>
   }) {
     if (isCompleted) {
       return Container(
-        width: 24,
-        height: 24,
+        width: Sizes.stepNode,
+        height: Sizes.stepNode,
         decoration: const BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
         ),
         child: const Icon(
           Icons.check_rounded,
-          size: 14,
+          size: Sizes.iconXs,
           color: DesignTokens.brand900,
         ),
       );
@@ -277,18 +293,18 @@ class _StatusStripState extends State<StatusStrip>
           _ => Icons.close_rounded,
         };
         return Container(
-          width: 24,
-          height: 24,
+          width: Sizes.stepNode,
+          height: Sizes.stepNode,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: Alpha.tintAccent),
             shape: BoxShape.circle,
           ),
-          child: Icon(terminalIcon, size: 14, color: Colors.white),
+          child: Icon(terminalIcon, size: Sizes.iconXs, color: Colors.white),
         );
       }
       return Container(
-        width: 24,
-        height: 24,
+        width: Sizes.stepNode,
+        height: Sizes.stepNode,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: Alpha.gradient),
           shape: BoxShape.circle,
@@ -308,8 +324,8 @@ class _StatusStripState extends State<StatusStrip>
 
     // Upcoming
     return Container(
-      width: 24,
-      height: 24,
+      width: Sizes.stepNode,
+      height: Sizes.stepNode,
       decoration: BoxDecoration(
         color: Colors.transparent,
         shape: BoxShape.circle,

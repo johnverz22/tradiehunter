@@ -66,6 +66,7 @@ abstract class Sizes {
   static const double iconXs = 14.0;
   static const double iconSm = 18.0;
   static const double iconMd = 22.0;
+  static const double iconLg = 24.0;
   static const double buttonTonalSm = 44.0;
   static const double segmentMin = 80.0;
   static const double dot = 10.0;
@@ -85,6 +86,15 @@ abstract class Sizes {
 
   /// Status chip height (used in job cards and job detail).
   static const double statusChip = 26.0;
+
+  /// Status badge pill height — 28dp; matching kit.css `.pill` min-height.
+  static const double statusBadgeH = 28.0;
+
+  /// Timeline step node size (in expandable StatusStrip) — 24dp diameter.
+  static const double stepNode = 24.0;
+
+  /// Timeline step node column width — 28dp.
+  static const double stepNodeCol = 28.0;
 
   // Avatar sizes
   static const double avatarSm = 36.0;
@@ -107,11 +117,13 @@ abstract class Sizes {
 
   // Icon sizes (between iconXs=14 and iconSm=18)
   static const double iconRating = 16.0;   // star in rating rows
-  static const double iconChip  = 14.0;    // icon inside pill chips — matches iconXs
+  static const double iconInfo   = 16.0;   // info banner / small inline notice icons
+  static const double iconChip   = 14.0;   // icon inside pill chips — matches iconXs
 
   // Spacing constants for Wrap / row gaps
-  static const double chipGap   = 6.0;     // horizontal gap between pill chips
-  static const double ratingGap = 3.0;     // gap between star icon and rating text
+  static const double chipGap      = 6.0;  // horizontal gap between pill chips
+  static const double ratingGap    = 3.0;  // gap between star icon and rating text
+  static const double chipIconGap  = 5.0;  // gap between icon and label inside a pill/chip
 
   // Avatar overlay badge (verified checkmark badge on avatar corner)
   static const double avatarBadge    = 22.0; // badge circle diameter

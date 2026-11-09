@@ -549,7 +549,7 @@ class _HomeownerJobDetailScreenState
                     children: [
                       Icon(
                         Icons.location_on_outlined,
-                        size: 18,
+                        size: Sizes.iconSm,
                         color: DesignTokens.inkSoft(isDark),
                       ),
                       const SizedBox(width: Space.s2),
@@ -671,7 +671,7 @@ class _HomeownerJobDetailScreenState
               materialsDisclaimer.isNotEmpty) ...[
             const SizedBox(height: Space.s3),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: Space.s3),
+              padding: const EdgeInsets.symmetric(horizontal: Space.s3_5, vertical: Space.s3),
               decoration: BoxDecoration(
                 color: DesignTokens.brand500.withValues(alpha: Alpha.faint),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
@@ -684,7 +684,7 @@ class _HomeownerJobDetailScreenState
                 children: [
                   Icon(
                     Icons.info_outline,
-                    size: 16,
+                    size: Sizes.iconInfo,
                     color: DesignTokens.foregroundBrand(isDark),
                   ),
                   const SizedBox(width: Space.s2_5),
@@ -915,25 +915,25 @@ class _MatchedTradieCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  FixoAvatar(initials: p == null ? '?' : p.initials, radius: 26),
+                  FixoAvatar(initials: p == null ? '?' : p.initials, radius: Sizes.statusChip),
                   if (isVerified)
                     Positioned(
-                      right: -2,
-                      bottom: -2,
+                      right: -Space.s0_5,
+                      bottom: -Space.s0_5,
                       child: Container(
-                        width: 18,
-                        height: 18,
+                        width: Sizes.iconSm,
+                        height: Sizes.iconSm,
                         decoration: BoxDecoration(
                           color: DesignTokens.inkSuccess(isDark),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: DesignTokens.surfaceCard(isDark),
-                            width: 2,
+                            width: Sizes.borderWidthThick,
                           ),
                         ),
                         child: const Icon(
                           Icons.check_rounded,
-                          size: 10,
+                          size: Sizes.dot,
                           color: Colors.white,
                         ),
                       ),
@@ -1070,13 +1070,13 @@ class _JobNotFoundBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Space.s7, vertical: 48),
+      padding: const EdgeInsets.symmetric(horizontal: Space.s7, vertical: Space.s9),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.search_off_outlined,
-            size: 72,
+            size: Sizes.avatarLg,
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: Space.s6),
