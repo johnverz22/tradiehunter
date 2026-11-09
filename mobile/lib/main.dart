@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -5,8 +7,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 import 'router/app_router.dart';
+import 'theme/design_tokens.dart';
 import 'theme/fixo_theme.dart';
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
+import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
 import 'views/settings_screen.dart'; // themeModeProvider
 
 // ─── FCM background handler ─────────────────────────────────────────────────
@@ -25,9 +29,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    // Integration tests re-invoke main() per test — the app is already there.
+    if (e.code != 'duplicate-app') rethrow;
+  }
 
   // Register the background handler before runApp so it's in place
   // even if the app was launched from a terminated state by a notification.
@@ -36,16 +45,29 @@ void main() async {
   // google_sign_in 7.x requires exactly one initialize() call before any
   // authenticate() / signOut() calls. serverClientId must match the backend's
   // Authentication:Google:ClientId and the value in mobile/.env.json.
-  await GoogleSignIn.instance.initialize(
-    serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
-  );
+  try {
+    await GoogleSignIn.instance.initialize(
+      serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
+    ).timeout(const Duration(seconds: 5));
+  } catch (_) {
+    // Already initialized (main() re-run by tests/hot restart) or the plugin
+    // hung — either way, don't hold runApp hostage for it.
+  }
 
   // Request notification permission (required on iOS; Android 13+ also needs it).
-  await _requestNotificationPermission();
+  // Fire-and-forget: awaiting would hold runApp behind the system prompt —
+  // nobody answers it in integration tests, so the app would never start.
+  // FIXO_DISABLE_PUSH skips it entirely (screenshot/test runs) — the
+  // unanswered prompt still photobombs simctl captures.
+  if (!const bool.fromEnvironment('FIXO_DISABLE_PUSH')) {
+    unawaited(_requestNotificationPermission());
+  }
 
   // Check if the app was launched by tapping a notification (terminated state).
   // We store it and route after the widget tree is ready.
-  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  final initialMessage = await FirebaseMessaging.instance
+      .getInitialMessage()
+      .timeout(const Duration(seconds: 3), onTimeout: () => null);
 
   runApp(
     ProviderScope(
@@ -124,7 +146,7 @@ class _FixoAppState extends ConsumerState<FixoApp> {
             if (notification?.title != null)
               Text(
                 notification!.title!,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FW.bold),
               ),
             if (notification?.body != null)
               Text(notification!.body!),
@@ -160,9 +182,13 @@ class _FixoAppState extends ConsumerState<FixoApp> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    // P10-24: read app name from brand config; fallback to 'TradieHunter'.
+    // The /api/config/locale response nests brand under the 'brand' key.
+    final localeData = ref.watch(localeConfigProvider).value;
+    final appName = (localeData?['brand'] as Map<String, dynamic>?)?['appName'] as String? ?? 'TradieHunter';
 
     return MaterialApp.router(
-      title: 'Fixo',
+      title: appName,
       theme: FixoTheme.light(),
       darkTheme: FixoTheme.dark(),
       themeMode: themeMode,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../theme/design_tokens.dart';
 
 /// Bottom-sheet rating form from mockup 13-rating-modal.
@@ -31,11 +32,8 @@ class RatingSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => RatingSheet(
-        jobId: jobId,
-        jobTitle: jobTitle,
-        onSubmit: onSubmit,
-      ),
+      builder: (_) =>
+          RatingSheet(jobId: jobId, jobTitle: jobTitle, onSubmit: onSubmit),
     );
   }
 
@@ -71,7 +69,7 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
         _commentCtrl.text.isEmpty ? null : _commentCtrl.text,
       );
       if (mounted) setState(() => _submitted = true);
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      await Future<void>.delayed(FixoDurations.sheetDelay);
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) {
@@ -91,11 +89,10 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
     final atLimit = charCount >= _maxChars;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(
-          32, 16, 32, MediaQuery.of(context).viewInsets.bottom + 32),
+      padding: EdgeInsets.fromLTRB(Space.s7, Space.s4, Space.s7, MediaQuery.of(context).viewInsets.bottom + 32),
       decoration: BoxDecoration(
-        color: isDark ? DesignTokens.cardDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        color: DesignTokens.surfaceCard(isDark),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.tile)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -108,21 +105,22 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
               color: isDark
                   ? DesignTokens.paperLineDark
                   : DesignTokens.paperLineLight,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(Radii.micro),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: Space.s5),
 
           // Success state
           if (_submitted) ...[
             const Icon(Icons.check_circle, color: DesignTokens.green, size: 48),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.s3),
             Text(
               'Review submitted!',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FW.bold,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: Space.s2),
             Text(
               'Thank you for your feedback.',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -132,10 +130,11 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
           ] else ...[
             Text(
               'Job Complete!',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FW.bold,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: Space.s1_5),
             Text(
               widget.jobTitle,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -143,12 +142,12 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: Space.s5),
             const Text(
               'How was the service?',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: DesignTokens.fontSizeBody, fontWeight: FW.semibold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: Space.s2),
 
             // Star rating row
             Row(
@@ -163,40 +162,45 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
                     color: filled
                         ? DesignTokens.amber
                         : (isDark
-                            ? DesignTokens.paperLineDark
-                            : DesignTokens.brand100Light),
+                              ? DesignTokens.paperLineDark
+                              : DesignTokens.brand100Light),
                   ),
                 );
               }),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.s3),
 
             // Comment field with character counter
             TextField(
               controller: _commentCtrl,
               maxLines: 3,
               maxLength: _maxChars,
-              buildCounter: (context,
-                  {required currentLength,
-                  required isFocused,
-                  maxLength}) {
-                return Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '$currentLength / $maxLength',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: atLimit
-                          ? DesignTokens.red
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                );
-              },
+              buildCounter:
+                  (
+                    context, {
+                    required currentLength,
+                    required isFocused,
+                    maxLength,
+                  }) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '$currentLength / $maxLength',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: atLimit
+                              ? DesignTokens.inkDanger(
+                                  theme.brightness == Brightness.dark,
+                                )
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
+                  },
               decoration: const InputDecoration(
                 hintText: 'Write a review… (optional)',
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: Space.s4),
 
             // Submit button
             SizedBox(
@@ -206,7 +210,7 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
                 onPressed: _sending ? null : _submit,
                 style: FilledButton.styleFrom(
                   backgroundColor: DesignTokens.amber,
-                  foregroundColor: const Color(0xFF241300),
+                  foregroundColor: DesignTokens.onAmber,
                 ),
                 child: _sending
                     ? const SizedBox(
@@ -217,7 +221,9 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
                     : const Text(
                         'Submit Review',
                         style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15),
+                          fontWeight: FW.semibold,
+                          fontSize: DesignTokens.fontSizeBody,
+                        ),
                       ),
               ),
             ),

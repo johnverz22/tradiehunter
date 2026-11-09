@@ -4,16 +4,20 @@ import { StatusBadge } from '../../../components/StatusBadge';
 import { Pagination } from '../../../components/Pagination';
 import { useDisputeList } from '../hooks/useDisputes';
 
+const PAGE_SIZE = 20;
+
 const DISPUTE_STATUSES = ['All', 'Open', 'Resolved', 'Escalated'];
+
+const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
 
 export const DisputesPage: React.FC = () => {
   const [disputeStatus, setDisputeStatus] = useState('Open');
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useDisputeList({
-    disputeStatus: disputeStatus === 'All' ? undefined : disputeStatus,
+    ...(disputeStatus === 'All' ? {} : { disputeStatus }),
     page,
-    pageSize: 20,
+    pageSize: PAGE_SIZE,
   });
 
   return (
@@ -21,9 +25,16 @@ export const DisputesPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-[var(--ink)]">Disputes</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          {data ? `${data.totalCount} dispute${data.totalCount !== 1 ? 's' : ''}` : ''}
-        </p>
+        {data && (
+          <div className="flex flex-wrap gap-4 mt-3">
+            <div className="stat-pill">
+              <strong>{data.totalCount.toLocaleString()}</strong> {disputeStatus.toLowerCase()}
+            </div>
+            <div className="stat-pill">
+              <strong>{data.items.length}</strong> on this page
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status filter tabs */}
@@ -45,56 +56,57 @@ export const DisputesPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--paper-line)]/50">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Job</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Homeowner</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Tradie</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Job Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Dispute</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Flagged</th>
-                <th className="px-4 py-3"></th>
+                <th className="th">Job ID</th>
+                <th className="th">Job</th>
+                <th className="th">Homeowner</th>
+                <th className="th">Tradie</th>
+                <th className="th">Job Status</th>
+                <th className="th">Dispute</th>
+                <th className="th">Flagged</th>
+                <th className="th" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--paper-line)]">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">Loading…</td>
+                  <td colSpan={8} className="td text-center cell-muted">Loading…</td>
                 </tr>
               ) : data?.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">
+                  <td colSpan={8} className="td text-center cell-muted">
                     No disputes {disputeStatus !== 'All' ? `with status "${disputeStatus}"` : ''}.
                   </td>
                 </tr>
               ) : (
                 data?.items.map((d) => (
-                  <tr key={d.jobId} className="hover:bg-[var(--paper-line)]/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-[var(--ink)] block max-w-xs truncate">
-                        {d.jobTitle}
-                      </span>
+                  <tr key={d.jobId}>
+                    <td className="td mono">
+                      <Link to={`/disputes/${d.jobId}`} className="cell-link">
+                        {formatJobId(d.jobId)}
+                      </Link>
+                    </td>
+                    <td className="td">
+                      <span className="block max-w-xs truncate">{d.jobTitle}</span>
                       {d.flagReason && (
-                        <span className="text-xs text-[var(--ink-soft)] block truncate max-w-xs">
+                        <span className="block max-w-xs truncate text-xs cell-muted">
                           {d.flagReason}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{d.homeownerName}</td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{d.tradieName ?? '—'}</td>
-                    <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
-                    <td className="px-4 py-3"><StatusBadge status={d.disputeStatus} /></td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">
+                    <td className="td cell-muted">{d.homeownerName}</td>
+                    <td className="td cell-muted">{d.tradieName ?? '—'}</td>
+                    <td className="td"><StatusBadge status={d.status} /></td>
+                    <td className="td"><StatusBadge status={d.disputeStatus} /></td>
+                    <td className="td cell-muted">
                       {new Date(d.flaggedAtUtc).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        to={`/disputes/${d.jobId}`}
-                        className="text-xs text-[var(--brand-500)] hover:underline"
-                      >
+                    <td className="td text-right">
+                      <Link to={`/disputes/${d.jobId}`} className="action-link">
                         Review
                       </Link>
                     </td>
@@ -104,11 +116,18 @@ export const DisputesPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {data && (
-        <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
-      )}
+        {data && (
+          <Pagination
+            page={data.page}
+            totalPages={data.totalPages}
+            pageSize={data.pageSize}
+            totalCount={data.totalCount}
+            itemLabel="disputes"
+            onPageChange={setPage}
+          />
+        )}
+      </div>
     </div>
   );
 };

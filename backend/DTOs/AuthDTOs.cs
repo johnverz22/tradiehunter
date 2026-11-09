@@ -37,3 +37,14 @@ public class CompleteRegistrationRequest
 {
     public UserRole Role { get; set; }
 }
+
+public class VerifyEmailRequest
+{
+    public string Email { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+}
+
+public class ResendOtpRequest
+{
+    public string Email { get; set; } = string.Empty;
+}

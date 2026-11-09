@@ -8,7 +8,7 @@ blueprint-marketplace/
 ├── docs/           # PRD, UX research, MVP spec, architecture, milestones, design system
 │   ├── design/
 │   │   ├── design-system.html   # Source of truth for color, type, spacing tokens
-│   │   └── mockup/              # Screen mockups (light theme; add dark where missing)
+│   │   └── mockup/              # Historical mockups; excluded from v1.5 inputs/deliverables/acceptance
 │   │       ├── mobile/          # 01-splash … 15-homeowner-profile
 │   │       └── web/             # 01-admin-login … 08-admin-settings
 │   └── specs/      # Implementation task specs grouped by milestone (M1 … M5)

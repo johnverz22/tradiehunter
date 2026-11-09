@@ -1,20 +1,14 @@
 using FixoApi.DTOs;
 using FixoApi.Enums;
+using System.Threading.Tasks;
 
 namespace FixoApi.Services;
 
-/// <summary>
-/// Formal job-status state machine (M3-05).
-/// All status transitions MUST go through <see cref="TransitionAsync"/> —
-/// never update Job.Status directly in controllers or other services.
-/// </summary>
 public interface IJobStatusService
 {
-    /// <summary>
-    /// Transition a job to <paramref name="newStatus"/>.
-    /// Validates the transition is legal, writes to <c>JobStatusHistory</c>,
-    /// broadcasts <c>JobStatusChanged</c> via SignalR, and sends FCM to both parties.
-    /// Throws <see cref="InvalidOperationException"/> for illegal transitions.
-    /// </summary>
-    Task<JobDto> TransitionAsync(int jobId, JobStatus newStatus, string userId, string? reason = null);
+    Task<JobDto> TransitionAsync(int jobId, JobStatus newStatus, string userId, UserRole actorRole, ReasonCode? reasonCode = null, string? note = null);
+
+    Task<JobDto> CancelJobAsync(int jobId, string userId, UserRole actorRole, CancelJobRequest request);
+
+    Task<JobDto> ReportNoShowAsync(int jobId, string userId, UserRole actorRole, ReportNoShowRequest request);
 }

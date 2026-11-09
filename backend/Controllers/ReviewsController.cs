@@ -75,5 +75,5 @@ public class ReviewsController : ControllerBase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private string? GetUserId() => User.FindFirstValue("sub");
 }

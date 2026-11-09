@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../theme/design_tokens.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/fixo_buttons.dart';
+import 'widgets/auth_controls.dart';
+import 'widgets/fixo_feedback.dart';
 
-/// Mockup 04-signup: back + "Join Fixo.", 2-col role selector
-/// (selected = amber border + tint), labeled inputs, amber CTA,
-/// Google button, footer Log in. Register wiring unchanged.
+
+/// S06: wordmark → "Create your account" → role toggle → fields → CTA.
+/// Register API takes firstName/lastName separately; the "Full name" field
+/// is split on the first space before submitting.
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
@@ -18,164 +22,224 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _fullNameController = TextEditingController();
+  final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
-  int _selectedRole = 0; // 0 = Homeowner, 1 = Tradie  (matches UserRole enum)
+  int  _selectedRole    = 0; // 0=Homeowner, 1=Tradie
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  /// Splits "Sarah Mitchell" → ("Sarah", "Mitchell").
+  /// Single-word names become (word, "").
+  (String, String) _splitName(String full) {
+    final parts = full.trim().split(RegExp(r'\s+'));
+    if (parts.length == 1) return (parts[0], '');
+    return (parts.first, parts.sublist(1).join(' '));
+  }
+
   void _signup() async {
     if (!_formKey.currentState!.validate()) return;
     ref.read(authViewModelProvider.notifier).clearError();
-    final success = await ref.read(authViewModelProvider.notifier).register(
-          _firstNameController.text.trim(),
-          _lastNameController.text.trim(),
+
+    final (firstName, lastName) = _splitName(_fullNameController.text);
+    final outcome = await ref
+        .read(authViewModelProvider.notifier)
+        .register(
+          firstName,
+          lastName,
           _emailController.text.trim(),
           _passwordController.text,
           _selectedRole,
         );
-    if (success && mounted) {
-      ref.invalidate(profileViewModelProvider);
-      final destination = await getRoleRoute(
-        ref.read(sharedProfileRepositoryProvider),
-      );
-      if (mounted) context.go(destination);
+    if (!mounted || outcome == null) return;
+
+    switch (outcome) {
+      // P1-03: registration emails an OTP — no JWT issued here.
+      case AuthNeedsEmailVerification(:final email):
+        context.go('/verify-email', extra: email);
+      case AuthSignedIn():
+        ref.invalidate(profileViewModelProvider);
+        final destination = await getRoleRoute(
+          ref.read(sharedProfileRepositoryProvider),
+        );
+        if (mounted) context.go(destination);
+    }
+  }
+
+  void _googleSignup() async {
+    final result = await ref
+        .read(authViewModelProvider.notifier)
+        .loginWithGoogle();
+    if (!mounted) return;
+
+    switch (result) {
+      case GoogleLoginSuccess():
+        ref.invalidate(profileViewModelProvider);
+        final destination = await getRoleRoute(
+          ref.read(sharedProfileRepositoryProvider),
+        );
+        if (mounted) context.go(destination);
+      case GoogleLoginRequiresRegistration(
+        :final userId,
+        :final registrationToken,
+      ):
+        context.go(
+          '/role-select',
+          extra: (userId: userId, registrationToken: registrationToken),
+        );
+      case GoogleLoginRequiresVerification(:final email):
+        context.go('/verify-email', extra: email);
+      case GoogleLoginCancelled():
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
-    final theme = Theme.of(context);
+    final th        = Theme.of(context).extension<THColors>()!;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
+      key: const Key('signup_screen'),
+      // ── Sticky CTA ────────────────────────────────────────────────────────
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.s6, Space.s2, Space.s6, Space.s4,
+            ),
+            child: Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: FixoPrimaryButton(
+                  key: const Key('signup_button'),
+                  label: 'Create account',
+                  isLoading: authState.isLoading,
+                  onPressed: _signup,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: AuthScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Space.s6, Space.s8, Space.s6, Space.s8,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => context.go('/auth'),
-                    icon: const Icon(Icons.arrow_back),
+                // ── Wordmark ───────────────────────────────────────────────
+                const FixoWordmark(fontSize: DesignTokens.fontSizeDisplay),
+                const SizedBox(height: Space.s7), // 32
+
+                // ── Heading ────────────────────────────────────────────────
+                Text(
+                  'Create your account',
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FW.bold,
+                    color: th.text,
                   ),
                 ),
+                const SizedBox(height: Space.s1), // 4
                 Text(
-                  'Join Fixo.',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  'I\'m signing up as a...',
+                  style: textTheme.bodyMedium?.copyWith(color: th.textSoft),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RoleCard(
-                        label: "I'm a\nHomeowner",
-                        icon: Icons.home_rounded,
-                        selected: _selectedRole == 0,
-                        onTap: () => setState(() => _selectedRole = 0),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _RoleCard(
-                        label: "I'm a\nTradie",
-                        icon: Icons.handyman_rounded,
-                        selected: _selectedRole == 1,
-                        onTap: () => setState(() => _selectedRole = 1),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: Space.s4), // 16
+
+                // ── Role toggle ────────────────────────────────────────────
+                _RoleToggle(
+                  selectedRole: _selectedRole,
+                  onRoleChanged: (r) => setState(() => _selectedRole = r),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: Space.s6), // 24
+
+                // ── Error banner ───────────────────────────────────────────
                 if (authState.error != null)
-                  _ErrorBanner(message: authState.error!),
-                _label('Full Name'),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _firstNameController,
-                        decoration: const InputDecoration(
-                            hintText: 'First'),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.givenName],
-                        validator: (v) => v == null || v.isEmpty
-                            ? 'Required'
-                            : null,
-                      ),
+                  Semantics(
+                    liveRegion: true,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: Space.s4),
+                      child: FixoInfoBanner.error(message: authState.error!),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lastNameController,
-                        decoration:
-                            const InputDecoration(hintText: 'Last'),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.familyName],
-                        validator: (v) => v == null || v.isEmpty
-                            ? 'Required'
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _label('Email'),
-                const SizedBox(height: 8),
+                  ),
+
+                // ── Full name ──────────────────────────────────────────────
                 TextFormField(
+                  key: const Key('full_name_field'),
+                  controller: _fullNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    hintText: 'e.g. Sarah Mitchell',
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.name],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Required';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: Space.s4),
+
+                // ── Email ──────────────────────────────────────────────────
+                TextFormField(
+                  key: const Key('signup_email_field'),
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email],
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'e.g. kiaora@example.co.nz',
+                  ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!v.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
+                    if (v == null || v.isEmpty) return 'Please enter your email';
+                    if (!v.contains('@')) return 'Please enter a valid email';
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-                _label('Password'),
-                const SizedBox(height: 8),
+                const SizedBox(height: Space.s4),
+
+                // ── Password ───────────────────────────────────────────────
                 TextFormField(
+                  key: const Key('signup_password_field'),
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.newPassword],
                   onFieldSubmitted: (_) => _signup(),
                   decoration: InputDecoration(
-                    helperText: 'Min 8 chars, uppercase, number & symbol',
-                    helperMaxLines: 1,
+                    labelText: 'Password',
                     suffixIcon: IconButton(
-                      tooltip:
-                          _obscurePassword ? 'Show password' : 'Hide password',
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
+                      tooltip: _obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
                       onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
+                        () => _obscurePassword = !_obscurePassword,
+                      ),
                     ),
                   ),
                   validator: (v) {
@@ -183,84 +247,68 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       return 'Password must be at least 8 characters';
                     }
                     if (!v.contains(RegExp(r'[A-Z]'))) {
-                      return 'Password must contain an uppercase letter';
+                      return 'Must contain an uppercase letter';
                     }
                     if (!v.contains(RegExp(r'[a-z]'))) {
-                      return 'Password must contain a lowercase letter';
+                      return 'Must contain a lowercase letter';
                     }
                     if (!v.contains(RegExp(r'[0-9]'))) {
-                      return 'Password must contain a number';
+                      return 'Must contain a number';
                     }
                     if (!v.contains(RegExp(r'[^A-Za-z0-9]'))) {
-                      return 'Password must contain a special character';
+                      return 'Must contain a special character';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
-                FixoPrimaryButton(
-                  label: 'Create account',
-                  isLoading: authState.isLoading,
-                  onPressed: _signup,
+                const SizedBox(height: Space.s4), // 16
+
+                // ── Terms line ─────────────────────────────────────────────
+                Text(
+                  'By continuing you agree to our Terms and Privacy Policy.',
+                  style: textTheme.bodySmall?.copyWith(color: th.textSoft),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('or sign up with',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5))),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 48,
-                  child: OutlinedButton(
-                    // TODO(backend): Google sign-up via POST /api/auth/google-oauth.
-                    onPressed: authState.isLoading
-                        ? null
-                        : () => context.go('/auth'),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 10,
-                          backgroundColor: Color(0xFF4285F4),
-                          child: Text('G',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white)),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Google',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: Space.s6), // 24
+
+                // ── Google divider + button ────────────────────────────────
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Already have an account? ',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7))),
-                    GestureDetector(
-                      onTap: () => context.go('/auth'),
-                      child: Text('Log in',
-                          style: TextStyle(
-                              color: DesignTokens.brand500,
-                              fontWeight: FontWeight.w600)),
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.s4,
+                      ),
+                      child: Text(
+                        'or',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: th.textSoft,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: Space.s4),
+                AuthGoogleButton(
+                  icon: const _GoogleG(),
+                  onPressed: authState.isLoading ? null : _googleSignup,
+                ),
+
+                const SizedBox(height: Space.s7), // 32
+
+                // ── Footer ─────────────────────────────────────────────────
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account?',
+                      style: textTheme.bodyMedium?.copyWith(color: th.textSoft),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/auth'),
+                      child: const Text('Log in'),
                     ),
                   ],
                 ),
@@ -271,18 +319,70 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ),
     );
   }
-
-  Widget _label(String text) => Text(text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500));
 }
 
-class _RoleCard extends StatelessWidget {
+// ── Role toggle ───────────────────────────────────────────────────────────────
+//
+// 2-column segmented picker. Selected tab: brand border (navy/blue300) +
+// surface fill + card shadow. Unselected: transparent, muted icon/text.
+
+class _RoleToggle extends StatelessWidget {
+  final int selectedRole;
+  final ValueChanged<int> onRoleChanged;
+
+  const _RoleToggle({
+    required this.selectedRole,
+    required this.onRoleChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final th     = Theme.of(context).extension<THColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: Alpha.overlay)
+            : th.line.withValues(alpha: Alpha.borderMid),
+        borderRadius: BorderRadius.circular(Radii.card),
+      ),
+      padding: const EdgeInsets.all(Space.s1),
+      child: Row(
+        children: [
+          Expanded(
+            child: _RoleTab(
+              key: const Key('role_homeowner'),
+              label: 'Homeowner',
+              icon: Icons.home_rounded,
+              selected: selectedRole == 0,
+              onTap: () => onRoleChanged(0),
+            ),
+          ),
+          Expanded(
+            child: _RoleTab(
+              key: const Key('role_tradie'),
+              label: 'Tradie',
+              icon: Icons.handyman_rounded,
+              selected: selectedRole == 1,
+              onTap: () => onRoleChanged(1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleTab extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
 
-  const _RoleCard({
+  const _RoleTab({
+    super.key,
     required this.label,
     required this.icon,
     required this.selected,
@@ -291,72 +391,37 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final th     = Theme.of(context).extension<THColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+      child: AnimatedContainer(
+        duration: FixoDurations.fast,
         decoration: BoxDecoration(
-          color: selected
-              ? DesignTokens.amber.withValues(alpha: 0.12)
-              : Colors.transparent,
-          border: Border.all(
-            color: selected
-                ? DesignTokens.amber
-                : Theme.of(context).dividerColor,
-            width: selected ? 2 : 1,
-          ),
-          borderRadius:
-              BorderRadius.circular(DesignTokens.radius),
+          color: selected ? th.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(Radii.card - 2),
+          border: selected
+              ? Border.all(color: th.brand, width: 2)
+              : null,
+          boxShadow: selected ? DesignTokens.cardShadow(isDark) : null,
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 28,
-                color: selected
-                    ? DesignTokens.amberDark
-                    : Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(height: 8),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w500)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(DesignTokens.radius),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.error_outline_rounded,
-                size: 18, color: colorScheme.onErrorContainer),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: colorScheme.onErrorContainer,
-                  fontSize: 14,
-                ),
+            Icon(
+              icon,
+              size: 22,
+              color: selected ? th.brand : th.textSoft,
+            ),
+            const SizedBox(height: Space.s1),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: DesignTokens.fontBody,
+                fontSize: DesignTokens.fontSizeSecondary,
+                fontWeight: selected ? FW.bold : FW.medium,
+                color: selected ? th.text : th.textSoft,
               ),
             ),
           ],
@@ -365,3 +430,22 @@ class _ErrorBanner extends StatelessWidget {
     );
   }
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+class _GoogleG extends StatelessWidget {
+  const _GoogleG();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      'G',
+      style: TextStyle(
+        fontSize: DesignTokens.fontSizeH2Small,
+        fontWeight: FW.bold,
+        color: SocialColors.googleBlue,
+      ),
+    );
+  }
+}
+

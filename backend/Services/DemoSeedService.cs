@@ -58,6 +58,9 @@ public class DemoSeedService : IHostedService
         // Guard: skip if the homeowner already exists.
         if (await userManager.FindByEmailAsync(homeownerEmail) is not null)
         {
+            // P1-03: heal pre-OTP accounts so demo logins keep working.
+            await EnsureVerifiedAsync(userManager, homeownerEmail);
+            await EnsureVerifiedAsync(userManager, tradieEmail);
             _logger.LogDebug("DemoSeed: {Email} already exists — skipping full seed.", homeownerEmail);
             return;
         }
@@ -74,6 +77,9 @@ public class DemoSeedService : IHostedService
             Role      = UserRole.Homeowner,
             IsActive  = true,
             EmailConfirmed = true,
+            AuthProvider = "password",
+            EmailVerified = true,
+            EmailVerifiedAtUtc = DateTime.UtcNow,
             PhoneNumber = "+64 21 555 0101",
         };
         await CreateUserOrThrow(userManager, homeowner, password);
@@ -88,6 +94,9 @@ public class DemoSeedService : IHostedService
             Role      = UserRole.Tradie,
             IsActive  = true,
             EmailConfirmed = true,
+            AuthProvider = "password",
+            EmailVerified = true,
+            EmailVerifiedAtUtc = DateTime.UtcNow,
             PhoneNumber = "+64 27 555 0202",
         };
         await CreateUserOrThrow(userManager, tradie, password);
@@ -123,12 +132,12 @@ public class DemoSeedService : IHostedService
                 Category        = TradeCategory.Plumber,
                 Description     = "The kitchen mixer tap has been dripping for a week. Water is pooling under the sink. Need it fixed ASAP — I think the cartridge needs replacing.",
                 Urgency         = JobUrgency.High,
-                Status          = JobStatus.Complete,
+                Status          = JobStatus.Completed,
                 Address         = "8 Ponsonby Road, Ponsonby, Auckland 1011",
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-30),
                 UpdatedAtUtc    = now.AddDays(-22),
-                ScheduledDateUtc    = now.AddDays(-24),
+                ScheduledStart    = now.AddDays(-24),
                 ScheduledTimeSlot   = ScheduleTimeSlot.Morning,
                 ScheduleStatus      = ScheduleStatus.Confirmed,
                 ScheduleProposedByUserId = tradie.Id,
@@ -148,7 +157,7 @@ public class DemoSeedService : IHostedService
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-10),
                 UpdatedAtUtc    = now.AddDays(-2),
-                ScheduledDateUtc    = now.AddDays(1),
+                ScheduledStart    = now.AddDays(1),
                 ScheduledTimeSlot   = ScheduleTimeSlot.Afternoon,
                 ScheduleStatus      = ScheduleStatus.Confirmed,
                 ScheduleProposedByUserId = homeowner.Id,
@@ -163,12 +172,12 @@ public class DemoSeedService : IHostedService
                 Category        = TradeCategory.Plumber,
                 Description     = "Main bathroom shower drains really slowly. Also want the grout around the base re-done — it's going mouldy.",
                 Urgency         = JobUrgency.Low,
-                Status          = JobStatus.Confirmed,
+                Status          = JobStatus.Booked,
                 Address         = "8 Ponsonby Road, Ponsonby, Auckland 1011",
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-5),
                 UpdatedAtUtc    = now.AddDays(-3),
-                ScheduledDateUtc    = now.AddDays(7),
+                ScheduledStart    = now.AddDays(7),
                 ScheduledTimeSlot   = ScheduleTimeSlot.Morning,
                 ScheduleStatus      = ScheduleStatus.Confirmed,
                 ScheduleProposedByUserId = tradie.Id,
@@ -183,7 +192,7 @@ public class DemoSeedService : IHostedService
                 Category        = TradeCategory.Plumber,
                 Description     = "Want a tap installed on the exterior wall near the back garden. Existing pipe is accessible from the laundry. Need frost-proof fitting.",
                 Urgency         = JobUrgency.Low,
-                Status          = JobStatus.Matched,
+                Status          = JobStatus.AwaitingPayment,
                 Address         = "8 Ponsonby Road, Ponsonby, Auckland 1011",
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-2),
@@ -214,12 +223,12 @@ public class DemoSeedService : IHostedService
                 Category        = TradeCategory.Plumber,
                 Description     = "Older home with copper pipes. Two bathrooms need full re-pipe in PEX. Includes hot + cold supply lines, waste connections. Walls are open — just completed a reno.",
                 Urgency         = JobUrgency.Medium,
-                Status          = JobStatus.Complete,
+                Status          = JobStatus.Completed,
                 Address         = "8 Ponsonby Road, Ponsonby, Auckland 1011",
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-60),
                 UpdatedAtUtc    = now.AddDays(-50),
-                ScheduledDateUtc    = now.AddDays(-55),
+                ScheduledStart    = now.AddDays(-55),
                 ScheduledTimeSlot   = ScheduleTimeSlot.Morning,
                 ScheduleStatus      = ScheduleStatus.Confirmed,
                 ScheduleProposedByUserId = tradie.Id,
@@ -249,12 +258,12 @@ public class DemoSeedService : IHostedService
                 Category        = TradeCategory.General,
                 Description     = "Getting a new kitchen. Need gas hob and oven disconnected safely before the kitchen installer arrives on Monday. Also need the new hob connected after.",
                 Urgency         = JobUrgency.High,
-                Status          = JobStatus.Complete,
+                Status          = JobStatus.Completed,
                 Address         = "8 Ponsonby Road, Ponsonby, Auckland 1011",
                 Location        = Auck(174.7490, -36.8585),
                 CreatedAtUtc    = now.AddDays(-45),
                 UpdatedAtUtc    = now.AddDays(-38),
-                ScheduledDateUtc    = now.AddDays(-42),
+                ScheduledStart    = now.AddDays(-42),
                 ScheduledTimeSlot   = ScheduleTimeSlot.Morning,
                 ScheduleStatus      = ScheduleStatus.Confirmed,
                 ScheduleProposedByUserId = homeowner.Id,
@@ -283,54 +292,54 @@ public class DemoSeedService : IHostedService
         }
 
         var j1 = jobs[0]; // Complete
-        AddHistory(j1, JobStatus.Draft,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j1, JobStatus.Requested,  JobStatus.Matching,   homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j1, JobStatus.Matching,   JobStatus.Matched,    tradie.Id,    offsetDaysAgo: 2);
-        AddHistory(j1, JobStatus.Matched,    JobStatus.Confirmed,  homeowner.Id, offsetDaysAgo: 4);
-        AddHistory(j1, JobStatus.Confirmed,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 192); // ~8 days later
-        AddHistory(j1, JobStatus.InProgress, JobStatus.Complete,   tradie.Id,    offsetDaysAgo: 200);
+        AddHistory(j1, JobStatus.Requested,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j1, JobStatus.Requested,  JobStatus.Requested,   homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j1, JobStatus.Requested,   JobStatus.AwaitingPayment,    tradie.Id,    offsetDaysAgo: 2);
+        AddHistory(j1, JobStatus.AwaitingPayment,    JobStatus.Booked,  homeowner.Id, offsetDaysAgo: 4);
+        AddHistory(j1, JobStatus.Booked,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 192); // ~8 days later
+        AddHistory(j1, JobStatus.InProgress, JobStatus.Completed,   tradie.Id,    offsetDaysAgo: 200);
 
         var j2 = jobs[1]; // InProgress
-        AddHistory(j2, JobStatus.Draft,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j2, JobStatus.Requested, JobStatus.Matching,   homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j2, JobStatus.Matching,  JobStatus.Matched,    tradie.Id,    offsetDaysAgo: 3);
-        AddHistory(j2, JobStatus.Matched,   JobStatus.Confirmed,  homeowner.Id, offsetDaysAgo: 6);
-        AddHistory(j2, JobStatus.Confirmed, JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 192);
+        AddHistory(j2, JobStatus.Requested,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j2, JobStatus.Requested, JobStatus.Requested,   homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j2, JobStatus.Requested,  JobStatus.AwaitingPayment,    tradie.Id,    offsetDaysAgo: 3);
+        AddHistory(j2, JobStatus.AwaitingPayment,   JobStatus.Booked,  homeowner.Id, offsetDaysAgo: 6);
+        AddHistory(j2, JobStatus.Booked, JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 192);
 
         var j3 = jobs[2]; // Confirmed
-        AddHistory(j3, JobStatus.Draft,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j3, JobStatus.Requested, JobStatus.Matching,   homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j3, JobStatus.Matching,  JobStatus.Matched,    tradie.Id,    offsetDaysAgo: 4);
-        AddHistory(j3, JobStatus.Matched,   JobStatus.Confirmed,  homeowner.Id, offsetDaysAgo: 8);
+        AddHistory(j3, JobStatus.Requested,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j3, JobStatus.Requested, JobStatus.Requested,   homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j3, JobStatus.Requested,  JobStatus.AwaitingPayment,    tradie.Id,    offsetDaysAgo: 4);
+        AddHistory(j3, JobStatus.AwaitingPayment,   JobStatus.Booked,  homeowner.Id, offsetDaysAgo: 8);
 
         var j4 = jobs[3]; // Matched
-        AddHistory(j4, JobStatus.Draft,     JobStatus.Requested, homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j4, JobStatus.Requested, JobStatus.Matching,  homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j4, JobStatus.Matching,  JobStatus.Matched,   tradie.Id,    offsetDaysAgo: 12);
+        AddHistory(j4, JobStatus.Requested,     JobStatus.Requested, homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j4, JobStatus.Requested, JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j4, JobStatus.Requested,  JobStatus.AwaitingPayment,   tradie.Id,    offsetDaysAgo: 12);
 
         var j5 = jobs[4]; // Requested
-        AddHistory(j5, JobStatus.Draft,     JobStatus.Requested, homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j5, JobStatus.Requested,     JobStatus.Requested, homeowner.Id, offsetDaysAgo: 0);
 
         var j6 = jobs[5]; // Complete (re-pipe)
-        AddHistory(j6, JobStatus.Draft,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j6, JobStatus.Requested,  JobStatus.Matching,   homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j6, JobStatus.Matching,   JobStatus.Matched,    tradie.Id,    offsetDaysAgo: 3);
-        AddHistory(j6, JobStatus.Matched,    JobStatus.Confirmed,  homeowner.Id, offsetDaysAgo: 6);
-        AddHistory(j6, JobStatus.Confirmed,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 240);
-        AddHistory(j6, JobStatus.InProgress, JobStatus.Complete,   tradie.Id,    offsetDaysAgo: 480);
+        AddHistory(j6, JobStatus.Requested,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j6, JobStatus.Requested,  JobStatus.Requested,   homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j6, JobStatus.Requested,   JobStatus.AwaitingPayment,    tradie.Id,    offsetDaysAgo: 3);
+        AddHistory(j6, JobStatus.AwaitingPayment,    JobStatus.Booked,  homeowner.Id, offsetDaysAgo: 6);
+        AddHistory(j6, JobStatus.Booked,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 240);
+        AddHistory(j6, JobStatus.InProgress, JobStatus.Completed,   tradie.Id,    offsetDaysAgo: 480);
 
         var j7 = jobs[6]; // Cancelled
-        AddHistory(j7, JobStatus.Draft,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j7, JobStatus.Requested,     JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
         AddHistory(j7, JobStatus.Requested, JobStatus.Cancelled,  homeowner.Id,
             reason: "Managed to fix it myself with emergency tape — no longer needed.", offsetDaysAgo: 3);
 
         var j8 = jobs[7]; // Complete (gas)
-        AddHistory(j8, JobStatus.Draft,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
-        AddHistory(j8, JobStatus.Requested,  JobStatus.Matching,   homeowner.Id, offsetDaysAgo: 1);
-        AddHistory(j8, JobStatus.Matching,   JobStatus.Matched,    tradie.Id,    offsetDaysAgo: 2);
-        AddHistory(j8, JobStatus.Matched,    JobStatus.Confirmed,  homeowner.Id, offsetDaysAgo: 6);
-        AddHistory(j8, JobStatus.Confirmed,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 168);
-        AddHistory(j8, JobStatus.InProgress, JobStatus.Complete,   tradie.Id,    offsetDaysAgo: 180);
+        AddHistory(j8, JobStatus.Requested,      JobStatus.Requested,  homeowner.Id, offsetDaysAgo: 0);
+        AddHistory(j8, JobStatus.Requested,  JobStatus.Requested,   homeowner.Id, offsetDaysAgo: 1);
+        AddHistory(j8, JobStatus.Requested,   JobStatus.AwaitingPayment,    tradie.Id,    offsetDaysAgo: 2);
+        AddHistory(j8, JobStatus.AwaitingPayment,    JobStatus.Booked,  homeowner.Id, offsetDaysAgo: 6);
+        AddHistory(j8, JobStatus.Booked,  JobStatus.InProgress, tradie.Id,    offsetDaysAgo: 168);
+        AddHistory(j8, JobStatus.InProgress, JobStatus.Completed,   tradie.Id,    offsetDaysAgo: 180);
 
         db.JobStatusHistory.AddRange(history);
         await db.SaveChangesAsync(cancellationToken);
@@ -491,5 +500,18 @@ public class DemoSeedService : IHostedService
             throw new InvalidOperationException(
                 $"DemoSeed: failed to create {user.Email}: " +
                 string.Join(", ", result.Errors.Select(e => e.Description)));
+    }
+
+    private static async Task EnsureVerifiedAsync(
+        UserManager<ApplicationUser> userManager,
+        string email)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is not null && !user.EmailVerified)
+        {
+            user.EmailVerified = true;
+            user.EmailVerifiedAtUtc ??= DateTime.UtcNow;
+            await userManager.UpdateAsync(user);
+        }
     }
 }

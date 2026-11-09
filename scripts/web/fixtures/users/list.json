@@ -1,0 +1,61 @@
+{
+  "_comment": "User list page: shows homeowners and tradies, status badges, role filters, and search.",
+  "page": "features/users/pages/UserListPage",
+  "route": "/users",
+  "prefetch": [
+    {
+      "key": [
+        "admin",
+        "users",
+        {
+          "search": "",
+          "role": "",
+          "flaggedOnly": false,
+          "page": 1,
+          "pageSize": 20,
+          "sortBy": "createdAt",
+          "sortDesc": true
+        }
+      ],
+      "url": "/admin/users",
+      "body": {
+        "items": [
+          {
+            "id": "u-101",
+            "fullName": "Alice Cooper",
+            "email": "alice@rock.nz",
+            "role": "Homeowner",
+            "isActive": true,
+            "isVerified": true,
+            "createdAtUtc": "2026-10-15T12:00:00Z",
+            "jobCount": 3
+          },
+          {
+            "id": "u-102",
+            "fullName": "Bob Vance",
+            "email": "bob@refrigeration.nz",
+            "role": "Tradie",
+            "isActive": true,
+            "isVerified": false,
+            "createdAtUtc": "2026-10-18T09:00:00Z",
+            "jobCount": 12
+          }
+        ],
+        "totalCount": 2,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    }
+  ],
+  "expect": [
+    { "label": "page heading", "needle": "Users" },
+    { "label": "total count summary", "needle": ">2</strong> All roles" },
+    { "label": "first user name", "needle": "Alice Cooper" },
+    { "label": "first user email", "needle": "alice@rock.nz" },
+    { "label": "second user name", "needle": "Bob Vance" },
+    { "label": "second user email", "needle": "bob@refrigeration.nz" },
+    { "label": "verify action for unverified tradie", "needle": ">Verify</button>" },
+    { "label": "user detail link", "needle": "href=\"/users/u-101\"" }
+  ]
+}

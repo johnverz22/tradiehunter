@@ -1,5 +1,7 @@
 using FixoApi.DTOs;
+using FixoApi.Enums;
 using FixoApi.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -7,7 +9,7 @@ using System.Security.Claims;
 namespace FixoApi.Controllers;
 
 /// <summary>
-/// Admin REST API — all endpoints require the "Admin" role.
+/// Admin REST API — all endpoints require staff-level access or higher.
 /// Controller is split into logical regions (stats, users, jobs, disputes, settings, metrics)
 /// while staying in a single file to avoid over-splitting a thin controller layer.
 ///
@@ -15,21 +17,49 @@ namespace FixoApi.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = "RequireStaffRole")]
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _admin;
+    private readonly IPaymentService _payments;
+    private readonly FixoApi.Services.Payout.IPayoutService _payouts;
     private readonly ILogger<AdminController> _logger;
+    private readonly IValidator<StaffInviteRequest> _inviteValidator;
+    private readonly IValidator<SetStaffPasswordRequest> _setPasswordValidator;
+    private readonly IValidator<ReviewCredentialRequest> _reviewValidator;
+    private readonly IValidator<RejectPaymentRequest> _rejectPaymentValidator;
 
-    public AdminController(IAdminService admin, ILogger<AdminController> logger)
+    public AdminController(
+        IAdminService admin,
+        IPaymentService payments,
+        FixoApi.Services.Payout.IPayoutService payouts,
+        ILogger<AdminController> logger,
+        IValidator<StaffInviteRequest> inviteValidator,
+        IValidator<SetStaffPasswordRequest> setPasswordValidator,
+        IValidator<ReviewCredentialRequest> reviewValidator,
+        IValidator<RejectPaymentRequest> rejectPaymentValidator)
     {
         _admin = admin;
+        _payments = payments;
+        _payouts = payouts;
         _logger = logger;
+        _inviteValidator = inviteValidator;
+        _setPasswordValidator = setPasswordValidator;
+        _reviewValidator = reviewValidator;
+        _rejectPaymentValidator = rejectPaymentValidator;
     }
 
     private string CurrentUserId =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        User.FindFirstValue("sub") // JWT bearer (mobile/API clients)
+        ?? User.FindFirstValue(ClaimTypes.NameIdentifier) // AdminCookie (web)
         ?? throw new InvalidOperationException("User ID claim missing");
+
+    /// <summary>
+    /// Actor role recorded on the job status history row. Both staff roles are
+    /// permitted to review payments, so the state machine accepts either.
+    /// </summary>
+    private UserRole CurrentRole() =>
+        User.IsInRole("Superadmin") ? UserRole.Superadmin : UserRole.Staff;
 
     // ══════════════════════════════════════════════════════════════════════════
     // STATS
@@ -84,7 +114,7 @@ public class AdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> VerifyUser(string id)
     {
-        var success = await _admin.VerifyUserAsync(id);
+        var success = await _admin.VerifyUserAsync(id, CurrentUserId);
         if (!success) return NotFound(new { message = "User not found or has no tradie profile." });
         return NoContent();
     }
@@ -99,7 +129,7 @@ public class AdminController : ControllerBase
         if (id == CurrentUserId)
             return BadRequest(new { message = "You cannot deactivate your own account." });
 
-        var success = await _admin.DeactivateUserAsync(id);
+        var success = await _admin.DeactivateUserAsync(id, CurrentUserId);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -183,6 +213,131 @@ public class AdminController : ControllerBase
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // STAFF INVITES (P1-05)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// <summary>Invite a staff member — creates an inactive account and emails a set-password token. Superadmin only.</summary>
+    [HttpPost("staff/invite")]
+    [Authorize(Policy = "RequireSuperadminRole")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> InviteStaff([FromBody] StaffInviteRequest request)
+    {
+        var validation = await _inviteValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        var result = await _admin.InviteStaffAsync(request);
+        if (result.Conflict) return Conflict(new { message = result.Error });
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(new { message = "Invite sent." });
+    }
+
+    /// <summary>Activate an invited staff account by setting its password. Public — the emailed token authorizes it.</summary>
+    [HttpPost("staff/set-password")]
+    [AllowAnonymous]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetStaffPassword([FromBody] SetStaffPasswordRequest request)
+    {
+        var validation = await _setPasswordValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        var result = await _admin.SetStaffPasswordAsync(request);
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(new AuthResponse { Token = result.Token!, RefreshToken = "stub-refresh-token" });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // CREDENTIAL VERIFICATION (P1-07)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// <summary>Paginated queue of pending tradie credentials, oldest first.</summary>
+    [HttpGet("credentials/pending")]
+    [ProducesResponseType<PagedResult<PendingCredentialDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPendingCredentials(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var result = await _admin.GetPendingCredentialsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>Approve or reject a tradie credential. Rejections require a reason.</summary>
+    [HttpPost("credentials/{id:int}/review")]
+    [ProducesResponseType<ReviewedCredentialDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReviewCredential(int id, [FromBody] ReviewCredentialRequest request)
+    {
+        var validation = await _reviewValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        var result = await _admin.ReviewCredentialAsync(id, request, CurrentUserId);
+        if (result.NotFound) return NotFound(new { message = "Credential not found." });
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(result.Credential);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAYMENT QUEUE (P4-05)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Receipts waiting on review, oldest first. Each row carries a short-lived
+    /// SAS URL for the receipt plus the amount and reference staff check against
+    /// the trader's bank statement.
+    /// </summary>
+    [HttpGet("payments/pending")]
+    [ProducesResponseType<PagedResult<PendingPaymentDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPendingPayments(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var result = await _payments.GetPendingPaymentsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>Approve a receipt — payment becomes Verified and the job is booked.</summary>
+    [HttpPost("payments/{id:int}/verify")]
+    [ProducesResponseType<PaymentStatusDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> VerifyPayment(int id)
+    {
+        var result = await _payments.VerifyPaymentAsync(id, CurrentUserId, CurrentRole());
+        if (result.NotFound) return NotFound(new { message = "Payment not found." });
+        if (result.Conflict) return Conflict(new { message = result.Error });
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(result.Payment);
+    }
+
+    /// <summary>Refuse a receipt — the job returns to AwaitingPayment for a re-upload.</summary>
+    [HttpPost("payments/{id:int}/reject")]
+    [ProducesResponseType<PaymentStatusDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectPayment(int id, [FromBody] RejectPaymentRequest request)
+    {
+        var validation = await _rejectPaymentValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        var result = await _payments.RejectPaymentAsync(id, CurrentUserId, CurrentRole(), request.Reason);
+        if (result.NotFound) return NotFound(new { message = "Payment not found." });
+        if (result.Conflict) return Conflict(new { message = result.Error });
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(result.Payment);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // SETTINGS
     // ══════════════════════════════════════════════════════════════════════════
 
@@ -200,7 +355,7 @@ public class AdminController : ControllerBase
     [ProducesResponseType<AdminSettingsDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateSettings([FromBody] AdminSettingsDto dto)
     {
-        var updated = await _admin.UpdateSettingsAsync(dto);
+        var updated = await _admin.UpdateSettingsAsync(dto, CurrentUserId);
         return Ok(updated);
     }
 
@@ -218,5 +373,136 @@ public class AdminController : ControllerBase
     {
         var metrics = await _admin.GetMetricsAsync();
         return Ok(metrics);
+    }
+
+    /// <summary>
+    /// Audit log (P8-07): timestamp, admin/user, action, entity + JSON diffs.
+    /// Filter by date (?fromUtc & ?toUtc, ISO-8601), action, or user ID.
+    /// </summary>
+    [HttpGet("audit-logs")]
+    [ProducesResponseType<PagedResult<AuditLogDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAuditLogs(
+        [FromQuery] DateTime? fromUtc = null,
+        [FromQuery] DateTime? toUtc = null,
+        [FromQuery] string? action = null,
+        [FromQuery] string? userId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var result = await _admin.GetAuditLogsAsync(fromUtc, toUtc, action, userId, page, pageSize);
+        return Ok(result);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // REFUND QUEUE (P6-04 / P6-05)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Pending refunds queue — jobs cancelled after payment, sorted oldest-first.
+    /// Each row shows the homeowner, suggested amounts, and cancellation reason.
+    /// </summary>
+    [HttpGet("refunds/pending")]
+    [ProducesResponseType<PagedResult<RefundSummaryDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPendingRefunds(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var result = await _admin.GetPendingRefundsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Process a pending refund: upload proof, set final amounts, notify homeowner.
+    /// Accepts a multipart/form-data body where the JSON fields are in the `data` part
+    /// and an optional proof file (receipt screenshot) is in the `proof` part.
+    /// </summary>
+    [HttpPost("refunds/{id:guid}/process")]
+    [ProducesResponseType<RefundSummaryDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ProcessRefund(Guid id, [FromForm] ProcessRefundForm form)
+    {
+        if (string.IsNullOrWhiteSpace(form.TransferReference))
+            return BadRequest(new { message = "TransferReference is required." });
+
+        var request = new ProcessRefundRequest
+        {
+            FinalAmount       = form.FinalAmount,
+            Penalty           = form.Penalty,
+            HoursWorked       = form.HoursWorked,
+            TransferReference = form.TransferReference,
+        };
+
+        Stream? proofStream = null;
+        string? proofContentType = null;
+        if (form.Proof != null && form.Proof.Length > 0)
+        {
+            proofStream = form.Proof.OpenReadStream();
+            proofContentType = form.Proof.ContentType;
+        }
+
+        var result = await _admin.ProcessRefundAsync(id, request, proofStream, proofContentType, CurrentUserId);
+
+        if (result.NotFound) return NotFound(new { message = "Refund not found." });
+        if (result.Conflict) return Conflict(new { message = result.Error });
+        if (!result.Succeeded) return BadRequest(new { message = result.Error });
+        return Ok(result.Refund);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAYOUT QUEUE (P10-06)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [HttpGet("payouts/pending")]
+    public async Task<IActionResult> GetPendingPayouts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _payouts.GetPendingPayoutsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    [HttpGet("payouts/batches")]
+    public async Task<IActionResult> GetPayoutBatches([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _payouts.GetBatchesAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    [HttpGet("payouts/batches/{id:guid}")]
+    public async Task<IActionResult> GetPayoutBatch(Guid id)
+    {
+        var batch = await _payouts.GetBatchAsync(id);
+        if (batch == null) return NotFound();
+        return Ok(batch);
+    }
+
+    [HttpPost("payouts/{id:guid}/process")]
+    public async Task<IActionResult> ProcessPayout(Guid id, [FromBody] ProcessPayoutRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TransferReference))
+            return BadRequest(new { message = "TransferReference is required." });
+
+        var success = await _payouts.ProcessPayoutAsync(id, request.TransferReference, CurrentUserId);
+        if (!success) return NotFound(new { message = "Payout not found or already processed." });
+        
+        return NoContent();
+    }
+
+    [HttpPost("payouts/batches/{id:guid}/complete")]
+    public async Task<IActionResult> CompletePayoutBatch(Guid id)
+    {
+        if (await _payouts.CompleteBatchAsync(id))
+            return Ok(new { message = "Batch is complete." });
+
+        var batch = await _payouts.GetBatchAsync(id);
+        if (batch == null) return NotFound();
+
+        return BadRequest(new { message = "Cannot complete batch. Not all payouts are processed." });
     }
 }

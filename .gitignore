@@ -1,6 +1,8 @@
 # .NET
 backend/**/bin/
 backend/**/obj/
+scripts/address-resolution-tests/bin/
+scripts/address-resolution-tests/obj/
 *.user
 
 # Node / React
@@ -19,5 +21,15 @@ mobile/**/.flutter-plugin-dependencies
 .env
 .env.local
 
+# Python bytecode caches from the verification scripts in scripts/
+__pycache__/
+*.py[cod]
+
 
 backend/firebase-service-account.json
+# App settings with secrets
+backend/appsettings.Development.json
+
+# Playwright artifacts
+web/**/test-results/
+web/**/playwright-report/

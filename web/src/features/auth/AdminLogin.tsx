@@ -1,26 +1,16 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 import api from '../../services/api';
+import { useAppName } from '../branding/hooks/useBrandConfig';
+import { BrandWordmark } from '../branding/components/BrandWordmark';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface JwtPayload {
-  role: string;
-  sub: string;
-  email: string;
-}
 
 interface LoginFormValues {
   email: string;
   password: string;
-}
-
-interface LoginResponse {
-  token: string;
-  refreshToken: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -29,17 +19,17 @@ export const AdminLogin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const appName = useAppName();
+
+  // The login screen is public, so the tab title can't rely on a session — but
+  // the brand name comes from the same public config endpoint.
+  useEffect(() => {
+    document.title = `${appName} Admin Portal`;
+  }, [appName]);
 
   // ── Shared post-auth handler ───────────────────────────────────────────────
   const handleAuthSuccess = useCallback(
-    (token: string, refreshToken: string) => {
-      const decoded = jwtDecode<JwtPayload>(token);
-      if (decoded.role !== 'Admin') {
-        setError('Access denied. Admin role required.');
-        return;
-      }
-      localStorage.setItem('jwt_token', token);
-      localStorage.setItem('refresh_token', refreshToken);
+    () => {
       navigate('/dashboard');
     },
     [navigate],
@@ -50,11 +40,11 @@ export const AdminLogin: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.post<LoginResponse>('/auth/login', {
+      await api.post('/auth/admin-login', {
         email: data.email,
         password: data.password,
       });
-      handleAuthSuccess(response.data.token, response.data.refreshToken);
+      handleAuthSuccess();
     } catch (err: unknown) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
         if (err.response) {
@@ -79,15 +69,11 @@ export const AdminLogin: React.FC = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper px-4 py-12">
-      <div className="max-w-md w-full p-8 bg-paper border border-paper-line rounded-lg shadow-lg">
+      <div className="max-w-md w-full p-8 card-pop">
         <div className="text-center mb-8">
-          <p
-            className="font-bold text-2xl text-brand-700"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Fixo Admin
-          </p>
-          <p className="text-ink-soft mt-2 text-sm">Sign in to manage the marketplace</p>
+          <BrandWordmark className="block text-[32px] font-bold text-brand-900" />
+          <p className="text-ink-soft mt-2 text-sm">{appName} Admin Portal</p>
+          <h1 className="text-[24px] font-bold text-ink mt-6 mb-0">Sign in</h1>
         </div>
 
         {error && (
@@ -110,7 +96,7 @@ export const AdminLogin: React.FC = () => {
               autoComplete="email"
               aria-invalid={errors.email ? 'true' : 'false'}
               {...register('email', { required: 'Email is required' })}
-              className="mt-1 block w-full border border-paper-line rounded bg-paper text-ink shadow-sm px-3 py-2 text-sm placeholder:text-ink-soft/60 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
+              className="field"
               placeholder="admin@example.com"
             />
             {errors.email && (
@@ -128,7 +114,7 @@ export const AdminLogin: React.FC = () => {
               autoComplete="current-password"
               aria-invalid={errors.password ? 'true' : 'false'}
               {...register('password', { required: 'Password is required' })}
-              className="mt-1 block w-full border border-paper-line rounded bg-paper text-ink shadow-sm px-3 py-2 text-sm placeholder:text-ink-soft/60 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
+              className="field"
               placeholder="••••••••"
             />
             {errors.password && (
@@ -139,7 +125,7 @@ export const AdminLogin: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded text-sm font-semibold text-white bg-brand-700 hover:bg-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn btn-primary w-full justify-center"
           >
             {isLoading ? 'Signing in…' : 'Sign In'}
           </button>

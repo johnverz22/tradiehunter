@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>v1.7 new components</title>
+  <link href="../fonts/fonts.css" rel="stylesheet"/>
+  <link href="kit.css" rel="stylesheet"/>
+</head>
+<body>
+%%SPRITE%%
+<div style="padding:40px;display:flex;flex-wrap:wrap;gap:40px;background:#DCD8CF">
+
+  <!-- ── 1. Skeleton card (light + dark) ── -->
+  <div class="frame spec" data-frame="cmp-skeleton-card-light">
+    <div class="eyebrow">Loading · job card (light)</div>
+    <div class="card stack">
+      <div class="row">
+        <div class="skel" style="width:44px;height:44px;border-radius:var(--r-pill)"></div>
+        <div class="stack8" style="flex:1">
+          <div class="skel" style="width:60%;height:14px;border-radius:8px"></div>
+          <div class="skel" style="width:35%;height:12px;border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="skel" style="width:45%;height:24px;border-radius:8px"></div>
+      <div class="skel" style="width:100%;height:4px;border-radius:2px"></div>
+      <div class="skel" style="width:100%;height:56px;border-radius:14px"></div>
+    </div>
+  </div>
+
+  <div class="frame spec dark" data-frame="cmp-skeleton-card-dark">
+    <div class="eyebrow">Loading · job card (dark)</div>
+    <div class="card stack">
+      <div class="row">
+        <div class="skel" style="width:44px;height:44px;border-radius:var(--r-pill)"></div>
+        <div class="stack8" style="flex:1">
+          <div class="skel" style="width:60%;height:14px;border-radius:8px"></div>
+          <div class="skel" style="width:35%;height:12px;border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="skel" style="width:45%;height:24px;border-radius:8px"></div>
+      <div class="skel" style="width:100%;height:4px;border-radius:2px"></div>
+      <div class="skel" style="width:100%;height:56px;border-radius:14px"></div>
+    </div>
+  </div>
+
+  <!-- ── 2. Toast (light + dark) ── -->
+  <div class="frame spec" data-frame="cmp-toast-light">
+    <div class="eyebrow">Toast · 48px min, one action (light)</div>
+    <div class="toast"><svg height="20" width="20"><use href="#i-check"></use></svg>Receipt uploaded<span class="act">View</span></div>
+    <div class="toast">Request cancelled<span class="act">Undo</span></div>
+  </div>
+
+  <div class="frame spec dark" data-frame="cmp-toast-dark">
+    <div class="eyebrow">Toast · 48px min, one action (dark)</div>
+    <div class="toast"><svg height="20" width="20"><use href="#i-check"></use></svg>Receipt uploaded<span class="act">View</span></div>
+    <div class="toast">Request cancelled<span class="act">Undo</span></div>
+  </div>
+
+  <!-- ── 3. Banners (light + dark) ── -->
+  <div class="frame spec" data-frame="cmp-banner-light">
+    <div class="eyebrow">Banners (light)</div>
+    <div class="banner">
+      <svg viewBox="0 0 24 24"><use href="#i-clock"></use></svg>
+      <div><b>You're offline.</b> Messages will send when you reconnect.</div>
+    </div>
+    <div class="banner err">
+      <svg viewBox="0 0 24 24"><use href="#i-alert"></use></svg>
+      <div><b>Payment not received.</b> Upload a clearer receipt.</div>
+    </div>
+  </div>
+
+  <div class="frame spec dark" data-frame="cmp-banner-dark">
+    <div class="eyebrow">Banners (dark)</div>
+    <div class="banner">
+      <svg viewBox="0 0 24 24"><use href="#i-clock"></use></svg>
+      <div><b>You're offline.</b> Messages will send when you reconnect.</div>
+    </div>
+    <div class="banner err">
+      <svg viewBox="0 0 24 24"><use href="#i-alert"></use></svg>
+      <div><b>Payment not received.</b> Upload a clearer receipt.</div>
+    </div>
+  </div>
+
+  <!-- ── 4. Nav badge (light + dark) ── -->
+  <div class="frame spec" data-frame="cmp-badge-light">
+    <div class="eyebrow">Nav badge (light)</div>
+    <div class="navbar" style="border:1px solid var(--line);border-radius:16px">
+      <div class="tab on"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-home"></use></svg></div>Home</div>
+      <div class="tab"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-msg"></use></svg><span class="badge">3</span></div>Messages</div>
+      <div class="tab"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-user"></use></svg></div>Profile</div>
+    </div>
+  </div>
+
+  <div class="frame spec dark" data-frame="cmp-badge-dark">
+    <div class="eyebrow">Nav badge (dark)</div>
+    <div class="navbar" style="border:1px solid var(--line);border-radius:16px">
+      <div class="tab on"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-home"></use></svg></div>Home</div>
+      <div class="tab"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-msg"></use></svg><span class="badge">3</span></div>Messages</div>
+      <div class="tab"><div class="ind"><svg viewBox="0 0 24 24"><use href="#i-user"></use></svg></div>Profile</div>
+    </div>
+  </div>
+
+  <!-- ── 5. Selection controls (light + dark) ── -->
+  <div class="frame spec" data-frame="cmp-controls-light">
+    <div class="eyebrow">Selection controls · one rule (light)</div>
+    <div class="list-group">
+      <div class="list-row">Push notifications<span style="flex:1"></span><div class="switch on"><i></i></div></div>
+      <div class="list-row">Message previews<span style="flex:1"></span><div class="switch"><i></i></div></div>
+      <div class="list-row"><span class="cb on"><svg><use href="#i-check"></use></svg></span>Plumber</div>
+      <div class="list-row"><span class="cb"></span>Electrician</div>
+    </div>
+  </div>
+
+  <div class="frame spec dark" data-frame="cmp-controls-dark">
+    <div class="eyebrow">Selection controls · one rule (dark)</div>
+    <div class="list-group">
+      <div class="list-row">Push notifications<span style="flex:1"></span><div class="switch on"><i></i></div></div>
+      <div class="list-row">Message previews<span style="flex:1"></span><div class="switch"><i></i></div></div>
+      <div class="list-row"><span class="cb on"><svg><use href="#i-check"></use></svg></span>Plumber</div>
+      <div class="list-row"><span class="cb"></span>Electrician</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

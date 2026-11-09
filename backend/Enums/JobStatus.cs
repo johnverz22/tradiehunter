@@ -2,12 +2,14 @@ namespace FixoApi.Enums;
 
 public enum JobStatus
 {
-    Draft,
     Requested,
-    Matching,
-    Matched,
-    Confirmed,
+    AwaitingPayment,
+    PaymentReview,
+    Booked,
     InProgress,
-    Complete,
-    Cancelled
+    AwaitingConfirmation,
+    Completed,
+    Cancelled,
+    Expired,
+    Disputed
 }

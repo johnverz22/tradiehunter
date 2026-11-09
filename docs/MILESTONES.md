@@ -3,7 +3,7 @@
 Phased around the tiered MVP scope in `docs/MVP-SPEC.md`. Each milestone ships independently testable and demoable.
 
 ## M0 — Docker & Scaffold
-- Docker Compose: PostgreSQL + PostGIS, MinIO, Redis, .NET API, React (admin)
+- Docker Compose: PostgreSQL + PostGIS, Azurite, Redis, .NET API, React (admin)
 - Scaffold backend (.NET Web API) with EF Core + Npgsql
 - Scaffold mobile (Flutter) with project structure and navigation shell
 - Scaffold web (React) admin shell
@@ -19,8 +19,8 @@ Phased around the tiered MVP scope in `docs/MVP-SPEC.md`. Each milestone ships i
 - Locale configuration (currency, phone format) wired into API config
 
 ## M2 — Job Posting & Matching
-- Job posting flow in Flutter (category, description, photo upload to MinIO, urgency, location)
-- S3-compatible photo upload endpoint
+- Job posting flow in Flutter (category, description, photo upload to Azurite/Azure Blob, urgency, location)
+- Azure Blob photo upload endpoint
 - Rule-based matching service (trade + PostGIS radius + availability)
 - SignalR match notification to eligible tradies
 - FCM push for match notification (background)

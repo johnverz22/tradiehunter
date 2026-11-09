@@ -77,6 +77,7 @@ public class ChatHub : Hub
     /// <summary>
     /// Persist the message and broadcast to all job-group members.
     /// Content is trimmed and capped at 2000 chars server-side.
+    /// Throws HubException when the job's chat is closed (P5-08).
     /// </summary>
     public async Task SendMessage(string jobId, string content)
     {
@@ -88,6 +89,12 @@ public class ChatHub : Hub
         if (!await _chatService.IsParticipantAsync(id, userId))
         {
             throw new HubException("Not authorized to send messages to this job.");
+        }
+
+        // P5-08: Block new messages when the job is Completed or Cancelled.
+        if (!await _chatService.IsChatOpenAsync(id))
+        {
+            throw new HubException("Chat is closed for this job.");
         }
 
         content = content.Trim();

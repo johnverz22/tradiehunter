@@ -15,6 +15,13 @@ public interface IChatService
     Task<bool> IsParticipantAsync(int jobId, string userId);
 
     /// <summary>
+    /// P5-08: Returns true when the job is in an active phase where chat is
+    /// permitted (Matched, AwaitingPayment, PaymentReview, Booked, InProgress).
+    /// Returns false for Completed, Cancelled, or Disputed.
+    /// </summary>
+    Task<bool> IsChatOpenAsync(int jobId);
+
+    /// <summary>
     /// Persist a message and return the saved DTO.
     /// Does NOT broadcast — the hub broadcasts after calling this.
     /// </summary>
@@ -37,4 +44,11 @@ public interface IChatService
     /// Returns the user IDs of all participants for a job.
     /// </summary>
     Task<(string homeownerId, string? tradieId)> GetParticipantIdsAsync(int jobId);
+
+    /// <summary>
+    /// Thread summaries for the signed-in user's inbox: every job that has a
+    /// matched counterparty, with the newest message preview and a real
+    /// unread count. Sorted by last activity, newest first.
+    /// </summary>
+    Task<List<ConversationSummaryDto>> GetConversationsAsync(string userId, int limit = 50);
 }

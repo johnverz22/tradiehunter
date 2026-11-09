@@ -37,7 +37,7 @@ The frontend is organized by functional feature modules with a strict separation
 
 ## Design System & Theming
 
-- **Tokens & Variables**: Design tokens must strictly match `docs/design/design-system.html`. Use `web/src/theme/design-tokens.css` as the single CSS token file — import it in `index.css`. For screen layout and composition, reference the mockups in `docs/design/mockup/web/`.
+- **Tokens & Variables**: Design tokens must strictly match `docs/design/design-system.html`. Use `web/src/theme/design-tokens.css` as the single CSS token file — import it in `index.css`. Existing mockups are historical only, not layout or acceptance requirements; do not match, update or replace them for v1.5. Follow the applicable approved specification and shared token contract. The v1.5 mobile audit does not expand admin-web scope.
 - **Brand Color**: The primary theme is driven dynamically by the `--hue` CSS custom property (dev brand "Fixo", `--hue: 209`). Never hardcode hex color values.
 - **Theme Support**: Both light and dark themes are required. The token file provides `@media (prefers-color-scheme: dark)` overrides and a `[data-theme="dark"]` manual toggle. If only one theme is present, add the other.
 - **Consistency**: Use design system typography scales, border radii, elevation shadows, and spacing units across all admin components.
@@ -55,3 +55,18 @@ The frontend is organized by functional feature modules with a strict separation
   - Admin Dashboard (user management with verify/deactivate capabilities, live job list + status monitoring, flagged dispute reviews).
 - **Bundle Isolation**:
   - Ensure admin routes are code-split cleanly to prevent accidental leakage into any future homeowner/tradie web bundles.
+
+## Verifying Rendered Output
+
+Browser automation is not guaranteed in this repo, so a UI change is not done until its *rendered
+markup* has been checked:
+
+- `npm run lint` and `npm run build` (the build runs `tsc -b`) must pass.
+- Render the page and assert on its HTML with
+  `scripts/web/render-probe.py --page <module under web/src> --fixture scripts/web/fixtures/<feature>/<case>.json`.
+  Keep fixtures beside the feature they cover and assert the interesting states (empty, populated,
+  multi-page, null fields, escaped text) — not just the happy path. Details in
+  `docs/ai-tooling.md` → Verification Scripts.
+- The Puppeteer MCP remains the only way to observe real browser behaviour (layout, theme
+  switching, console errors); use the probe when it is unavailable.
+

@@ -1,9 +1,11 @@
-import 'dart:io' show Platform, SocketException;
+import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
+import '../network/api_error.dart';
 
 // ─── Result types ─────────────────────────────────────────────────────────────
 
@@ -21,10 +23,43 @@ class GoogleLoginCancelled extends GoogleLoginResult {
   const GoogleLoginCancelled();
 }
 
-/// New Google account — navigate to /role-select with this userId.
+/// New Google account — navigate to /role-select with this userId and the
+/// one-time registrationToken issued by POST /api/auth/google (P9-02: the
+/// token binds the subsequent complete-registration call to this Google session).
 class GoogleLoginRequiresRegistration extends GoogleLoginResult {
   final String userId;
-  const GoogleLoginRequiresRegistration(this.userId);
+  final String registrationToken;
+  const GoogleLoginRequiresRegistration(this.userId, this.registrationToken);
+}
+
+/// P1-04: the Google email belongs to an existing password account that has
+/// not completed email verification yet. Linking is blocked server-side so
+/// the OTP gate can't be bypassed — finish verification via email instead.
+class GoogleLoginRequiresVerification extends GoogleLoginResult {
+  final String email;
+  const GoogleLoginRequiresVerification(this.email);
+}
+
+// ─── Email / password outcomes (P1-03) ───────────────────────────────────────
+
+/// Result of [AuthRepository.login] and [AuthRepository.register].
+///
+/// P1-03 moved both behind an email-verification gate: the backend only
+/// issues a JWT once `EmailVerified == true`, so an unverified account comes
+/// back as [AuthNeedsEmailVerification] and the client routes to the OTP screen.
+sealed class AuthOutcome {
+  const AuthOutcome();
+}
+
+/// JWT stored — navigate to the role landing page.
+class AuthSignedIn extends AuthOutcome {
+  const AuthSignedIn();
+}
+
+/// Account exists but `EmailVerified == false`. No token was stored.
+class AuthNeedsEmailVerification extends AuthOutcome {
+  final String email;
+  const AuthNeedsEmailVerification(this.email);
 }
 
 // ─── Repository ───────────────────────────────────────────────────────────────
@@ -40,15 +75,23 @@ class AuthRepository {
 
   // ── Email / password ────────────────────────────────────────────────────────
 
-  Future<void> login(String email, String password) async {
+  /// Returns [AuthSignedIn] when the account is verified (JWT stored), or
+  /// [AuthNeedsEmailVerification] when the backend replies 403 with
+  /// `requiresVerification` — P1-03 gates login on `EmailVerified`.
+  Future<AuthOutcome> login(String email, String password) async {
     try {
       final response = await _dio.post('/api/auth/login', data: {
         'email': email,
         'password': password,
       });
       await _storeTokens(response.data);
+      return const AuthSignedIn();
     } on DioException catch (e) {
       debugPrint('[AuthRepository] login error: $e');
+      final verificationEmail = _verificationRequiredEmail(e, fallback: email);
+      if (verificationEmail != null) {
+        return AuthNeedsEmailVerification(verificationEmail);
+      }
       throw Exception(_friendlyDioError(e));
     } catch (e) {
       debugPrint('[AuthRepository] login unexpected error: $e');
@@ -56,7 +99,10 @@ class AuthRepository {
     }
   }
 
-  Future<void> register(String firstName, String lastName, String email,
+  /// P1-03: registration always leaves the account unverified — the backend
+  /// mails a 6-digit code and returns no tokens, so the outcome is
+  /// [AuthNeedsEmailVerification] unless the call itself fails.
+  Future<AuthOutcome> register(String firstName, String lastName, String email,
       String password, int role) async {
     try {
       final response = await _dio.post('/api/auth/register', data: {
@@ -64,14 +110,50 @@ class AuthRepository {
         'lastName': lastName,
         'email': email,
         'password': password,
-        'role': role, // 1 = Homeowner, 2 = Tradie
+        'role': role, // 0 = Homeowner, 1 = Tradie (backend UserRole enum)
       });
-      await _storeTokens(response.data);
+      return AuthNeedsEmailVerification(
+        response.data['email'] as String? ?? email,
+      );
     } on DioException catch (e) {
       debugPrint('[AuthRepository] register error: $e');
       throw Exception(_friendlyDioError(e));
     } catch (e) {
       debugPrint('[AuthRepository] register unexpected error: $e');
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  // ── Email OTP (P1-03) ───────────────────────────────────────────────────────
+
+  /// Verifies the 6-digit code for [email] and stores the returned JWT.
+  /// Throws a friendly [Exception] on invalid / expired / over-attempted codes.
+  Future<void> verifyEmail(String email, String code) async {
+    try {
+      final response = await _dio.post('/api/auth/verify-email', data: {
+        'email': email,
+        'code': code,
+      });
+      await _storeTokens(response.data);
+    } on DioException catch (e) {
+      debugPrint('[AuthRepository] verifyEmail error: $e');
+      throw Exception(_friendlyDioError(e));
+    } catch (e) {
+      debugPrint('[AuthRepository] verifyEmail unexpected error: $e');
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  /// Asks the backend for a fresh code. Throws a friendly [Exception] when
+  /// the 60s cooldown or the hourly cap (HTTP 429) rejects the request.
+  Future<void> resendOtp(String email) async {
+    try {
+      await _dio.post('/api/auth/resend-otp', data: {'email': email});
+    } on DioException catch (e) {
+      debugPrint('[AuthRepository] resendOtp error: $e');
+      throw Exception(_friendlyDioError(e));
+    } catch (e) {
+      debugPrint('[AuthRepository] resendOtp unexpected error: $e');
       throw Exception('Something went wrong. Please try again.');
     }
   }
@@ -90,7 +172,9 @@ class AuthRepository {
 
       if (response.data['requiresRegistration'] == true) {
         return GoogleLoginRequiresRegistration(
-            response.data['userId'] as String);
+          response.data['userId'] as String,
+          response.data['registrationToken'] as String,
+        );
       }
 
       await _storeTokens(response.data);
@@ -103,6 +187,11 @@ class AuthRepository {
       throw Exception('Google sign-in failed. Please try again.');
     } on DioException catch (e) {
       debugPrint('[AuthRepository] Google login Dio error: $e');
+      // P1-04: an unverified password account blocks Google linking (403).
+      final verificationEmail = _verificationRequiredEmail(e);
+      if (verificationEmail != null) {
+        return GoogleLoginRequiresVerification(verificationEmail);
+      }
       throw Exception(_friendlyDioError(e));
     } catch (e) {
       debugPrint('[AuthRepository] Google login unexpected error: $e');
@@ -111,11 +200,18 @@ class AuthRepository {
   }
 
   /// Called from RoleSelectScreen after a new Google user picks their role.
-  Future<void> completeRegistration(String userId, int role) async {
+  ///
+  /// P9-02: [registrationToken] is the one-time token issued by
+  /// POST /api/auth/google — the backend rejects the call without it.
+  Future<void> completeRegistration(
+      String userId, String registrationToken, int role) async {
     try {
       final response = await _dio.patch(
         '/api/auth/complete-registration',
-        queryParameters: {'userId': userId},
+        queryParameters: {
+          'userId': userId,
+          'registrationToken': registrationToken,
+        },
         data: {'role': role},
       );
       await _storeTokens(response.data);
@@ -152,6 +248,19 @@ class AuthRepository {
   // ── Logout ──────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    // P9-06: revoke the refresh token server-side before clearing local
+    // storage so a stolen token cannot be used after explicit logout.
+    try {
+      final refreshToken = await _storage.read(key: 'refresh_token');
+      if (refreshToken != null) {
+        await _dio.delete(
+          '/api/auth/refresh',
+          data: {'refreshToken': refreshToken},
+        );
+      }
+    } catch (_) {
+      // Non-fatal — proceed with local sign-out regardless of network state.
+    }
     await _storage.delete(key: 'jwt_token');
     await _storage.delete(key: 'refresh_token');
     await _googleSignIn.signOut();
@@ -165,85 +274,30 @@ class AuthRepository {
         key: 'refresh_token', value: data['refreshToken'] as String);
   }
 
+  /// P1-03 / P1-04: the backend signals "unverified account" with
+  /// `{ requiresVerification: true, email }` on a 403 from `/auth/login`
+  /// and `/auth/google`. Returns the email to show on the OTP screen, or
+  /// null when this is an ordinary error the caller should surface normally.
+  String? _verificationRequiredEmail(DioException e, {String? fallback}) {
+    if (e.response?.statusCode != 403) return null;
+    final body = e.response?.data;
+    if (body is! Map || body['requiresVerification'] != true) return null;
+    return (body['email'] as String?) ?? fallback;
+  }
+
   /// Translates a [DioException] into a short, user-friendly message.
   /// Full technical detail is always printed to the debug console first.
-  String _friendlyDioError(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return "Can't reach the server. Check your connection and try again.";
-      case DioExceptionType.connectionError:
-        final inner = e.error;
-        if (inner is SocketException) {
-          return "Can't reach the server. Check your connection and try again.";
-        }
-        return 'Connection failed. Please try again.';
-      case DioExceptionType.badResponse:
-        final status = e.response?.statusCode;
-        final body = e.response?.data;
-        debugPrint('[AuthRepository] HTTP $status body: $body');
-        return switch (status) {
-          400 => _extractServerMessage(body) ??
-              'Invalid details. Please check your input.',
-          401 => 'Incorrect email or password.',
-          409 => 'An account with this email already exists.',
-          422 => _extractServerMessage(body) ?? 'Validation failed.',
-          500 => 'Server error. Please try again later.',
-          _ => 'Unexpected error ($status). Please try again.',
-        };
-      case DioExceptionType.cancel:
-        return 'Request was cancelled.';
-      default:
-        return 'Something went wrong. Please try again.';
-    }
-  }
-
-  /// Pulls a human-readable message from common ASP.NET Core error shapes.
-  String? _extractServerMessage(dynamic body) {
-    if (body == null) return null;
-
-    // ── ASP.NET Identity errors: [{code, description}, ...]  ────────────────
-    // Returned by UserManager.CreateAsync when password/policy rules fail.
-    if (body is List && body.isNotEmpty) {
-      final messages = body
-          .whereType<Map>()
-          .map((e) => e['description'] as String?)
-          .whereType<String>()
-          .toList();
-      if (messages.isNotEmpty) return messages.join('\n');
-    }
-
-    if (body is Map) {
-      // ── FluentValidation errors: {errors: {field: [msg, ...]}}  ───────────
-      // Returned as ValidationProblemDetails by ASP.NET Core.
-      final errors = body['errors'];
-      if (errors is Map && errors.isNotEmpty) {
-        final messages = errors.values
-            .whereType<List>()
-            .expand((l) => l)
-            .whereType<String>()
-            .toList();
-        if (messages.isNotEmpty) return messages.join('\n');
-      }
-
-      // ── FluentValidation raw list: [{propertyName, errorMessage}, ...]  ───
-      // Some FluentValidation setups return the raw ValidationFailure list.
-      final errList = body['errors'];
-      if (errList is List && errList.isNotEmpty) {
-        final messages = errList
-            .whereType<Map>()
-            .map((e) => e['errorMessage'] as String?)
-            .whereType<String>()
-            .toList();
-        if (messages.isNotEmpty) return messages.join('\n');
-      }
-
-      // ── Simple {message} or {title}  ──────────────────────────────────────
-      final msg = body['message'] ?? body['title'];
-      if (msg is String && msg.isNotEmpty) return msg;
-    }
-
-    return null;
-  }
+  /// Shared implementation lives in `network/api_error.dart`; the status
+  /// overrides below keep auth-specific copy (wrong password, unverified
+  /// account, duplicate email) intact.
+  String _friendlyDioError(DioException e) => friendlyDioError(
+        e,
+        tag: 'AuthRepository',
+        statusOverrides: const {
+          401: 'Incorrect email or password.',
+          403: 'This account needs to be verified first.',
+          409: 'An account with this email already exists.',
+          429: 'Too many attempts. Please wait before trying again.',
+        },
+      );
 }

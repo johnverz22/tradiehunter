@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { ArrowLeft, MessageSquare, CheckCircle, AlertTriangle, XCircle, Clock, FileText, Image as ImageIcon } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { useDisputeDetail, useResolveDispute } from '../hooks/useDisputes';
 
-type DisputeAction = 'Resolved' | 'Escalated' | 'CancelJob';
+type DisputeAction = 'FullRefund' | 'PartialRefund' | 'NoRefund' | 'None';
 
 export const DisputeDetailPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
@@ -25,26 +25,31 @@ export const DisputeDetailPage: React.FC = () => {
     if (!pendingAction) return;
     await resolveMutation.mutateAsync({
       jobId: Number(jobId),
-      request: { action: pendingAction, note: note || undefined },
+      request: { outcome: pendingAction, note: note || undefined },
     });
     navigate('/disputes');
   };
 
   const actionConfig: Record<DisputeAction, { label: string; description: string; destructive: boolean }> = {
-    Resolved: {
-      label: 'Mark Resolved',
-      description: 'This will close the dispute. No further action will be taken.',
-      destructive: false,
-    },
-    Escalated: {
-      label: 'Escalate',
-      description: 'This will flag the dispute for escalation to a senior reviewer.',
-      destructive: false,
-    },
-    CancelJob: {
-      label: 'Cancel Job',
-      description: 'This will cancel the job and close the dispute. This cannot be undone.',
+    FullRefund: {
+      label: 'Full Refund',
+      description: 'Resolve dispute and issue a full refund to the homeowner. This will also cancel the job.',
       destructive: true,
+    },
+    PartialRefund: {
+      label: 'Partial Refund',
+      description: 'Resolve dispute and issue a partial refund to the homeowner.',
+      destructive: false,
+    },
+    NoRefund: {
+      label: 'No Refund',
+      description: 'Resolve dispute with no refund.',
+      destructive: false,
+    },
+    None: {
+      label: 'No Action',
+      description: 'Close dispute without taking any action.',
+      destructive: false,
     },
   };
 
@@ -106,16 +111,71 @@ export const DisputeDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Chat transcript */}
-      <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-[var(--paper-line)] flex items-center gap-2">
-          <MessageSquare size={14} className="text-[var(--ink-soft)]" />
-          <span className="text-sm font-medium text-[var(--ink)]">Chat Context (read-only)</span>
-        </div>
-        {dispute.chatTranscript.length === 0 ? (
-          <div className="px-5 py-6 text-center text-sm text-[var(--ink-soft)]">No messages.</div>
+      {/* Evidence */}
+      <div className="card">
+        <h3 className="card-title">
+          <FileText size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
+          Dispute Evidence ({dispute.evidence?.length ?? 0})
+        </h3>
+        {!dispute.evidence?.length ? (
+          <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No evidence submitted.</p>
         ) : (
-          <div className="divide-y divide-[var(--paper-line)] max-h-80 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            {dispute.evidence.map((ev) => (
+              <div key={ev.id} className="border border-[var(--border)] rounded p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-[var(--ink)]">{ev.type}</span>
+                  <span className="text-xs text-[var(--ink-soft)]">
+                    {new Date(ev.createdAtUtc).toLocaleString()}
+                  </span>
+                </div>
+                {ev.type === 'Text' && <p className="text-sm text-[var(--ink-soft)] whitespace-pre-wrap">{ev.textContent}</p>}
+                {(ev.type === 'Photo' || ev.type === 'Document') && (
+                  <a href={ev.downloadUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[var(--brand-500)] hover:underline">
+                    <ImageIcon size={14} /> View attached file
+                  </a>
+                )}
+                <p className="text-xs text-[var(--ink-soft)] mt-2">Submitted by: {ev.submittedBy}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Time Logs */}
+      <div className="card">
+        <h3 className="card-title">
+          <Clock size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
+          Time Logs ({dispute.timeLogs?.length ?? 0})
+        </h3>
+        {!dispute.timeLogs?.length ? (
+          <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No time logs recorded.</p>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {dispute.timeLogs.map((log) => (
+              <div key={log.id} className="flex justify-between items-center border-b border-[var(--border)] last:border-0 pb-2">
+                <div>
+                  <p className="text-sm text-[var(--ink)]">Check In: {new Date(log.checkInAtUtc).toLocaleString()}</p>
+                  {log.checkOutAtUtc && (
+                    <p className="text-sm text-[var(--ink)]">Check Out: {new Date(log.checkOutAtUtc).toLocaleString()}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Chat transcript */}
+      <div className="card">
+        <h3 className="card-title">
+          <MessageSquare size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
+          Chat Context ({dispute.chatTranscript.length})
+        </h3>
+        {dispute.chatTranscript.length === 0 ? (
+          <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No messages.</p>
+        ) : (
+          <div className="max-h-80 overflow-y-auto">
             {dispute.chatTranscript.map((msg) => (
               <div key={msg.id} className="px-5 py-3">
                 <div className="flex justify-between mb-0.5">
@@ -133,8 +193,8 @@ export const DisputeDetailPage: React.FC = () => {
 
       {/* Resolution actions */}
       {!isAlreadyResolved ? (
-        <div className="border border-[var(--paper-line)] rounded-lg p-5">
-          <h2 className="text-sm font-semibold text-[var(--ink)] mb-1">Resolution Actions</h2>
+        <div className="card">
+          <h2 className="card-title">Resolution Actions</h2>
           <p className="text-xs text-[var(--ink-soft)] mb-4">
             All actions are final. Add an optional note before resolving.
           </p>
@@ -143,31 +203,37 @@ export const DisputeDetailPage: React.FC = () => {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Admin note (optional)…"
             rows={3}
-            className="w-full mb-4 px-3 py-2 text-sm border border-[var(--paper-line)] rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] resize-none"
+            className="field field-multiline w-full mb-4 resize-none"
           />
           <div className="flex flex-wrap gap-3">
             <ActionButton
-              label="Mark Resolved"
-              icon={<CheckCircle size={14} />}
-              variant="success"
-              onClick={() => setPendingAction('Resolved')}
-            />
-            <ActionButton
-              label="Escalate"
-              icon={<AlertTriangle size={14} />}
-              variant="warning"
-              onClick={() => setPendingAction('Escalated')}
-            />
-            <ActionButton
-              label="Cancel Job"
+              label="Full Refund"
               icon={<XCircle size={14} />}
               variant="danger"
-              onClick={() => setPendingAction('CancelJob')}
+              onClick={() => setPendingAction('FullRefund')}
+            />
+            <ActionButton
+              label="Partial Refund"
+              icon={<AlertTriangle size={14} />}
+              variant="warning"
+              onClick={() => setPendingAction('PartialRefund')}
+            />
+            <ActionButton
+              label="No Refund"
+              icon={<CheckCircle size={14} />}
+              variant="success"
+              onClick={() => setPendingAction('NoRefund')}
+            />
+            <ActionButton
+              label="No Action"
+              icon={<CheckCircle size={14} />}
+              variant="success"
+              onClick={() => setPendingAction('None')}
             />
           </div>
         </div>
       ) : (
-        <div className="border border-[var(--paper-line)] rounded-lg p-5 text-center">
+        <div className="card text-center">
           <p className="text-sm text-[var(--ink-soft)]">
             This dispute has been <strong>{dispute.disputeStatus.toLowerCase()}</strong>. No further
             actions available.
@@ -201,7 +267,7 @@ const PartyCard: React.FC<{
   jobCount: number;
   isVerified?: boolean;
 }> = ({ title, name, userId, role, jobCount, isVerified }) => (
-  <div className="border border-[var(--paper-line)] rounded-lg p-4">
+  <div className="card !p-4">
     <p className="text-xs text-[var(--ink-soft)] mb-1">{title}</p>
     <p className="text-sm font-semibold text-[var(--ink)]">{name}</p>
     <div className="flex items-center gap-2 mt-2">
@@ -227,15 +293,12 @@ const ActionButton: React.FC<{
   onClick: () => void;
 }> = ({ label, icon, variant, onClick }) => {
   const styles: Record<string, string> = {
-    success: 'border-green-200 text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20',
-    warning: 'border-amber-200 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20',
-    danger: 'border-red-200 text-[var(--red)] hover:bg-red-50 dark:hover:bg-red-900/20',
+    success: 'pill-green',
+    warning: 'pill-amber',
+    danger: 'pill-red',
   };
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 text-sm rounded border transition-colors ${styles[variant]}`}
-    >
+    <button onClick={onClick} className={`pill ${styles[variant]} !px-4 !py-2 !text-sm`}>
       {icon}
       {label}
     </button>

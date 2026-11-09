@@ -1,0 +1,30 @@
+{
+  "_comment": "Settings page: platform-wide locale, timezone, default matching radius, and feature flags configuration.",
+  "page": "features/settings/pages/SettingsPage",
+  "route": "/settings",
+  "prefetch": [
+    {
+      "key": ["admin", "settings"],
+      "url": "/admin/settings",
+      "body": {
+        "currency": "NZD",
+        "currencySymbol": "$",
+        "timezone": "Pacific/Auckland",
+        "phoneFormat": "+64",
+        "defaultMatchRadiusKm": 25,
+        "featureChatEnabled": true,
+        "featureReviewsEnabled": true,
+        "featureSchedulingEnabled": true
+      }
+    }
+  ],
+  "expect": [
+    { "label": "page heading", "needle": "Settings" },
+    { "label": "locale section heading", "needle": "Locale &amp; Region" },
+    { "label": "currency code field", "needle": "Currency code" },
+    { "label": "timezone field", "needle": "Timezone" },
+    { "label": "matching section heading", "needle": "Matching" },
+    { "label": "default radius field", "needle": "Default match radius (km)" },
+    { "label": "save settings button", "needle": "Save Settings" }
+  ]
+}

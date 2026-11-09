@@ -22,10 +22,14 @@ public class CreateJobRequestValidator : AbstractValidator<CreateJobRequest>
             .NotEmpty().WithMessage("Description is required.")
             .MaximumLength(2000);
 
-        RuleFor(x => x.Category)
-            .NotEmpty()
-            .Must(c => ValidCategories.Contains(c, StringComparer.OrdinalIgnoreCase))
-            .WithMessage($"Category must be one of: {string.Join(", ", ValidCategories)}.");
+        RuleFor(x => x.ServiceId).GreaterThan(0);
+
+        RuleFor(x => x.ScheduledStartUtc)
+            .Must(x => x.Offset == TimeSpan.Zero)
+            .WithMessage("Scheduled start must be supplied in UTC.");
+
+        RuleFor(x => x.Hours).GreaterThan(0);
+        RuleFor(x => x.HourlyRate).GreaterThan(0);
 
         RuleFor(x => x.Urgency)
             .Must(u => string.IsNullOrEmpty(u) ||

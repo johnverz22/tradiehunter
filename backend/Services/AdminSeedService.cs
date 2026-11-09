@@ -38,6 +38,13 @@ public class AdminSeedService : IHostedService
         var existing = await userManager.FindByEmailAsync(email);
         if (existing is not null)
         {
+            // P1-03: heal pre-OTP accounts so the seeded admin can still log in.
+            if (!existing.EmailVerified)
+            {
+                existing.EmailVerified = true;
+                existing.EmailVerifiedAtUtc ??= DateTime.UtcNow;
+                await userManager.UpdateAsync(existing);
+            }
             _logger.LogDebug("Admin seed: user {Email} already exists, skipping.", email);
             return;
         }
@@ -48,8 +55,11 @@ public class AdminSeedService : IHostedService
             Email     = email,
             FirstName = firstName,
             LastName  = lastName,
-            Role      = UserRole.Admin,
+            Role      = UserRole.Superadmin,
             IsActive  = true,
+            AuthProvider = "password",
+            EmailVerified = true,
+            EmailVerifiedAtUtc = DateTime.UtcNow,
         };
 
         var result = await userManager.CreateAsync(admin, password);

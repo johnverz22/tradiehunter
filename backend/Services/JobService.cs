@@ -6,6 +6,7 @@ using FixoApi.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
+using System.Security.Cryptography;
 
 namespace FixoApi.Services;
 
@@ -47,8 +48,16 @@ public class JobService : IJobService
 
     public async Task<JobDto> CreateJobAsync(string homeownerId, CreateJobRequest request)
     {
-        if (!Enum.TryParse<TradeCategory>(request.Category, ignoreCase: true, out var category))
-            throw new ArgumentException($"Invalid category: {request.Category}");
+        var service = await _context.Services.FindAsync(request.ServiceId)
+            ?? throw new ArgumentException("The selected service does not exist.");
+
+        var selectedRateExists = await _context.TradieRates.AnyAsync(rate =>
+            rate.ServiceId == request.ServiceId
+            && rate.HourlyRate == request.HourlyRate
+            && rate.TradieProfile.IsVerified
+            && rate.TradieProfile.IsAvailable);
+        if (!selectedRateExists)
+            throw new ArgumentException("The selected hourly rate is no longer available.");
 
         if (!Enum.TryParse<JobUrgency>(request.Urgency ?? "Medium", ignoreCase: true, out var urgency))
             urgency = JobUrgency.Medium;
@@ -61,13 +70,18 @@ public class JobService : IJobService
         {
             HomeownerId     = homeownerId,
             Title           = request.Title,
-            Category        = category,
+            Category        = service.Category,
             Description     = request.Description,
             Urgency         = urgency,
             Status          = JobStatus.Requested,
             Location        = location,
             Address         = request.Address,
-            ScheduledDateUtc = request.ScheduledDateUtc,
+            ServiceId       = service.Id,
+            ScheduledStartUtc = request.ScheduledStartUtc,
+            Hours           = request.Hours,
+            HourlyRate      = request.HourlyRate,
+            TotalAmount     = request.HourlyRate * request.Hours,
+            ReferenceCode   = await GenerateReferenceCodeAsync(),
             CreatedAtUtc    = DateTime.UtcNow,
             UpdatedAtUtc    = DateTime.UtcNow,
         };
@@ -91,7 +105,7 @@ public class JobService : IJobService
 
         return new JobListResponse
         {
-            Items      = items.Select(MapToDto).ToList(),
+            Items      = items.Select(j => MapToDto(j, isTradie)).ToList(),
             TotalCount = total,
             Page       = page,
             PageSize   = pageSize,
@@ -100,14 +114,15 @@ public class JobService : IJobService
 
     public async Task<JobDto?> GetJobByIdAsync(int id, string requestingUserId, bool isTradie)
     {
-        var job = await _jobRepo.GetByIdAsync(id, includePhotos: true);
+        var job = await _jobRepo.GetByIdAsync(id, includePhotos: true, includeOffers: true);
         if (job == null) return null;
 
-        // Authorisation: homeowners see their own; tradies see what's matched to them.
-        if (isTradie && job.MatchedTradieId != requestingUserId) return null;
+        // Authorisation: homeowners see their own; tradies see what's matched to them or pending offer.
+        var hasPendingOffer = isTradie && job.Offers.Any(o => o.TradieId == requestingUserId && o.Response == OfferResponse.Pending);
+        if (isTradie && job.MatchedTradieId != requestingUserId && !hasPendingOffer) return null;
         if (!isTradie && job.HomeownerId     != requestingUserId) return null;
 
-        return MapToDto(job);
+        return MapToDto(job, isTradie);
     }
 
     public async Task<bool> UpdateJobAsync(int id, string homeownerId, UpdateJobRequest request)
@@ -116,12 +131,12 @@ public class JobService : IJobService
         if (job == null || job.HomeownerId != homeownerId) return false;
 
         // Only Draft or Requested jobs can be edited.
-        if (job.Status is not (JobStatus.Draft or JobStatus.Requested)) return false;
+        if (job.Status is not (JobStatus.Requested or JobStatus.Requested)) return false;
 
         if (request.Title       != null) job.Title       = request.Title;
         if (request.Description != null) job.Description = request.Description;
         if (request.Address     != null) job.Address     = request.Address;
-        if (request.ScheduledDateUtc.HasValue) job.ScheduledDateUtc = request.ScheduledDateUtc;
+        if (request.ScheduledStartUtc.HasValue) job.ScheduledStartUtc = request.ScheduledStartUtc.Value;
 
         if (!string.IsNullOrEmpty(request.Urgency) &&
             Enum.TryParse<JobUrgency>(request.Urgency, ignoreCase: true, out var urgency))
@@ -144,7 +159,7 @@ public class JobService : IJobService
         var isTradie = job.MatchedTradieId == requestingUserId;
         if (!isOwner && !isTradie) return false;
 
-        if (job.Status is JobStatus.Complete or JobStatus.Cancelled) return false;
+        if (job.Status is JobStatus.Completed or JobStatus.Cancelled) return false;
 
         await TransitionStatusAsync(job, JobStatus.Cancelled);
         return true;
@@ -159,7 +174,7 @@ public class JobService : IJobService
             return new MatchResultDto();
 
         // Transition → Matching
-        await TransitionStatusAsync(job, JobStatus.Matching);
+        await TransitionStatusAsync(job, JobStatus.Requested);
 
         var matches = await _matchingService.FindMatchesAsync(job);
 
@@ -172,7 +187,7 @@ public class JobService : IJobService
 
         // Transition → Matched (picks the top-ranked tradie as the suggested match)
         job.MatchedTradieId = matches[0].TradieId;
-        await TransitionStatusAsync(job, JobStatus.Matched);
+        await TransitionStatusAsync(job, JobStatus.AwaitingPayment);
 
         // Notify all matched tradies via SignalR + FCM (M2-05, M2-06).
         await NotifyMatchedTradiesAsync(job, matches);
@@ -194,10 +209,10 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.HomeownerId != homeownerId) return false;
-        if (job.Status is not (JobStatus.Matched or JobStatus.Matching)) return false;
+        if (job.Status is not (JobStatus.AwaitingPayment or JobStatus.Requested)) return false;
 
         job.MatchedTradieId = tradieId;
-        await TransitionStatusAsync(job, JobStatus.Matched);
+        await TransitionStatusAsync(job, JobStatus.AwaitingPayment);
         return true;
     }
 
@@ -205,9 +220,9 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.MatchedTradieId != tradieId) return false;
-        if (job.Status != JobStatus.Matched) return false;
+        if (job.Status != JobStatus.AwaitingPayment) return false;
 
-        await TransitionStatusAsync(job, JobStatus.Confirmed);
+        await TransitionStatusAsync(job, JobStatus.Booked);
         return true;
     }
 
@@ -215,11 +230,11 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.MatchedTradieId != tradieId) return false;
-        if (job.Status != JobStatus.Matched) return false;
+        if (job.Status != JobStatus.AwaitingPayment) return false;
 
         // Clear matched tradie and go back to Matching so another can be found.
         job.MatchedTradieId = null;
-        await TransitionStatusAsync(job, JobStatus.Matching);
+        await TransitionStatusAsync(job, JobStatus.Requested);
         return true;
     }
 
@@ -313,19 +328,44 @@ public class JobService : IJobService
 
     // ── Mapping ───────────────────────────────────────────────────────────────
 
-    private static JobDto MapToDto(Job job)
+    private async Task<string> GenerateReferenceCodeAsync()
+    {
+        const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const int length = 8;
+
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var bytes = RandomNumberGenerator.GetBytes(length);
+            var code = string.Concat(bytes.Select(b => alphabet[b % alphabet.Length]));
+            if (!await _context.Jobs.AnyAsync(job => job.ReferenceCode == code))
+                return code;
+        }
+
+        throw new InvalidOperationException("Could not generate a unique job reference code.");
+    }
+
+    private static JobDto MapToDto(Job job, bool isTradie = false)
     {
         var stage = job.Status switch
         {
-            JobStatus.Requested or JobStatus.Matching => 0,
-            JobStatus.Matched                          => 1,
-            JobStatus.Confirmed or JobStatus.InProgress => 2,
-            JobStatus.Complete                         => 3,
-            _                                          => 0,
+            JobStatus.Requested          => 0,
+            JobStatus.AwaitingPayment    => 1,
+            JobStatus.PaymentReview      => 1,
+            JobStatus.Booked             => 2,
+            JobStatus.InProgress         => 3,
+            JobStatus.AwaitingConfirmation => 4,
+            JobStatus.Completed          => 5,
+            _                            => 0,
         };
 
         // Extract suburb as the first comma-separated segment of the address.
         var suburb = job.Address?.Split(',').FirstOrDefault()?.Trim() ?? "";
+
+        // P5-01: Address privacy - mask exact address for tradies before Booked
+        var showFullAddress = !isTradie || job.Status >= JobStatus.Booked;
+        var addressToShow = showFullAddress ? job.Address : suburb;
+        var latToShow = showFullAddress ? job.Location?.Y : null;
+        var lngToShow = showFullAddress ? job.Location?.X : null;
 
         return new JobDto
         {
@@ -336,28 +376,35 @@ public class JobService : IJobService
             Description      = job.Description,
             Urgency          = job.Urgency.ToString(),
             Status           = job.Status.ToString(),
-            Address          = job.Address,
+            Address          = addressToShow,
             Suburb           = suburb,
-            Latitude         = job.Location?.Y,
-            Longitude        = job.Location?.X,
+            Latitude         = latToShow,
+            Longitude        = lngToShow,
             CreatedAtUtc     = job.CreatedAtUtc,
             UpdatedAtUtc     = job.UpdatedAtUtc,
-            ScheduledDateUtc = job.ScheduledDateUtc,
+            ServiceId        = job.ServiceId,
+            ScheduledStartUtc = job.ScheduledStartUtc,
+            Hours            = job.Hours,
+            HourlyRate       = job.HourlyRate,
+            TotalAmount      = job.TotalAmount,
+            ReferenceCode    = job.ReferenceCode,
             MatchedTradieId  = job.MatchedTradieId,
+            MatchedTradieName = string.IsNullOrWhiteSpace(job.MatchedTradie?.FullName) ? null : job.MatchedTradie.FullName,
+            DisputeStatus    = job.DisputeStatus,
             Stage            = stage,
             Photos           = job.Photos.Select(p => new JobPhotoDto
             {
                 Id               = p.Id,
-                Url              = BuildPhotoUrl(p.S3Key),
+                Url              = BuildPhotoUrl(p.BlobKey),
                 OriginalFileName = p.OriginalFileName,
             }).ToList(),
         };
     }
 
     /// <summary>
-    /// In production this would generate a pre-signed URL via the S3 client.
+    /// In production this would generate a read-SAS URL via the blob client.
     /// For now return a relative path the Flutter client can resolve.
     /// </summary>
-    private static string BuildPhotoUrl(string s3Key) =>
-        $"/api/photos/{s3Key}";
+    private static string BuildPhotoUrl(string blobKey) =>
+        $"/api/photos/{blobKey}";
 }

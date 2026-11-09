@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../repositories/chat_reviews_repository.dart';
 import '../../theme/design_tokens.dart';
+import '../views/widgets/fixo_feedback.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 
 /// Scheduling bottom sheet (M4-08).
@@ -101,13 +103,12 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
           _existing = result;
           _isSending = false;
         });
-        await Future<void>.delayed(const Duration(milliseconds: 1000));
+        await Future<void>.delayed(FixoDurations.sheetDelayLong);
         if (mounted) Navigator.of(context).pop();
       } else {
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Could not save schedule. Try again.')),
+          const SnackBar(content: Text('Could not save schedule. Try again.')),
         );
       }
     }
@@ -120,11 +121,10 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
     final dateFormat = DateFormat('EEE, d MMM yyyy');
 
     return Container(
-      padding: EdgeInsets.fromLTRB(
-          24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+      padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, MediaQuery.of(context).viewInsets.bottom + 32),
       decoration: BoxDecoration(
-        color: isDark ? DesignTokens.cardDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        color: DesignTokens.surfaceCard(isDark),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.tile)),
       ),
       child: _loadingExisting
           ? const SizedBox(
@@ -140,12 +140,12 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                   child: Container(
                     width: 40,
                     height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
+                    margin: const EdgeInsets.only(bottom: Space.s5),
                     decoration: BoxDecoration(
                       color: isDark
                           ? DesignTokens.paperLineDark
                           : DesignTokens.paperLineLight,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(Radii.micro),
                     ),
                   ),
                 ),
@@ -155,71 +155,80 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                   Center(
                     child: Column(
                       children: [
-                        const Icon(Icons.check_circle,
-                            color: DesignTokens.green, size: 48),
-                        const SizedBox(height: 12),
+                        const Icon(
+                          Icons.check_circle,
+                          color: DesignTokens.green,
+                          size: 48,
+                        ),
+                        const SizedBox(height: Space.s3),
                         Text(
                           _existing?.scheduleStatus == 'Confirmed'
                               ? 'Schedule confirmed!'
                               : 'Schedule proposed!',
                           style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FW.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: Space.s6),
                 ] else ...[
                   // Header
                   Text(
                     'Schedule Job',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FW.bold,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: Space.s1),
 
                   // Current status pill
                   if (_existing != null &&
                       _existing!.scheduleStatus != 'None') ...[
-                    const SizedBox(height: 8),
-                    _StatusPill(
-                        status: _existing!.scheduleStatus,
-                        isDark: isDark,
-                        theme: theme),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: Space.s2),
+                    FixoPillChip(
+                      label: _existing!.scheduleStatus == 'Confirmed'
+                          ? '✓ Schedule Confirmed'
+                          : '⏳ Schedule Proposed',
+                      color: _existing!.scheduleStatus == 'Confirmed'
+                          ? DesignTokens.inkSuccess(isDark)
+                          : DesignTokens.inkAccent(isDark),
+                    ),
+                    const SizedBox(height: Space.s1),
                   ],
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: Space.s4),
 
                   // Date picker button
-                  Text(
-                    'Select Date',
-                    style: theme.textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
+                  Text('Select Date', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: Space.s2),
                   InkWell(
                     onTap: _pickDate,
-                    borderRadius: BorderRadius.circular(DesignTokens.radius),
+                    borderRadius: BorderRadius.circular(
+                      DesignTokens.radiusControl,
+                    ),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: 14),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: isDark
                               ? DesignTokens.paperLineDark
                               : DesignTokens.paperLineLight,
                         ),
-                        borderRadius:
-                            BorderRadius.circular(DesignTokens.radius),
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusControl,
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today,
-                              size: 18,
-                              color: theme.colorScheme.onSurfaceVariant),
-                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: Space.s3),
                           Text(
                             _selectedDate != null
                                 ? dateFormat.format(_selectedDate!)
@@ -234,14 +243,11 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: Space.s5),
 
                   // Time slot selector
-                  Text(
-                    'Preferred Time',
-                    style: theme.textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
+                  Text('Preferred Time', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: Space.s2),
                   Row(
                     children: _slots.map((slot) {
                       final selected = _selectedSlot == slot;
@@ -251,29 +257,28 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                             right: slot == _slots.last ? 0 : 8,
                           ),
                           child: InkWell(
-                            onTap: () =>
-                                setState(() => _selectedSlot = slot),
-                            borderRadius:
-                                BorderRadius.circular(DesignTokens.radius),
+                            onTap: () => setState(() => _selectedSlot = slot),
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusControl,
+                            ),
                             child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 8),
+                              duration: FixoDurations.fast,
+                              padding: const EdgeInsets.symmetric(vertical: Space.s3, horizontal: Space.s2),
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? DesignTokens.amber
-                                        .withValues(alpha: 0.15)
+                                    ? DesignTokens.amber.withValues(alpha: Alpha.tintAccent)
                                     : (isDark
-                                        ? DesignTokens.brand100Dark
-                                        : DesignTokens.brand100Light),
+                                          ? DesignTokens.brand100Dark
+                                          : DesignTokens.brand100Light),
                                 border: Border.all(
                                   color: selected
                                       ? DesignTokens.amber
                                       : Colors.transparent,
-                                  width: 1.5,
+                                  width: DesignTokens.borderWidthFor(isDark),
                                 ),
                                 borderRadius: BorderRadius.circular(
-                                    DesignTokens.radius),
+                                  DesignTokens.radiusControl,
+                                ),
                               ),
                               child: Column(
                                 children: [
@@ -284,26 +289,24 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                                         ? DesignTokens.amber
                                         : theme.colorScheme.onSurfaceVariant,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: Space.s1),
                                   Text(
                                     slot,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: DesignTokens.fontSizeCaption,
                                       fontWeight: selected
-                                          ? FontWeight.w700
-                                          : FontWeight.w400,
+                                          ? FW.bold
+                                          : FW.regular,
                                       color: selected
                                           ? DesignTokens.amber
-                                          : theme
-                                              .colorScheme.onSurfaceVariant,
+                                          : theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                   Text(
                                     _slotLabels[slot]!,
                                     style: TextStyle(
-                                      fontSize: 9,
-                                      color: theme
-                                          .colorScheme.onSurfaceVariant,
+                                      fontSize: DesignTokens.fontSizeCaption,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -314,21 +317,22 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: Space.s6),
 
                   // Propose / Confirm button
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: FilledButton(
-                      onPressed: (_selectedDate == null ||
+                      onPressed:
+                          (_selectedDate == null ||
                               _selectedSlot == null ||
                               _isSending)
                           ? null
                           : _submit,
                       style: FilledButton.styleFrom(
                         backgroundColor: DesignTokens.amber,
-                        foregroundColor: const Color(0xFF241300),
+                        foregroundColor: DesignTokens.onAmber,
                         disabledBackgroundColor: isDark
                             ? DesignTokens.paperLineDark
                             : DesignTokens.paperLineLight,
@@ -337,8 +341,7 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(
                               _existing?.scheduleStatus == 'Proposed' &&
@@ -346,8 +349,9 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                                   ? 'Confirm Schedule'
                                   : 'Propose Schedule',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15),
+                                fontWeight: FW.semibold,
+                                fontSize: DesignTokens.fontSizeBody,
+                              ),
                             ),
                     ),
                   ),
@@ -364,39 +368,3 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
 
 // ── Status pill ───────────────────────────────────────────────────────────────
 
-class _StatusPill extends StatelessWidget {
-  final String status;
-  final bool isDark;
-  final ThemeData theme;
-
-  const _StatusPill({
-    required this.status,
-    required this.isDark,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isConfirmed = status == 'Confirmed';
-    final color =
-        isConfirmed ? DesignTokens.green : DesignTokens.amber;
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Text(
-        isConfirmed ? '✓ Schedule Confirmed' : '⏳ Schedule Proposed',
-        style: TextStyle(
-          fontFamily: DesignTokens.fontMono,
-          fontSize: 11,
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}

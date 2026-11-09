@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 
 import AdminLayout from './layout/AdminLayout';
 import { AdminLogin } from './features/auth/AdminLogin';
@@ -25,67 +24,75 @@ const JobDetail = React.lazy(() =>
 const Disputes = React.lazy(() =>
   import('./features/disputes/pages/DisputesPage').then((m) => ({ default: m.DisputesPage })),
 );
+const CredentialQueue = React.lazy(() =>
+  import('./features/credentials/pages/CredentialQueue').then((m) => ({
+    default: m.CredentialQueue,
+  })),
+);
 const DisputeDetail = React.lazy(() =>
   import('./features/disputes/pages/DisputeDetailPage').then((m) => ({
     default: m.DisputeDetailPage,
   })),
 );
+const PaymentQueue = React.lazy(() =>
+  import('./features/payments/pages/PaymentQueue').then((m) => ({
+    default: m.PaymentQueue,
+  })),
+);
 const Settings = React.lazy(() =>
   import('./features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
+const RefundQueue = React.lazy(() =>
+  import('./features/refunds/pages/RefundQueue').then((m) => ({ default: m.RefundQueue })),
+);
+const PayoutQueue = React.lazy(() =>
+  import('./features/payouts/pages/PayoutQueue').then((m) => ({ default: m.PayoutQueue })),
+);
+const PayoutBatches = React.lazy(() =>
+  import('./features/payouts/pages/PayoutBatches').then((m) => ({ default: m.PayoutBatches })),
+);
+const PayoutBatchDetail = React.lazy(() =>
+  import('./features/payouts/pages/PayoutBatchDetail').then((m) => ({
+    default: m.PayoutBatchDetail,
+  })),
+);
+const AuditLogs = React.lazy(() =>
+  import('./features/admin/AuditLogs').then((m) => ({ default: m.AuditLogs })),
+);
+
+import { useEffect, useState } from 'react';
+import api from './services/api';
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 
-interface JwtClaims {
-  role: string;
-  exp: number;
-}
-
-export function getTokenClaims(): JwtClaims | null {
-  const token = localStorage.getItem('jwt_token');
-  if (!token) return null;
-  try {
-    return jwtDecode<JwtClaims>(token);
-  } catch {
-    return null;
-  }
-}
-
-export function isAdminAuthenticated(): boolean {
-  const claims = getTokenClaims();
-  if (!claims) return false;
-  if (claims.exp * 1000 < Date.now()) return false;
-  return claims.role === 'Admin';
+export function isAdminAuthenticated(): Promise<boolean> {
+  return api.get('/auth/admin-me')
+    .then(() => true)
+    .catch(() => false);
 }
 
 // ── Route guards ──────────────────────────────────────────────────────────────
 
 /**
- * Requires a valid, non-expired JWT with the Admin role.
- * - No token / expired token → redirect to /login.
- * - Valid token but wrong role → show 403.
+ * Requires an active AdminCookie session.
+ * Checks via GET /api/auth/admin-me on mount.
  */
 const RequireAdmin: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const token = localStorage.getItem('jwt_token');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  if (!token) return <Navigate to="/login" replace />;
+  useEffect(() => {
+    isAdminAuthenticated().then(setIsAuthenticated);
+  }, []);
 
-  let claims: JwtClaims;
-  try {
-    claims = jwtDecode<JwtClaims>(token);
-  } catch {
-    return <Navigate to="/login" replace />;
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--paper)]">
+        <span className="text-[var(--ink-soft)] text-sm">Checking session…</span>
+      </div>
+    );
   }
 
-  // Expired token
-  if (claims.exp * 1000 < Date.now()) {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('refresh_token');
-    return <Navigate to="/login" replace />;
-  }
-
-  // Authenticated but not admin
-  if (claims.role !== 'Admin') return <Navigate to="/403" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
 };
@@ -120,8 +127,15 @@ function App() {
           <Route path="users/:id" element={<UserDetail />} />
           <Route path="jobs" element={<JobList />} />
           <Route path="jobs/:id" element={<JobDetail />} />
+          <Route path="credentials" element={<CredentialQueue />} />
+          <Route path="payments" element={<PaymentQueue />} />
+          <Route path="payouts" element={<PayoutQueue />} />
+          <Route path="payouts/batches" element={<PayoutBatches />} />
+          <Route path="payouts/batches/:id" element={<PayoutBatchDetail />} />
           <Route path="disputes" element={<Disputes />} />
           <Route path="disputes/:jobId" element={<DisputeDetail />} />
+          <Route path="refunds" element={<RefundQueue />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

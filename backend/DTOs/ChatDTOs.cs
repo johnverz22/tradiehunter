@@ -42,19 +42,33 @@ public class SendMessageRequest
     public string Content { get; set; } = string.Empty;
 }
 
-/// <summary>Request body for POST /api/jobs/{id}/cancel.</summary>
-public class CancelJobRequest
-{
-    public string Reason { get; set; } = string.Empty;
-}
-
 /// <summary>
-/// Payload broadcast on the JobHub's JobStatusChanged server → client method.
-/// Richer than the original (jobId, status) pair — includes title for push copy.
+/// One row of GET /api/chat/conversations — a two-party job thread summary.
+/// Participant-first: the other party's name leads, the job is the subtitle.
+/// Preview and unread state are always real — null when there are no messages.
 /// </summary>
-public class JobStatusChangedPayload
+public class ConversationSummaryDto
 {
     public int JobId { get; set; }
-    public string NewStatus { get; set; } = string.Empty;
     public string JobTitle { get; set; } = string.Empty;
+
+    /// <summary>Job status enum name (e.g. "Booked") for the status tag.</summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>The counterparty's user id (the matched tradie or the homeowner).</summary>
+    public string OtherUserId { get; set; } = string.Empty;
+
+    /// <summary>The counterparty's first name; empty when the account was removed.</summary>
+    public string OtherFirstName { get; set; } = string.Empty;
+
+    /// <summary>Content of the newest message; null when the thread is empty.</summary>
+    public string? LastMessageContent { get; set; }
+
+    /// <summary>True when the requesting user sent the newest message ("You: …" preview).</summary>
+    public bool LastMessageSentByMe { get; set; }
+
+    public DateTime? LastMessageSentAtUtc { get; set; }
+
+    /// <summary>Messages from the other party with no ReadAtUtc — never estimated.</summary>
+    public int UnreadCount { get; set; }
 }

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 frames — tradie</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .pg { background:#DCD8CF; padding:40px; display:flex; flex-wrap:wrap; gap:40px; font-family:var(--fb); }
+  .herotile { background:var(--surface);border-radius:16px;padding:12px 14px;color:var(--text-brand); }
+  .herotile .cap { color:var(--text-soft); }
+  .svc { height:56px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:10px;font:500 15px var(--fb); }
+  .svc .cb { width:22px;height:22px;border-radius:7px;border:1.5px solid var(--text-soft);display:grid;place-items:center;flex:none; }
+  .svc.on .cb { background:var(--brand);border-color:var(--brand); }
+  .svc .cb svg { width:13px;height:13px;color:var(--on-brand); }
+  .svc .rate { margin-left:auto;color:var(--text-soft);font-size:13px; }
+</style></head>
+<body>
+<div class="pg">
+<!-- T19 TRADIE DASHBOARD -->
+<div class="frame w440" data-frame="T19-light">
+<div class="heroband" style="padding-bottom:18px">
+<img src="../assets/rings-3-white.svg" style="position:absolute;top:-30px;right:-40px;width:260px"/>
+<div class="bpdots" style="position:absolute;inset:0"></div>
+<div class="hero-statusbar"><span>9:41</span><span class="si"><svg height="20" style="color:#fff" width="20"><use href="#i-bell"></use></svg></span></div>
+<div class="pad" style="position:relative">
+<div class="cap" style="color:rgba(255,255,255,.75)">Earned this week (net)</div>
+<div class="row" style="align-items:flex-end"><div class="hero-num anim-num">$1,246.80</div>
+<svg height="26" style="margin:0 0 8px 12px" viewBox="0 0 90 26" width="90"><polyline fill="none" points="2,20 26,14 48,17 70,8 88,11" stroke="var(--amber)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"></polyline><circle cx="88" cy="11" fill="var(--amber)" r="2.6"></circle></svg></div>
+<div class="grid2" style="margin-top:14px">
+<div class="herotile"><div class="cap">Pending</div><b style="font-size:17px">$384.50</b></div>
+<div class="herotile"><div class="cap">Jobs this week</div><b style="font-size:17px">6</b></div>
+</div>
+</div>
+</div>
+<div class="pad scroll">
+<div class="eyebrow" style="margin:16px 0 10px">New leads</div>
+<div class="card attcard anim-enter" style="padding:16px">
+<div class="spread"><span class="price" style="font-size:28px">$171.00</span><span class="urg high">HIGH</span></div>
+<div class="countdown" style="margin-top:8px"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t urgent">04:12</span></div><div class="track"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="sec" style="margin-top:8px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:4px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:12px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept</div></div>
+</div>
+<div class="card" style="padding:16px;margin-top:12px">
+<div class="spread"><span class="price" style="font-size:28px">$256.50</span><span class="urg low">FLEXIBLE</span></div>
+<div class="countdown" style="margin-top:8px"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t">09:57</span></div><div class="track"><div class="fill" style="width:81%"></div></div></div>
+<div class="sec" style="margin-top:8px">5.4 km · Tomorrow 9:00 am · ~3 h</div>
+<div class="title" style="margin-top:4px">Replace vanity mixer — Ponsonby</div>
+<div class="btnrow" style="margin-top:12px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-navy" style="flex:2;height:56px">Accept</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 10px">Today</div>
+<div class="card" style="padding:16px">
+<div class="spread"><span class="title" style="font-size:16px">Deck repairs — Grey Lynn</span><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Active</span></div>
+<div class="spread" style="margin-top:8px"><span class="sec">2:00 pm · ~4 h</span><span class="price" style="font-size:20px">$342.00</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div>
+</div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T19 TRADIE DASHBOARD · DARK -->
+<div class="frame w440 dark" data-frame="T19-dark" style="background:var(--paper-d)">
+<div class="heroband" style="padding-bottom:18px">
+<img src="../assets/rings-3-white.svg" style="position:absolute;top:-30px;right:-40px;width:260px;opacity:.7"/>
+<div class="bpdots" style="position:absolute;inset:0"></div>
+<div class="hero-statusbar"><span>9:41</span><span class="si"><svg height="20" style="color:#fff" width="20"><use href="#i-bell"></use></svg></span></div>
+<div class="pad" style="position:relative">
+<div class="cap" style="color:rgba(255,255,255,.65)">Earned this week (net)</div>
+<div class="row" style="align-items:flex-end"><div class="hero-num anim-num">$1,246.80</div>
+<svg height="26" style="margin:0 0 8px 12px" viewBox="0 0 90 26" width="90"><polyline fill="none" points="2,20 26,14 48,17 70,8 88,11" stroke="var(--amber)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"></polyline><circle cx="88" cy="11" fill="var(--amber)" r="2.6"></circle></svg></div>
+<div class="grid2" style="margin-top:14px">
+<div class="herotile"><div class="cap">Pending</div><b style="font-size:17px">$384.50</b></div>
+<div class="herotile"><div class="cap">Jobs this week</div><b style="font-size:17px">6</b></div>
+</div>
+</div>
+</div>
+<div class="pad scroll">
+<div class="eyebrow" style="margin:16px 0 10px">New leads</div>
+<div class="card attcard anim-enter" style="padding:16px">
+<div class="spread"><span class="price" style="font-size:28px">$171.00</span><span class="urg high">HIGH</span></div>
+<div class="countdown" style="margin-top:8px"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t urgent">04:12</span></div><div class="track"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="sec" style="margin-top:8px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:4px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:12px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept</div></div>
+</div>
+<div class="card" style="padding:16px;margin-top:12px">
+<div class="spread"><span class="price" style="font-size:28px">$256.50</span><span class="urg low">FLEXIBLE</span></div>
+<div class="countdown" style="margin-top:8px"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t">09:57</span></div><div class="track"><div class="fill" style="width:81%"></div></div></div>
+<div class="sec" style="margin-top:8px">5.4 km · Tomorrow 9:00 am · ~3 h</div>
+<div class="title" style="margin-top:4px">Replace vanity mixer — Ponsonby</div>
+<div class="btnrow" style="margin-top:12px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-navy" style="flex:2;height:56px">Accept</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 10px">Today</div>
+<div class="card" style="padding:16px">
+<div class="spread"><span class="title" style="font-size:16px">Deck repairs — Grey Lynn</span><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Active</span></div>
+<div class="spread" style="margin-top:8px"><span class="sec">2:00 pm · ~4 h</span><span class="price" style="font-size:20px">$342.00</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div>
+</div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T20 JOBS LIST -->
+<div class="frame w440" data-frame="T20-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Jobs</div><div class="grow"></div></div>
+<div class="pad"><div class="filters"><span class="chip sel">Today</span><span class="chip">Upcoming</span><span class="chip">Unpaid</span><span class="chip">Done</span></div></div>
+<div class="pad scroll" style="margin-top:14px">
+<div class="eyebrow" style="margin-bottom:8px">Now</div>
+<div class="card" style="padding:16px"><div class="spread"><span class="title" style="font-size:16px">Leaking kitchen tap</span><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Active</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">Started 1:05 pm · Grey Lynn</span><span class="price" style="font-size:20px">$171.00</span></div>
+<div class="cpb" style="margin-top:8px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap">Step 3 of 4 <span class="soft">· In progress</span></div></div></div>
+<div class="eyebrow" style="margin:16px 0 8px">Next</div>
+<div class="card" style="padding:16px"><div class="spread"><span class="title" style="font-size:16px">Deck repairs</span><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Active</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">4:30 pm · Grey Lynn</span><span class="price" style="font-size:20px">$342.00</span></div>
+<div class="cpb" style="margin-top:8px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div></div>
+<div class="eyebrow" style="margin:16px 0 8px">Later</div>
+<div class="card" style="padding:16px"><div class="spread"><span class="title" style="font-size:16px">Vanity mixer swap</span><span class="pill pill-waiting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Booked</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">Tomorrow 9:00 am · Ponsonby</span><span class="price" style="font-size:20px">$256.50</span></div>
+<div class="cpb" style="margin-top:8px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div></div>
+<div class="card" style="padding:16px;margin-top:12px"><div class="spread"><span class="title" style="font-size:16px">Hot water cylinder check</span><span class="pill pill-waiting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Under review</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">Sat 10:00 am · New Lynn</span><span class="price" style="font-size:20px">$128.25</span></div>
+<div class="cpb muted" style="margin-top:8px"><div class="track"><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 1 of 4 <span class="soft">· Awaiting payment</span></div></div></div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab on"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T21 REQUEST DETAIL -->
+<div class="frame w440" data-frame="T21-light">
+<div class="maphead" style="flex:none;height:38%">
+<img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9"/>
+<div class="hero-statusbar" style="color:var(--text-brand)"><span>9:41</span><span class="si"></span></div>
+<div class="appbar" style="padding:4px 20px"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="color:var(--text-brand)">Job request</div></div>
+<svg height="52" style="position:absolute;left:55%;top:44%" viewBox="0 0 40 52" width="40"><path d="M20 50S2 30 2 18A18 18 0 0 1 38 18c0 12-18 32-18 32Z" fill="var(--navy)"></path><circle cx="20" cy="17" fill="var(--amber)" r="7"></circle></svg>
+<div style="position:absolute;left:20px;bottom:18px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);border-radius:14px;padding:8px 14px;font:700 18px var(--fb);color:var(--text-brand)">$171.00</div>
+</div>
+<div class="pad" style="padding-top:12px">
+<div class="countdown"><div class="row" style="justify-content:space-between;margin-bottom:5px"><b style="font-size:14px">Respond within</b><span class="cdown-t urgent" style="font-size:16px">04:12</span></div><div class="track t8"><div class="fill urgent" style="width:62%"></div></div></div>
+</div>
+<div class="pad scroll">
+<div class="row" style="margin-top:12px"><div class="title" style="flex:1">Leaking kitchen tap</div><span class="chip" style="height:26px;font-size:12px">Plumbing</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">Estimated</span><b style="font-size:16px">2 h × $85.50/h</b></div>
+<div class="tile tinted" style="margin-top:12px"><div class="row"><svg height="18" style="color:var(--blue)" width="18"><use href="#i-pin"></use></svg><b style="font-size:14px;color:var(--text-brand)">Grey Lynn, Auckland</b></div><div class="cap" style="color:var(--text-soft);margin-top:4px">Exact address is shared after you accept</div></div>
+<div class="tile" style="margin-top:10px"><div class="row"><svg height="18" width="18"><use href="#i-cal"></use></svg><span style="font-size:14px">Today, 2:00 pm · ~2 hours</span></div></div>
+<div class="body" style="font-size:15px;margin-top:12px">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp. Access easy — someone home all afternoon.</div>
+<div class="row" style="margin-top:10px"><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div></div>
+</div>
+<div class="sticky"><div class="btnrow"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T22 ACTIVE JOB — booked -->
+<div class="frame w440" data-frame="T22-booked-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Booked</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 2 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· Booked</span></div></div></div>
+<div class="pad scroll">
+<div class="tile tinted" style="margin-top:14px"><div class="spread"><div><div class="cap" style="color:var(--text-soft)">Address</div><b style="font-size:15px">14 Crummer Rd, Grey Lynn</b></div>
+<div style="width:80px;height:64px;border-radius:10px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><svg height="24" style="position:absolute;left:30px;top:18px" viewBox="0 0 40 52" width="18"><path d="M20 50S2 30 2 18A18 18 0 0 1 38 18c0 12-18 32-18 32Z" fill="var(--navy)"></path><circle cx="20" cy="17" fill="var(--amber)" r="7"></circle></svg></div></div></div>
+<div class="card" style="margin-top:12px"><div class="row"><div class="av" style="width:48px;height:48px;font-size:17px">SM</div><div style="flex:1"><div class="title" style="font-size:16px">Sarah Mitchell</div><div class="sec">Homeowner</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</div></div></div>
+<div class="card" style="margin-top:12px"><div class="spread"><span class="sec">Scheduled</span><b style="font-size:15px">Today, 2:00 pm</b></div>
+<div class="spread" style="margin-top:8px"><span class="sec">You earn</span><span class="price" style="font-size:22px">$153.90</span></div>
+<div class="cap" style="color:var(--text-soft);margin-top:4px">$171.00 total − platform fee</div></div>
+</div>
+<div class="sticky"><div class="btnrow"><div class="btn btn-tonal" style="height:56px;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate</div><div class="btn btn-primary" style="flex:2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Check in</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T22 ACTIVE JOB — in progress -->
+<div class="frame w440" data-frame="T22-inprogress-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="pad scroll">
+<div class="tile tinted" style="margin-top:14px"><div class="spread"><div><div class="cap" style="color:var(--text-soft)">Address</div><b style="font-size:15px">14 Crummer Rd, Grey Lynn</b></div>
+<div style="width:80px;height:64px;border-radius:10px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><svg height="24" style="position:absolute;left:30px;top:18px" viewBox="0 0 40 52" width="18"><path d="M20 50S2 30 2 18A18 18 0 0 1 38 18c0 12-18 32-18 32Z" fill="var(--navy)"></path><circle cx="20" cy="17" fill="var(--amber)" r="7"></circle></svg></div></div></div>
+<div class="card" style="margin-top:12px"><div class="row"><div class="av" style="width:48px;height:48px;font-size:17px">SM</div><div style="flex:1"><div class="title" style="font-size:16px">Sarah Mitchell</div><div class="sec">Checked in 1:05 pm</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</div></div></div>
+<div class="card" style="margin-top:12px"><div class="spread"><span class="sec">Elapsed</span><b style="font-size:15px;font-variant-numeric:tabular-nums">42 min</b></div>
+<div class="spread" style="margin-top:8px"><span class="sec">You earn</span><span class="price" style="font-size:22px">$153.90</span></div></div>
+</div>
+<div class="sticky"><div class="btn btn-navy"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Check out</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T23 CHAT (tradie) -->
+<div class="frame w440 bg-dots" data-frame="T23-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar" style="padding-bottom:8px"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px">SM</div>
+<div style="flex:1;min-width:0"><div style="font:600 16px var(--fb)">Sarah Mitchell</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div>
+</div>
+<div class="pad"><div class="pill pill-waiting" style="background:rgba(60,117,170,.12);display:flex;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Step 3 of 4 · In progress</div></div>
+<div class="scroll" style="display:flex;flex-direction:column;gap:8px;padding:14px 20px">
+<div class="bubble sent">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble recv">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble sent">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="bubble recv">Perfect, see you soon</div>
+</div>
+<div class="pad" style="padding-bottom:6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running 10 late</span><span class="chip">Job's done</span><span class="chip">Quick question</span></div></div>
+<div class="composer"><div class="field2">Message Sarah…</div><div class="ibtn send"><svg height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12L2 4l4 8-4 8 20-8z"/></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T24 OWN PROFILE / SETTINGS -->
+<div class="frame w440" data-frame="T24-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Profile</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-pencil"></use></svg></div></div>
+<div class="pad scroll">
+<div class="center" style="margin:8px 0 18px"><div class="av" style="width:80px;height:80px;font-size:28px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div class="h2" style="margin-top:10px">Mike Te Rangi</div><div class="sec">Plumber · Grey Lynn</div>
+<div class="tile" style="margin-top:14px;width:100%"><div class="spread"><div class="row"><svg height="18" width="18"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126)</span></div><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-doc"></use></svg>Insured</span></div><div class="sec" style="margin-top:8px">126 jobs completed</div></div></div>
+<div class="stack16">
+<div class="field"><label>Full name</label><div class="input">Mike Te Rangi</div></div>
+<div class="field"><label>Phone</label><div class="input">+64 21 555 088</div></div>
+<div class="field"><label>Email</label><div class="input">mike@terangi.co.nz</div></div>
+<div class="field"><label>Hourly rate</label><div class="input">$85.50 /h</div></div>
+<div class="field"><label>Licence no.</label><div class="input disabled">PLB-2014-88621</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 8px">Settings</div>
+<div class="card" style="padding:0"><div class="msgrow" style="height:56px"><span style="flex:1">Notifications</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Payout details</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Help centre</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div></div>
+<div class="btn" style="height:56px;color:var(--danger-text);font-weight:600;margin-top:8px">Log out</div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab on"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T25 WIZARD ×4 -->
+<div class="frame w440" data-frame="T25-step1-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl">Set up your profile</div></div>
+<div class="pad"><div class="wiz"><div class="node">1</div><div class="seg done"></div><div class="seg"></div><div class="seg"></div></div><div class="cap" style="color:var(--text-soft);margin-top:6px">Step 1 of 4 · Your trade</div></div>
+<div class="pad scroll" style="margin-top:16px">
+<div class="h2">What do you do?</div>
+<div class="sec" style="margin-top:6px">Pick your main trade — you can add more later.</div>
+<div class="stack8" style="margin-top:18px">
+<div class="svc on"><span class="cb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Plumber</div>
+<div class="svc"><span class="cb"></span>Electrician</div>
+<div class="svc"><span class="cb"></span>Builder / carpenter</div>
+<div class="svc"><span class="cb"></span>Painter</div>
+<div class="svc"><span class="cb"></span>Landscaper</div>
+<div class="svc"><span class="cb"></span>Handyman</div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Continue</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w440" data-frame="T25-step2-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl">Set up your profile</div></div>
+<div class="pad"><div class="wiz"><div class="seg done"></div><div class="node">2</div><div class="seg"></div><div class="seg"></div></div><div class="cap" style="color:var(--text-soft);margin-top:6px">Step 2 of 4 · Services &amp; rates</div></div>
+<div class="pad scroll" style="margin-top:16px">
+<div class="h2">Plumbing services</div>
+<div class="sec" style="margin-top:6px">Tick what you offer. Add an hourly rate where it applies.</div>
+<div class="stack8" style="margin-top:18px">
+<div class="svc on"><span class="cb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Taps &amp; mixers<span class="rate">$85.50/h</span></div>
+<div class="svc on"><span class="cb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Toilets<span class="rate">$85.50/h</span></div>
+<div class="svc"><span class="cb"></span>Hot water cylinders</div>
+<div class="svc"><span class="cb"></span>Drainage</div>
+<div class="svc"><span class="cb"></span>Gasfitting</div>
+<div class="svc on"><span class="cb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Leak repairs<span class="rate">$85.50/h</span></div>
+</div>
+<div class="field" style="margin-top:16px"><label>Default hourly rate</label><div class="input">$85.50</div></div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Continue</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w440" data-frame="T25-step3-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl">Set up your profile</div></div>
+<div class="pad"><div class="wiz"><div class="seg done"></div><div class="seg done"></div><div class="node">3</div><div class="seg"></div></div><div class="cap" style="color:var(--text-soft);margin-top:6px">Step 3 of 4 · Credentials</div></div>
+<div class="pad scroll" style="margin-top:16px">
+<div class="h2">Your documents</div>
+<div class="sec" style="margin-top:6px">We check these before your first job. Homeowners see "Verified" once approved.</div>
+<div class="stack8" style="margin-top:18px">
+<div class="card row"><div class="icon-tile" style="width:44px;height:44px"><svg height="20" width="20"><use href="#i-doc"></use></svg></div><div style="flex:1"><b style="font-size:15px">Plumbing licence</b><div class="cap" style="color:var(--success-text)">Uploaded · pending review</div></div><svg height="18" style="color:var(--success-text)" width="18"><use href="#i-check-c"></use></svg></div>
+<div class="card row"><div class="icon-tile" style="width:44px;height:44px"><svg height="20" width="20"><use href="#i-shield"></use></svg></div><div style="flex:1"><b style="font-size:15px">Public liability insurance</b><div class="cap" style="color:var(--text-soft)">Not uploaded</div></div></div>
+<div class="card row"><div class="icon-tile" style="width:44px;height:44px"><svg height="20" width="20"><use href="#i-user"></use></svg></div><div style="flex:1"><b style="font-size:15px">Photo ID</b><div class="cap" style="color:var(--text-soft)">Not uploaded</div></div></div>
+</div>
+<div class="btn btn-secondary" style="margin-top:16px">Upload document</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Continue</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w440" data-frame="T25-step4-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl">Set up your profile</div></div>
+<div class="pad"><div class="wiz"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="node">4</div></div><div class="cap" style="color:var(--text-soft);margin-top:6px">Step 4 of 4 · Payout</div></div>
+<div class="pad scroll" style="margin-top:16px">
+<div class="h2">Where should we pay you?</div>
+<div class="stack16" style="margin-top:18px">
+<div class="field"><label>Account name</label><div class="input">M Te Rangi</div></div>
+<div class="field"><label>Account number</label><div class="input">06-0193-0455221-00</div></div>
+<div class="field"><label>GST number (optional)</label><div class="input" style="color:var(--text-soft)">e.g. 123-456-789</div></div>
+</div>
+<div class="tile" style="margin-top:16px;background:rgba(60,117,170,.08);border:none"><div class="row"><svg height="18" style="color:var(--blue)" width="18"><use href="#i-shield"></use></svg><span class="cap" style="color:var(--text-brand)">Encrypted and only used for payouts. Never shown to homeowners.</span></div></div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Finish setup</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- T26 HOMEOWNER PUBLIC PROFILE (tradie's view) -->
+<div class="frame w440" data-frame="T26-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-flag"></use></svg></div></div>
+<div class="pad scroll">
+<div class="center" style="margin-top:4px">
+<div class="av" style="width:88px;height:88px;font-size:32px">SM</div>
+<div class="h2" style="margin-top:10px">Sarah Mitchell</div>
+<div class="sec">Homeowner · Grey Lynn</div>
+<div class="tile" style="margin-top:16px;width:100%"><div class="spread"><div class="row"><svg height="18" width="18"><use href="#i-star"></use></svg><b>4.9</b><span class="sec">(14)</span></div><span class="sec">14 jobs posted</span></div><div class="sec" style="margin-top:8px">Member since March 2026</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 8px">Recent jobs</div>
+<div class="card"><div class="spread"><span class="title" style="font-size:15px">Leaking kitchen tap</span><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Active</span></div><div class="sec" style="margin-top:6px">Today 2:00 pm</div></div>
+<div class="card" style="margin-top:10px"><div class="spread"><span class="title" style="font-size:15px">Garden tidy-up</span><span class="pill pill-done"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Done</span></div><div class="sec" style="margin-top:6px">Completed 12 Oct</div></div>
+</div>
+<div class="sticky"><div class="btn btn-tonal" style="height:56px;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message Sarah</div></div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+%%SPRITE%%
+</body></html>

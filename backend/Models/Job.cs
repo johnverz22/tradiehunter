@@ -1,5 +1,7 @@
 using NetTopologySuite.Geometries;
 using FixoApi.Enums;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -7,7 +9,7 @@ namespace FixoApi.Models;
 
 /// <summary>
 /// A job posted by a homeowner. Status transitions must always go through
-/// IJobService and be broadcast via the SignalR JobHub (AGENTS.md rule).
+/// IJobStatusService and be broadcast via the SignalR JobHub.
 /// </summary>
 public class Job
 {
@@ -24,22 +26,19 @@ public class Job
     [MaxLength(200)]
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>Trade category — stored as string in the database (HasConversion).</summary>
+    /// <summary>Trade category — stored as string in the database.</summary>
     public TradeCategory Category { get; set; }
 
     [MaxLength(2000)]
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>Urgency level — stored as string in the database (HasConversion).</summary>
+    /// <summary>Urgency level — stored as string in the database.</summary>
     public JobUrgency Urgency { get; set; } = JobUrgency.Medium;
 
-    /// <summary>
-    /// Current state of the job. Stored as a string so DB rows are human-readable
-    /// and the schema does not break when enum values are reordered.
-    /// </summary>
-    public JobStatus Status { get; set; } = JobStatus.Draft;
+    /// <summary>Current state of the job.</summary>
+    public JobStatus Status { get; set; } = JobStatus.Requested;
 
-    /// <summary>WGS-84 point (longitude, latitude) — SRID 4326. Indexed with GIST.</summary>
+    /// <summary>WGS-84 point (longitude, latitude) — SRID 4326.</summary>
     [Column(TypeName = "geometry(Point, 4326)")]
     public Point? Location { get; set; }
 
@@ -49,52 +48,91 @@ public class Job
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    /// <summary>
-    /// Confirmed or proposed appointment date (UTC).
-    /// Set when either party proposes a schedule via POST /api/jobs/{id}/schedule.
-    /// </summary>
-    public DateTime? ScheduledDateUtc { get; set; }
+    // ── Scheduling & Financials (v1.2) ───────────────────────────────────────
 
-    /// <summary>Preferred time window within the scheduled date.</summary>
+    /// <summary>Scheduled appointment time, persisted in UTC.</summary>
+    public DateTimeOffset ScheduledStartUtc { get; set; }
+
+    /// <summary>
+    /// Compatibility projection for the pre-P2 scheduling workflow. New code must
+    /// use <see cref="ScheduledStartUtc"/> so API clients receive an explicit UTC offset.
+    /// </summary>
+    [NotMapped]
+    public DateTime? ScheduledStart
+    {
+        get => ScheduledStartUtc == default ? null : ScheduledStartUtc.UtcDateTime;
+        set => ScheduledStartUtc = value is null
+            ? default
+            : new DateTimeOffset(value.Value.ToUniversalTime());
+    }
+
+    public int ServiceId { get; set; }
+
+    public int Hours { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal HourlyRate { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalAmount { get; set; }
+
+    [MaxLength(50)]
+    public string? ReferenceCode { get; set; }
+
+    public DateTime? StartedAtUtc { get; set; }
+    public DateTime? EndedAtUtc { get; set; }
+
+    // ── Legacy Scheduling Fields (To be phased out or kept if still needed) ──
     public ScheduleTimeSlot? ScheduledTimeSlot { get; set; }
-
-    /// <summary>Lifecycle state of the scheduling proposal (None / Proposed / Confirmed).</summary>
     public ScheduleStatus ScheduleStatus { get; set; } = ScheduleStatus.None;
-
-    /// <summary>
-    /// The user who last proposed the schedule (so the other party can confirm/counter).
-    /// </summary>
     public string? ScheduleProposedByUserId { get; set; }
 
-    /// <summary>
-    /// Hangfire job IDs for the two scheduled reminders.
-    /// Stored so they can be cancelled if the job is cancelled or rescheduled.
-    /// Format: comma-separated "hangfireJobId24h,hangfireJobId1h".
-    /// </summary>
     [MaxLength(200)]
     public string? ReminderJobIds { get; set; }
 
-    /// <summary>Populated once the matching service selects a tradie.</summary>
+    /// <summary>
+    /// Hangfire job ID for the auto-complete background job (P5-04).
+    /// Set when job enters AwaitingConfirmation, cleared when confirmed or cancelled.
+    /// </summary>
+    [MaxLength(100)]
+    public string? AutoCompleteJobId { get; set; }
+
+    // ── Matching & Fulfillment ───────────────────────────────────────────────
+
     public string? MatchedTradieId { get; set; }
 
     [ForeignKey(nameof(MatchedTradieId))]
     public ApplicationUser? MatchedTradie { get; set; }
 
-    /// <summary>Navigation property for photos attached to this job.</summary>
+    /// <summary>
+    /// When an outstanding manual payment must have been verified by (P4-06).
+    /// Set on entry to <c>AwaitingPayment</c> and re-baselined whenever staff
+    /// reject a receipt, which restarts the homeowner's payment window. The
+    /// Hangfire expiry job reads this rather than trusting its own fire time, so
+    /// a job enqueued before a rejection is never expired early.
+    /// Null when no payment is outstanding.
+    /// </summary>
+    public DateTime? PaymentDueAtUtc { get; set; }
+
+    public string? CancelledByUserId { get; set; }
+    public ReasonCode? CancelReasonCode { get; set; }
+
+    // ── Navigation ───────────────────────────────────────────────────────────
+
     public ICollection<JobPhoto> Photos { get; set; } = new List<JobPhoto>();
-
-    /// <summary>Chat messages exchanged between homeowner and tradie for this job.</summary>
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
-
-    /// <summary>Audit trail of every status transition for this job.</summary>
     public ICollection<JobStatusHistory> StatusHistory { get; set; } = new List<JobStatusHistory>();
-
-    /// <summary>Reviews submitted for this job (up to two: one each direction).</summary>
+    public ICollection<JobOffer> Offers { get; set; } = new List<JobOffer>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+    /// <summary>The single manual payment attached to this job (P4-01).</summary>
+    public Payment? Payment { get; set; }
+
+    /// <summary>The refund record for this job, created on cancellation after payment (P6-01).</summary>
+    public Refund? Refund { get; set; }
 
     // ── Dispute / flag ────────────────────────────────────────────────────────
 
-    /// <summary>True when a homeowner or tradie has flagged this job for admin review.</summary>
     public bool IsFlagged { get; set; } = false;
 
     [MaxLength(1000)]
@@ -102,7 +140,6 @@ public class Job
 
     public DateTime? FlaggedAtUtc { get; set; }
 
-    /// <summary>Admin-set dispute lifecycle: Open, Resolved, Escalated.</summary>
     [MaxLength(50)]
     public string DisputeStatus { get; set; } = "None";
 

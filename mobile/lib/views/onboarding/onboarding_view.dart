@@ -1,28 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../theme/design_tokens.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../widgets/abstract_onboarding_background.dart';
 
-/// Mockup 02-onboarding, restyled: wordmark header, organic mesh
-/// background behind the illustration, H1 + body copy, amber dot
-/// indicator, amber Next + ghost Skip.
+/// Onboarding (mockup 02) — remodernized.
+/// Same _pageController / _currentPage / slide data / navigation commands.
 ///
-/// NOTE ON MVVM: the provided project archive has no
-/// `OnboardingViewModel` — the original `onboarding_screen.dart` manages
-/// its `PageController` and `_currentPage` as plain `State`, with no
-/// Provider/Riverpod/Bloc involved. Per the "preserve all existing logic
-/// and state variables" constraint, this view keeps that exact same
-/// local-state shape rather than introducing a ViewModel that doesn't
-/// exist in the codebase. If you do have (or plan to add) an
-/// `OnboardingViewModel` elsewhere, swap the two marked lines below for
-/// `ref.watch/read(onboardingViewModelProvider)` calls — nothing else
-/// in this file needs to change.
-///
-/// This class keeps the original name `OnboardingScreen` so existing
-/// `go_router` routes that import `onboarding_screen.dart` keep working
-/// if you replace that file's contents with this one (or update the
-/// import path to `views/onboarding/onboarding_view.dart`).
+/// Class name kept as [OnboardingScreen] for router compatibility.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -31,7 +17,6 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  // ── Preserved exactly from the original screen ──────────────────────
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -43,13 +28,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
     (
       asset: 'assets/illustrations/onboarding_match.png',
-      title: 'Get matched fast',
-      body: 'We find verified tradies near you and notify them instantly.',
+      title: 'See credentials and reviews before you hire',
+      body: 'Check profile credentials and reviews when choosing a tradie. We verify the documents your tradie provides.',
     ),
     (
       asset: 'assets/illustrations/onboarding_chat.png',
       title: 'Chat and get it sorted',
-      body: 'Confirm the job, chat directly, and leave a review when it’s done.',
+      body: 'Track job updates, chat directly and follow bank-transfer receipt review. Leave a review when the work is done.',
     ),
   ];
 
@@ -61,114 +46,134 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final bottom = MediaQuery.of(context).padding.bottom;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: FixoWordmark(fontSize: 24),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (p) => setState(() => _currentPage = p),
-                itemCount: _slides.length,
-                itemBuilder: (context, index) {
-                  final slide = _slides[index];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          // Rigid brand-100 square container replaced with
-                          // a soft, organic blurred-mesh background.
-                          // BoxFit.contain is preserved: the art bleeds to
-                          // all four edges, so cover would still clip it.
-                          child: AbstractOnboardingBackground(
-                            seed: index,
+      body: AbstractOnboardingBackground(
+        seed: _currentPage,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Space.s6, Space.s7, Space.s6, Space.s2),
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const FixoWordmark(fontSize: DesignTokens.fontSizeH1),
+                    TextButton(
+                      onPressed: () => context.go('/auth'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.onSurface
+                            .withValues(alpha: Alpha.iconOnGradientStrong),
+                      ),
+                      child: const Text('Skip'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (p) => setState(() => _currentPage = p),
+                  itemCount: _slides.length,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final slide = _slides[index];
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.s6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Illustration floats inside a radial halo —
+                          // replaces the old rigid brand-100 square container.
+                          Container(
+                            height: MediaQuery.of(context).size.height * 0.42,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  DesignTokens.brand300.withValues(alpha: Alpha.gradient),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
                             child: Image.asset(
                               slide.asset,
                               fit: BoxFit.contain,
                               filterQuality: FilterQuality.medium,
                             ),
                           ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
-                        child: Text(
-                          slide.title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                        child: Text(
-                          slide.body,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                              ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
-                        child: Row(
-                          children: List.generate(
-                            _slides.length,
-                            (i) => AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              width: i == _currentPage ? 22 : 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: i == _currentPage
-                                    ? DesignTokens.amber
-                                    : (isDark ? DesignTokens.brand100Dark : DesignTokens.brand100Light),
+                          const SizedBox(height: 28),
+                          Text(
+                            slide.title,
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FW.bold),
+                          ),
+                          const SizedBox(height: Space.s3),
+                          Text(
+                            slide.body,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: Alpha.textOnGradientStrong),
+                                ),
+                          ),
+                          const SizedBox(height: Space.s6),
+                          // Animated pill indicator
+                          Semantics(
+                            label:
+                                'Slide ${_currentPage + 1} of ${_slides.length}',
+                            child: ExcludeSemantics(
+                              child: Row(
+                                children: List.generate(
+                                  _slides.length,
+                                  (i) => AnimatedContainer(
+                                    duration: FixoDurations.onboardingDot,
+                                    height: 8,
+                                    width: i == _currentPage ? 26 : 8,
+                                    margin: const EdgeInsets.only(right: Space.s2),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(Radii.pill),
+                                      color: i == _currentPage
+                                          ? DesignTokens.amber
+                                          : DesignTokens.brand300.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(context).padding.bottom),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FixoPrimaryButton(
-                    label: _currentPage == _slides.length - 1 ? 'Get Started' : 'Next',
-                    onPressed: () {
-                      if (_currentPage == _slides.length - 1) {
-                        context.go('/auth');
-                      } else {
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeIn,
-                        );
-                      }
-                    },
-                  ),
-                  TextButton(
-                    onPressed: () => context.go('/auth'),
-                    child: const Text('Skip'),
-                  ),
-                ],
+              Padding(
+                padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, 16 + bottom),
+                child: FixoPrimaryButton(
+                  label: _currentPage == _slides.length - 1
+                      ? 'Get Started'
+                      : 'Next',
+                  onPressed: () {
+                    if (_currentPage == _slides.length - 1) {
+                      context.go('/auth');
+                    } else {
+                      _pageController.nextPage(
+                        duration: FixoDurations.debounce,
+                        curve: Curves.easeInOutCubic,
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

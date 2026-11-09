@@ -3,8 +3,10 @@ using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Text;
 
 namespace FixoApi.Services;
 
@@ -16,18 +18,36 @@ public class AdminService : IAdminService
 {
     private readonly FixoDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IEmailSender _emailSender;
+    private readonly TokenService _tokenService;
+    private readonly IBlobStorageService _blob;
+    private readonly string _credentialsContainer;
     private readonly IOptions<LocaleOptions> _locale;
+    private readonly PushNotificationService _pushNotifications;
+    private readonly IAuditLogService _audit;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         FixoDbContext db,
         UserManager<ApplicationUser> userManager,
+        IEmailSender emailSender,
+        TokenService tokenService,
+        IBlobStorageService blob,
+        IConfiguration config,
         IOptions<LocaleOptions> locale,
+        PushNotificationService pushNotifications,
+        IAuditLogService audit,
         ILogger<AdminService> logger)
     {
         _db = db;
         _userManager = userManager;
+        _emailSender = emailSender;
+        _tokenService = tokenService;
+        _blob = blob;
+        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "fixo-credentials";
         _locale = locale;
+        _pushNotifications = pushNotifications;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -44,8 +64,8 @@ public class AdminService : IAdminService
 
         var activeJobStatuses = new[]
         {
-            JobStatus.Requested, JobStatus.Matching, JobStatus.Matched,
-            JobStatus.Confirmed, JobStatus.InProgress
+            JobStatus.Requested, JobStatus.Requested, JobStatus.AwaitingPayment,
+            JobStatus.Booked, JobStatus.InProgress
         };
 
         var activeJobs = await _db.Jobs
@@ -222,7 +242,7 @@ public class AdminService : IAdminService
         return dto;
     }
 
-    public async Task<bool> VerifyUserAsync(string userId)
+    public async Task<bool> VerifyUserAsync(string userId, string? adminUserId = null)
     {
         var tp = await _db.TradieProfiles.FirstOrDefaultAsync(t => t.UserId == userId);
         if (tp is null)
@@ -231,17 +251,20 @@ public class AdminService : IAdminService
             return false;
         }
 
+        var before = new { tp.UserId, tp.IsVerified };
         tp.IsVerified = true;
         await _db.SaveChangesAsync();
+        await _audit.LogAsync(adminUserId, "user.verify", "TradieProfile", userId, before, new { tp.UserId, tp.IsVerified });
         _logger.LogInformation("User {UserId} verified by admin", userId);
         return true;
     }
 
-    public async Task<bool> DeactivateUserAsync(string userId)
+    public async Task<bool> DeactivateUserAsync(string userId, string? adminUserId = null)
     {
         var user = await _db.Users.FindAsync(userId);
         if (user is null) return false;
 
+        var before = new { user.Id, user.IsActive };
         user.IsActive = false;
 
         // Revoke all refresh tokens by locking the account via ASP.NET Identity
@@ -249,8 +272,113 @@ public class AdminService : IAdminService
         await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync(adminUserId, "user.deactivate", "ApplicationUser", userId, before, new { user.Id, user.IsActive });
+
+        // P8-06: account suspension is critical — email fallback even without push.
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            try
+            {
+                await _emailSender.SendAccountSuspendedAsync(user.Email!, user.FullName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Suspension email to {Email} failed.", user.Email);
+            }
+        }
         _logger.LogInformation("User {UserId} deactivated by admin", userId);
         return true;
+    }
+
+    // ── Staff invites (P1-05) ─────────────────────────────────────────────────
+
+    public async Task<StaffInviteResult> InviteStaffAsync(StaffInviteRequest request)
+    {
+        if (request.Role is not (UserRole.Staff or UserRole.Superadmin))
+            return new StaffInviteResult { Succeeded = false, Error = "Role must be Staff or Superadmin." };
+
+        var existing = await _userManager.FindByEmailAsync(request.Email);
+        if (existing is not null)
+        {
+            // Already active (or already has a password) — not inviteable.
+            if (existing.IsActive || await _userManager.HasPasswordAsync(existing))
+                return new StaffInviteResult { Succeeded = false, Conflict = true, Error = "A user with this email already exists." };
+
+            // Pending invite that never completed — rotate the token and resend.
+            await SendInviteTokenAsync(existing);
+            _logger.LogInformation("Staff invite re-sent to {Email}", request.Email);
+            return new StaffInviteResult { Succeeded = true };
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Role = request.Role,
+            AuthProvider = "password",
+            EmailVerified = false,
+            IsActive = false, // activated on set-password
+        };
+
+        var result = await _userManager.CreateAsync(user);
+        if (!result.Succeeded)
+            return new StaffInviteResult
+            {
+                Succeeded = false,
+                Error = string.Join(", ", result.Errors.Select(e => e.Description)),
+            };
+
+        await SendInviteTokenAsync(user);
+        _logger.LogInformation("Staff invite sent to {Email} with role {Role}", request.Email, request.Role);
+        return new StaffInviteResult { Succeeded = true };
+    }
+
+    public async Task<SetStaffPasswordResult> SetStaffPasswordAsync(SetStaffPasswordRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return new SetStaffPasswordResult { Succeeded = false, Error = "Invalid email or token." };
+
+        if (user.Role is not (UserRole.Staff or UserRole.Superadmin))
+            return new SetStaffPasswordResult { Succeeded = false, Error = "Invalid email or token." };
+
+        if (await _userManager.HasPasswordAsync(user))
+            return new SetStaffPasswordResult { Succeeded = false, Error = "Account is already activated. Please log in." };
+
+        string rawToken;
+        try
+        {
+            rawToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
+        }
+        catch
+        {
+            return new SetStaffPasswordResult { Succeeded = false, Error = "Invalid email or token." };
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user, rawToken, request.NewPassword);
+        if (!result.Succeeded)
+            return new SetStaffPasswordResult
+            {
+                Succeeded = false,
+                Error = string.Join(", ", result.Errors.Select(e => e.Description)),
+            };
+
+        user.EmailVerified = true;
+        user.EmailVerifiedAtUtc = DateTime.UtcNow;
+        user.IsActive = true;
+        await _userManager.UpdateAsync(user);
+
+        _logger.LogInformation("Staff account activated for {Email}", request.Email);
+        return new SetStaffPasswordResult { Succeeded = true, Token = _tokenService.CreateToken(user) };
+    }
+
+    private async Task SendInviteTokenAsync(ApplicationUser user)
+    {
+        var rawToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(rawToken));
+        await _emailSender.SendStaffInviteAsync(user.Email!, encoded);
     }
 
     // ── Jobs ───────────────────────────────────────────────────────────────────
@@ -339,14 +467,14 @@ public class AdminService : IAdminService
             Description = job.Description,
             Urgency = job.Urgency.ToString(),
             Address = job.Address,
-            ScheduledDateUtc = job.ScheduledDateUtc,
+            ScheduledStart = job.ScheduledStart,
             ScheduleStatus = job.ScheduleStatus.ToString(),
             CreatedAtUtc = job.CreatedAtUtc,
             UpdatedAtUtc = job.UpdatedAtUtc,
             Photos = job.Photos.Select(p => new JobPhotoDto
             {
                 Id = p.Id,
-                Url = $"/api/photos/{p.S3Key}",
+                Url = $"/api/photos/{p.BlobKey}",
                 OriginalFileName = p.OriginalFileName,
             }).ToList(),
             ChatTranscript = job.ChatMessages
@@ -461,6 +589,8 @@ public class AdminService : IAdminService
         var job = await _db.Jobs.FindAsync(jobId);
         if (job is null || !job.IsFlagged) return false;
 
+        var before = new { job.Id, Status = job.Status.ToString(), job.DisputeStatus };
+
         switch (request.Action)
         {
             case "Resolved":
@@ -492,10 +622,124 @@ public class AdminService : IAdminService
         job.UpdatedAtUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
+        await _audit.LogAsync(adminUserId, "dispute.resolve", "Job", jobId.ToString(),
+            before, new { job.Id, Status = job.Status.ToString(), job.DisputeStatus, request.Action, request.Note });
         _logger.LogInformation("Dispute for job {JobId} resolved with action {Action} by admin {AdminId}",
             jobId, request.Action, adminUserId);
         return true;
     }
+
+    // ── Credential verification (P1-07) ─────────────────────────────────────────
+
+    public async Task<PagedResult<PendingCredentialDto>> GetPendingCredentialsAsync(int page, int pageSize)
+    {
+        var query = _db.TradieCredentials
+            .Include(c => c.TradieProfile).ThenInclude(tp => tp.User)
+            .Where(c => c.Status == CredentialStatus.Pending)
+            .OrderBy(c => c.Id);
+
+        var total = await query.CountAsync();
+
+        var creds = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var items = new List<PendingCredentialDto>();
+        foreach (var c in creds)
+            items.Add(await MapToPendingCredentialDtoAsync(c));
+
+        return new PagedResult<PendingCredentialDto>
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        };
+    }
+
+    public async Task<ReviewCredentialResult> ReviewCredentialAsync(
+        int credentialId, ReviewCredentialRequest request, string adminUserId)
+    {
+        if (!Enum.TryParse<CredentialStatus>(request.Status, true, out var status)
+            || status == CredentialStatus.Pending)
+            return new ReviewCredentialResult { Error = "Status must be Approved or Rejected." };
+
+        var cred = await _db.TradieCredentials
+            .Include(c => c.TradieProfile).ThenInclude(tp => tp.User)
+            .FirstOrDefaultAsync(c => c.Id == credentialId);
+
+        if (cred is null)
+            return new ReviewCredentialResult { NotFound = true };
+
+        if (status == CredentialStatus.Rejected && string.IsNullOrWhiteSpace(request.RejectReason))
+            return new ReviewCredentialResult { Error = "RejectReason is required when rejecting." };
+
+        var before = new { cred.Id, Status = cred.Status.ToString(), cred.RejectReason };
+        cred.Status = status;
+        cred.ReviewedById = adminUserId;
+        cred.ReviewedAtUtc = DateTime.UtcNow;
+        cred.RejectReason = status == CredentialStatus.Rejected ? request.RejectReason!.Trim() : null;
+
+        // MVP verification rule: a tradie is verified while they hold
+        // at least one approved credential. Re-reviewing is allowed, so this
+        // also un-verifies when the last approval is revoked.
+        // NOTE: the review itself must be saved first — AnyAsync queries the
+        // database, not the change tracker, so it would miss the row above.
+        await _db.SaveChangesAsync();
+        cred.TradieProfile.IsVerified = await _db.TradieCredentials.AnyAsync(c =>
+            c.TradieProfileId == cred.TradieProfileId && c.Status == CredentialStatus.Approved);
+            
+        // P10-09: Insurance Badge logic
+        cred.TradieProfile.HasInsurance = await _db.TradieCredentials.AnyAsync(c =>
+            c.TradieProfileId == cred.TradieProfileId && c.Type == CredentialType.Insurance && c.Status == CredentialStatus.Approved);
+            
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Credential {CredentialId} reviewed as {Status} by admin {AdminId}",
+            credentialId, status, adminUserId);
+
+        await _audit.LogAsync(adminUserId, "credential.review", "TradieCredential", credentialId.ToString(),
+            before, new { cred.Id, Status = cred.Status.ToString(), cred.RejectReason, cred.ReviewedById });
+
+        var dto = await MapToPendingCredentialDtoAsync(cred);
+        return new ReviewCredentialResult
+        {
+            Succeeded = true,
+            Credential = new ReviewedCredentialDto
+            {
+                Id = dto.Id,
+                Type = dto.Type,
+                TradieUserId = dto.TradieUserId,
+                TradieName = dto.TradieName,
+                TradieEmail = dto.TradieEmail,
+                TradeType = dto.TradeType,
+                BusinessName = dto.BusinessName,
+                OriginalFileName = dto.OriginalFileName,
+                DownloadUrl = dto.DownloadUrl,
+                Status = cred.Status.ToString(),
+                RejectReason = cred.RejectReason,
+                ReviewedById = cred.ReviewedById,
+                ReviewedAtUtc = cred.ReviewedAtUtc,
+                TradieIsVerified = cred.TradieProfile.IsVerified,
+            },
+        };
+    }
+
+    private async Task<PendingCredentialDto> MapToPendingCredentialDtoAsync(TradieCredential c) =>
+        new()
+        {
+            Id = c.Id,
+            Type = c.Type.ToString(),
+            TradieUserId = c.TradieProfile.UserId,
+            TradieName = c.TradieProfile.User.FullName,
+            TradieEmail = c.TradieProfile.User.Email ?? string.Empty,
+            TradeType = c.TradieProfile.TradeType,
+            BusinessName = c.TradieProfile.BusinessName,
+            OriginalFileName = c.OriginalFileName,
+            DownloadUrl = (await _blob.GetReadSasUriAsync(
+                c.FileKey, _credentialsContainer, TimeSpan.FromMinutes(15))).ToString(),
+        };
 
     // ── Settings ───────────────────────────────────────────────────────────────
 
@@ -515,8 +759,15 @@ public class AdminService : IAdminService
         });
     }
 
-    public async Task<AdminSettingsDto> UpdateSettingsAsync(AdminSettingsDto dto)
+    public async Task<AdminSettingsDto> UpdateSettingsAsync(AdminSettingsDto dto, string? adminUserId = null)
     {
+        var before = new AdminSettingsDto
+        {
+            Currency = _locale.Value.DefaultCurrency,
+            CurrencySymbol = _locale.Value.CurrencySymbol,
+            Timezone = _locale.Value.DefaultTimezone,
+            PhoneFormat = _locale.Value.PhoneCountryCode,
+        };
         var locale = _locale.Value;
         locale.DefaultCurrency = dto.Currency;
         locale.CurrencySymbol = dto.CurrencySymbol;
@@ -526,6 +777,8 @@ public class AdminService : IAdminService
         await Task.CompletedTask;
         _logger.LogInformation("Admin updated locale settings: currency={Currency}, tz={Tz}",
             dto.Currency, dto.Timezone);
+
+        await _audit.LogAsync(adminUserId, "settings.update", "AdminSettings", null, before, dto);
 
         return dto;
     }
@@ -578,7 +831,7 @@ public class AdminService : IAdminService
         var confirmedTransitions = await _db.JobStatusHistory
             .Include(h => h.Job)
             .Where(h =>
-                h.ToStatus == JobStatus.Confirmed &&
+                h.ToStatus == JobStatus.Booked &&
                 h.ChangedAtUtc >= windowStart &&
                 h.Job.CreatedAtUtc >= windowStart)
             .ToListAsync();
@@ -594,7 +847,7 @@ public class AdminService : IAdminService
         // ── Tradie response rate ──────────────────────────────────────────────
         // Jobs that reached Matched status (notification sent) in window
         var matchedJobs = await _db.Jobs
-            .Where(j => j.Status != JobStatus.Draft &&
+            .Where(j => j.Status != JobStatus.Requested &&
                         j.Status != JobStatus.Requested &&
                         j.CreatedAtUtc >= windowStart)
             .ToListAsync();
@@ -602,9 +855,9 @@ public class AdminService : IAdminService
         int totalMatched = matchedJobs.Count;
         // A response is when job moved past Matched to Confirmed or Cancelled
         int responded = matchedJobs.Count(j =>
-            j.Status == JobStatus.Confirmed ||
+            j.Status == JobStatus.Booked ||
             j.Status == JobStatus.InProgress ||
-            j.Status == JobStatus.Complete ||
+            j.Status == JobStatus.Completed ||
             j.Status == JobStatus.Cancelled);
 
         double tradieResponseRate = totalMatched > 0
@@ -614,7 +867,7 @@ public class AdminService : IAdminService
         // ── Review completion rate ─────────────────────────────────────────────
         var completedJobs = await _db.Jobs
             .Include(j => j.Reviews)
-            .Where(j => j.Status == JobStatus.Complete && j.CreatedAtUtc >= windowStart)
+            .Where(j => j.Status == JobStatus.Completed && j.CreatedAtUtc >= windowStart)
             .ToListAsync();
 
         int totalCompleted = completedJobs.Count;
@@ -624,6 +877,38 @@ public class AdminService : IAdminService
             ? Math.Round((double)bothReviewed / totalCompleted * 100, 1)
             : 0;
 
+        // ── P8-08: match → AwaitingPayment time (offer accepted) ───────────────
+        var awaitingPaymentTransitions = await _db.JobStatusHistory
+            .Include(h => h.Job)
+            .Where(h =>
+                h.ToStatus == JobStatus.AwaitingPayment &&
+                h.ChangedAtUtc >= windowStart &&
+                h.Job.CreatedAtUtc >= windowStart)
+            .ToListAsync();
+
+        double avgMatchToAwaitingPaymentHours = 0;
+        if (awaitingPaymentTransitions.Count > 0)
+        {
+            var totalHours = awaitingPaymentTransitions
+                .Sum(h => (h.ChangedAtUtc - h.Job.CreatedAtUtc).TotalHours);
+            avgMatchToAwaitingPaymentHours = Math.Round(totalHours / awaitingPaymentTransitions.Count, 1);
+        }
+
+        // ── P8-08: payment verification time (Submitted → Verified/Rejected) ──
+        var verifiedPayments = await _db.Payments
+            .Where(p => p.SubmittedAtUtc != null
+                && p.SubmittedAtUtc >= windowStart
+                && (p.VerifiedAtUtc != null || p.Status == PaymentStatus.Rejected))
+            .ToListAsync();
+
+        double avgPaymentVerificationHours = 0;
+        if (verifiedPayments.Count > 0)
+        {
+            var totalHours = verifiedPayments.Sum(p =>
+                ((p.VerifiedAtUtc ?? p.UpdatedAtUtc) - p.SubmittedAtUtc!.Value).TotalHours);
+            avgPaymentVerificationHours = Math.Round(totalHours / verifiedPayments.Count, 1);
+        }
+
         // ── Total jobs in window ──────────────────────────────────────────────
         var totalJobs = await _db.Jobs.CountAsync(j => j.CreatedAtUtc >= windowStart);
 
@@ -631,6 +916,8 @@ public class AdminService : IAdminService
         {
             ActivationRatePct = activationRate,
             AvgMatchToConfirmationHours = avgMatchToConfirmHours,
+            AvgMatchToAwaitingPaymentHours = avgMatchToAwaitingPaymentHours,
+            AvgPaymentVerificationHours = avgPaymentVerificationHours,
             TradieResponseRatePct = tradieResponseRate,
             ReviewCompletionRatePct = reviewCompletionRate,
             TotalJobs = totalJobs,
@@ -653,4 +940,208 @@ public class AdminService : IAdminService
             CreatedAtUtc = u.CreatedAtUtc,
             JobCount = jobCount,
         };
+
+    // ── Refunds (P6-04 / P6-05) ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a page of refunds with Status == Pending, oldest first.
+    /// Includes job and homeowner details for the admin queue view.
+    /// </summary>
+    public async Task<PagedResult<RefundSummaryDto>> GetPendingRefundsAsync(int page, int pageSize)
+    {
+        var query = _db.Refunds
+            .Include(r => r.Job)
+                .ThenInclude(j => j.Homeowner)
+            .Where(r => r.Status == RefundStatus.Pending)
+            .OrderBy(r => r.CreatedAtUtc);
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var dtos = items.Select(MapRefundToDto).ToList();
+        foreach (var dto in dtos)
+        {
+            var proofKey = items.FirstOrDefault(r => r.Id == dto.Id)?.ProofFileKey;
+            if (!string.IsNullOrEmpty(proofKey))
+            {
+                try
+                {
+                    // P8-03: refund proofs live in the private bucket — signed URL only.
+                    dto.ProofDownloadUrl = (await _blob.GenerateSignedUrl(
+                        proofKey, TimeSpan.FromMinutes(15), _credentialsContainer)).ToString();
+                }
+                catch { /* best-effort */ }
+            }
+        }
+
+        return new PagedResult<RefundSummaryDto>
+        {
+            Items = dtos,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        };
+    }
+
+    /// <summary>
+    /// P6-05: Process a pending refund — update amounts, record proof, mark Processed.
+    /// Optionally uploads a proof file (bank transfer screenshot) to blob storage.
+    /// Sends a push notification to the homeowner (P6-06).
+    /// </summary>
+    public async Task<ProcessRefundResult> ProcessRefundAsync(
+        Guid refundId,
+        ProcessRefundRequest request,
+        Stream? proofFile,
+        string? proofFileContentType,
+        string adminUserId)
+    {
+        var refund = await _db.Refunds
+            .Include(r => r.Job)
+                .ThenInclude(j => j.Homeowner)
+            .FirstOrDefaultAsync(r => r.Id == refundId);
+
+        if (refund is null)
+            return new ProcessRefundResult { NotFound = true };
+
+        if (refund.Status == RefundStatus.Processed)
+            return new ProcessRefundResult { Conflict = true, Error = "This refund has already been processed." };
+
+        var refundBefore = new { refund.Id, Status = refund.Status.ToString(), refund.FinalAmount, refund.TransferReference };
+
+        // Upload proof file if provided.
+        if (proofFile != null && proofFile.Length > 0 && !string.IsNullOrEmpty(proofFileContentType))
+        {
+            try
+            {
+                var ext = proofFileContentType.Contains("pdf") ? ".pdf" : ".jpg";
+                var key = $"refunds/{refund.Id}/{Guid.NewGuid()}{ext}";
+                await _blob.UploadAsync(proofFile, key, proofFileContentType, _credentialsContainer);
+                refund.ProofFileKey = key;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upload proof file for refund {RefundId}.", refundId);
+                // Non-fatal — still allow processing.
+            }
+        }
+
+        // Apply updated amounts.
+        refund.FinalAmount = request.FinalAmount;
+        refund.Penalty = request.Penalty;
+        refund.HoursWorked = request.HoursWorked;
+        refund.HoursWorkedAmount = Math.Round(request.HoursWorked * refund.Job.HourlyRate, 2);
+        refund.TransferReference = request.TransferReference;
+        refund.Status = RefundStatus.Processed;
+        refund.ProcessedAtUtc = DateTime.UtcNow;
+
+        if (Guid.TryParse(adminUserId, out var adminGuid))
+            refund.ProcessedBy = adminGuid;
+
+        await _db.SaveChangesAsync();
+
+        // P6-06: Notify the homeowner that their refund has been processed.
+        // P8-06: critical event — email fallback when push is disabled/misses.
+        var homeownerId = refund.Job.HomeownerId;
+        var pushSent = false;
+        try
+        {
+            var tokens = await _db.DeviceTokens
+                .Where(dt => dt.UserId == homeownerId)
+                .Select(dt => dt.Token)
+                .ToListAsync();
+
+            var currency = _locale.Value.DefaultCurrency;
+            var amountStr = refund.FinalAmount.ToString("F2");
+
+            foreach (var token in tokens)
+            {
+                try
+                {
+                    await _pushNotifications.SendAsync(
+                        token,
+                        "Your refund has been processed",
+                        $"${amountStr} {currency} has been transferred. Reference: {request.TransferReference}",
+                        new Dictionary<string, string>
+                        {
+                            ["jobId"]    = refund.JobId.ToString(),
+                            ["refundId"] = refund.Id.ToString(),
+                            ["type"]     = "refund_processed",
+                        });
+                    pushSent = true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", homeownerId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not send refund notification to homeowner {HomeownerId}.", homeownerId);
+        }
+
+        if (!pushSent && !string.IsNullOrWhiteSpace(refund.Job.Homeowner.Email))
+        {
+            try
+            {
+                await _emailSender.SendRefundProcessedAsync(
+                    refund.Job.Homeowner.Email!, refund.Job.Title,
+                    refund.FinalAmount, _locale.Value.DefaultCurrency,
+                    request.TransferReference);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Refund fallback email to {Email} failed.", refund.Job.Homeowner.Email);
+            }
+        }
+
+        _logger.LogInformation(
+            "Refund {RefundId} processed by admin {AdminUserId}: final=${Amount}, ref={Ref}.",
+            refundId, adminUserId, request.FinalAmount, request.TransferReference);
+
+        await _audit.LogAsync(adminUserId, "refund.process", "Refund", refundId.ToString(),
+            refundBefore, new { refund.Id, Status = refund.Status.ToString(), refund.FinalAmount, refund.TransferReference });
+
+        var dto = MapRefundToDto(refund);
+        if (!string.IsNullOrEmpty(refund.ProofFileKey))
+        {
+            try
+            {
+                dto.ProofDownloadUrl = (await _blob.GenerateSignedUrl(
+                    refund.ProofFileKey, TimeSpan.FromMinutes(15), _credentialsContainer)).ToString();
+            }
+            catch { /* best-effort */ }
+        }
+
+        return new ProcessRefundResult { Succeeded = true, Refund = dto };
+    }
+
+    // ── Audit log (P8-04 / P8-07) ────────────────────────────────────────────
+
+    public Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(
+        DateTime? fromUtc, DateTime? toUtc, string? action, string? userId, int page, int pageSize) =>
+        _audit.QueryAsync(fromUtc, toUtc, action, userId, page, pageSize);
+
+    private static RefundSummaryDto MapRefundToDto(Refund r) => new()    {
+        Id               = r.Id,
+        JobId            = r.JobId,
+        JobTitle         = r.Job.Title,
+        HomeownerName    = r.Job.Homeowner.FullName,
+        HomeownerEmail   = r.Job.Homeowner.Email ?? string.Empty,
+        PaymentId        = r.PaymentId,
+        SuggestedAmount  = r.SuggestedAmount,
+        FinalAmount      = r.FinalAmount,
+        Penalty          = r.Penalty,
+        HoursWorked      = r.HoursWorked,
+        HoursWorkedAmount = r.HoursWorkedAmount,
+        Status           = r.Status.ToString(),
+        CancelReasonCode = r.Job.CancelReasonCode?.ToString(),
+        CreatedAtUtc     = r.CreatedAtUtc,
+        ProcessedAtUtc   = r.ProcessedAtUtc,
+        TransferReference = r.TransferReference,
+    };
 }

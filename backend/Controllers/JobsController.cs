@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using FixoApi.Data;
+using FixoApi.Jobs;
+using Hangfire;
 
 namespace FixoApi.Controllers;
 
@@ -23,9 +25,11 @@ public class JobsController : ControllerBase
 {
     private readonly IJobService _jobService;
     private readonly IJobStatusService _jobStatusService;
+    private readonly IMatchingService _matching;
     private readonly IScheduleService _scheduleService;
     private readonly IBlobStorageService _blob;
     private readonly FixoDbContext _context;
+    private readonly IBackgroundJobClient _hangfire;
     private readonly IValidator<CreateJobRequest> _createValidator;
     private readonly IValidator<UpdateJobRequest> _updateValidator;
     private readonly IValidator<ScheduleJobRequest> _scheduleValidator;
@@ -39,9 +43,11 @@ public class JobsController : ControllerBase
     public JobsController(
         IJobService jobService,
         IJobStatusService jobStatusService,
+        IMatchingService matching,
         IScheduleService scheduleService,
         IBlobStorageService blob,
         FixoDbContext context,
+        IBackgroundJobClient hangfire,
         IValidator<CreateJobRequest> createValidator,
         IValidator<UpdateJobRequest> updateValidator,
         IValidator<ScheduleJobRequest> scheduleValidator,
@@ -49,9 +55,11 @@ public class JobsController : ControllerBase
     {
         _jobService       = jobService;
         _jobStatusService = jobStatusService;
+        _matching         = matching;
         _scheduleService  = scheduleService;
         _blob             = blob;
         _context          = context;
+        _hangfire         = hangfire;
         _createValidator  = createValidator;
         _updateValidator  = updateValidator;
         _scheduleValidator = scheduleValidator;
@@ -69,8 +77,15 @@ public class JobsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var job = await _jobService.CreateJobAsync(userId, request);
-        return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
+        try
+        {
+            var job = await _jobService.CreateJobAsync(userId, request);
+            return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // ── GET /api/jobs?status=&page=&pageSize= ─────────────────────────────────
@@ -102,6 +117,41 @@ public class JobsController : ControllerBase
         return job == null ? NotFound() : Ok(job);
     }
 
+    // ── GET /api/jobs/{id}/contact ────────────────────────────────────────────
+    // V15-15: counterparty contact (name + phone) for the matched tradie or the
+    // homeowner, only once the job is Booked or later and still meaningful.
+    // Cancelled/Expired jobs return NotFound — contact ends with the job.
+
+    [HttpGet("{id:int}/contact")]
+    public async Task<IActionResult> GetJobContact(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null) return NotFound();
+
+        var isHomeowner     = job.HomeownerId == userId;
+        var isMatchedTradie = job.MatchedTradieId == userId;
+        if (!isHomeowner && !isMatchedTradie) return NotFound();
+
+        var contactable = job.Status is JobStatus.Booked or JobStatus.InProgress
+            or JobStatus.AwaitingConfirmation or JobStatus.Completed
+            or JobStatus.Disputed;
+        if (!contactable || job.MatchedTradieId == null) return NotFound();
+
+        var counterpartyId = isHomeowner ? job.MatchedTradieId : job.HomeownerId;
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == counterpartyId);
+        if (user == null) return NotFound();
+
+        return Ok(new JobContactDto
+        {
+            UserId      = user.Id,
+            FirstName   = user.FirstName,
+            PhoneNumber = user.PhoneNumber,
+        });
+    }
+
     // ── PATCH /api/jobs/{id} ──────────────────────────────────────────────────
 
     [HttpPatch("{id:int}")]
@@ -112,6 +162,13 @@ public class JobsController : ControllerBase
 
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.Include(j => j.Offers).FirstOrDefaultAsync(j => j.Id == id);
+        if (job == null || job.HomeownerId != userId) return NotFound();
+
+        // P10-13: Job Editing Lockout
+        if (job.Status != JobStatus.Requested || job.Offers.Any())
+            return Conflict(new { message = "Job cannot be edited once matching has started or offers exist." });
 
         var updated = await _jobService.UpdateJobAsync(id, userId, request);
         return updated ? NoContent() : NotFound();
@@ -130,7 +187,7 @@ public class JobsController : ControllerBase
     }
 
     // ── POST /api/jobs/{id}/photos ────────────────────────────────────────────
-    // M2-02: multipart photo upload → MinIO → JobPhoto rows.
+    // M2-02: multipart photo upload → Azure Blob → JobPhoto rows.
 
     [HttpPost("{id:int}/photos")]
     [RequestSizeLimit(MaxPhotos * MaxPhotoBytes + 4096)]
@@ -165,12 +222,12 @@ public class JobsController : ControllerBase
 
             var ext      = Path.GetExtension(file.FileName).ToLowerInvariant();
             var key      = $"jobs/{id}/{Guid.NewGuid()}{ext}";
-            var s3Key    = await _blob.UploadAsync(file.OpenReadStream(), key, file.ContentType);
+            var blobKey  = await _blob.UploadAsync(file.OpenReadStream(), key, file.ContentType);
 
             var photo = new JobPhoto
             {
                 JobId            = id,
-                S3Key            = s3Key,
+                BlobKey          = blobKey,
                 OriginalFileName = file.FileName,
                 ContentType      = file.ContentType,
                 UploadedAtUtc    = DateTime.UtcNow,
@@ -181,7 +238,7 @@ public class JobsController : ControllerBase
             uploaded.Add(new JobPhotoDto
             {
                 Id               = photo.Id,
-                Url              = $"/api/photos/{s3Key}",
+                Url              = $"/api/photos/{blobKey}",
                 OriginalFileName = file.FileName,
             });
         }
@@ -190,7 +247,8 @@ public class JobsController : ControllerBase
     }
 
     // ── POST /api/jobs/{id}/match ─────────────────────────────────────────────
-    // Trigger matching run. Returns the match list.
+    // Kick off sequential offer dispatch. Returns 202 Accepted immediately.
+    // Homeowner listens via SignalR for OfferLifecycleEvent updates.
 
     [HttpPost("{id:int}/match")]
     public async Task<IActionResult> RunMatching(int id)
@@ -198,8 +256,22 @@ public class JobsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var result = await _jobService.RunMatchingAsync(id, userId);
-        return Ok(result);
+        // Only the job's homeowner may trigger matching.
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null) return NotFound();
+
+        if (job.HomeownerId != userId) return Forbid();
+        if (job.Status != JobStatus.Requested)
+            return Conflict(new { error = $"Job is in state '{job.Status}' — cannot start matching." });
+
+        // Sequential dispatch runs in a Hangfire job, not on this request:
+        // SendNextOfferAsync touches a scoped DbContext, the SignalR hub, and
+        // the Hangfire client, so it needs a scope that outlives the request
+        // (a bare Task.Run would be torn down when the request completes).
+        // The client waits on SignalR OfferLifecycleEvent, not this response.
+        _hangfire.Enqueue<SendOfferJob>(j => j.ExecuteAsync(id, userId));
+
+        return Accepted(new { message = "Matching started. Listen for OfferLifecycleEvent via SignalR." });
     }
 
     // ── GET /api/jobs/{id}/matches ────────────────────────────────────────────
@@ -252,7 +324,7 @@ public class JobsController : ControllerBase
     }
 
     // ── POST /api/jobs/{id}/start ─────────────────────────────────────────────
-    // M3-06: Confirmed → InProgress. Tradie only.
+    // M3-06: Booked → InProgress. Tradie only.
 
     [HttpPost("{id:int}/start")]
     public async Task<IActionResult> StartJob(int id)
@@ -268,7 +340,82 @@ public class JobsController : ControllerBase
 
         try
         {
-            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.InProgress, userId);
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.InProgress, userId, UserRole.Tradie);
+            return Ok(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    // ── POST /api/jobs/{id}/check-in ──────────────────────────────────────────
+    // P5-02: Booked → InProgress. Tradie only. Alias for /start for clarity.
+
+    [HttpPost("{id:int}/check-in")]
+    public async Task<IActionResult> CheckIn(int id)
+    {
+        if (!User.IsInRole("Tradie")) return Forbid();
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null || job.MatchedTradieId != userId) return NotFound();
+
+        try
+        {
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.InProgress, userId, UserRole.Tradie);
+            return Ok(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    // ── POST /api/jobs/{id}/check-out ─────────────────────────────────────────
+    // P5-02: InProgress → AwaitingConfirmation. Tradie only.
+
+    [HttpPost("{id:int}/check-out")]
+    public async Task<IActionResult> CheckOut(int id)
+    {
+        if (!User.IsInRole("Tradie")) return Forbid();
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null || job.MatchedTradieId != userId) return NotFound();
+
+        try
+        {
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.AwaitingConfirmation, userId, UserRole.Tradie);
+            return Ok(dto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    // ── POST /api/jobs/{id}/confirm ───────────────────────────────────────────
+    // P5-02: AwaitingConfirmation → Completed. Homeowner only.
+
+    [HttpPost("{id:int}/confirm")]
+    public async Task<IActionResult> ConfirmCompletion(int id)
+    {
+        if (User.IsInRole("Tradie")) return Forbid(); // homeowner only
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null || job.HomeownerId != userId) return NotFound();
+
+        try
+        {
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.Completed, userId, UserRole.Homeowner);
             return Ok(dto);
         }
         catch (InvalidOperationException ex)
@@ -278,7 +425,7 @@ public class JobsController : ControllerBase
     }
 
     // ── POST /api/jobs/{id}/complete ──────────────────────────────────────────
-    // M3-06: InProgress → Complete. Homeowner only.
+    // M3-06: InProgress → Complete. Homeowner only. (Legacy endpoint)
 
     [HttpPost("{id:int}/complete")]
     public async Task<IActionResult> CompleteJob(int id)
@@ -293,7 +440,7 @@ public class JobsController : ControllerBase
 
         try
         {
-            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.Complete, userId);
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.Completed, userId, UserRole.Homeowner);
             return Ok(dto);
         }
         catch (InvalidOperationException ex)
@@ -303,16 +450,13 @@ public class JobsController : ControllerBase
     }
 
     // ── POST /api/jobs/{id}/cancel ────────────────────────────────────────────
-    // M3-06: Any → Cancelled. Either party. Requires a reason.
+    // P6-02: Either party can cancel with a required ReasonCode.
 
     [HttpPost("{id:int}/cancel")]
     public async Task<IActionResult> CancelJobWithReason(int id, [FromBody] CancelJobRequest request)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-
-        if (string.IsNullOrWhiteSpace(request.Reason))
-            return BadRequest(new { error = "A cancellation reason is required." });
 
         var job = await _context.Jobs.FindAsync(id);
         if (job == null) return NotFound();
@@ -323,8 +467,8 @@ public class JobsController : ControllerBase
 
         try
         {
-            var dto = await _jobStatusService.TransitionAsync(
-                id, JobStatus.Cancelled, userId, request.Reason);
+            var role = job.HomeownerId == userId ? UserRole.Homeowner : UserRole.Tradie;
+            var dto = await _jobStatusService.CancelJobAsync(id, userId, role, request);
             return Ok(dto);
         }
         catch (InvalidOperationException ex)
@@ -365,6 +509,39 @@ public class JobsController : ControllerBase
         return dto == null ? NotFound() : Ok(dto);
     }
 
+    // ── POST /api/jobs/{id}/no-show ───────────────────────────────────────────
+    /// <summary>
+    /// Report a no-show on a booked job.
+    /// Homeowners can cancel (CancelJob=true) or reassign (CancelJob=false).
+    /// Tradies can only cancel (homeowner is considered absent, partial refund applied).
+    /// Available 15 minutes after the scheduled start time.
+    /// </summary>
+    [HttpPost("{id:int}/no-show")]
+    public async Task<IActionResult> ReportNoShow(int id, [FromBody] ReportNoShowRequest request)
+    {
+        var userId = GetUserId();
+        if (userId is null) return Unauthorized();
+
+        var roleStr = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+        var actorRole = roleStr switch
+        {
+            "Homeowner"  => UserRole.Homeowner,
+            "Tradie"     => UserRole.Tradie,
+            "Staff"      => UserRole.Staff,
+            "Superadmin" => UserRole.Superadmin,
+            _            => UserRole.Homeowner,
+        };
+
+        try
+        {
+            var dto = await _jobStatusService.ReportNoShowAsync(id, userId, actorRole, request);
+            return Ok(dto);
+        }
+        catch (KeyNotFoundException ex)      { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        catch (UnauthorizedAccessException)  { return Forbid(); }
+    }
+
     // ── POST /api/jobs/{id}/flag ──────────────────────────────────────────────
     /// <summary>
     /// Flag a job for admin dispute review. Either participant (homeowner or matched tradie)
@@ -396,7 +573,7 @@ public class JobsController : ControllerBase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private string? GetUserId() => User.FindFirstValue("sub");
 }
 
 /// <summary>Request body for POST /api/jobs/{id}/requests.</summary>

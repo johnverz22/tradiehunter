@@ -1,0 +1,40 @@
+{
+  "_comment": "Disputes queue: lists flagged jobs with dispute status, participants, flag reason, and review actions.",
+  "page": "features/disputes/pages/DisputesPage",
+  "route": "/disputes",
+  "prefetch": [
+    {
+      "key": ["admin", "disputes", { "disputeStatus": "Open", "page": 1, "pageSize": 20 }],
+      "url": "/admin/disputes",
+      "body": {
+        "items": [
+          {
+            "jobId": 310,
+            "jobTitle": "Blocked drain in driveway",
+            "homeownerName": "Stanley Hudson",
+            "tradieName": "Dwight Schrute",
+            "status": "Disputed",
+            "disputeStatus": "Open",
+            "flagReason": "Tradie damaged driveway paver",
+            "flaggedAtUtc": "2026-10-25T11:00:00Z"
+          }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    }
+  ],
+  "expect": [
+    { "label": "page heading", "needle": "Disputes" },
+    { "label": "total count summary", "needle": ">1</strong> open" },
+    { "label": "job id mono link", "needle": "JOB-00310" },
+    { "label": "job title", "needle": "Blocked drain in driveway" },
+    { "label": "flag reason", "needle": "Tradie damaged driveway paver" },
+    { "label": "homeowner name", "needle": "Stanley Hudson" },
+    { "label": "tradie name", "needle": "Dwight Schrute" },
+    { "label": "dispute status badge", "needle": ">Open</span>" },
+    { "label": "dispute review action", "needle": "href=\"/disputes/310\"" }
+  ]
+}

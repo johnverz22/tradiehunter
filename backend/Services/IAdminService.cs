@@ -13,9 +13,9 @@ public interface IAdminService
 
     Task<AdminUserDetailDto?> GetUserDetailAsync(string userId);
 
-    Task<bool> VerifyUserAsync(string userId);
+    Task<bool> VerifyUserAsync(string userId, string? adminUserId = null);
 
-    Task<bool> DeactivateUserAsync(string userId);
+    Task<bool> DeactivateUserAsync(string userId, string? adminUserId = null);
 
     // Jobs
     Task<PagedResult<AdminJobSummaryDto>> GetJobsAsync(
@@ -33,8 +33,29 @@ public interface IAdminService
     // Settings
     Task<AdminSettingsDto> GetSettingsAsync();
 
-    Task<AdminSettingsDto> UpdateSettingsAsync(AdminSettingsDto dto);
+    Task<AdminSettingsDto> UpdateSettingsAsync(AdminSettingsDto dto, string? adminUserId = null);
+
+    // Staff invites (P1-05)
+    Task<StaffInviteResult> InviteStaffAsync(StaffInviteRequest request);
+
+    Task<SetStaffPasswordResult> SetStaffPasswordAsync(SetStaffPasswordRequest request);
+
+    // Credentials (P1-07)
+    Task<PagedResult<PendingCredentialDto>> GetPendingCredentialsAsync(int page, int pageSize);
+
+    Task<ReviewCredentialResult> ReviewCredentialAsync(
+        int credentialId, ReviewCredentialRequest request, string adminUserId);
 
     // Metrics
     Task<AdminMetricsDto> GetMetricsAsync();
+
+    // Refunds (P6-04 / P6-05)
+    Task<PagedResult<RefundSummaryDto>> GetPendingRefundsAsync(int page, int pageSize);
+
+    Task<ProcessRefundResult> ProcessRefundAsync(
+        Guid refundId, ProcessRefundRequest request, Stream? proofFile, string? proofFileContentType, string adminUserId);
+
+    // Audit log (P8-04 / P8-07)
+    Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(
+        DateTime? fromUtc, DateTime? toUtc, string? action, string? userId, int page, int pageSize);
 }

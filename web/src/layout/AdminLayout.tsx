@@ -1,16 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import api from "../services/api";
+import { useAppName } from "../features/branding/hooks/useBrandConfig";
+import { BrandWordmark } from "../features/branding/components/BrandWordmark";
+
+import React, { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 import {
   LayoutDashboard,
   Users,
   Briefcase,
+  ShieldCheck,
   AlertTriangle,
+  Wallet,
+  RotateCcw,
+  ScrollText,
   Settings,
   LogOut,
   UserRound,
   Sun,
   Moon,
+  Banknote,
 } from 'lucide-react';
 
 type ThemeMode = 'light' | 'dark';
@@ -25,40 +33,46 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/users', label: 'Users', Icon: Users },
   { to: '/jobs', label: 'Jobs', Icon: Briefcase },
+  { to: '/credentials', label: 'Credentials', Icon: ShieldCheck },
+  { to: '/payments', label: 'Payments', Icon: Wallet },
+  { to: '/payouts', label: 'Payouts', Icon: Banknote },
+  { to: '/refunds', label: 'Refunds', Icon: RotateCcw },
   { to: '/disputes', label: 'Disputes', Icon: AlertTriangle },
+  { to: '/audit-logs', label: 'Audit Logs', Icon: ScrollText },
   { to: '/settings', label: 'Settings', Icon: Settings },
 ];
-
-interface TokenClaims {
-  email?: string;
-  sub?: string;
-  role?: string;
-}
-
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+  const appName = useAppName();
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('fixo-theme', theme);
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("fixo-theme", theme);
   }, [theme]);
 
-  const adminEmail = useMemo(() => {
-    const token = localStorage.getItem('jwt_token');
-    if (!token) return null;
-    try {
-      const claims = jwtDecode<TokenClaims>(token);
-      return claims.email ?? null;
-    } catch {
-      return null;
-    }
+  // The static <title> in index.html is the pre-config paint; once the brand
+  // name is known it takes over so the tab matches a partner's rebrand.
+  useEffect(() => {
+    document.title = `${appName} Admin`;
+  }, [appName]);
+
+
+  const [adminName, setAdminName] = useState<string>('Admin');
+
+  useEffect(() => {
+    // Fetch profile instead of parsing JWT
+    api.get('/auth/admin-me').then(res => {
+      if (res.data.name) setAdminName(res.data.name);
+    }).catch(() => {});
   }, []);
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/login', { replace: true });
+  const handleLogout = useCallback(async () => {
+    try {
+      await api.post('/auth/admin-logout');
+    } finally {
+      navigate('/login', { replace: true });
+    }
   }, [navigate]);
 
   return (
@@ -72,12 +86,9 @@ const AdminLayout: React.FC = () => {
 
       <aside className="w-60 bg-[var(--brand-900)] text-white flex flex-col shrink-0">
         <div className="px-6 pt-6 pb-8">
-          <span
+          <BrandWordmark
             className="font-bold text-[22px] text-white"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Fixo<span className="text-[var(--amber)]">.</span>
-          </span>
+          />
         </div>
 
         <nav className="flex-1 flex flex-col" aria-label="Admin navigation">
@@ -112,9 +123,9 @@ const AdminLayout: React.FC = () => {
             <span className="min-w-0 flex-1">
               <span
                 className="block text-[13px] font-medium text-white truncate"
-                title={adminEmail ?? 'Admin'}
+                title={adminName ?? 'Admin'}
               >
-                {adminEmail ?? 'Admin'}
+                {adminName ?? 'Admin'}
               </span>
               <span className="block text-[11px] text-white/60">Administrator</span>
             </span>

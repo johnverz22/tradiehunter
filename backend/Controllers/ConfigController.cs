@@ -9,15 +9,29 @@ namespace FixoApi.Controllers;
 public class ConfigController : ControllerBase
 {
     private readonly LocaleOptions _localeOptions;
+    private readonly FixoApi.Options.PayoutOptions _payoutOptions;
+    private readonly FixoApi.Options.BrandOptions _brandOptions;
 
-    public ConfigController(IOptions<LocaleOptions> localeOptions)
+    public ConfigController(
+        IOptions<LocaleOptions> localeOptions,
+        IOptions<FixoApi.Options.PayoutOptions> payoutOptions,
+        IOptions<FixoApi.Options.BrandOptions> brandOptions)
     {
         _localeOptions = localeOptions.Value;
+        _payoutOptions = payoutOptions.Value;
+        _brandOptions = brandOptions.Value;
     }
 
     [HttpGet("locale")]
     public IActionResult GetLocale()
     {
-        return Ok(_localeOptions);
+        var response = new
+        {
+            Locale = _localeOptions,
+            CommissionPercent = _payoutOptions.CommissionPercent,
+            Brand = _brandOptions
+        };
+        
+        return Ok(response);
     }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fixo - Matching</title>
+<title>TradieFixo - Matching</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -122,16 +122,28 @@
   }
   .cancel-btn {
     position: absolute;
-    bottom: 48px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 24px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1px solid var(--brand-100);
+    display: flex;
+    justify-content: center;
+  }
+  .cancel-btn button {
     background: transparent;
-    border: none;
+    border: 1px solid var(--brand-100);
     color: var(--ink);
     font-family: var(--font-body);
     font-weight: 500;
     font-size: 15px;
-    padding: 12px 24px;
+    height: 48px;
+    width: 100%;
+    border-radius: var(--radius);
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.8;
   }
 </style>
 </head>
@@ -149,7 +161,6 @@
       <div class="subtitle">Plumbing • Urgent • Grey Lynn</div>
     </div>
     
-    <button class="cancel-btn">Cancel</button>
-  </div>
+    <button class="cancel-btn">Cancel</button>  </div>
 </body>
 </html>

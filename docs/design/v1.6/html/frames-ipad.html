@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 frames — iPad</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .pg { background:#DCD8CF; padding:40px; display:flex; flex-wrap:wrap; gap:40px; font-family:var(--fb); }
+  .gradring { padding:2px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue)); }
+  .listitem { padding:14px 16px;border-bottom:1px solid var(--line); }
+  .listitem.sel { background:rgba(60,117,170,.10);border-left:3px solid var(--blue); }
+</style></head>
+<body>
+<div class="pg">
+<!-- IPAD HOMEOWNER DASHBOARD — master-detail, ≥744pt -->
+<div class="frame w834" data-frame="IPAD-dashboard-light" style="flex-direction:row">
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div style="background:var(--navy);color:#fff;padding:16px 16px 14px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Welcome back</div>
+<div style="font:700 22px var(--fd)">Sarah</div>
+</div>
+<div class="scroll">
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">Leaking kitchen tap</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Review</span></div><div class="sec" style="margin-top:4px">$171.00 · Today 2:00 pm</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Install two power points</b><span class="pill pill-waiting"><svg><use href="#i-excl"></use></svg>Payment due</span></div><div class="sec" style="margin-top:4px">$128.25 · Fri 9:00 am</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Deck repairs</b><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Active</span></div><div class="sec" style="margin-top:4px">$342.00 · Mon 10:30 am</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Garden tidy-up</b><span class="pill pill-done"><svg><use href="#i-check"></use></svg>Done</span></div><div class="sec" style="margin-top:4px">$205.00 · Completed 12 Oct</div></div>
+</div>
+<div class="navbar" style="border-top:1px solid var(--line)"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewbox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="status-strip" style="margin:0 24px;border-radius:16px"><div class="spread"><span class="pill pill-active"><svg><use href="#i-play"></use></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="scroll" style="padding:16px 24px">
+<div class="maxw stack16">
+<div class="h1" style="font-size:24px">Leaking kitchen tap</div>
+<div class="card"><div class="row"><div class="av" style="width:52px;height:52px;font-size:19px;background:#3C75AA;color:#fff">MT<div class="vbdg"><svg><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+<div style="flex:1"><div class="title">Mike Te Rangi</div><div class="sec">Plumber · 4.8 ★ (126)</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg><use href="#i-msg"></use></svg>Message</div><div class="btn btn-tonal btn-tile"><svg><use href="#i-call"></use></svg>Call</div><div class="btn btn-tonal btn-tile"><svg><use href="#i-nav"></use></svg>Navigate</div></div></div>
+<div class="card"><div class="grid2"><div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Scheduled</div><b style="font-size:15px">Today, 2:00 pm</b></div>
+<div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Duration</div><b style="font-size:15px">~2 hours</b></div></div>
+<div class="row" style="margin-top:12px"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">14 Crummer Rd, Grey Lynn</span></div>
+<div class="spread" style="margin-top:10px"><span class="sec">Total</span><span class="price">$171.00</span></div></div>
+<div class="btn btn-primary" style="max-width:320px">Review completion</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- IPAD MESSAGES master-detail -->
+<div class="frame w834" data-frame="IPAD-messages-light" style="flex-direction:row"><div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div class="appbar"><div class="ttl" style="font-size:22px">Messages</div></div>
+<div class="scroll">
+<div class="listitem sel"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div><div class="tx" style="flex:1"><div class="spread"><b>Mike Te Rangi</b><span class="cap" style="color:var(--text-soft)">1:47 pm</span></div><div class="pv sec" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">No worries, I'll have a spare…</div></div><div class="udot"></div></div></div>
+<div class="listitem"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px">JK</div><div class="tx" style="flex:1"><div class="spread"><b>Jess Kaur</b><span class="cap" style="color:var(--text-soft)">11:20 am</span></div><div class="pv sec">Certificate sent through</div></div><div class="udot"></div></div></div>
+<div class="listitem"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px">RW</div><div class="tx" style="flex:1"><div class="spread"><b>Rob Walker</b><span class="cap" style="color:var(--text-soft)">Tue</span></div><div class="pv sec">Picking up timber Monday</div></div></div></div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewbox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="detail-pane bpdots">
+<div class="appbar" style="border-bottom:1px solid var(--line)"><div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div style="flex:1"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="scroll" style="display:flex;flex-direction:column">
+<div class="maxw" style="display:flex;flex-direction:column;gap:8px;padding:16px 24px;width:100%">
+<div class="pill pill-waiting" style="align-self:center;background:rgba(60,117,170,.12)"><svg><use href="#i-clock"></use></svg>Step 3 of 4 · In progress</div>
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+</div>
+<div class="maxw" style="width:100%;padding:0 24px 6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer maxw" style="width:100%"><div class="ibtn cam"><svg height="24" width="24"><use href="#i-cam"></use></svg></div><div class="field2">Message…</div><div class="ibtn send"><svg height="22" width="22"><use href="#i-send"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+</div>
+<!-- IPAD POST A JOB — 640 centred -->
+<div class="frame w834" data-frame="IPAD-postjob-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar maxw" style="width:100%"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Post a job</div><div class="grow"></div></div>
+<div class="scroll"><div class="maxw pad stack16">
+<div class="field"><label>Job title</label><div class="input">Leaking kitchen tap</div></div>
+<div class="field"><label>Description</label><div class="input" style="height:110px;align-items:flex-start;padding-top:14px;color:var(--text-soft)">Mixer tap drips constantly, gets worse overnight…</div></div>
+<div class="field"><label>Photos</label><div class="row"><div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div><div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div><div class="phototile" style="background:var(--surface);border:1.5px dashed rgba(60,117,170,.45)"><svg height="20" width="20"><use href="#i-plus"></use></svg></div></div></div>
+<div class="grid2">
+<div class="field"><label>Hourly rate</label><div class="input">$85.50</div></div>
+<div class="field"><label>Est. hours</label><div class="input">2</div></div>
+</div>
+<div class="tile tinted"><div class="spread"><span class="sec">Estimated total</span><span style="font:700 28px var(--fb);color:var(--text-brand);font-variant-numeric:tabular-nums">$171.00</span></div></div>
+<div class="field"><label>Urgency</label><div class="seg48"><div class="o on">Today</div><div class="o">This week</div><div class="o">Flexible</div></div></div>
+</div></div>
+<div class="sticky"><div class="maxw" style="width:100%;padding:0 20px"><div class="btn btn-primary">Post job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- IPAD CHAT — 640 column centred -->
+<div class="frame w834 bpdots" data-frame="IPAD-chat-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar maxw" style="width:100%"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div style="flex:1"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="scroll" style="display:flex;flex-direction:column">
+<div class="maxw" style="display:flex;flex-direction:column;gap:8px;padding:16px 24px;width:100%">
+<div class="pill pill-waiting" style="align-self:center;background:rgba(60,117,170,.12)"><svg><use href="#i-clock"></use></svg>Step 3 of 4 · In progress</div>
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+</div>
+<div class="maxw" style="width:100%;padding:0 24px 6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer maxw" style="width:100%"><div class="ibtn cam"><svg height="24" width="24"><use href="#i-cam"></use></svg></div><div class="field2">Message…</div><div class="ibtn send"><svg height="22" width="22"><use href="#i-send"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- IPAD LEFT RAIL ≥1024pt -->
+<div class="frame w834" data-frame="IPAD-rail-light" style="flex-direction:row">
+<div class="rail">
+<div class="tab on"><svg><use href="#i-home"></use></svg>Home</div>
+<div class="tab"><svg><use href="#i-jobs"></use></svg>Jobs</div>
+<div class="tab"><svg><use href="#i-plus"></use></svg>Post job</div>
+<div class="tab"><svg><use href="#i-msg"></use></svg>Messages</div>
+<div class="tab"><svg><use href="#i-user"></use></svg>Profile</div>
+</div>
+<div class="md" style="flex:1">
+<div class="list-pane" style="border-right:1px solid var(--line)">
+<div style="background:var(--navy);color:#fff;padding:16px 16px 14px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Welcome back</div>
+<div style="font:700 22px var(--fd)">Sarah</div>
+</div>
+<div class="scroll">
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">Leaking kitchen tap</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Review</span></div><div class="sec" style="margin-top:4px">$171.00 · Today</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Install two power points</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Pay now</span></div><div class="sec" style="margin-top:4px">$128.25 · Fri</div></div>
+</div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<div class="av" style="width:72px;height:72px;background:rgba(60,117,170,.12)"><svg height="30" style="color:var(--blue)" width="30"><use href="#i-jobs"></use></svg></div>
+<div class="h2" style="margin-top:16px">Select a job to view details</div>
+<div class="sec" style="margin-top:8px">Choose a job from the list on the left.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- IPAD TRADIE DASHBOARD -->
+<div class="frame w834" data-frame="IPAD-tradie-light" style="flex-direction:row">
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div style="background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:16px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Earned this week (net)</div>
+<div style="font:700 30px var(--fd);font-variant-numeric:tabular-nums">$1,246.80</div>
+</div>
+<div class="scroll">
+<div class="eyebrow" style="padding:12px 16px 6px">New leads</div>
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">$171.00</b><span class="urg high">HIGH</span></div><div class="sec" style="margin-top:4px">Leaking kitchen tap — Grey Lynn</div><div class="cap" style="color:var(--accent-text);font-weight:700;margin-top:4px">04:12 left</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">$256.50</b><span class="urg low">FLEXIBLE</span></div><div class="sec" style="margin-top:4px">Replace vanity mixer — Ponsonby</div><div class="cap" style="color:var(--accent-text);font-weight:700;margin-top:4px">09:57 left</div></div>
+<div class="eyebrow" style="padding:14px 16px 6px">Today</div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Deck repairs</b><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Active</span></div><div class="sec" style="margin-top:4px">$342.00 · 2:00 pm</div></div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="scroll" style="padding:16px 24px"><div class="maxw stack16">
+<div class="row"><div class="title" style="flex:1;font-size:20px">Leaking kitchen tap</div><span class="chip">Plumbing</span></div>
+<div class="countdown"><div class="row" style="justify-content:space-between;margin-bottom:5px"><b style="font-size:14px">Respond within</b><span class="cdown-t urgent" style="font-size:16px">04:12</span></div><div class="track t8"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="card"><div class="spread"><span class="sec">Estimated</span><b style="font-size:16px">2 h × $85.50/h</b></div>
+<div class="spread" style="margin-top:8px"><span class="sec">Total</span><span class="price">$171.00</span></div>
+<div class="divider" style="margin:12px 0"></div>
+<div class="row"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">Grey Lynn, Auckland — exact address after accept</span></div>
+<div class="row" style="margin-top:8px"><svg height="18" width="18"><use href="#i-cal"></use></svg><span class="sec">Today, 2:00 pm · ~2 hours</span></div>
+<div class="body" style="font-size:15px;margin-top:12px">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp.</div>
+<div class="row" style="margin-top:10px"><div class="phototile"><svg height="18" width="18"><use href="#i-photo"></use></svg></div><div class="phototile"><svg height="18" width="18"><use href="#i-photo"></use></svg></div></div></div>
+<div class="btnrow" style="max-width:480px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept job</div></div>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+%%SPRITE%%
+</body></html>

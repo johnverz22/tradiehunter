@@ -16,7 +16,7 @@ const Forbidden: React.FC = () => (
       </p>
       <Link
         to="/login"
-        className="inline-block px-5 py-2.5 rounded bg-[var(--brand-500)] text-white text-sm font-medium hover:bg-[var(--brand-700)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:ring-offset-2"
+        className="btn btn-primary"
       >
         Back to Login
       </Link>

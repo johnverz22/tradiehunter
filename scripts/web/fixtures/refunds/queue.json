@@ -1,0 +1,45 @@
+{
+  "_comment": "Refunds queue: lists pending refunds for cancelled jobs, suggested amounts, cancellation reason codes, and process actions.",
+  "page": "features/refunds/pages/RefundQueue",
+  "route": "/refunds",
+  "prefetch": [
+    {
+      "key": ["admin", "refunds", "pending", { "page": 1, "pageSize": 20 }],
+      "url": "/admin/refunds/pending",
+      "body": {
+        "items": [
+          {
+            "id": "ref-001",
+            "jobId": 405,
+            "jobTitle": "Deck railing replacement",
+            "homeownerName": "Kelly Kapoor",
+            "homeownerEmail": "kelly@dunder.nz",
+            "paymentId": 52,
+            "suggestedAmount": 350.0,
+            "finalAmount": 350.0,
+            "penalty": 0.0,
+            "hoursWorked": 0.0,
+            "hoursWorkedAmount": 0.0,
+            "status": "Pending",
+            "cancelReasonCode": "tradie_no_show",
+            "createdAtUtc": "2026-10-27T08:00:00Z"
+          }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    }
+  ],
+  "expect": [
+    { "label": "page heading", "needle": "Refund Queue" },
+    { "label": "total count summary", "needle": ">1</strong> pending refunds" },
+    { "label": "job title link", "needle": "Deck railing replacement" },
+    { "label": "homeowner name", "needle": "Kelly Kapoor" },
+    { "label": "homeowner email", "needle": "kelly@dunder.nz" },
+    { "label": "suggested amount", "needle": "$350.00" },
+    { "label": "reason code", "needle": "tradie no show" },
+    { "label": "process action button", "needle": "Process" }
+  ]
+}

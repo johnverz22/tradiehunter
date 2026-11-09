@@ -11,7 +11,7 @@ namespace FixoApi.Services;
 /// </summary>
 public interface IJobRepository
 {
-    Task<Job?> GetByIdAsync(int id, bool includePhotos = false);
+    Task<Job?> GetByIdAsync(int id, bool includePhotos = false, bool includeOffers = false);
     Task<(List<Job> Items, int TotalCount)> GetForUserAsync(
         string userId, bool isTradie, JobStatus? statusFilter, int page, int pageSize);
     Task<Job> CreateAsync(Job job);

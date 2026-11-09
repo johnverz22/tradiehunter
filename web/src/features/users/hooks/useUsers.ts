@@ -4,6 +4,9 @@ import {
   fetchUserDetail,
   verifyUser,
   deactivateUser,
+  warnUser,
+  suspendUser,
+  resolveUserFlags,
   type UserListParams,
 } from '../../../services/adminApi';
 
@@ -46,6 +49,31 @@ export const useDeactivateUser = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deactivateUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+};
+
+
+export const useWarnUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => warnUser(id, reason),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+};
+
+export const useSuspendUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => suspendUser(id, reason),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+};
+
+export const useResolveUserFlags = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => resolveUserFlags(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 };

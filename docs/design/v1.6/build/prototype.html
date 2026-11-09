@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 Prototype — 4 core flows</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  body { background:#26221D; display:flex; flex-direction:column; align-items:center; padding:28px 0; font-family:var(--fb); }
+  .bar { width:402px; display:flex; justify-content:space-between; align-items:center; color:#ECEAE3; margin-bottom:14px; }
+  .bar .h { font:600 14px var(--fm); }
+  .bar label { font:400 12px var(--fb); display:flex; gap:6px; align-items:center; color:#9AA4AC; }
+  .stage { width:402px; height:874px; position:relative; border-radius:36px; overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,.5); border:8px solid #0E0C0A; }
+  .scr { position:absolute; inset:0; display:none; }
+  .scr.on { display:flex; }
+  /* shared-element-style transition: cross-fade + slight rise (300ms) */
+  @keyframes scrIn { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+  .scr.on { animation: scrIn 300ms ease; }
+  @keyframes sheetUp { from { transform:translateY(100%) } to { transform:none } }
+  .scr.on .sheet { animation: sheetUp 280ms cubic-bezier(.3,1.1,.4,1); }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  .scr.on .scrim { animation: fadeIn 200ms ease; }
+  @keyframes pulse { 0%,100% { transform:scale(1);opacity:1 } 50% { transform:scale(1.06);opacity:.45 } }
+  .rings-anim { animation: pulse 2s ease-in-out infinite; transform-origin:center; }
+  .rm .scr.on { animation: fadeIn 250ms ease; }
+  .rm .scr.on .sheet, .rm .scr.on .scrim { animation: fadeIn 200ms ease; }
+  .rm .rings-anim { animation: none; }
+  .btn { cursor:pointer; }
+  .btn:active { transform:scale(.98); transition:transform 120ms ease-out; }
+  .clickable { cursor:pointer; }
+        .ill-card { border-radius:24px; background:rgba(255,255,255,.6); overflow:hidden; display:grid; place-items:center; }
+  .gradring { padding:2px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue)); }
+  .herotile { background:var(--surface);border-radius:16px;padding:12px 14px;color:var(--text-brand); }
+  .herotile .cap { color:var(--text-soft); }
+  .stepnode { width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 14px var(--fb);flex:none; }
+  .stitch { border-left:2px dashed rgba(25,57,87,.2);margin-left:15px;padding-left:22px; }
+  .flownav { width:402px; margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  .flownav button { background:#3A342C;color:#ECEAE3;border:1px solid #55493C;border-radius:8px;padding:6px 10px;font:500 12px var(--fb);cursor:pointer; }
+  .flownav button:hover { background:#4A4339; }
+</style></head>
+<body>
+<div class="bar"><div class="h">v1.7 prototype</div><label><input id="rm" type="checkbox"/> Reduce motion</label></div>
+<div class="stage" id="stage">
+<!-- ════ FLOW 4: ONBOARDING ════ -->
+<div class="scr frame w402" id="s-splash" style="flex-direction:column">
+<div class="heroband" style="position:absolute;inset:0;border-radius:0">
+<img class="rings-anim" src="../assets/rings-4-white.svg" style="position:absolute;top:6%;left:50%;transform:translateX(-50%);width:340px"/>
+<div class="bpdots" style="position:absolute;inset:0;-webkit-mask-image:linear-gradient(180deg,#000 30%,transparent 75%);mask-image:linear-gradient(180deg,#000 30%,transparent 75%)"></div>
+</div>
+<div class="center clickable" onclick="go('s-ob1')" style="flex:1;justify-content:center;position:relative">
+<div class="wordmark inv">Tradie<span class="o">Hunter</span></div>
+<div style="width:32px;height:2px;background:var(--amber);margin:14px 0 18px"></div>
+<div style="font:500 16px var(--fb);color:rgba(255,255,255,.92)">Trusted tradies, sorted fast.</div>
+</div>
+<div class="homebar" style="color:#fff"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-ob1" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm));flex-direction:column">
+<img class="blob" src="../assets/blob-blue.svg" style="top:-60px;right:-80px;width:280px;position:absolute"/>
+<img class="blob" src="../assets/blob-peach.svg" style="bottom:-70px;left:-90px;width:300px;position:absolute"/>
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad" style="flex:1;display:flex;flex-direction:column;position:relative">
+<div class="ill-card" style="height:340px"><img src="../assets/il-01-light.svg" width="190"/></div>
+<div class="h1" style="margin-top:26px">Post a job in minutes</div>
+<div class="body" style="margin-top:10px;color:var(--text-soft)">Describe what you need, set your rate, and get matched with a local tradie.</div>
+<div class="spacer"></div>
+<div class="spread" style="margin-bottom:16px"><div class="slide-dots"><i class="on"></i><i></i><i></i></div><div class="btn btn-primary" onclick="go('s-ob2')" style="height:52px;padding:0 28px">Next</div></div>
+<div class="btn btn-ghost" onclick="go('s-signup')">Skip</div>
+</div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-ob2" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm));flex-direction:column">
+<img class="blob" src="../assets/blob-blue.svg" style="top:-60px;right:-80px;width:280px;position:absolute"/>
+<img class="blob" src="../assets/blob-peach.svg" style="bottom:-70px;left:-90px;width:300px;position:absolute"/>
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad" style="flex:1;display:flex;flex-direction:column;position:relative">
+<div class="ill-card" style="height:340px;position:relative"><img src="../assets/route-line.svg" style="position:absolute;inset:0;width:100%;height:100%;opacity:.8"/><img src="../assets/il-07-light.svg" style="position:relative" width="190"/></div>
+<div class="h1" style="margin-top:26px">See credentials and reviews before you hire</div>
+<div class="body" style="margin-top:10px;color:var(--text-soft)">We verify the documents your tradie provides, so you know who's coming.</div>
+<div class="spacer"></div>
+<div class="spread" style="margin-bottom:16px"><div class="slide-dots"><i></i><i class="on"></i><i></i></div><div class="btn btn-primary" onclick="go('s-ob3')" style="height:52px;padding:0 28px">Next</div></div>
+<div class="btn btn-ghost" onclick="go('s-signup')">Skip</div>
+</div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-ob3" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm));flex-direction:column">
+<img class="blob" src="../assets/blob-blue.svg" style="top:-60px;right:-80px;width:280px;position:absolute"/>
+<img class="blob" src="../assets/blob-peach.svg" style="bottom:-70px;left:-90px;width:300px;position:absolute"/>
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad" style="flex:1;display:flex;flex-direction:column;position:relative">
+<div class="ill-card" style="height:340px"><img src="../assets/il-02-light.svg" width="190"/></div>
+<div class="h1" style="margin-top:26px">Chat, track, done</div>
+<div class="body" style="margin-top:10px;color:var(--text-soft)">Message your tradie, follow the job in real time, and pay after the work's checked.</div>
+<div class="spacer"></div>
+<div class="spread" style="margin-bottom:16px"><div class="slide-dots"><i></i><i></i><i class="on"></i></div><div class="btn btn-primary" onclick="go('s-signup')" style="height:52px;padding:0 28px">Get started</div></div>
+</div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-signup" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad scroll">
+<div class="wordmark" style="color:var(--text-brand);font-size:28px;margin-top:6px">Tradie<span class="o">Hunter</span></div>
+<div class="h1" style="margin-top:20px">Create your account</div>
+<div class="sec" style="margin:6px 0 16px">I'm signing up as a…</div>
+<div class="seg"><div class="opt on"><svg height="26" width="26"><use href="#i-house"></use></svg>Homeowner</div><div class="opt"><svg height="26" width="26"><use href="#i-wrench"></use></svg>Tradie</div></div>
+<div class="stack16" style="margin-top:18px">
+<div class="field"><label>Full name</label><div class="input">Sarah Mitchell</div></div>
+<div class="field"><label>Email</label><div class="input">sarah@example.co.nz</div></div>
+<div class="field"><label>Password</label><div class="input">••••••••••</div></div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('s-otp')">Create account</div></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-otp" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('s-signup')"><svg height="24" width="24"><use href="#i-back"></use></svg></div></div>
+<div class="pad"><div class="h1">Check your email</div>
+<div class="body" style="margin-top:10px;color:var(--text-soft)">We sent a 6-digit code to <b style="color:var(--text)">sarah@example.co.nz</b></div>
+<div class="otp" style="margin-top:32px"><div class="cell">4</div><div class="cell">8</div><div class="cell">2</div><div class="cell">1</div><div class="cell on"></div><div class="cell"></div></div>
+</div><div class="spacer"></div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('s-role')">Verify</div></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-role" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm));flex-direction:column">
+<img class="blob" src="../assets/blob-blue.svg" style="top:-50px;right:-80px;width:260px;position:absolute"/>
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad" style="position:relative"><div class="h1" style="margin-top:20px">How will you use TradieHunter?</div>
+<div class="stack16" style="margin-top:28px">
+<div class="card row clickable" onclick="go('s-dash-empty')" style="background:rgba(227,139,41,.14);border:2px solid var(--amber)">
+<div class="icon-tile"><svg height="28" width="28"><use href="#i-house"></use></svg></div>
+<div><div class="title">Homeowner</div><div class="sec">Post jobs and hire local tradies</div></div></div>
+<div class="card row clickable" onclick="go('t-dash')">
+<div class="icon-tile"><svg height="28" width="28"><use href="#i-wrench"></use></svg></div>
+<div><div class="title">Tradie</div><div class="sec">Find work and grow your business</div></div></div>
+</div></div>
+<div class="spacer"></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="s-dash-empty" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad scroll"><div class="spread"><div class="h1">Welcome back, Sarah</div><div class="ico-btn"><svg height="24" width="24"><use href="#i-bell"></use></svg></div></div>
+<div class="center" style="margin-top:64px"><img src="../assets/il-01-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">Post your first job</div>
+<div class="sec" style="margin-top:8px;max-width:270px">Describe what you need and we'll match you with a verified local tradie.</div>
+<div class="btn btn-primary" onclick="go('h-postjob')" style="margin-top:24px;padding:0 32px">Post a job</div></div></div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"></div><div class="tab clickable" onclick="go('c-list')"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- ════ FLOW 1: HOMEOWNER ════ -->
+<div class="scr frame w402" id="h-postjob" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('s-dash-empty')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Post a job</div></div>
+<div class="pad scroll stack16">
+<div class="field"><label>Job title</label><div class="input">Leaking kitchen tap</div></div>
+<div class="field"><label>Description</label><div class="input" style="height:88px;align-items:flex-start;padding-top:14px;color:var(--text-soft)">Mixer tap drips constantly…</div></div>
+<div class="grid2"><div class="field"><label>Hourly rate</label><div class="input">$85.50</div></div><div class="field"><label>Est. hours</label><div class="input">2</div></div></div>
+<div class="tile tinted"><div class="spread"><span class="sec">Estimated total</span><span style="font:700 28px var(--fb);color:var(--text-brand);font-variant-numeric:tabular-nums">$171.00</span></div></div>
+<div class="field"><label>Urgency</label><div class="seg48"><div class="o on">Today</div><div class="o">This week</div><div class="o">Flexible</div></div></div>
+</div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('h-matching')">Post job</div></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="h-matching" style="background:linear-gradient(180deg,#E0E5E6,#F6F4EE);flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="pad center" style="flex:1;justify-content:center;position:relative">
+<img class="rings-anim" src="../assets/rings-3-navy.svg" style="position:absolute;width:300px"/>
+<div class="av" style="width:96px;height:96px;font-size:34px;background:var(--surface);border:1px solid var(--line)">MT</div>
+<div class="h2" style="margin-top:28px">Finding your tradie</div>
+<div class="sec" style="margin-top:8px">Leaking kitchen tap · Grey Lynn</div>
+<div class="stack8" style="margin-top:30px"><div class="row"><svg height="18" style="color:var(--success-text)" width="18"><use href="#i-check"></use></svg><b style="font-size:14px">Searching nearby</b></div><div class="row"><svg height="18" style="color:var(--amber)" width="18"><use href="#i-clock"></use></svg><b style="font-size:14px">Contacting tradies</b></div></div>
+</div>
+<div class="sticky"><div class="btn btn-ghost" onclick="go('h-match')">(demo: match found →)</div></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="h-match" style="flex-direction:column">
+<div class="heroband" style="padding-bottom:46px">
+<img class="rings" src="../assets/rings-3-white.svg" style="width:300px;top:-40px;left:50%;transform:translateX(-50%);height:auto"/>
+<div class="hero-statusbar"><span>9:41</span><span></span></div>
+<img src="../assets/route-line.svg" style="display:block;margin:14px auto 0;width:290px;filter:brightness(0) invert(1);opacity:.5"/>
+<div class="center" style="margin-top:6px"><div style="font:600 18px var(--fb);color:#fff">We found your tradie</div></div>
+</div>
+<div class="pad" style="flex:1;overflow:visible">
+<div class="card center" style="margin-top:16px">
+<div class="av ring" style="width:72px;height:72px;font-size:26px;background:#3C75AA;color:#fff;margin-top:-72px">MT<div class="vbdg"><svg><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+<div style="font:700 20px var(--fb);margin-top:8px">Mike Te Rangi</div>
+<div class="row" style="margin-top:6px"><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#i-doc"></use></svg>Insured</span></div>
+<div class="row" style="margin-top:8px"><svg height="16" width="16"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126 jobs) · 2.1 km</span></div>
+</div>
+<div class="card" style="margin-top:14px;background:rgba(60,117,170,.06)">
+<div class="spread body"><span>2 h × $85.50</span><b>$171.00</b></div><div class="divider" style="margin:10px 0"></div>
+<div class="spread"><b>Total</b><span class="price">$171.00</span></div>
+</div>
+</div>
+<div class="sticky"><div class="stack8"><div class="btn btn-primary" onclick="go('h-pay')">Continue to payment</div><div class="btn btn-secondary" onclick="go('h-matching')">See another tradie</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="h-pay" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('h-match')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment</div></div>
+<div class="pad scroll">
+<div class="card center" style="background:linear-gradient(135deg,var(--navy),var(--blue));border:none;color:#fff">
+<div class="cap" style="color:rgba(255,255,255,.75)">Amount to pay</div><div class="hero-num" style="margin-top:4px">$171.00</div>
+<div class="cap" style="color:rgba(255,255,255,.75);margin-top:4px">Leaking kitchen tap · Mike Te Rangi</div></div>
+<div class="card" style="margin-top:14px"><div class="stitch stack16" style="margin-left:4px">
+<div class="row" style="margin-left:-38px"><div class="stepnode">1</div><div><b style="font-size:15px">Transfer to Mike</b><div class="sec">ANZ 06-0193-0455221-00</div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">2</div><div><b style="font-size:15px">Use this reference</b><div class="mono">FIXO-2481</div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">3</div><div><b style="font-size:15px">Upload your receipt</b><div class="sec">Checked within 1 business day</div></div></div>
+</div></div>
+</div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('h-jobdetail')">I've paid — submit receipt</div></div><div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="h-jobdetail" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('h-pay')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Booked</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 2 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· Booked</span></div></div></div>
+<div class="pad scroll"><div class="card" style="margin-top:14px"><div class="row"><div class="av" style="width:52px;height:52px;font-size:19px;background:#3C75AA;color:#fff">MT<div class="vbdg"><svg><use href="#i-check" style="stroke:#fff"></use></svg></div></div><div style="flex:1"><div class="title">Mike Te Rangi</div><div class="sec">Plumber · 4.8 ★ (126)</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal"><svg><use href="#i-msg"></use></svg>Message</div><div class="btn btn-tonal"><svg><use href="#i-call"></use></svg>Call</div></div></div>
+<div class="card" style="margin-top:12px"><div class="spread"><span class="sec">Total</span><span class="price">$171.00</span></div><div class="row" style="margin-top:8px"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">14 Crummer Rd, Grey Lynn</span></div></div></div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('c-chat')">Open chat</div></div><div class="homebar"><i></i></div>
+</div>
+<!-- ════ FLOW 2: TRADIE ════ -->
+<div class="scr frame w402" id="t-dash" style="flex-direction:column">
+<div class="heroband" style="padding-bottom:18px">
+<img src="../assets/rings-3-white.svg" style="position:absolute;top:-30px;right:-40px;width:260px"/>
+<div class="hero-statusbar"><span>9:41</span><span></span></div>
+<div class="pad" style="position:relative"><div class="cap" style="color:rgba(255,255,255,.75)">Earned this week (net)</div>
+<div class="hero-num">$1,246.80</div>
+<div class="grid2" style="margin-top:14px"><div class="herotile"><div class="cap">Pending</div><b style="font-size:17px">$384.50</b></div><div class="herotile"><div class="cap">Jobs this week</div><b style="font-size:17px">6</b></div></div></div>
+</div>
+<div class="pad scroll"><div class="eyebrow" style="margin:16px 0 10px">New leads</div>
+<div class="card attcard clickable" onclick="go('t-request')" style="padding:16px">
+<div class="spread"><span class="price" style="font-size:28px">$171.00</span><span class="urg high">HIGH</span></div>
+<div class="countdown" style="margin-top:8px"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t urgent">04:12</span></div><div class="track"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="sec" style="margin-top:8px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:4px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:12px"><div class="btn btn-secondary" onclick="event.stopPropagation()" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" onclick="event.stopPropagation();go('t-job-booked')" style="flex:2;height:56px">Accept</div></div>
+</div></div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="t-request" style="flex-direction:column">
+<div class="maphead" style="flex:none;height:34%">
+<img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/>
+<div class="hero-statusbar" style="color:var(--text-brand)"><span>9:41</span><span></span></div>
+<div class="appbar" style="padding:4px 20px"><div class="back clickable" onclick="go('t-dash')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="color:var(--text-brand)">Job request</div></div>
+<svg height="52" style="position:absolute;left:55%;top:44%" viewbox="0 0 40 52" width="40"><path d="M20 50S2 30 2 18A18 18 0 0 1 38 18c0 12-18 32-18 32Z" fill="#193957"></path><circle cx="20" cy="17" fill="#E38B29" r="7"></circle></svg>
+<div style="position:absolute;left:20px;bottom:18px;background:rgba(255,255,255,.85);border-radius:14px;padding:8px 14px;font:700 18px var(--fb);color:var(--text-brand)">$171.00</div>
+</div>
+<div class="pad" style="padding-top:12px"><div class="countdown"><div class="row" style="justify-content:space-between;margin-bottom:5px"><b style="font-size:14px">Respond within</b><span class="cdown-t urgent" style="font-size:16px">04:12</span></div><div class="track t8"><div class="fill urgent" style="width:62%"></div></div></div></div>
+<div class="pad scroll"><div class="row" style="margin-top:12px"><div class="title" style="flex:1">Leaking kitchen tap</div><span class="chip" style="height:26px;font-size:12px">Plumbing</span></div>
+<div class="spread" style="margin-top:6px"><span class="sec">Estimated</span><b style="font-size:16px">2 h × $85.50/h</b></div>
+<div class="body" style="font-size:15px;margin-top:14px">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp.</div></div>
+<div class="sticky"><div class="btnrow"><div class="btn btn-secondary" onclick="go('t-dash')" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" onclick="go('t-job-booked')" style="flex:2;height:56px">Accept job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="t-job-booked" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('t-dash')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn clickable" onclick="sheet('sheet-cancel')"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Booked</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 2 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· Booked</span></div></div></div>
+<div class="pad scroll"><div class="tile tinted" style="margin-top:14px"><div class="spread"><div><div class="cap" style="color:var(--text-soft)">Address</div><b style="font-size:15px">14 Crummer Rd, Grey Lynn</b></div></div></div>
+<div class="card" style="margin-top:12px"><div class="row"><div class="av" style="width:48px;height:48px;font-size:17px">SM</div><div style="flex:1"><div class="title" style="font-size:16px">Sarah Mitchell</div><div class="sec">Homeowner</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal" onclick="sheet('sheet-maps')"><svg><use href="#i-nav"></use></svg>Navigate</div><div class="btn btn-tonal"><svg><use href="#i-msg"></use></svg>Message</div><div class="btn btn-tonal"><svg><use href="#i-call"></use></svg>Call</div></div></div>
+<div class="card" style="margin-top:12px"><div class="spread"><span class="sec">You earn</span><span class="price" style="font-size:22px">$153.90</span></div></div></div>
+<div class="sticky"><div class="btn btn-primary" onclick="go('t-job-active')">Check in</div></div>
+<div class="scrim" id="sheet-maps" onclick="this.style.display='none'" style="display:none"></div>
+<div class="sheet" id="sheet-maps-ui" style="display:none"><div class="grip"></div><div class="title">Navigate with</div>
+<div class="stack8" style="margin-top:12px"><div class="tile row"><div class="icon-tile" style="width:40px;height:40px"><svg height="20" width="20"><use href="#i-pin"></use></svg></div><b>Apple Maps</b></div>
+<div class="tile row"><div class="icon-tile" style="width:40px;height:40px"><svg height="20" width="20"><use href="#i-pin"></use></svg></div><b>Google Maps</b></div></div></div>
+<div class="scrim" id="sheet-cancel" onclick="this.style.display='none';document.getElementById('sheet-cancel-ui').style.display='none'" style="display:none"></div>
+<div class="sheet" id="sheet-cancel-ui" style="display:none"><div class="grip"></div><div class="title">Cancel this job?</div>
+<div class="sec" style="margin-top:8px">Cancelling within 24 h of the start time lowers your ranking in search results.</div>
+<div class="stack8" style="margin-top:14px"><div class="btn" onclick="go('t-dash')" style="background:var(--red);color:#fff;height:52px">Yes, cancel job</div><div class="btn btn-ghost" onclick="document.getElementById('sheet-cancel').style.display='none';this.parentElement.parentElement.style.display='none'">Keep job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402" id="t-job-active" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="back clickable" onclick="go('t-job-booked')"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg><use href="#i-play"></use></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="pad scroll"><div class="card" style="margin-top:14px"><div class="spread"><span class="sec">Elapsed</span><b style="font-variant-numeric:tabular-nums">42 min</b></div><div class="spread" style="margin-top:8px"><span class="sec">You earn</span><span class="price" style="font-size:22px">$153.90</span></div></div></div>
+<div class="sticky"><div class="btn btn-navy" onclick="go('t-dash')">Check out</div></div><div class="homebar"><i></i></div>
+</div>
+<!-- ════ FLOW 3: CHAT ════ -->
+<div class="scr frame w402" id="c-list" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Messages</div></div>
+<div class="scroll">
+<div class="msgrow clickable" onclick="go('c-chat')"><div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div class="tx"><div class="nm"><span>Mike Te Rangi</span><span class="cap" style="color:var(--text-soft)">1:47 pm</span></div><div class="pv"><span class="sec" style="font-size:12px">Leaking kitchen tap</span></div><div class="pv">No worries. If it's the cartridge I'll have…</div></div><div class="udot"></div></div>
+<div class="msgrow"><div class="av" style="width:40px;height:40px;font-size:14px">JK</div>
+<div class="tx"><div class="nm"><span>Jess Kaur</span><span class="cap" style="color:var(--text-soft)">11:20 am</span></div><div class="pv"><span class="sec" style="font-size:12px">Install two power points</span></div><div class="pv">I've sent through the certificate…</div></div></div>
+</div>
+<div class="navbar"><div class="tab clickable" onclick="go('s-dash-empty')"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="scr frame w402 bpdots" id="c-chat" style="flex-direction:column">
+<div class="statusbar"><span>9:41</span><span></span></div>
+<div class="appbar" style="padding-bottom:8px"><div class="back clickable" onclick="go('c-list')"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div style="flex:1"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="pad"><div class="pill pill-waiting" style="background:rgba(60,117,170,.12);display:flex;justify-content:center"><svg><use href="#i-clock"></use></svg>Step 3 of 4 · In progress</div></div>
+<div class="scroll" id="chatlog" style="display:flex;flex-direction:column;gap:8px;padding:14px 20px">
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+</div>
+<div class="pad" style="padding-bottom:6px"><div class="faderow"><span class="chip clickable" onclick="quick('On my way')">On my way</span><span class="chip clickable" onclick="quick('Running late')">Running late</span><span class="chip clickable" onclick="quick('All done')">All done</span><span class="chip clickable" onclick="quick('Need anything?')">Need anything?</span></div></div>
+<div class="composer"><div class="ibtn cam"><svg height="24" width="24"><use href="#i-cam"></use></svg></div><input class="field2" id="msgin" placeholder="Message…" style="border:none;outline:none;font-family:var(--fb)"/><div class="ibtn send clickable" onclick="send()"><svg height="22" width="22"><use href="#i-send"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+<div class="flownav">
+<span style="align-self:center;color:#9AA4AC;font:600 11px var(--fm)">FLOWS:</span>
+<button onclick="go('h-postjob')">Homeowner</button>
+<button onclick="go('t-dash')">Tradie</button>
+<button onclick="go('c-list')">Chat</button>
+<button onclick="go('s-splash')">Onboarding</button>
+</div>
+<script>
+const stage = document.getElementById('stage');
+function go(id){
+  stage.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function sheet(id){
+  document.getElementById(id).style.display='block';
+  document.getElementById(id+'-ui').style.display='block';
+}
+function send(){
+  const i=document.getElementById('msgin'); const v=i.value.trim(); if(!v)return;
+  addBubble(v,'sent'); i.value='';
+}
+function quick(t){ addBubble(t,'sent'); }
+function addBubble(t,cls){
+  const d=document.createElement('div'); d.className='bubble '+cls; d.textContent=t;
+  const log=document.getElementById('chatlog'); log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+document.getElementById('rm').addEventListener('change',e=>stage.classList.toggle('rm',e.target.checked));
+go('s-splash');
+</script>
+<!-- Inline SVG icon sprite: rounded-duotone, 2px stroke, single accent fill.
+     Paste inside <body> of each frame file. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="9.5" y="14" width="5" height="6.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-jobs" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 7V5.8A1.8 1.8 0 0 1 10.3 4h3.4a1.8 1.8 0 0 1 1.8 1.8V7" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="11" width="4" height="3.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="12.8" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="16.6" cy="10.5" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-call" viewBox="0 0 24 24"><path d="M7.2 4.6 9 3.9c.6-.2 1.3.1 1.6.6l1.3 2.3c.3.5.2 1.2-.3 1.6l-1.1.9a13.2 13.2 0 0 0 5.2 5.2l.9-1.1c.4-.5 1.1-.6 1.6-.3l2.3 1.3c.5.3.8 1 .6 1.6l-.7 1.8c-.2.6-.9 1-1.5.9C10.6 18.6 5.4 13.4 4.3 6.1c-.1-.6.3-1.3.9-1.5Z" fill="#3C75AA"/><path d="M14 4.5a5.5 5.5 0 0 1 5.5 5.5M14.5 8a2 2 0 0 1 2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-nav" viewBox="0 0 24 24"><path d="M12 3.5 19.5 20 12 16.5 4.5 20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.5 19.5 20 12 16.5Z" fill="#E38B29"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#E38B29"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4.5 4.5 8.5-9.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12.4 3 3 5.3-6" fill="none" stroke="#3A7D5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-excl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.8v12.4c0 .8.9 1.3 1.6.9l9.6-6.2a1.05 1.05 0 0 0 0-1.8L9.6 4.9c-.7-.4-1.6.1-1.6.9Z" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.3l-4.8 2.6.9-5.4-3.9-3.8 5.4-.8Z" fill="#E38B29"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 19 6v5.5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.8 11.8 2.3 2.3 4.2-4.7" fill="none" stroke="#3A7D5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="#3C75AA" stroke-width="2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4.5 11.5 20 4l-7.5 15.5-2.2-6.3Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="13" width="3.5" height="3" rx="0.8" fill="#E38B29"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 9.5h17" stroke="currentColor" stroke-width="2"/><rect x="7" y="13.5" width="5" height="2.2" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3.5V8h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12.5h6M9 16h4" stroke="#3C75AA" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5v-11M7.5 8.5 12 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M20.2 6.9a5 5 0 0 1-6.6 6.6L7 20.1a2.1 2.1 0 0 1-3-3l6.6-6.6a5 5 0 0 1 6.6-6.6l-2.8 2.8.9 2.5 2.5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6.2" cy="17.8" r="1" fill="#E38B29"/></symbol>
+<symbol id="i-brush" viewBox="0 0 24 24"><path d="M18 3l3 3-9.5 9.5c-.8.8-1.8 1.3-2.9 1.4L4 18l1.1-4.6c.1-1.1.6-2.1 1.4-2.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" stroke="currentColor" stroke-width="2"/><path d="M4 18c0 1.7 1.3 3 3 3 1.2 0 2.2-.7 2.7-1.8" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 2L5 12h4l-3 6h12l-3-6h4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 18v4" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-hammer" viewBox="0 0 24 24"><path d="M15 4l5 3-2 3-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 6l-9.5 9.5a2.1 2.1 0 0 0 3 3L17 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="17" y="5" width="4" height="3" rx="0.5" fill="var(--amber)"/></symbol>
+<!-- Deprecated alias: prefer #i-home -->
+<symbol id="i-house" viewBox="0 0 24 24"><use href="#i-home"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0v4l1.5 3h-15L6 14Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 19.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="5.5" r="2.4" fill="#E38B29"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M18 6l-1.8 1.8M7.8 16.2 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.4a2.6 2.6 0 1 1 3.7 2.9c-.8.4-1.2.8-1.2 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4.5H7A1.5 1.5 0 0 0 5.5 6v12A1.5 1.5 0 0 0 7 19.5h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 12h10M17 8.5 20.5 12 17 15.5" fill="none" stroke="#B23A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="m15.5 4.5 4 4L8.5 19.5l-4.7.7.7-4.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="#E38B29" stroke-width="2"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 12.5h5.5v3H15a1.5 1.5 0 0 1 0-3Z" fill="#E38B29"/><path d="M3.5 9V7.5A1.5 1.5 0 0 1 5 6h11" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 15.5h-1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9.8" r="1.8" fill="#3C75AA"/><path d="m4.5 17.5 4.5-4.5 3.5 3.5 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 5c4-1.8 7 1.8 12 0v9c-5 1.8-8-1.8-12 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="1.4" fill="#E38B29"/></symbol>
+</defs>
+</svg>
+
+</body></html>

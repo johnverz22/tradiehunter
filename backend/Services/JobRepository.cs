@@ -18,10 +18,12 @@ public class JobRepository : IJobRepository
         _context = context;
     }
 
-    public async Task<Job?> GetByIdAsync(int id, bool includePhotos = false)
+    public async Task<Job?> GetByIdAsync(int id, bool includePhotos = false, bool includeOffers = false)
     {
         var q = _context.Jobs.AsQueryable();
         if (includePhotos) q = q.Include(j => j.Photos);
+        if (includeOffers) q = q.Include(j => j.Offers);
+        q = q.Include(j => j.MatchedTradie);
         return await q.FirstOrDefaultAsync(j => j.Id == id);
     }
 
@@ -29,7 +31,7 @@ public class JobRepository : IJobRepository
         string userId, bool isTradie, JobStatus? statusFilter, int page, int pageSize)
     {
         var q = isTradie
-            ? _context.Jobs.Where(j => j.MatchedTradieId == userId)
+            ? _context.Jobs.Where(j => j.MatchedTradieId == userId || j.Offers.Any(o => o.TradieId == userId && o.Response == OfferResponse.Pending))
             : _context.Jobs.Where(j => j.HomeownerId == userId);
 
         if (statusFilter.HasValue)
@@ -41,6 +43,7 @@ public class JobRepository : IJobRepository
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Include(j => j.Photos)
+            .Include(j => j.MatchedTradie)
             .ToListAsync();
 
         return (items, total);

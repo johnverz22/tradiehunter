@@ -1,0 +1,48 @@
+/* v1.7 theme tokens, extracted from html/kit.css */
+:root {
+  --navy: #193957; --blue700: #29537A; --blue: #3C75AA; --blue300: #89AFD2;
+  --blue100: #E1EBF4; --blue100d: #1B2937;
+  --amber: #E38B29; --amber-dark: #B96A18; --on-amber: #241300;
+  --green: #3A7D5C; --red: #B23A2E;
+  --cream: #F6F4EE; --paper-line: #E4E0D4; --ink: #1D2226; --ink-soft: #5B6570;
+  --paper-d: #14181B; --paper-line-d: #262C30; --ink-d: #ECEAE3; --ink-soft-d: #9AA4AC; --card-d: #1E2328;
+  --ink-success: #2E6B4E; --ink-success-d: #8FC9A8;
+  --ink-danger: #B23A2E; --ink-danger-d: #E8968E;
+  --ink-accent: #8F4F08; --ink-accent-d: #E38B29;
+  /* v1.7 semantic tokens (light) — components read ONLY these, so .dark / .outdoor swap values, never layout */
+  --paper: var(--cream); --surface: #FFFFFF; --surface-2: var(--cream); --line: var(--paper-line);
+  --text: var(--ink); --text-soft: var(--ink-soft); --text-brand: var(--navy);
+  --brand: var(--navy); --on-brand: #FFFFFF;
+  --tint-brand: rgba(60,117,170,.12); --tint-brand-strong: rgba(60,117,170,.20); --tint-navy: rgba(25,57,87,.15);
+  --track: rgba(25,57,87,.12); --press: rgba(25,57,87,.06);
+  --accent-text: var(--ink-accent); --map-a: #E1EBF4; --map-b: #CFDDEA;
+  --hero-a: var(--navy); --hero-b: var(--blue); --strip: var(--navy);
+  --elev-card: 0 1px 2px rgba(25,57,87,.06), 0 8px 24px rgba(25,57,87,.08);
+  --elev-sheet: 0 -12px 32px rgba(25,57,87,.12);
+  --elev-cta: inset 0 1px 0 rgba(255,255,255,.2), 0 6px 16px rgba(227,139,41,.25);
+  --glass: rgba(255,255,255,.86);
+  /* spacing scale (4pt) — Flutter: Space.s1..s8 */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px; --gutter:20px;
+  --r-card:20px; --r-ctl:14px; --r-tile:16px; --r-sheet:28px; --r-pill:999px;
+  --fd: 'Space Grotesk', system-ui, sans-serif;
+  --fb: 'IBM Plex Sans', system-ui, sans-serif;
+  --fm: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.dark {
+  --paper: var(--paper-d); --surface: var(--card-d); --surface-2: var(--paper-d); --line: rgba(255,255,255,.12);
+  --text: var(--ink-d); --text-soft: var(--ink-soft-d); --text-brand: var(--blue300);
+  --brand: var(--blue300); --on-brand: var(--navy);
+  --tint-brand: rgba(60,117,170,.20); --tint-brand-strong: rgba(60,117,170,.30); --tint-navy: rgba(137,175,210,.18);
+  --track: rgba(255,255,255,.14); --press: rgba(255,255,255,.06);
+  --accent-text: var(--amber); --map-a: #1B2937; --map-b: #22384B;
+  --hero-a: #12293F; --hero-b: #1F4468; --strip: #12293F;
+  --elev-card: none; --elev-sheet: 0 -12px 32px rgba(0,0,0,.45);
+  --elev-cta: inset 0 1px 0 rgba(255,255,255,.2), 0 6px 20px rgba(227,139,41,.30);
+  --glass: rgba(30,35,40,.86);
+}
+
+.outdoor { --elev-card: 0 0 0 1px rgba(25,57,87,.18); --glass: #FFFFFF; --text-soft: #46505A; --line: rgba(25,57,87,.28);
+  --hero-a: var(--navy); --hero-b: var(--navy); }
+
+.outdoor { --paper-warm: var(--paper); }

@@ -29,7 +29,7 @@ namespace FixoApi.Migrations
                     Address = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ScheduledDateUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ScheduledStart = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     MatchedTradieId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>

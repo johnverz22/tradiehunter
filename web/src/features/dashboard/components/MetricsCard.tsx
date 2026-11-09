@@ -12,15 +12,15 @@ interface MetricRowProps {
 }
 
 const MetricRow: React.FC<MetricRowProps> = ({ label, value }) => (
-  <div className="flex items-center justify-between py-2 border-b border-[var(--paper-line)] last:border-0">
-    <span className="text-sm text-[var(--ink-soft)]">{label}</span>
-    <span className="text-sm font-semibold text-[var(--ink)]">{value}</span>
+  <div className="detail-row">
+    <span className="detail-label">{label}</span>
+    <span className="detail-value">{value}</span>
   </div>
 );
 
 export const MetricsCard: React.FC<MetricsCardProps> = ({ label, window: w }) => (
-  <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded-lg p-5">
-    <h3 className="text-sm font-semibold text-[var(--ink)] mb-3">{label}</h3>
+  <div className="card">
+    <h3 className="card-title">{label}</h3>
     <MetricRow label="Activation rate" value={`${w.activationRatePct}%`} />
     <MetricRow
       label="Avg match→confirm"

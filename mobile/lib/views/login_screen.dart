@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../theme/design_tokens.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/fixo_buttons.dart';
+import 'widgets/auth_controls.dart';
+import 'widgets/fixo_feedback.dart';
+
 
 /// Mockup 03-login: wordmark + "Welcome back", labeled 48h inputs,
 /// amber Sign in, "or continue with" divider, Google button, footer link.
@@ -32,23 +36,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
     ref.read(authViewModelProvider.notifier).clearError();
-    final success = await ref.read(authViewModelProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
+    final outcome = await ref
+        .read(authViewModelProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
+    if (!mounted || outcome == null) return;
+
+    switch (outcome) {
+      case AuthSignedIn():
+        // Invalidate stale profile from any previous session and reload.
+        ref.invalidate(profileViewModelProvider);
+        final destination = await getRoleRoute(
+          ref.read(sharedProfileRepositoryProvider),
         );
-    if (success && mounted) {
-      // Invalidate stale profile from any previous session and reload.
-      ref.invalidate(profileViewModelProvider);
-      final destination = await getRoleRoute(
-        ref.read(sharedProfileRepositoryProvider),
-      );
-      if (mounted) context.go(destination);
+        if (mounted) context.go(destination);
+      // P1-03: unverified account — the backend withheld the JWT.
+      case AuthNeedsEmailVerification(:final email):
+        context.go('/verify-email', extra: email);
     }
   }
 
   void _googleLogin() async {
-    final result =
-        await ref.read(authViewModelProvider.notifier).loginWithGoogle();
+    final result = await ref
+        .read(authViewModelProvider.notifier)
+        .loginWithGoogle();
     if (!mounted) return;
 
     switch (result) {
@@ -58,17 +68,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ref.read(sharedProfileRepositoryProvider),
         );
         if (mounted) context.go(destination);
-      case GoogleLoginRequiresRegistration(:final userId):
-        context.go('/role-select', extra: userId);
+      case GoogleLoginRequiresRegistration(
+        :final userId,
+        :final registrationToken,
+      ):
+        context.go(
+          '/role-select',
+          extra: (userId: userId, registrationToken: registrationToken),
+        );
+      // P1-04: Google can't link an unverified password account.
+      case GoogleLoginRequiresVerification(:final email):
+        context.go('/verify-email', extra: email);
       case GoogleLoginCancelled():
         break;
     }
   }
 
-  // TODO(backend): wire to POST /api/auth/forgot-password.
+  // No POST /api/auth/forgot-password exists on the backend (AuthController
+  // has register/login/refresh/google only) — coming-soon placeholder.
   void _forgotPassword() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password reset — coming soon')),
+      const SnackBar(
+        content: Text('Password reset is not available in this app.'),
+      ),
     );
   }
 
@@ -78,32 +100,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      key: const Key('login_screen'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+        child: AuthScrollView(
+          padding: const EdgeInsets.fromLTRB(Space.s6, 48, Space.s6, Space.s6),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const FixoWordmark(fontSize: 32),
-                const SizedBox(height: 32),
+                const FixoWordmark(fontSize: DesignTokens.fontSizeDisplay),
+                const SizedBox(height: Space.s7),
                 Text(
                   'Welcome back',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FW.bold,
+                  ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: Space.s7),
                 if (authState.error != null)
-                  _ErrorBanner(message: authState.error!),
-                const Text('Email',
-                    style:
-                        TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 8),
+                  Semantics(
+                    liveRegion: true,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: Space.s4),
+                      child: FixoInfoBanner.error(message: authState.error!),
+                    ),
+                  ),
                 TextFormField(
+                  key: const Key('email_field'),
                   controller: _emailController,
                   decoration: const InputDecoration(
-                      hintText: 'e.g. kiaora@example.co.nz'),
+                    labelText: 'Email',
+                    hintText: 'e.g. kiaora@example.co.nz',
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email],
@@ -117,46 +146,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Password',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500)),
-                    GestureDetector(
-                      onTap: _forgotPassword,
-                      child: Semantics(
-                        button: true,
-                        label: 'Forgot password',
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 4),
-                          child: Text('Forgot password?',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: DesignTokens.brand500)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: Space.s4),
                 TextFormField(
+                  key: const Key('password_field'),
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.password],
                   onFieldSubmitted: (_) => _login(),
                   decoration: InputDecoration(
+                    labelText: 'Password',
                     suffixIcon: IconButton(
-                      tooltip:
-                          _obscurePassword ? 'Show password' : 'Hide password',
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
-                      onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
+                      tooltip: _obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (v) {
@@ -166,68 +176,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: Space.s1),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _forgotPassword,
+                    child: const Text('Forgot password?'),
+                  ),
+                ),
+                const SizedBox(height: Space.s4),
                 FixoPrimaryButton(
+                  key: const Key('login_button'),
                   label: 'Sign in',
                   isLoading: authState.isLoading,
                   onPressed: _login,
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: Space.s6),
                   child: Row(
                     children: [
                       const Expanded(child: Divider()),
                       Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('or continue with',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5))),
+                        padding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                        child: Text(
+                          'or',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
                       ),
                       const Expanded(child: Divider()),
                     ],
                   ),
                 ),
-                SizedBox(
-                  height: 48,
-                  child: OutlinedButton(
-                    onPressed:
-                        authState.isLoading ? null : _googleLogin,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _GoogleG(),
-                        SizedBox(width: 12),
-                        Text('Google',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
+                AuthGoogleButton(
+                  icon: const _GoogleG(),
+                  onPressed: authState.isLoading ? null : _googleLogin,
                 ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: Space.s7),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text("Don't have an account? ",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7))),
-                    GestureDetector(
-                      onTap: () => context.go('/signup'),
-                      child: Semantics(
-                        button: true,
-                        label: 'Create account',
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 4),
-                          child: Text('Create account',
-                              style: TextStyle(
-                                  color: DesignTokens.brand500,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ),
+                    const Text("Don't have an account?"),
+                    TextButton(
+                      onPressed: () => context.go('/signup'),
+                      child: const Text('Create account'),
                     ),
                   ],
                 ),
@@ -250,47 +246,11 @@ class _GoogleG extends StatelessWidget {
     return const Text(
       'G',
       style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF4285F4),
+        fontSize: DesignTokens.fontSizeH2Small,
+        fontWeight: FW.bold,
+        color: SocialColors.googleBlue,
       ),
     );
   }
 }
 
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(DesignTokens.radius),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.error_outline_rounded,
-                size: 18, color: colorScheme.onErrorContainer),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: colorScheme.onErrorContainer,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -45,7 +45,7 @@ public class ScheduleService : IScheduleService
             ?? throw new KeyNotFoundException($"Job {jobId} not found.");
 
         // Only Confirmed-status jobs can be scheduled.
-        if (job.Status != JobStatus.Confirmed)
+        if (job.Status != JobStatus.Booked)
             throw new InvalidOperationException(
                 "Scheduling is only available for Confirmed jobs.");
 
@@ -65,7 +65,7 @@ public class ScheduleService : IScheduleService
         // Cancel any existing reminders before replacing.
         CancelExistingReminders(job);
 
-        job.ScheduledDateUtc         = request.ProposedDateUtc.Date; // UTC date only
+        job.ScheduledStart         = request.ProposedDateUtc.Date; // UTC date only
         job.ScheduledTimeSlot        = slot;
         job.ScheduleProposedByUserId = userId;
         job.ScheduleStatus           = isConfirmation
@@ -85,7 +85,7 @@ public class ScheduleService : IScheduleService
             jobId,
             isConfirmation ? "confirmed" : "proposed",
             userId,
-            job.ScheduledDateUtc?.ToString("yyyy-MM-dd"),
+            job.ScheduledStart?.ToString("yyyy-MM-dd"),
             slot);
 
         var dto = BuildDto(job);
@@ -125,7 +125,7 @@ public class ScheduleService : IScheduleService
     /// <summary>Enqueue 24h and 1h reminders for a confirmed schedule.</summary>
     private void EnqueueReminders(Models.Job job)
     {
-        if (job.ScheduledDateUtc == null) return;
+        if (job.ScheduledStart == null) return;
 
         // Compute the approximate reminder times based on the time slot.
         var slotHour = job.ScheduledTimeSlot switch
@@ -137,7 +137,7 @@ public class ScheduleService : IScheduleService
         };
 
         var scheduledAt = DateTime.SpecifyKind(
-            job.ScheduledDateUtc.Value.Date.AddHours(slotHour),
+            job.ScheduledStart.Value.Date.AddHours(slotHour),
             DateTimeKind.Utc);
 
         var reminder24h = scheduledAt.AddHours(-24);
@@ -203,7 +203,7 @@ public class ScheduleService : IScheduleService
                 ? "Schedule confirmed"
                 : "Schedule proposal";
             var slotLabel = slot.ToString().ToLower();
-            var dateStr   = job.ScheduledDateUtc?.ToString("ddd d MMM") ?? "upcoming";
+            var dateStr   = job.ScheduledStart?.ToString("ddd d MMM") ?? "upcoming";
             var body      = isConfirmation
                 ? $"\"{job.Title}\" is confirmed for {dateStr} ({slotLabel})."
                 : $"A {slotLabel} slot on {dateStr} was proposed for \"{job.Title}\".";
@@ -238,7 +238,7 @@ public class ScheduleService : IScheduleService
     private static ScheduleDto BuildDto(Models.Job job) => new()
     {
         JobId             = job.Id,
-        ScheduledDateUtc  = job.ScheduledDateUtc,
+        ScheduledStart  = job.ScheduledStart,
         ScheduledTimeSlot = job.ScheduledTimeSlot?.ToString(),
         ScheduleStatus    = job.ScheduleStatus.ToString(),
         ProposedByUserId  = job.ScheduleProposedByUserId,

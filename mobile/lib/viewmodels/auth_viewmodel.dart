@@ -13,10 +13,34 @@ import '../router/app_router.dart';
 // Re-export result types so screens only need one import.
 export '../repositories/auth_repository.dart'
     show
+        AuthOutcome,
+        AuthSignedIn,
+        AuthNeedsEmailVerification,
         GoogleLoginResult,
         GoogleLoginSuccess,
         GoogleLoginCancelled,
-        GoogleLoginRequiresRegistration;
+        GoogleLoginRequiresRegistration,
+        GoogleLoginRequiresVerification;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/// Returns the API base URL, rewriting localhost → 10.0.2.2 on Android
+/// emulators so a single .env.json works everywhere.
+///
+/// Use this anywhere you need a raw URL string (e.g. SignalR hub connections).
+/// Dio already applies the same rewrite internally via [dioProvider].
+String resolveBaseUrl() {
+  const configured = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:5000',
+  );
+  if (!kIsWeb && Platform.isAndroid) {
+    return configured
+        .replaceFirst('localhost', '10.0.2.2')
+        .replaceFirst('127.0.0.1', '10.0.2.2');
+  }
+  return configured;
+}
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -72,7 +96,8 @@ final sharedProfileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 /// Fetches the current user's role from the API and returns the
 /// destination route string: '/tradie' for role==1 (Tradie), '/home' otherwise.
-/// UserRole enum: Homeowner=0, Tradie=1, Admin=2.
+/// UserRole enum: Homeowner=0, Tradie=1, Staff=2, Superadmin=3.
+/// Mobile users are always Homeowner or Tradie; Staff/Superadmin log into the web admin.
 /// Call this after every successful login / registration / splash check.
 Future<String> getRoleRoute(ProfileRepository profileRepo) async {
   try {
@@ -106,22 +131,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._repository) : super(const AuthState());
 
-  Future<bool> login(String email, String password) async {
+  /// P1-03: returns [AuthSignedIn] for a verified account, or
+  /// [AuthNeedsEmailVerification] when the backend withholds the JWT until
+  /// the emailed code is entered. Returns null on failure, with the reason
+  /// in [AuthState.error].
+  Future<AuthOutcome?> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repository.login(email, password);
-      await _postLoginHook();
+      final outcome = await _repository.login(email, password);
+      if (outcome is AuthSignedIn) await _postLoginHook();
       state = state.copyWith(isLoading: false);
-      return true;
+      return outcome;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _stripException(e));
-      return false;
+      return null;
     }
   }
 
   /// Returns a [GoogleLoginResult]:
   /// - [GoogleLoginSuccess]              → navigate to /home
   /// - [GoogleLoginRequiresRegistration] → navigate to /role-select?userId=...
+  /// - [GoogleLoginRequiresVerification] → navigate to the OTP screen
   /// - [GoogleLoginCancelled]            → do nothing
   Future<GoogleLoginResult> loginWithGoogle() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -136,11 +166,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> register(String firstName, String lastName, String email,
+  /// P1-03: registration never signs the user in — the backend emails an OTP
+  /// and returns no tokens, so this yields [AuthNeedsEmailVerification] on
+  /// success and null on failure (reason in [AuthState.error]).
+  Future<AuthOutcome?> register(String firstName, String lastName, String email,
       String password, int role) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repository.register(firstName, lastName, email, password, role);
+      final outcome = await _repository.register(
+          firstName, lastName, email, password, role);
+      state = state.copyWith(isLoading: false);
+      return outcome;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _stripException(e));
+      return null;
+    }
+  }
+
+  /// P1-03: submit the emailed 6-digit code. On success the JWT is stored and
+  /// the caller navigates to the role landing page.
+  Future<bool> verifyEmail(String email, String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.verifyEmail(email, code);
       await _postLoginHook();
       state = state.copyWith(isLoading: false);
       return true;
@@ -150,11 +198,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Called from RoleSelectScreen. Sends role to backend, stores JWT.
-  Future<bool> completeRegistration(String userId, int role) async {
+  /// P1-03: request a fresh code. Throws are caught into [AuthState.error] —
+  /// a 429 cooldown response leaves the countdown running and shows the
+  /// server's "please wait" message instead.
+  Future<bool> resendOtp(String email) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repository.completeRegistration(userId, role);
+      await _repository.resendOtp(email);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _stripException(e));
+      return false;
+    }
+  }
+
+  /// Called from RoleSelectScreen. Sends role + P9-02 registration token to
+  /// backend, stores JWT.
+  Future<bool> completeRegistration(
+      String userId, String registrationToken, int role) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.completeRegistration(userId, registrationToken, role);
       await _postLoginHook();
       state = state.copyWith(isLoading: false);
       return true;
@@ -171,6 +236,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _postLoginHook() async {
+    const disablePush = bool.fromEnvironment('FIXO_DISABLE_PUSH', defaultValue: false);
+    if (disablePush) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) await _repository.registerDeviceToken(token);

@@ -174,7 +174,7 @@ namespace FixoApi.Migrations
                     b.Property<string>("MatchedTradieId")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("ScheduledDateUtc")
+                    b.Property<DateTime?>("ScheduledStart")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")

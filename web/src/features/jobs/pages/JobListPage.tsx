@@ -5,10 +5,14 @@ import { StatusBadge } from '../../../components/StatusBadge';
 import { Pagination } from '../../../components/Pagination';
 import { useJobList } from '../hooks/useJobs';
 
+const PAGE_SIZE = 20;
+
 const JOB_STATUSES = [
   'Draft', 'Requested', 'Matching', 'Matched',
   'Confirmed', 'InProgress', 'Complete', 'Cancelled',
 ];
+
+const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
 
 export const JobListPage: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -20,7 +24,7 @@ export const JobListPage: React.FC = () => {
     search,
     status,
     page,
-    pageSize: 20,
+    pageSize: PAGE_SIZE,
     sortBy: 'createdAt',
     sortDesc,
   });
@@ -30,9 +34,16 @@ export const JobListPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-[var(--ink)]">Jobs</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          {data ? `${data.totalCount.toLocaleString()} total` : ''}
-        </p>
+        {data && (
+          <div className="flex flex-wrap gap-4 mt-3">
+            <div className="stat-pill">
+              <strong>{data.totalCount.toLocaleString()}</strong> {status || 'All statuses'}
+            </div>
+            <div className="stat-pill">
+              <strong>{data.items.length}</strong> on this page
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -41,70 +52,73 @@ export const JobListPage: React.FC = () => {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]" />
           <input
             type="search"
+            className="field field-search"
             placeholder="Search title or address…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--paper-line)] rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)]"
           />
         </div>
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="px-3 py-2 text-sm border border-[var(--paper-line)] rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)]"
-        >
-          <option value="">All statuses</option>
-          {JOB_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <button
-          onClick={() => setSortDesc((d) => !d)}
-          className="px-3 py-2 text-sm border border-[var(--paper-line)] rounded text-[var(--ink-soft)] hover:bg-[var(--paper-line)] transition-colors"
-        >
+        <span className="select-wrap">
+          <select
+            className="select-field"
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            {JOB_STATUSES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </span>
+        <button className="btn btn-ghost" onClick={() => setSortDesc((d) => !d)}>
           {sortDesc ? 'Newest first' : 'Oldest first'}
         </button>
       </div>
 
       {/* Table */}
-      <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--paper-line)]/50">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Title</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Homeowner</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Tradie</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Created</th>
-                <th className="px-4 py-3"></th>
+                <th className="th">Job ID</th>
+                <th className="th">Title</th>
+                <th className="th">Category</th>
+                <th className="th">Status</th>
+                <th className="th">Homeowner</th>
+                <th className="th">Tradie</th>
+                <th className="th">Posted</th>
+                <th className="th" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--paper-line)]">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">Loading…</td>
+                  <td colSpan={8} className="td text-center cell-muted">Loading…</td>
                 </tr>
               ) : data?.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">No jobs found.</td>
+                  <td colSpan={8} className="td text-center cell-muted">No jobs found.</td>
                 </tr>
               ) : (
                 data?.items.map((job) => (
-                  <tr key={job.id} className="hover:bg-[var(--paper-line)]/30 transition-colors">
-                    <td className="px-4 py-3 font-medium text-[var(--ink)] max-w-xs truncate">{job.title}</td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{job.category}</td>
-                    <td className="px-4 py-3"><StatusBadge status={job.status} /></td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{job.homeownerName}</td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{job.tradeName ?? '—'}</td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">
+                  <tr key={job.id}>
+                    <td className="td mono">
+                      <Link to={`/jobs/${job.id}`} className="cell-link">
+                        {formatJobId(job.id)}
+                      </Link>
+                    </td>
+                    <td className="td">{job.title}</td>
+                    <td className="td cell-muted">{job.category}</td>
+                    <td className="td"><StatusBadge status={job.status} /></td>
+                    <td className="td cell-muted">{job.homeownerName}</td>
+                    <td className="td cell-muted">{job.tradeName ?? '—'}</td>
+                    <td className="td cell-muted">
                       {new Date(job.createdAtUtc).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        to={`/jobs/${job.id}`}
-                        className="text-xs text-[var(--brand-500)] hover:underline"
-                      >
+                    <td className="td text-right">
+                      <Link to={`/jobs/${job.id}`} className="action-link">
                         View
                       </Link>
                     </td>
@@ -114,11 +128,18 @@ export const JobListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {data && (
-        <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />
-      )}
+        {data && (
+          <Pagination
+            page={data.page}
+            totalPages={data.totalPages}
+            pageSize={data.pageSize}
+            totalCount={data.totalCount}
+            itemLabel="jobs"
+            onPageChange={setPage}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 /* ────────────────────────────────────────────────────
-   Fixo Design Tokens
+   TradieFixo Design Tokens
    Source of truth: docs/design/design-system.html
    ──────────────────────────────────────────────────── */
 
@@ -19,11 +19,23 @@
   --green: #3A7D5C;
   --red: #B23A2E;
 
+  /* Semantic text — the same hues lightened for dark surfaces */
+  --amber-ink: var(--amber-dark);
+  --green-ink: var(--green);
+  --red-ink: var(--red);
+
   /* Neutrals — light */
   --paper: #F6F4EE;
   --paper-line: #E4E0D4;
   --ink: #1D2226;
   --ink-soft: #5B6570;
+
+  /* Surface — raised elements: cards, tables, fields (mockup --white) */
+  --surface: #FFFFFF;
+
+  /* Elevation */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-pop: 0 4px 24px rgba(0, 0, 0, 0.08);
 
   /* Border radius */
   --radius: 4px;
@@ -60,6 +72,10 @@
     --ink: #ECEAE3;
     --ink-soft: #9AA4AC;
     --brand-100: hsl(var(--hue) 35% 16%);
+    --surface: #1E2328;
+    --amber-ink: #F0A94E;
+    --green-ink: #6FBF95;
+    --red-ink: #E38C80;
   }
 }
 
@@ -70,4 +86,8 @@
   --ink: #ECEAE3;
   --ink-soft: #9AA4AC;
   --brand-100: hsl(var(--hue) 35% 16%);
+  --surface: #1E2328;
+  --amber-ink: #F0A94E;
+  --green-ink: #6FBF95;
+  --red-ink: #E38C80;
 }

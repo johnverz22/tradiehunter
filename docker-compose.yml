@@ -37,43 +37,30 @@ services:
       timeout: 3s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    container_name: fixo-minio
+  # Azurite emulates Azure Blob Storage locally (API at :10000).
+  # Containers are created lazily by the API on first upload — no init step.
+  # Inspect blobs with Azure Storage Explorer → "Attach to a local emulator".
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: fixo-azurite
     restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-fixo}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-fixo_dev_secret}
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"      # S3 API
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"   # Web console
+      - "${AZURITE_BLOB_PORT:-10000}:10000"
     volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # ─── Create default MinIO bucket on startup ──────────────────
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: fixo-minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-        mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-fixo} $${MINIO_ROOT_PASSWORD:-fixo_dev_secret};
-        mc mb --ignore-existing local/fixo-photos;
-        mc anonymous set download local/fixo-photos;
-        echo 'Bucket fixo-photos ready';
-      "
-    restart: "no"
+      - azuritedata:/data
 
   # ─── Application services ────────────────────────────────────
+
+  # P1-02: local SMTP catcher for OTP + staff-invite emails.
+  # UI: http://localhost:8025 · SMTP: localhost:1025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: fixo-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
 
   api:
     build:
@@ -81,18 +68,23 @@ services:
       dockerfile: Dockerfile
     container_name: fixo-api
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     ports:
       - "${API_PORT:-5000}:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-fixo};Username=${POSTGRES_USER:-fixo};Password=${POSTGRES_PASSWORD:-fixo_dev}"
+      Jwt__Secret: ${JWT_SECRET:-GOCSPX-VOkvwdTNIZ3|0_5KTg|0cbVVmvzg}
       ConnectionStrings__Redis: "redis:6379"
-      Storage__Endpoint: "http://minio:9000"
-      Storage__AccessKey: ${MINIO_ROOT_USER:-fixo}
-      Storage__SecretKey: ${MINIO_ROOT_PASSWORD:-fixo_dev_secret}
-      Storage__BucketName: fixo-photos
-      Storage__UseSSL: "false"
+      AzureBlob__ServiceUrl: "http://azurite:10000"
+      AzureBlob__ExternalServiceUrl: "http://localhost:10000"
+      AzureBlob__AccountName: "devstoreaccount1"
+      AzureBlob__AccountKey: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+      AzureBlob__PhotosContainer: "fixo-photos"
+      AzureBlob__CredentialsContainer: "fixo-credentials"
       Locale__DefaultCurrency: "NZD"
       Locale__CurrencySymbol: "$"
       Locale__PhoneCountryCode: "+64"
@@ -100,13 +92,19 @@ services:
       Locale__DistanceUnit: "km"
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
       GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-service-account.json
+      AddressResolution__Provider: ${ADDRESS_RESOLUTION_PROVIDER:-Linz}
+      AddressResolution__Linz__ApiKey: ${LINZ_API_KEY:-}
+      AddressResolution__Linz__LayerId: ${LINZ_ADDRESS_LAYER_ID:-123113}
+      EmailSender__Host: "mailhog"
+      EmailSender__Port: "1025"
+      EmailSender__FromEmail: "noreply@fixo.nz"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+      azurite:
+        condition: service_started
     volumes:
       - ./backend:/app   # mount source for hot reload (dev)
       - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
@@ -134,5 +132,5 @@ volumes:
     name: fixo-pgdata
   redisdata:
     name: fixo-redisdata
-  miniodata:
-    name: fixo-miniodata
+  azuritedata:
+    name: fixo-azuritedata

@@ -45,7 +45,7 @@ public class ScheduleJobRequest
 public class ScheduleDto
 {
     public int JobId { get; set; }
-    public DateTime? ScheduledDateUtc { get; set; }
+    public DateTime? ScheduledStart { get; set; }
     public string? ScheduledTimeSlot { get; set; }
 
     /// <summary>None | Proposed | Confirmed</summary>

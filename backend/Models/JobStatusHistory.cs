@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using FixoApi.Enums;
@@ -5,7 +6,7 @@ using FixoApi.Enums;
 namespace FixoApi.Models;
 
 /// <summary>
-/// Audit trail of every job status transition (M3-05).
+/// Audit trail of every job status transition.
 /// Append-only — never update or delete rows.
 /// </summary>
 public class JobStatusHistory
@@ -25,7 +26,13 @@ public class JobStatusHistory
     [Required]
     public string ChangedByUserId { get; set; } = string.Empty;
 
+    /// <summary>The role of the actor performing the transition.</summary>
+    public UserRole ActorRole { get; set; }
+
     public DateTime ChangedAtUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Structured reason for cancellations or disputes.</summary>
+    public ReasonCode? ReasonCode { get; set; }
 
     /// <summary>Optional cancellation or admin note.</summary>
     [MaxLength(500)]

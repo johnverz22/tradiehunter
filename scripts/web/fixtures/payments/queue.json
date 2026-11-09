@@ -1,0 +1,83 @@
+{
+  "_comment": "Three submitted receipts: the queue must show amount, reference, the send-back count and the private receipt link.",
+  "route": "/payments",
+  "prefetch": [
+    {
+      "key": ["admin", "payments", "pending", { "page": 1, "pageSize": 20 }],
+      "url": "/admin/payments/pending",
+      "body": {
+        "items": [
+          {
+            "id": 14,
+            "jobId": 40,
+            "jobTitle": "Leaking kitchen tap",
+            "homeownerName": "Sarah Mitchell",
+            "homeownerEmail": "homeowner@fixo.nz",
+            "amount": 171.0,
+            "currency": "NZD",
+            "reference": "FIXO-40",
+            "status": "Submitted",
+            "method": "BankTransfer",
+            "submittedAtUtc": "2026-09-28T14:00:38.056Z",
+            "reUploadCount": 0,
+            "receiptUrl": "http://localhost:10000/devstoreaccount1/fixo-payments/payments/40/receipt-a.png?sig=x"
+          },
+          {
+            "id": 15,
+            "jobId": 41,
+            "jobTitle": "Replace hot water cylinder",
+            "homeownerName": "Daniel O'Connell",
+            "homeownerEmail": "daniel@example.co.nz",
+            "amount": 640.5,
+            "currency": "NZD",
+            "reference": "FIXO-41",
+            "status": "Submitted",
+            "method": "BankTransfer",
+            "submittedAtUtc": "2026-09-28T13:10:00.000Z",
+            "reUploadCount": 2,
+            "receiptUrl": "http://localhost:10000/devstoreaccount1/fixo-payments/payments/41/receipt-b.png?sig=x"
+          },
+          {
+            "id": 16,
+            "jobId": 42,
+            "jobTitle": "Burst pipe in garage",
+            "homeownerName": "Aroha Ngata",
+            "homeownerEmail": "aroha@example.co.nz",
+            "amount": 95.25,
+            "currency": "NZD",
+            "reference": "FIXO-42",
+            "status": "Submitted",
+            "method": "BankTransfer",
+            "submittedAtUtc": "2026-09-28T12:00:00.000Z",
+            "reUploadCount": 1,
+            "receiptUrl": "http://localhost:10000/devstoreaccount1/fixo-payments/payments/42/statement.pdf?sig=x"
+          }
+        ],
+        "totalCount": 3,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    }
+  ],
+  "expect": [
+    { "label": "first job title", "needle": "Leaking kitchen tap" },
+    { "label": "first amount, formatted as currency", "needle": "$171.00" },
+    { "label": "first transfer reference", "needle": "FIXO-40" },
+    { "label": "homeowner email", "needle": "homeowner@fixo.nz" },
+    { "label": "job links to the job detail page", "needle": "href=\"/jobs/40\"" },
+    { "label": "larger amount keeps cents", "needle": "$640.50" },
+    { "label": "send-back count is surfaced", "needle": "2 send-backs" },
+    { "label": "single send-back is not pluralised", "needle": "1 send-back<" },
+    { "label": "a never-returned payment shows no send-back", "needle": "Leaking kitchen tap</a><span", "present": false },
+    { "label": "relative submitted time", "needle": "ago" },
+    { "label": "awaiting-review count", "needle": ">3</strong> awaiting review" },
+    { "label": "page total of the three amounts", "needle": "$906.75" },
+    { "label": "Verify action", "needle": ">Verify</button>" },
+    { "label": "Reject action", "needle": ">Reject</button>" },
+    { "label": "expiry caveat is shown", "needle": "links expire 15 minutes after the queue was" },
+    { "label": "empty state is not shown", "needle": "No payments awaiting review.", "present": false },
+    { "label": "no pagination for a single page", "needle": "aria-label=\"Next page\"", "present": false },
+    { "label": "review modal is closed", "needle": "Reason for rejection", "present": false }
+  ]
+}

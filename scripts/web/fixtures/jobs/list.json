@@ -1,0 +1,61 @@
+{
+  "_comment": "Jobs list page: displays all platform jobs, status pills, trade category, and customer links.",
+  "page": "features/jobs/pages/JobListPage",
+  "route": "/jobs",
+  "prefetch": [
+    {
+      "key": [
+        "admin",
+        "jobs",
+        {
+          "search": "",
+          "status": "",
+          "page": 1,
+          "pageSize": 20,
+          "sortBy": "createdAt",
+          "sortDesc": true
+        }
+      ],
+      "url": "/admin/jobs",
+      "body": {
+        "items": [
+          {
+            "id": 201,
+            "title": "Install kitchen rangehood",
+            "category": "Electrical",
+            "status": "Booked",
+            "homeownerName": "Karen Filippelli",
+            "tradeName": "Electrician",
+            "createdAtUtc": "2026-10-24T14:00:00Z",
+            "updatedAtUtc": "2026-10-24T15:00:00Z"
+          },
+          {
+            "id": 202,
+            "title": "Fix leaking roof flashing",
+            "category": "Roofing",
+            "status": "Completed",
+            "homeownerName": "Jim Halpert",
+            "tradeName": "Roofer",
+            "createdAtUtc": "2026-10-20T11:00:00Z",
+            "updatedAtUtc": "2026-10-22T12:00:00Z"
+          }
+        ],
+        "totalCount": 2,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    }
+  ],
+  "expect": [
+    { "label": "page heading", "needle": "Jobs" },
+    { "label": "total count summary", "needle": ">2</strong> All statuses" },
+    { "label": "first job mono reference", "needle": "JOB-00201" },
+    { "label": "first job title", "needle": "Install kitchen rangehood" },
+    { "label": "first job homeowner", "needle": "Karen Filippelli" },
+    { "label": "second job mono reference", "needle": "JOB-00202" },
+    { "label": "second job title", "needle": "Fix leaking roof flashing" },
+    { "label": "second job homeowner", "needle": "Jim Halpert" },
+    { "label": "job detail link", "needle": "href=\"/jobs/201\"" }
+  ]
+}

@@ -74,5 +74,5 @@ public class ChatController : ControllerBase
         return Ok(msg);
     }
 
-    private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private string? GetUserId() => User.FindFirstValue("sub");
 }

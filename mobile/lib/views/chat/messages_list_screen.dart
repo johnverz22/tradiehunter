@@ -1,124 +1,178 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../models/marketplace.dart';
 import '../../theme/design_tokens.dart';
-import '../../widgets/fixo_cards.dart';
+import '../../viewmodels/jobs_viewmodel.dart';
+import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_states.dart';
-import '../../widgets/tradie_widgets.dart';
+import '../widgets/chat_widgets.dart';
+import 'chat_screen.dart';
 
 /// Messages inbox — rows push to /chat/:jobId.
-/// TODO(backend): GET /api/jobs/:id/messages overview + SignalR presence.
-class MessagesListScreen extends StatelessWidget {
+///
+/// Backed by GET /api/chat/conversations (V15-16): one call returns
+/// participant-first summaries with a real last-message preview and a real
+/// unread count — no per-job history waterfall and no invented badges.
+class MessagesListScreen extends ConsumerStatefulWidget {
   const MessagesListScreen({super.key});
 
   @override
+  ConsumerState<MessagesListScreen> createState() => _MessagesListScreenState();
+}
+
+class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
+  bool _loading = true;
+  String? _error;
+  List<ConversationSummary> _conversations = const [];
+  String? _selectedJobId;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final summaries = await ref
+          .read(chatRepositoryProvider)
+          .getConversations();
+      if (!mounted) return;
+      setState(() {
+        _conversations = summaries;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not load conversations.';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _open(String jobId) async {
+    // Reload on return — reading the thread clears its unread badge.
+    await context.push('/chat/$jobId');
+    if (mounted) _load();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // TODO(backend): replace with real conversation list.
-    const convos = [
-      ('JOB-00214', 'David Wiremu', 'See you at 9am tomorrow', '9:41 AM', 2),
-      ('JOB-00209', 'Aroha P.', 'Quote attached for the bedroom wall', 'Yesterday', 0),
-    ];
-    if (convos.isEmpty) {
+    const appBar = FixoAppBar(title: 'Messages', showBack: false);
+
+    if (_loading && _conversations.isEmpty) {
+      return const Scaffold(appBar: appBar, body: FixoLoading());
+    }
+
+    if (_error != null && _conversations.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text('Messages')),
-        body: const FixoEmptyState(
+        appBar: appBar,
+        body: FixoErrorState(message: _error!, onRetry: _load),
+      );
+    }
+
+    if (_conversations.isEmpty) {
+      return const Scaffold(
+        appBar: appBar,
+        body: FixoEmptyState(
           icon: Icons.chat_bubble_outline,
           title: 'No messages yet',
-          subtitle: 'Your job chats will show up here.',
+          subtitle: 'Once a job is matched, your chats will show up here.',
         ),
       );
     }
-    return Scaffold(
-      appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: const Text('Messages')),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        itemCount: convos.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (_, i) {
-          final c = convos[i];
-          final unread = c.$5 > 0;
-          return InkWell(
-            borderRadius:
-                BorderRadius.circular(DesignTokens.radius),
-            onTap: () => context.push('/chat/${c.$1}'),
-            child: FixoCard(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  FixoAvatar(initials: c.$2[0]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(c.$2,
-                                  style: TextStyle(
-                                      fontWeight: unread
-                                          ? FontWeight.w700
-                                          : FontWeight.w600)),
-                            ),
-                            Text(c.$4,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontFamily:
-                                          DesignTokens.fontMono,
-                                      fontSize: 11,
-                                    )),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                c.$3,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                              ),
-                            ),
-                            if (unread)
-                              Container(
-                                margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: const BoxDecoration(
-                                  color: DesignTokens.amber,
-                                  shape: BoxShape.rectangle,
-                                  borderRadius: BorderRadius.all(
-                                      Radius.circular(100)),
-                                ),
-                                child: Text('${c.$5}',
-                                    style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: DesignTokens.onAmber)),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= kBreakpointMasterDetail;
+
+        final masterList = RefreshIndicator(
+          onRefresh: _load,
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(Space.s4, Space.s4, Space.s4, Space.navClearance),
+            itemCount: _conversations.length,
+            separatorBuilder: (_, _) => const SizedBox(height: Space.s1),
+            itemBuilder: (_, i) {
+              final c = _conversations[i];
+              return ConversationTile(
+                conversation: c,
+                selected: isWide && _selectedJobId == c.jobId,
+                onTap: isWide
+                    ? () => setState(() => _selectedJobId = c.jobId)
+                    : () => _open(c.jobId),
+              );
+            },
+          ),
+        );
+
+        final detailPanel = _selectedJobId != null
+            ? ChatScreen(
+                key: ValueKey('chat_$_selectedJobId'),
+                jobId: _selectedJobId!,
+                embedded: true,
+              )
+            : null;
+
+        return Scaffold(
+          appBar: appBar,
+          body: MasterDetailLayout(
+            master: masterList,
+            detail: detailPanel ?? const SizedBox.shrink(),
+            detailVisible: _selectedJobId != null,
+            emptyDetail: const _MessagesEmptyDetail(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MessagesEmptyDetail extends StatelessWidget {
+  const _MessagesEmptyDetail();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Space.s7),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 56,
+              color: isDark
+                  ? DesignTokens.inkSoftDark
+                  : DesignTokens.inkSoftLight,
+            ),
+            const SizedBox(height: Space.s4),
+            Text(
+              'Select a conversation',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FW.semibold,
+                color: isDark ? DesignTokens.inkDark : DesignTokens.inkLight,
               ),
             ),
-          );
-        },
+            const SizedBox(height: Space.s1_5),
+            Text(
+              'Choose a chat from the left panel to view messages.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: DesignTokens.inkSoft(isDark),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

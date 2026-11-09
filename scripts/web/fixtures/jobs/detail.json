@@ -1,0 +1,73 @@
+{
+  "_comment": "Job detail page: shows status stepper, job description, participants, photos, chat transcript, and audit history.",
+  "page": "features/jobs/pages/JobDetailPage",
+  "route": "/jobs/201",
+  "path": "/jobs/:id",
+  "prefetch": [
+    {
+      "key": ["admin", "jobs", 201],
+      "url": "/admin/jobs/201",
+      "body": {
+        "id": 201,
+        "title": "Install kitchen rangehood",
+        "category": "Electrical",
+        "status": "Booked",
+        "homeownerName": "Karen Filippelli",
+        "homeownerId": "u-karen",
+        "matchedTradieId": "u-tradie1",
+        "tradeName": "Electrician",
+        "description": "Need new rangehood ducted through external wall.",
+        "urgency": "Scheduled",
+        "address": "42 Wallaby Way, Auckland",
+        "scheduleStatus": "Confirmed",
+        "scheduledDateUtc": "2026-10-30T09:00:00Z",
+        "createdAtUtc": "2026-10-24T14:00:00Z",
+        "updatedAtUtc": "2026-10-24T15:00:00Z",
+        "photos": [
+          {
+            "id": 1,
+            "url": "http://localhost:10000/photos/p1.jpg",
+            "caption": "Kitchen wall"
+          }
+        ],
+        "chatTranscript": [
+          {
+            "id": "m1",
+            "senderId": "u-karen",
+            "senderName": "Karen Filippelli",
+            "senderRole": "Homeowner",
+            "content": "Hi, do you bring ducting supplies?",
+            "sentAtUtc": "2026-10-24T14:30:00Z"
+          }
+        ],
+        "statusHistory": [
+          {
+            "id": 1,
+            "status": "Requested",
+            "previousStatus": "Draft",
+            "changedAtUtc": "2026-10-24T14:00:00Z",
+            "actorRole": "Homeowner"
+          },
+          {
+            "id": 2,
+            "status": "Booked",
+            "previousStatus": "PaymentReview",
+            "changedAtUtc": "2026-10-24T15:00:00Z",
+            "actorRole": "Staff"
+          }
+        ]
+      }
+    }
+  ],
+  "expect": [
+    { "label": "job id in mono", "needle": "JOB-00201" },
+    { "label": "job title", "needle": "Install kitchen rangehood" },
+    { "label": "address", "needle": "42 Wallaby Way, Auckland" },
+    { "label": "description", "needle": "Need new rangehood ducted through external wall." },
+    { "label": "stepper requested label", "needle": "Requested" },
+    { "label": "stepper confirmed label", "needle": "Confirmed" },
+    { "label": "photo count", "needle": "Photos (1)" },
+    { "label": "chat message content", "needle": "Hi, do you bring ducting supplies?" },
+    { "label": "homeowner link", "needle": "href=\"/users/u-karen\"" }
+  ]
+}

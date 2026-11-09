@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 Component Sheet</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .sheet-page { background: #E8E4DB; padding: 40px; font-family: var(--fb); }
+  .h { font: 700 26px var(--fd); color: var(--navy); margin-bottom: 4px; }
+  .sub { font: 400 13px var(--fb); color: var(--text-soft); margin-bottom: 28px; }
+  .grp { font: 600 12px var(--fb); letter-spacing: .09em; text-transform: uppercase; color: rgba(25,57,87,.6); margin: 30px 0 12px; }
+  .cells { display: flex; flex-wrap: wrap; gap: 16px; }
+  .cf { background: var(--paper); border-radius: 12px; padding: 18px; }
+  .cf.dk { background: var(--paper-d); }
+  .cf .lbl { font: 600 11px var(--fm); color: var(--text-soft); margin-bottom: 12px; }
+  .cf.dk .lbl { color: var(--ink-soft-d); }
+  .cf .lbl b { color: var(--amber-dark); }
+  .dk .cf.dk .lbl b { color: var(--amber); }
+  .w-card { width: 380px; }
+  .w-btn { width: 300px; display: flex; flex-direction: column; gap: 10px; }
+  .w-pill { width: 200px; }
+  .w-cpb { width: 320px; }
+  .w-inp { width: 300px; }
+  .w-sheet { width: 360px; position: relative; height: 340px; overflow: hidden; border-radius: 12px; background: var(--paper); }
+  .w-nav { width: 402px; }
+  .w-rail { height: 560px; display: flex; }
+</style>
+
+<!-- ── Inline icon macros (referenced inline below, no sprite dependency) ── -->
+<!-- check  -->  <svg style="display:none" id="svg-defs"><symbol id="s-check"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol><symbol id="s-x"      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol><symbol id="s-excl"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol><symbol id="s-play"  viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></symbol><symbol id="s-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol><symbol id="s-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol><symbol id="s-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol><symbol id="s-doc"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol><symbol id="s-star"  viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol><symbol id="s-nav"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></symbol><symbol id="s-msg"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></symbol><symbol id="s-pin"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="s-home"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol><symbol id="s-jobs"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></symbol><symbol id="s-user"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol><symbol id="s-plus"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol></svg>
+
+</head>
+<body>
+<div class="sheet-page">
+<div class="h">v1.7 Component Sheet</div>
+<div class="sub">All components at all states · labels show component / variant / key tokens. Light + dark pairs where required.</div>
+
+<!-- ═══ STATUS PILLS ═══ -->
+<div class="grp">Status pills — 28px · 13/600 · pill radius · icon+label · hugs content</div>
+<div class="cells">
+<div class="cf" data-frame="pill-action-light"><div class="lbl"><b>pill/action-needed</b> · light · solid amber · ! icon</div><span class="pill pill-action"><svg width="14" height="14"><use href="#s-excl"/></svg>Action needed</span></div>
+<div class="cf dk" data-frame="pill-action-dark"><div class="lbl"><b>pill/action-needed</b> · dark · solid amber · ! icon</div><div class="frame dark" style="background:transparent"><span class="pill pill-action"><svg width="14" height="14"><use href="#s-excl"/></svg>Action needed</span></div></div>
+<div class="cf" data-frame="pill-active-light"><div class="lbl"><b>pill/active</b> · light · solid navy · play icon</div><span class="pill pill-active"><svg width="14" height="14"><use href="#s-play"/></svg>Active</span></div>
+<div class="cf dk" data-frame="pill-active-dark"><div class="lbl"><b>pill/active</b> · dark · solid blue-300 · navy text</div><div class="frame dark" style="background:transparent"><span class="pill pill-active"><svg width="14" height="14"><use href="#s-play"/></svg>Active</span></div></div>
+<div class="cf" data-frame="pill-waiting-light"><div class="lbl"><b>pill/waiting</b> · light · navy 12% tint · clock</div><span class="pill pill-waiting"><svg width="14" height="14"><use href="#s-clock"/></svg>Waiting</span></div>
+<div class="cf dk" data-frame="pill-waiting-dark"><div class="lbl"><b>pill/waiting</b> · dark · blue-300 18% tint</div><div class="frame dark" style="background:transparent"><span class="pill pill-waiting"><svg width="14" height="14"><use href="#s-clock"/></svg>Waiting</span></div></div>
+<div class="cf" data-frame="pill-done-light"><div class="lbl"><b>pill/done</b> · light · green 15% tint · check</div><span class="pill pill-done"><svg width="14" height="14"><use href="#s-check"/></svg>Done</span></div>
+<div class="cf dk" data-frame="pill-done-dark"><div class="lbl"><b>pill/done</b> · dark · green tint · light text</div><div class="frame dark" style="background:transparent"><span class="pill pill-done"><svg width="14" height="14"><use href="#s-check"/></svg>Done</span></div></div>
+<div class="cf" data-frame="pill-muted-light"><div class="lbl"><b>pill/cancelled</b> · light · grey 15% tint · ×</div><span class="pill pill-muted"><svg width="14" height="14"><use href="#s-x"/></svg>Cancelled</span></div>
+<div class="cf dk" data-frame="pill-muted-dark"><div class="lbl"><b>pill/cancelled</b> · dark · grey tint</div><div class="frame dark" style="background:transparent"><span class="pill pill-muted"><svg width="14" height="14"><use href="#s-x"/></svg>Cancelled</span></div></div>
+<div class="cf" data-frame="pill-problem-light"><div class="lbl"><b>pill/problem</b> · light · red 12% tint · alert</div><span class="pill pill-problem"><svg width="14" height="14"><use href="#s-alert"/></svg>Disputed</span></div>
+<div class="cf dk" data-frame="pill-problem-dark"><div class="lbl"><b>pill/problem</b> · dark · red tint · light text</div><div class="frame dark" style="background:transparent"><span class="pill pill-problem"><svg width="14" height="14"><use href="#s-alert"/></svg>Disputed</span></div></div>
+</div>
+
+<!-- ═══ COMPACT PROGRESS BAR ═══ -->
+<div class="grp">Compact progress bar — 4px segments · "Step N of 4 · Label" 14/600 · ~24px total</div>
+<div class="cells">
+<div class="cf w-cpb" data-frame="cpb-step1-light"><div class="lbl"><b>cpb/step-1</b> · light · Requested</div><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 1 of 4 <span class="soft">· Requested</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-step1-dark"><div class="lbl"><b>cpb/step-1</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="cap" style="color:var(--ink-d)">Step 1 of 4 <span class="soft">· Requested</span></div></div></div></div>
+<div class="cf w-cpb" data-frame="cpb-step2-light"><div class="lbl"><b>cpb/step-2</b> · light · Booked</div><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-step2-dark"><div class="lbl"><b>cpb/step-2</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap" style="color:var(--ink-d)">Step 2 of 4 <span class="soft">· Booked</span></div></div></div></div>
+<div class="cf w-cpb" data-frame="cpb-step3-light"><div class="lbl"><b>cpb/step-3</b> · light · In progress</div><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap">Step 3 of 4 <span class="soft">· In progress</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-step3-dark"><div class="lbl"><b>cpb/step-3</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap" style="color:var(--ink-d)">Step 3 of 4 <span class="soft">· In progress</span></div></div></div></div>
+<div class="cf w-cpb" data-frame="cpb-step4-light"><div class="lbl"><b>cpb/step-4</b> · light · Done</div><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div></div><div class="cap">Step 4 of 4 <span class="soft">· Done</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-step4-dark"><div class="lbl"><b>cpb/step-4</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div></div><div class="cap" style="color:var(--ink-d)">Step 4 of 4 <span class="soft">· Done</span></div></div></div></div>
+<div class="cf w-cpb" data-frame="cpb-cancelled-light"><div class="lbl"><b>cpb/cancelled</b> · light · muted, last step</div><div class="cpb muted"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Cancelled <span class="soft">· was at step 2</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-cancelled-dark"><div class="lbl"><b>cpb/cancelled</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb muted"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap" style="color:var(--ink-soft-d)">Cancelled <span class="soft">· was at step 2</span></div></div></div></div>
+<div class="cf w-cpb" data-frame="cpb-disputed-light"><div class="lbl"><b>cpb/disputed</b> · light · muted, last step</div><div class="cpb muted"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap">Disputed <span class="soft">· paused at step 3</span></div></div></div>
+<div class="cf dk w-cpb" data-frame="cpb-disputed-dark"><div class="lbl"><b>cpb/disputed</b> · dark</div><div class="frame dark" style="background:transparent"><div class="cpb muted"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap" style="color:var(--ink-soft-d)">Disputed <span class="soft">· paused at step 3</span></div></div></div></div>
+</div>
+
+<!-- ═══ BUTTONS ═══ -->
+<div class="grp">Buttons — primary 56 · secondary 52 · tonal/ghost 48 · radius 14 · ≥48×48 target</div>
+<div class="cells">
+<div class="cf w-btn" data-frame="btn-primary-light"><div class="lbl"><b>btn/primary</b> · light · ctaSheen · 56px</div><div class="btn btn-primary">Accept job</div></div>
+<div class="cf w-btn" data-frame="btn-primary-light-pressed"><div class="lbl"><b>btn/primary</b> · light · pressed · scale .98</div><div class="btn btn-primary pressed">Accept job</div></div>
+<div class="cf dk w-btn" data-frame="btn-primary-dark"><div class="lbl"><b>btn/primary</b> · dark · glow shadow</div><div class="frame dark" style="background:transparent"><div class="btn btn-primary">Accept job</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-primary-dark-pressed"><div class="lbl"><b>btn/primary</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-primary pressed">Accept job</div></div></div>
+<div class="cf w-btn" data-frame="btn-secondary-light"><div class="lbl"><b>btn/secondary</b> · light · navy outline · 52px</div><div class="btn btn-secondary">See another tradie</div></div>
+<div class="cf w-btn" data-frame="btn-secondary-light-pressed"><div class="lbl"><b>btn/secondary</b> · light · pressed</div><div class="btn btn-secondary pressed">See another tradie</div></div>
+<div class="cf dk w-btn" data-frame="btn-secondary-dark"><div class="lbl"><b>btn/secondary</b> · dark</div><div class="frame dark" style="background:transparent"><div class="btn btn-secondary">See another tradie</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-secondary-dark-pressed"><div class="lbl"><b>btn/secondary</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-secondary pressed">See another tradie</div></div></div>
+<div class="cf w-btn" data-frame="btn-tonal-light"><div class="lbl"><b>btn/tonal</b> · light · blue 14% fill · 48px · with icon</div><div class="btn btn-tonal"><svg width="20" height="20"><use href="#s-nav"/></svg>Navigate</div></div>
+<div class="cf w-btn" data-frame="btn-tonal-light-pressed"><div class="lbl"><b>btn/tonal</b> · light · pressed</div><div class="btn btn-tonal pressed"><svg width="20" height="20"><use href="#s-nav"/></svg>Navigate</div></div>
+<div class="cf dk w-btn" data-frame="btn-tonal-dark"><div class="lbl"><b>btn/tonal</b> · dark · blue 20% fill</div><div class="frame dark" style="background:transparent"><div class="btn btn-tonal"><svg width="20" height="20"><use href="#s-nav"/></svg>Navigate</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-tonal-dark-pressed"><div class="lbl"><b>btn/tonal</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-tonal pressed"><svg width="20" height="20"><use href="#s-nav"/></svg>Navigate</div></div></div>
+<div class="cf w-btn" data-frame="btn-ghost-light"><div class="lbl"><b>btn/ghost</b> · light · transparent · 48px</div><div class="btn btn-ghost">Skip</div></div>
+<div class="cf w-btn" data-frame="btn-ghost-light-pressed"><div class="lbl"><b>btn/ghost</b> · light · pressed</div><div class="btn btn-ghost pressed">Skip</div></div>
+<div class="cf dk w-btn" data-frame="btn-ghost-dark"><div class="lbl"><b>btn/ghost</b> · dark</div><div class="frame dark" style="background:transparent"><div class="btn btn-ghost">Skip</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-ghost-dark-pressed"><div class="lbl"><b>btn/ghost</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-ghost pressed">Skip</div></div></div>
+<div class="cf w-btn" data-frame="btn-navy-light"><div class="lbl"><b>btn/navy</b> · light · solid brand · 56px</div><div class="btn btn-navy">View job</div></div>
+<div class="cf w-btn" data-frame="btn-navy-light-pressed"><div class="lbl"><b>btn/navy</b> · light · pressed · scale .98</div><div class="btn btn-navy pressed">View job</div></div>
+<div class="cf dk w-btn" data-frame="btn-navy-dark"><div class="lbl"><b>btn/navy</b> · dark</div><div class="frame dark" style="background:transparent"><div class="btn btn-navy">View job</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-navy-dark-pressed"><div class="lbl"><b>btn/navy</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-navy pressed">View job</div></div></div>
+<div class="cf w-btn" data-frame="btn-danger-light"><div class="lbl"><b>btn/danger</b> · light · red outline · 52px</div><div class="btn btn-danger">Cancel job</div></div>
+<div class="cf w-btn" data-frame="btn-danger-light-pressed"><div class="lbl"><b>btn/danger</b> · light · pressed</div><div class="btn btn-danger pressed">Cancel job</div></div>
+<div class="cf dk w-btn" data-frame="btn-danger-dark"><div class="lbl"><b>btn/danger</b> · dark</div><div class="frame dark" style="background:transparent"><div class="btn btn-danger">Cancel job</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-danger-dark-pressed"><div class="lbl"><b>btn/danger</b> · dark · pressed</div><div class="frame dark" style="background:transparent"><div class="btn btn-danger pressed">Cancel job</div></div></div>
+<div class="cf w-btn" data-frame="btn-disabled-light"><div class="lbl"><b>btn/disabled</b> · light · navy-tint outline</div><div class="btn disabled">Post job</div></div>
+<div class="cf w-btn" data-frame="btn-disabled-light-pressed"><div class="lbl"><b>btn/disabled</b> · light · pressed (no-op)</div><div class="btn disabled">Post job</div></div>
+<div class="cf dk w-btn" data-frame="btn-disabled-dark"><div class="lbl"><b>btn/disabled</b> · dark</div><div class="frame dark" style="background:transparent"><div class="btn disabled">Post job</div></div></div>
+<div class="cf dk w-btn" data-frame="btn-disabled-dark-pressed"><div class="lbl"><b>btn/disabled</b> · dark · pressed (no-op)</div><div class="frame dark" style="background:transparent"><div class="btn disabled">Post job</div></div></div>
+</div>
+
+<!-- ═══ INPUTS ═══ -->
+<div class="grp">Inputs — 56px · radius 14 · 1px neutral border · focused 1.5px navy</div>
+<div class="cells">
+<div class="cf w-inp" data-frame="input-default-light"><div class="lbl"><b>input/default</b> · light</div><div class="field"><label>Email</label><div class="input" style="color:var(--text-soft)">you@example.co.nz</div></div></div>
+<div class="cf dk w-inp" data-frame="input-default-dark"><div class="lbl"><b>input/default</b> · dark</div><div class="frame dark" style="background:transparent"><div class="field"><label>Email</label><div class="input" style="color:var(--ink-soft-d)">you@example.co.nz</div></div></div></div>
+<div class="cf w-inp" data-frame="input-focused-light"><div class="lbl"><b>input/focused</b> · light · 1.5px navy</div><div class="field"><label>Email</label><div class="input focused">sarah@<span style="border-right:2px solid var(--brand);height:20px"></span></div></div></div>
+<div class="cf dk w-inp" data-frame="input-focused-dark"><div class="lbl"><b>input/focused</b> · dark · blue-300</div><div class="frame dark" style="background:transparent"><div class="field"><label>Email</label><div class="input focused">sarah@<span style="border-right:2px solid var(--brand);height:20px"></span></div></div></div></div>
+<div class="cf w-inp" data-frame="input-error-light"><div class="lbl"><b>input/error</b> · light · red border + msg</div><div class="field"><label>Email</label><div class="input error">sarah@x</div><div class="cap" style="color:var(--danger-text);margin-top:5px">Enter a valid email address</div></div></div>
+<div class="cf dk w-inp" data-frame="input-error-dark"><div class="lbl"><b>input/error</b> · dark</div><div class="frame dark" style="background:transparent"><div class="field"><label>Email</label><div class="input error">sarah@x</div><div class="cap" style="color:var(--ink-danger-d);margin-top:5px">Enter a valid email address</div></div></div></div>
+<div class="cf w-inp" data-frame="input-filled-light"><div class="lbl"><b>input/filled</b> · light</div><div class="field"><label>Full name</label><div class="input">Sarah Mitchell</div></div></div>
+<div class="cf dk w-inp" data-frame="input-filled-dark"><div class="lbl"><b>input/filled</b> · dark</div><div class="frame dark" style="background:transparent"><div class="field"><label>Full name</label><div class="input">Sarah Mitchell</div></div></div></div>
+<div class="cf w-inp" data-frame="input-disabled-light"><div class="lbl"><b>input/disabled</b> · light · cream fill</div><div class="field"><label>Phone (verified)</label><div class="input disabled">+64 21 555 014</div></div></div>
+<div class="cf dk w-inp" data-frame="input-disabled-dark"><div class="lbl"><b>input/disabled</b> · dark</div><div class="frame dark" style="background:transparent"><div class="field"><label>Phone (verified)</label><div class="input disabled">+64 21 555 014</div></div></div></div>
+</div>
+
+<!-- ═══ LEAD CARDS ═══ -->
+<div class="grp">Lead card — tinted BG wash · price 28/700 · countdown bar · 56px actions</div>
+<div class="cells">
+<div class="cf w-card" data-frame="leadcard-default"><div class="lbl"><b>lead-card/default</b> · light</div>
+<div class="card" style="background:linear-gradient(180deg,rgba(60,117,170,.18) 0%,rgba(60,117,170,.06) 40%,transparent 100%)">
+<div class="spread"><span class="price" style="font-size:28px">$171.00</span><span class="urg high">HIGH</span></div>
+<div class="countdown" style="margin-top:10px"><div class="row" style="justify-content:space-between;margin-bottom:5px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t urgent">04:12</span></div><div class="track"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="sec" style="margin-top:10px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:6px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept</div></div>
+</div></div>
+<div class="cf w-card" data-frame="leadcard-high"><div class="lbl"><b>lead-card/high-urgency</b> · light</div>
+<div class="card" style="background:linear-gradient(180deg,rgba(60,117,170,.18) 0%,rgba(60,117,170,.06) 40%,transparent 100%)">
+<div class="spread"><span class="price" style="font-size:28px">$342.00</span><span class="urg high">URGENT</span></div>
+<div class="countdown" style="margin-top:10px"><div class="row" style="justify-content:space-between;margin-bottom:5px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t urgent">01:48</span></div><div class="track"><div class="fill urgent" style="width:28%"></div></div></div>
+<div class="sec" style="margin-top:10px">4.6 km · ASAP · ~4 h</div>
+<div class="title" style="margin-top:6px">Burst pipe under house — Mt Eden</div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept</div></div>
+</div></div>
+<div class="cf w-card" data-frame="leadcard-low"><div class="lbl"><b>lead-card/low-urgency</b> · light</div>
+<div class="card" style="background:linear-gradient(180deg,rgba(25,57,87,.12) 0%,rgba(25,57,87,.04) 40%,transparent 100%)">
+<div class="spread"><span class="price" style="font-size:28px">$128.25</span><span class="urg low">FLEXIBLE</span></div>
+<div class="countdown" style="margin-top:10px"><div class="row" style="justify-content:space-between;margin-bottom:5px"><span class="cap" style="color:var(--text-soft)">Respond within</span><span class="cdown-t">11:36</span></div><div class="track"><div class="fill" style="width:84%"></div></div></div>
+<div class="sec" style="margin-top:10px">6.3 km · Fri 9:00 am · ~1.5 h</div>
+<div class="title" style="margin-top:6px">Install two power points — New Lynn</div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept</div></div>
+</div></div>
+<div class="cf w-card" data-frame="leadcard-expired"><div class="lbl"><b>lead-card/expired</b> · muted · actions disabled</div>
+<div class="card" style="opacity:.72">
+<div class="spread"><span class="price" style="font-size:28px;color:var(--text-soft)">$171.00</span><span class="pill pill-muted"><svg width="14" height="14"><use href="#s-x"/></svg>Expired</span></div>
+<div class="countdown" style="margin-top:10px"><div class="row" style="justify-content:space-between;margin-bottom:5px"><span class="cap" style="color:var(--text-soft)">Offer closed</span><span class="cap" style="color:var(--text-soft);font-weight:700">00:00</span></div><div class="track"><div class="fill" style="width:0%"></div></div></div>
+<div class="sec" style="margin-top:10px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:6px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:14px"><div class="btn disabled" style="flex:1;height:56px">Decline</div><div class="btn disabled" style="flex:2;height:56px">Accept</div></div>
+</div></div>
+<div class="cf w-card" data-frame="leadcard-accepted"><div class="lbl"><b>lead-card/accepted</b> · booked state</div>
+<div class="card" style="background:linear-gradient(180deg,rgba(58,125,92,.18) 0%,rgba(58,125,92,.06) 40%,transparent 100%)">
+<div class="spread"><span class="price" style="font-size:28px">$171.00</span><span class="pill pill-done"><svg width="14" height="14"><use href="#s-check"/></svg>Booked</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 2 of 4 <span class="soft">· Booked</span></div></div>
+<div class="sec" style="margin-top:10px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:6px">Leaking kitchen tap — Grey Lynn</div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal" style="flex:1;height:56px;font-size:16px"><svg width="20" height="20"><use href="#s-msg"/></svg>Message</div><div class="btn btn-primary" style="flex:2;height:56px">View job</div></div>
+</div></div>
+<div class="cf w-card" data-frame="leadcard-declined"><div class="lbl"><b>lead-card/declined</b> · muted, no actions</div>
+<div class="card" style="opacity:.6">
+<div class="spread"><span class="price" style="font-size:28px;color:var(--text-soft)">$171.00</span><span class="pill pill-muted"><svg width="14" height="14"><use href="#s-x"/></svg>Declined</span></div>
+<div class="sec" style="margin-top:10px">2.1 km · Today 2:00 pm · ~2 h</div>
+<div class="title" style="margin-top:6px">Leaking kitchen tap — Grey Lynn</div>
+<div class="cap" style="color:var(--text-soft);margin-top:12px">You passed on this lead. It won't appear again.</div>
+</div></div>
+</div>
+
+<!-- ═══ TRADIE HERO ═══ -->
+<div class="grp">Tradie hero — 72px avatar · 20/700 name · evidence badges · rating or "New"</div>
+<div class="cells">
+<div class="cf w-card" data-frame="hero-rated"><div class="lbl"><b>tradie-hero/rated</b> · verified+insured</div>
+<div class="center"><div class="av ring" style="width:72px;height:72px;font-size:26px;background:#3C75AA;color:#fff">MT<div class="vbdg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="font:700 20px var(--fb);margin-top:10px">Mike Te Rangi</div>
+<div class="row" style="margin-top:6px"><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#s-shield"/></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#s-doc"/></svg>Insured</span></div>
+<div class="row" style="margin-top:8px"><svg height="16" width="16" style="color:var(--amber)"><use href="#s-star"/></svg><b>4.8</b><span class="sec">(126 jobs) · 2.1 km away</span></div>
+</div></div>
+<div class="cf w-card" data-frame="hero-new"><div class="lbl"><b>tradie-hero/new</b> · verified, no reviews</div>
+<div class="center"><div class="av ring" style="width:72px;height:72px;font-size:26px;background:#3C75AA;color:#fff">JK<div class="vbdg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="font:700 20px var(--fb);margin-top:10px">Jess Kaur</div>
+<div class="row" style="margin-top:6px"><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#s-shield"/></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#s-doc"/></svg>Insured</span></div>
+<div class="row" style="margin-top:8px"><b>New to TradieHunter</b><span class="sec">· Licenced electrician</span></div>
+</div></div>
+<div class="cf w-card" data-frame="hero-verified-insured"><div class="lbl"><b>tradie-hero/verified+insured</b> · badges row</div>
+<div class="row"><div class="av ml">MT<div class="vbdg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div><div class="title">Mike Te Rangi</div><div class="row" style="margin-top:4px"><span class="chip" style="height:24px;font-size:12px"><svg height="13" width="13"><use href="#s-shield"/></svg>Verified</span><span class="chip" style="height:24px;font-size:12px"><svg height="13" width="13"><use href="#s-doc"/></svg>Insured</span></div></div>
+</div></div>
+<div class="cf w-card" data-frame="hero-unverified"><div class="lbl"><b>tradie-hero/unverified</b> · no badge shown</div>
+<div class="row"><div class="av ml">RW</div>
+<div><div class="title">Rob Walker</div><div class="sec" style="margin-top:4px">Plumber · Verification pending</div></div>
+</div></div>
+</div>
+
+<!-- ═══ TRUST TILES ═══ -->
+<div class="grp">Trust tiles — single trust row per profile</div>
+<div class="cells">
+<div class="cf" data-frame="trust-new"><div class="lbl"><b>trust-tile/new</b></div><div class="tile" style="width:220px"><div class="row"><svg height="18" width="18"><use href="#s-shield"/></svg><b>New to TradieHunter</b></div><div class="sec" style="margin-top:4px">Licence verified · 3 jobs</div></div></div>
+<div class="cf" data-frame="trust-rated"><div class="lbl"><b>trust-tile/rated</b></div><div class="tile" style="width:220px"><div class="row"><svg height="18" width="18" style="color:var(--amber)"><use href="#s-star"/></svg><b>4.8</b><span class="sec">126 reviews</span></div><div class="sec" style="margin-top:4px">126 jobs completed</div></div></div>
+<div class="cf" data-frame="trust-verified"><div class="lbl"><b>trust-tile/verified</b></div><div class="tile" style="width:220px"><div class="row"><svg height="18" width="18"><use href="#s-shield"/></svg><b>Verified</b></div><div class="sec" style="margin-top:4px">ID + licence checked</div></div></div>
+<div class="cf" data-frame="trust-insured"><div class="lbl"><b>trust-tile/insured</b></div><div class="tile" style="width:220px"><div class="row"><svg height="18" width="18"><use href="#s-doc"/></svg><b>Insured</b></div><div class="sec" style="margin-top:4px">Public liability cover</div></div></div>
+</div>
+
+<!-- ═══ BOTTOM SHEETS ═══ -->
+<div class="grp">Bottom sheets — 28px top radius · 40×4 grip · 0 -12 32 shadow</div>
+<div class="cells">
+<div class="cf w-sheet" data-frame="sheet-cancel"><div class="scrim" style="background:var(--paper)"></div>
+<div class="sheet"><div class="grip"></div><div class="title">Cancel this job?</div>
+<div class="sec" style="margin-top:8px">Cancelling within 24 h of the start time lowers your ranking in search results.</div>
+<div class="tile" style="margin-top:12px;background:rgba(178,58,46,.08);border-color:rgba(178,58,46,.2)"><div class="row"><svg height="18" width="18" style="color:var(--danger-text)"><use href="#s-alert"/></svg><span style="font:500 13px var(--fb);color:var(--danger-text)">2 cancellations this month</span></div></div>
+<div class="stack8" style="margin-top:14px"><div class="btn btn-danger">Yes, cancel job</div><div class="btn btn-ghost">Keep job</div></div>
+</div><div class="lbl" style="position:absolute;top:12px;left:14px"><b>sheet/cancel</b> · ranking warning</div></div>
+<div class="cf w-sheet" data-frame="sheet-dispute"><div class="scrim" style="background:var(--paper)"></div>
+<div class="sheet"><div class="grip"></div><div class="title">Raise a dispute</div>
+<div class="sec" style="margin-top:8px">Tell us what went wrong. Our team reviews disputes within 2 business days.</div>
+<div class="input" style="margin-top:12px;height:56px;color:var(--text-soft)">Describe the issue…</div>
+<div class="stack8" style="margin-top:14px"><div class="btn btn-primary" style="height:52px">Submit dispute</div><div class="btn btn-ghost">Not now</div></div>
+</div><div class="lbl" style="position:absolute;top:12px;left:14px"><b>sheet/dispute</b></div></div>
+<div class="cf w-sheet" data-frame="sheet-map-picker"><div class="scrim" style="background:var(--paper)"></div>
+<div class="sheet"><div class="grip"></div><div class="title">Navigate with</div>
+<div class="stack8" style="margin-top:12px">
+<div class="tile row"><div class="icon-tile" style="width:40px;height:40px"><svg height="20" width="20"><use href="#s-pin"/></svg></div><b>Apple Maps</b></div>
+<div class="tile row"><div class="icon-tile" style="width:40px;height:40px"><svg height="20" width="20"><use href="#s-pin"/></svg></div><b>Google Maps</b></div>
+<div class="tile row"><div class="icon-tile" style="width:40px;height:40px"><svg height="20" width="20"><use href="#s-nav"/></svg></div><b>Waze</b></div>
+</div>
+</div><div class="lbl" style="position:absolute;top:12px;left:14px"><b>sheet/map-picker</b></div></div>
+<div class="cf w-sheet" data-frame="sheet-schedule"><div class="scrim" style="background:var(--paper)"></div>
+<div class="sheet"><div class="grip"></div><div class="title">Suggested times</div>
+<div class="stack8" style="margin-top:12px">
+<div class="tile row spread"><span><b>Today</b> <span class="sec">2:00 pm</span></span><span class="chip">Soonest</span></div>
+<div class="tile row"><span><b>Tomorrow</b> <span class="sec">9:00 am</span></span></div>
+<div class="tile row"><span><b>Sat 1 Nov</b> <span class="sec">10:30 am</span></span></div>
+</div>
+<div class="btn btn-primary" style="margin-top:14px;height:52px">Confirm time</div>
+</div><div class="lbl" style="position:absolute;top:12px;left:14px"><b>sheet/schedule</b></div></div>
+</div>
+
+<!-- ═══ NAV BARS ═══ -->
+<div class="grp">Nav bars — glass 80% white + 20px blur · active tab: 12% blue tint indicator</div>
+<div class="cells">
+<div class="cf w-nav" data-frame="navbar-homeowner"><div class="lbl"><b>nav/bottom-homeowner</b> · 5 tabs + centre FAB</div>
+<div style="position:relative;background:var(--paper);border-radius:8px;overflow:hidden;padding-top:8px">
+<div class="navbar"><div class="tab on"><span class="ind"><svg width="22" height="22"><use href="#s-home"/></svg></span>Home</div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-jobs"/></svg></span>Jobs</div><div class="tab"></div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-msg"/></svg></span>Messages</div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-user"/></svg></span>Profile</div><div class="fab"><svg height="26" width="26" style="color:#fff"><use href="#s-plus"/></svg></div></div>
+</div></div>
+<div class="cf w-nav" data-frame="navbar-tradie"><div class="lbl"><b>nav/bottom-tradie</b> · 4 tabs</div>
+<div style="position:relative;background:var(--paper);border-radius:8px;overflow:hidden;padding-top:8px">
+<div class="navbar"><div class="tab on"><span class="ind"><svg width="22" height="22"><use href="#s-home"/></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-jobs"/></svg></span>Jobs</div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-msg"/></svg></span>Messages</div><div class="tab"><span class="ind"><svg width="22" height="22"><use href="#s-user"/></svg></span>Profile</div></div>
+</div></div>
+<div class="cf" data-frame="navbar-rail"><div class="lbl"><b>nav/left-rail-ipad</b> · ≥1024pt · 64px · glass</div>
+<div class="w-rail" style="background:var(--paper);border-radius:8px;overflow:hidden"><div class="rail">
+<div class="tab on"><svg width="22" height="22"><use href="#s-home"/></svg>Home</div>
+<div class="tab"><svg width="22" height="22"><use href="#s-jobs"/></svg>Jobs</div>
+<div class="tab"><svg width="22" height="22"><use href="#s-plus"/></svg>Post job</div>
+<div class="tab"><svg width="22" height="22"><use href="#s-msg"/></svg>Messages</div>
+<div class="tab"><svg width="22" height="22"><use href="#s-user"/></svg>Profile</div>
+</div></div></div>
+</div>
+
+</div>
+</body></html>

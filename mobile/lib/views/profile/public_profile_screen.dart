@@ -1,16 +1,26 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../models/marketplace.dart';
+import '../../network/api_error.dart';
 import '../../repositories/chat_reviews_repository.dart';
 import '../../theme/design_tokens.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
+import '../../viewmodels/profile_viewmodel.dart';
+import '../../widgets/fixo_buttons.dart';
 import '../../widgets/rating_sheet.dart';
+import '../../widgets/fixo_states.dart';
+import '../../widgets/fixo_cards.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
 /// Fetches public profile (with aggregated rating) for a given userId.
-final _profileProvider =
-    FutureProvider.family<UserProfile?, String>((ref, userId) async {
+final _profileProvider = FutureProvider.family<UserProfile?, String>((
+  ref,
+  userId,
+) async {
   final repo = ref.read(reviewsRepositoryProvider);
   return repo.getProfile(userId);
 });
@@ -21,12 +31,14 @@ class _ReviewsState {
   final bool isLoading;
   final bool hasMore;
   final int page;
+  final bool hasError;
 
   const _ReviewsState({
     this.reviews = const [],
     this.isLoading = false,
     this.hasMore = true,
     this.page = 1,
+    this.hasError = false,
   });
 
   _ReviewsState copyWith({
@@ -34,13 +46,14 @@ class _ReviewsState {
     bool? isLoading,
     bool? hasMore,
     int? page,
-  }) =>
-      _ReviewsState(
-        reviews: reviews ?? this.reviews,
-        isLoading: isLoading ?? this.isLoading,
-        hasMore: hasMore ?? this.hasMore,
-        page: page ?? this.page,
-      );
+    bool? hasError,
+  }) => _ReviewsState(
+    reviews: reviews ?? this.reviews,
+    isLoading: isLoading ?? this.isLoading,
+    hasMore: hasMore ?? this.hasMore,
+    page: page ?? this.page,
+    hasError: hasError ?? this.hasError,
+  );
 }
 
 class _ReviewsNotifier extends StateNotifier<_ReviewsState> {
@@ -52,7 +65,7 @@ class _ReviewsNotifier extends StateNotifier<_ReviewsState> {
 
   Future<void> loadNext() async {
     if (state.isLoading || !state.hasMore) return;
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, hasError: false);
     try {
       final result = await _repo.getReviewsForUser(
         _userId,
@@ -66,18 +79,18 @@ class _ReviewsNotifier extends StateNotifier<_ReviewsState> {
         page: state.page + 1,
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, hasMore: false);
+      state = state.copyWith(isLoading: false, hasError: true);
     }
   }
 }
 
 final _reviewsNotifierProvider = StateNotifierProvider.autoDispose
     .family<_ReviewsNotifier, _ReviewsState, String>((ref, userId) {
-  final repo = ref.read(reviewsRepositoryProvider);
-  final notifier = _ReviewsNotifier(repo, userId);
-  notifier.loadNext(); // initial load
-  return notifier;
-});
+      final repo = ref.read(reviewsRepositoryProvider);
+      final notifier = _ReviewsNotifier(repo, userId);
+      notifier.loadNext(); // initial load
+      return notifier;
+    });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -101,24 +114,59 @@ class PublicProfileScreen extends ConsumerWidget {
 
     final profileAsync = ref.watch(_profileProvider(profileId));
     final reviewsState = ref.watch(_reviewsNotifierProvider(profileId));
-    final reviewsNotifier =
-        ref.read(_reviewsNotifierProvider(profileId).notifier);
+    final reviewsNotifier = ref.read(
+      _reviewsNotifierProvider(profileId).notifier,
+    );
+
+    final viewer = ref.watch(profileViewModelProvider).profile;
+    final viewerId = viewer?['id']?.toString();
+    final isOwner =
+        viewerId != null && viewerId.isNotEmpty && viewerId == profileId;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: FixoGradientAppBar(
+        title: 'Profile',
+        actions: [
+          if (!isOwner && viewerId != null && viewerId.isNotEmpty)
+            PopupMenuButton<String>(
+              tooltip: 'More actions',
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'report') {
+                  _reportUser(context, ref, profileId);
+                } else if (value == 'block') {
+                  _blockUser(context, ref, profileId);
+                }
+              },
+              itemBuilder: (ctx) => const [
+                PopupMenuItem(value: 'report', child: Text('Report user')),
+                PopupMenuItem(value: 'block', child: Text('Block user')),
+              ],
+            ),
+        ],
+      ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => const Center(child: Text('Failed to load profile')),
-        data: (profile) => _ProfileBody(
-          profileId: profileId,
-          isTradie: isTradie,
-          profile: profile,
-          reviewsState: reviewsState,
-          onLoadMore: reviewsNotifier.loadNext,
-          isDark: isDark,
-          theme: theme,
-          ref: ref,
-        ),
+        data: (profile) => profile == null
+            ? const FixoEmptyState(
+                title: 'Profile unavailable',
+                icon: Icons.person_off_outlined,
+                subtitle: 'This profile could not be loaded.',
+              )
+            : _ProfileBody(
+                profileId: profileId,
+                isTradie: isTradie,
+                profile: profile,
+                reviewsState: reviewsState,
+                onLoadMore: reviewsNotifier.loadNext,
+                isDark: isDark,
+                theme: theme,
+                ref: ref,
+                isOwner: isOwner,
+                viewerId: viewerId,
+                viewerRole: viewer?['role'] as int?,
+              ),
       ),
     );
   }
@@ -133,6 +181,9 @@ class _ProfileBody extends StatelessWidget {
   final bool isDark;
   final ThemeData theme;
   final WidgetRef ref;
+  final bool isOwner;
+  final String? viewerId;
+  final int? viewerRole;
 
   const _ProfileBody({
     required this.profileId,
@@ -143,25 +194,26 @@ class _ProfileBody extends StatelessWidget {
     required this.isDark,
     required this.theme,
     required this.ref,
+    required this.isOwner,
+    required this.viewerId,
+    required this.viewerRole,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // ── Resolved display values ────────────────────────────────────────────
-    final name = profile?.fullName ??
-        (isTradie ? 'Tradie Profile' : 'Homeowner Profile');
-    final subtitle = isTradie
-        ? (profile?.tradeType ?? 'Tradie')
-        : 'Homeowner';
-    final initials = profile?.initials ??
-        (isTradie ? 'T' : 'H');
-    final avgRating = profile?.averageRating ?? 0.0;
-    final reviewCount = profile?.reviewCount ?? 0;
+    final name = profile?.fullName.trim().isNotEmpty == true
+        ? profile!.fullName
+        : 'Name unavailable';
+    final subtitle = isTradie ? (profile?.tradeType ?? 'Tradie') : 'Homeowner';
+    final initials = profile?.initials ?? (isTradie ? 'T' : 'H');
+    final avgRating = profile?.averageRating;
+    final reviewCount = profile?.reviewCount;
 
-    final ratingLabel = avgRating > 0
-        ? avgRating.toStringAsFixed(1)
-        : '–';
     final isVerified = profile?.isVerified ?? false;
+    final hasInsurance = profile?.hasInsurance ?? false;
+    final isAvailable = profile?.isAvailable;
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notif) {
@@ -172,7 +224,7 @@ class _ProfileBody extends StatelessWidget {
         return false;
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s7),
         children: [
           // ── Avatar ──────────────────────────────────────────────────────
           Center(
@@ -188,21 +240,22 @@ class _ProfileBody extends StatelessWidget {
                 initials,
                 style: const TextStyle(
                   fontFamily: DesignTokens.fontDisplay,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FW.semibold,
                   fontSize: 28,
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.s3),
 
           // ── Name + subtitle ──────────────────────────────────────────────
           Center(
             child: Text(
               name,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FW.bold,
+              ),
             ),
           ),
           Center(
@@ -213,126 +266,168 @@ class _ProfileBody extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.s3),
 
           // ── Pills: Verified + Member ─────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            runSpacing: 8,
             children: [
               if (isVerified) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
                   decoration: BoxDecoration(
-                    color: DesignTokens.green.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(100),
+                    color: DesignTokens.green.withValues(alpha: Alpha.tintStrong),
+                    borderRadius: BorderRadius.circular(Radii.pill),
                   ),
-                  child: const Text(
+                  child: Text(
                     '✓ Verified',
                     style: TextStyle(
-                      fontFamily: DesignTokens.fontMono,
-                      fontSize: 11,
-                      color: DesignTokens.green,
+                      fontFamily: DesignTokens.fontBody,
+                      fontSize: DesignTokens.fontSizeSecondary,
+                      fontWeight: FW.semibold,
+                      color: DesignTokens.inkSuccess(isDark),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: Space.s2),
+              ],
+              if (hasInsurance) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
+                  decoration: BoxDecoration(
+                    color: DesignTokens.brand500.withValues(alpha: Alpha.tintStandard),
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 14,
+                        color: DesignTokens.brand500,
+                      ),
+                      const SizedBox(width: Space.s1),
+                      Text(
+                        'Insured',
+                        style: TextStyle(
+                          fontFamily: DesignTokens.fontBody,
+                          fontSize: DesignTokens.fontSizeSecondary,
+                          fontWeight: FW.semibold,
+                          color: DesignTokens.brand500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Space.s2),
+              ],
+              if (isTradie && isAvailable != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? DesignTokens.brand100Dark
+                        : DesignTokens.brand100Light,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                  ),
+                  child: Text(
+                    isAvailable ? 'Available for jobs' : 'Not taking jobs',
+                    style: TextStyle(
+                      fontFamily: DesignTokens.fontBody,
+                      fontSize: DesignTokens.fontSizeSecondary,
+                      fontWeight: FW.medium,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Space.s2),
               ],
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 9, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
                 decoration: BoxDecoration(
                   color: isDark
                       ? DesignTokens.brand100Dark
                       : DesignTokens.brand100Light,
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(Radii.pill),
                 ),
                 child: Text(
                   'Member',
                   style: TextStyle(
-                    fontFamily: DesignTokens.fontMono,
-                    fontSize: 11,
+                    fontFamily: DesignTokens.fontBody,
+                    fontSize: DesignTokens.fontSizeSecondary,
+                    fontWeight: FW.medium,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Space.s4),
 
-          // ── Stat cards (M4-10: aggregated rating) ─────────────────────────
-          Row(
-            children: [
-              // Rating card
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  theme: theme,
-                  label: 'Rating',
-                  value: ratingLabel,
-                  showStar: true,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Review count
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  theme: theme,
-                  label: 'Reviews',
-                  value: reviewCount.toString(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Response (placeholder)
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  theme: theme,
-                  label: 'Response',
-                  value: '100%',
-                ),
-              ),
-            ],
+          // ── Consolidated trust row ─────────────────────────────────────────
+          _TrustRow(
+            isDark: isDark,
+            isTradie: isTradie,
+            rating: (reviewCount != null && reviewCount > 0 && avgRating != null && avgRating > 0)
+                ? avgRating
+                : null,
+            reviewCount: reviewCount ?? 0,
+            isVerified: isVerified,
+            hasInsurance: hasInsurance,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Space.s4),
 
-          // ── Edit button (stub) ────────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Edit profile — coming soon')),
+          // ── Edit button ────────────────────────────────────────────────
+          // Routes to the current-user edit form (PUT /api/profile).
+          if (isOwner)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => context.go('/profile'),
+                child: const Text('Edit Profile'),
               ),
-              child: const Text('Edit Profile'),
             ),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: Space.s2),
+
+          // ── Contextual actions for signed-in non-owners ─────────────────
+          // Message stays job-scoped (existing conversation only — D5);
+          // Request reuses POST /api/jobs/:id/requests and only appears for
+          // a homeowner viewing a tradie while they own a Requested job.
+          // Report/Block live in the app-bar overflow menu.
+          if (!isOwner && viewerId != null && viewerId!.isNotEmpty)
+            _ContextualActions(
+              profileId: profileId,
+              isTradie: isTradie,
+              viewerRole: viewerRole,
+              ref: ref,
+            ),
+          const SizedBox(height: Space.s6),
 
           // ── Reviews section header ────────────────────────────────────────
           Text(
             'Recent Reviews',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FW.semibold,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.s2),
 
           // ── Review list (M4-06: live paginated) ──────────────────────────
           if (reviewsState.reviews.isEmpty && reviewsState.isLoading)
             const Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(Space.s6),
                 child: CircularProgressIndicator(),
               ),
             )
-          else if (reviewsState.reviews.isEmpty)
+          else if (reviewsState.reviews.isEmpty && !reviewsState.hasError)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: Space.s4),
               child: Center(
                 child: Text(
-                  'No reviews yet.',
+                  'No reviews yet — reviews appear here after a completed job.',
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -345,14 +440,14 @@ class _ProfileBody extends StatelessWidget {
             if (reviewsState.isLoading)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(12),
+                  padding: EdgeInsets.all(Space.s3),
                   child: CircularProgressIndicator(),
                 ),
               ),
             if (!reviewsState.hasMore && reviewsState.reviews.isNotEmpty)
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(Space.s3),
                   child: Text(
                     'All reviews loaded',
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -363,93 +458,463 @@ class _ProfileBody extends StatelessWidget {
               ),
           ],
 
-          // ── Demo entry point for rating sheet ────────────────────────────
-          TextButton(
-            onPressed: () => RatingSheet.show(
-              context,
-              jobId: '0', // replaced by real jobId in production flow
-              jobTitle: 'Fix leaking kitchen pipe',
-              onSubmit: (rating, comment) =>
-                  ref.read(reviewsRepositoryProvider).submitReview(
-                        '0',
-                        rating,
-                        comment,
-                        revieweeId: profileId,
-                      ),
+          if (reviewsState.hasError)
+            TextButton(
+              onPressed: onLoadMore,
+              child: const Text('Could not load reviews. Try again.'),
             ),
-            child: const Text('Leave a review (demo)'),
-          ),
+
+          // ── Leave-a-review entry ───────────────────────────────────────
+          // Opens the real rating sheet for a completed job. The jobId must
+          // come from a completed-job flow — no demo jobId '0' stub.
+          if (!isOwner && viewerId != null && viewerId!.isNotEmpty)
+            TextButton(
+              onPressed: () =>
+                  _showReviewEntry(context, ref, profileId, viewerId!),
+              child: const Text('Leave a review'),
+            ),
         ],
       ),
     );
   }
 }
 
-// ── Stat card widget ──────────────────────────────────────────────────────────
+// ── Contextual actions (Message / Request) ──────────────────────────────────
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool showStar;
+/// Job-scoped actions shown to a signed-in non-owner:
+/// - **Message** when a conversation already exists with this user and the
+///   job's chat is still open (matches IsChatOpenAsync: not Completed/
+///   Cancelled/Disputed). Messaging stays job-scoped — no arbitrary DMs.
+/// - **Request** when the viewer is a homeowner viewing a tradie and owns a
+///   job still in `Requested` matching state. Reuses the existing
+///   `POST /api/jobs/:id/requests` contract; multiple eligible jobs open a
+///   chooser sheet.
+class _ContextualActions extends StatefulWidget {
+  final String profileId;
+  final bool isTradie;
+  final int? viewerRole;
+  final WidgetRef ref;
+
+  const _ContextualActions({
+    required this.profileId,
+    required this.isTradie,
+    required this.viewerRole,
+    required this.ref,
+  });
+
+  @override
+  State<_ContextualActions> createState() => _ContextualActionsState();
+}
+
+class _ContextualActionsState extends State<_ContextualActions> {
+  static const _chatClosed = {'Completed', 'Cancelled', 'Disputed'};
+
+  ConversationSummary? _shared;
+  List<Job>? _requestable;
+  bool _sending = false;
+
+  bool get _viewerIsHomeowner => widget.viewerRole == 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final ref = widget.ref;
+    try {
+      final convs = await ref.read(chatRepositoryProvider).getConversations();
+      final open = convs
+          .where(
+            (c) =>
+                c.otherUserId == widget.profileId &&
+                !_chatClosed.contains(c.status),
+          )
+          .toList();
+      if (mounted) {
+        setState(() => _shared = open.isEmpty ? null : open.first);
+      }
+    } catch (_) {
+      // No conversations load → Message simply stays hidden.
+    }
+    if (widget.isTradie && _viewerIsHomeowner) {
+      try {
+        final jobs = await ref
+            .read(jobsRepositoryProvider)
+            .getMyJobs(status: 'Requested');
+        final open = jobs.where((j) => j.status == 'Requested').toList();
+        if (mounted) setState(() => _requestable = open);
+      } catch (_) {
+        if (mounted) setState(() => _requestable = const []);
+      }
+    }
+  }
+
+  Future<void> _message() async {
+    final jobId = _shared?.jobId;
+    if (jobId == null) return;
+    await context.push('/chat/$jobId');
+  }
+
+  Future<void> _request() async {
+    final eligible = _requestable;
+    if (eligible == null || eligible.isEmpty || _sending) return;
+    Job? job = eligible.length == 1 ? eligible.first : null;
+    job ??= await showModalBottomSheet<Job>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s2),
+              child: Text(
+                'Request for a job',
+                style: Theme.of(ctx).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FW.semibold),
+              ),
+            ),
+            for (final j in eligible)
+              ListTile(
+                title: Text(j.title),
+                subtitle: j.suburb.isNotEmpty ? Text(j.suburb) : null,
+                onTap: () => Navigator.pop(ctx, j),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (job == null || !mounted) return;
+    setState(() => _sending = true);
+    try {
+      final ok = await widget.ref
+          .read(jobsRepositoryProvider)
+          .requestTradie(job.id, widget.profileId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'Request sent — you’ll be notified when they respond.'
+                : 'This job is no longer open for requests.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not send the request. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <Widget>[
+      if (_shared != null)
+        OutlinedButton.icon(
+          onPressed: _message,
+          icon: const Icon(Icons.chat_bubble_outline, size: 18),
+          label: const Text('Message'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, DesignTokens.heightSecondary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+            ),
+          ),
+        ),
+      if (_requestable != null && _requestable!.isNotEmpty)
+        FilledButton.icon(
+          onPressed: _sending ? null : _request,
+          icon: const Icon(Icons.handshake_outlined, size: 18),
+          label: const Text('Request for a job'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, DesignTokens.heightPrimary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+            ),
+          ),
+        ),
+    ];
+    if (actions.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.s2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < actions.length; i++) ...[
+            if (i > 0) const SizedBox(height: Space.s2),
+            actions[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Finds the viewer's most recent Complete job and opens the real rating
+/// sheet (POST /api/jobs/:id/reviews). Shows a message when no completed
+/// job exists instead of submitting to a stub jobId.
+Future<void> _showReviewEntry(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+  String viewerId,
+) async {
+  List<Job> jobs;
+  try {
+    jobs = await ref.read(jobsRepositoryProvider).getMyJobs();
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not check completed jobs. Try again.'),
+        ),
+      );
+    }
+    return;
+  }
+  final completed = jobs
+      .where(
+        (j) =>
+            j.status == 'Completed' &&
+            ((j.homeownerId == viewerId && j.matchedTradieId == profileId) ||
+                (j.matchedTradieId == viewerId && j.homeownerId == profileId)),
+      )
+      .toList();
+  if (!context.mounted) return;
+  if (completed.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Reviews unlock after a completed job.')),
+    );
+    return;
+  }
+  final job = completed.first;
+  if (!context.mounted) return;
+  RatingSheet.show(
+    // ignore: use_build_context_synchronously
+    context,
+    jobId: job.id,
+    jobTitle: job.title,
+    onSubmit: (rating, comment) => ref
+        .read(reviewsRepositoryProvider)
+        .submitReview(job.id, rating, comment, revieweeId: profileId),
+  );
+}
+
+/// P8-02: report this profile for abuse (Abuse flag for staff triage).
+Future<void> _reportUser(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+) async {
+  final reasonCtrl = TextEditingController();
+  final reason = await showDialog<String>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const Text('Report abuse'),
+      content: TextField(
+        controller: reasonCtrl,
+        decoration: const InputDecoration(
+          hintText: 'What happened? (optional)',
+        ),
+        maxLines: 3,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(c),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(c, reasonCtrl.text.trim()),
+          child: const Text('Report'),
+        ),
+      ],
+    ),
+  );
+  if (reason == null) return;
+  try {
+    await ref
+        .read(profileRepositoryProvider)
+        .reportUser(profileId, reason: reason);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Thanks — our team will review this report.'),
+      ),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    final msg = e is DioException
+        ? friendlyDioError(e, tag: 'PublicProfile.report')
+        : e.toString();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+/// P8-02: block this profile (excluded from future matches both ways).
+Future<void> _blockUser(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const Text('Block user?'),
+      content: const Text('You will no longer be matched with this user.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(c, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(c, true),
+          child: const Text('Block'),
+        ),
+      ],
+    ),
+  );
+  if (confirm != true) return;
+  try {
+    await ref.read(profileRepositoryProvider).blockUser(profileId);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('User blocked.')));
+  } catch (e) {
+    if (!context.mounted) return;
+    final msg = e is DioException
+        ? friendlyDioError(e, tag: 'PublicProfile.block')
+        : e.toString();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+// ── Trust row widget ──────────────────────────────────────────────────────────
+
+class _TrustRow extends StatelessWidget {
   final bool isDark;
-  final ThemeData theme;
+  final bool isTradie;
+  final double? rating;
+  final int reviewCount;
+  final bool isVerified;
+  final bool hasInsurance;
 
-  const _StatCard({
-    required this.label,
-    required this.value,
-    this.showStar = false,
+  const _TrustRow({
     required this.isDark,
-    required this.theme,
+    required this.isTradie,
+    required this.rating,
+    required this.reviewCount,
+    required this.isVerified,
+    required this.hasInsurance,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: isDark ? DesignTokens.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(DesignTokens.radius),
-        border: Border.all(
-          color: isDark
-              ? DesignTokens.paperLineDark
-              : DesignTokens.paperLineLight,
-        ),
-      ),
-      child: Column(
-        children: [
-          if (showStar)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star,
-                    size: 18, color: DesignTokens.amberDark),
-                const SizedBox(width: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontFamily: DesignTokens.fontMono,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
+    final theme = Theme.of(context);
+    final hasRating = rating != null && rating! > 0 && reviewCount > 0;
+
+    return FixoCard(
+      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: 14),
+      child: Center(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            if (hasRating)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Icon(Icons.star_rounded, size: 20, color: DesignTokens.amber),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: Space.s1)),
+                    TextSpan(
+                      text: rating!.toStringAsFixed(1),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FW.bold,
+                      ),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: Space.s1)),
+                    TextSpan(
+                      text: '($reviewCount)',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            )
-          else
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: DesignTokens.fontMono,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+                textAlign: TextAlign.center,
+              )
+            else
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Icon(Icons.verified_user_outlined, size: 18, color: DesignTokens.amber),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: Space.s1_5)),
+                    TextSpan(
+                      text: 'New to TradieHunter',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        color: isDark ? Colors.white : DesignTokens.brand900,
+                      ),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+            if (isTradie && isVerified)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Icon(Icons.verified_outlined, size: 18, color: DesignTokens.inkSuccess(isDark)),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: Space.s1)),
+                    TextSpan(
+                      text: 'Verified',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        color: DesignTokens.inkSuccess(isDark),
+                      ),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            if (isTradie && hasInsurance)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Icon(Icons.shield_outlined, size: 18, color: DesignTokens.brand500),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: Space.s1)),
+                    TextSpan(
+                      text: 'Insured',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        color: DesignTokens.brand500,
+                      ),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -471,11 +936,11 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: Space.s3),
+      padding: const EdgeInsets.all(Space.s4),
       decoration: BoxDecoration(
-        color: isDark ? DesignTokens.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(DesignTokens.radius),
+        color: DesignTokens.surfaceCard(isDark),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
         border: Border.all(
           color: isDark
               ? DesignTokens.paperLineDark
@@ -493,18 +958,20 @@ class _ReviewCard extends StatelessWidget {
                       ? review.reviewerName
                       : 'Anonymous',
                   style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600),
+                    fontSize: DesignTokens.fontSizeSm,
+                    fontWeight: FW.semibold,
+                  ),
                 ),
               ),
               Text(
                 review.relativeDate,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: Alpha.divider),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: Space.s1),
           // Star display (read-only)
           Row(
             children: List.generate(5, (i) {
@@ -515,17 +982,17 @@ class _ReviewCard extends StatelessWidget {
                 color: filled
                     ? DesignTokens.amberDark
                     : (isDark
-                        ? DesignTokens.paperLineDark
-                        : DesignTokens.paperLineLight),
+                          ? DesignTokens.paperLineDark
+                          : DesignTokens.paperLineLight),
               );
             }),
           ),
           if (review.comment != null && review.comment!.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: Space.s1_5),
             Text(
               review.comment!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                color: theme.colorScheme.onSurface.withValues(alpha: Alpha.textOnGradientStrong),
               ),
             ),
           ],

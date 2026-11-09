@@ -7,6 +7,8 @@
   "permission": "ask",
   "instructions": [
     "AGENTS.md",
+    "mobile/AGENTS.md",
+    "mobile/HARDCODED_AUDIT.md",
     "docs/ARCHITECTURE.md",
     "docs/design/design-system.html",
     "docs/design/mockup/"

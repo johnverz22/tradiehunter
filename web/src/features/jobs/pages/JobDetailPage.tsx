@@ -1,215 +1,271 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Clock, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image as ImageIcon } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
-import { InfoRow } from '../../../components/InfoRow';
 import { useJobDetail } from '../hooks/useJobs';
+
+/** The mockup's four-step progress flow. */
+const STEPS = ['Requested', 'Matched', 'Confirmed', 'Complete'] as const;
+
+const STEP_INDEX: Record<string, number> = {
+  Draft: 0,
+  Requested: 0,
+  Matching: 0,
+  Matched: 1,
+  Confirmed: 2,
+  InProgress: 2,
+  Complete: 3,
+};
+
+const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
+
+const timeFormat = new Intl.DateTimeFormat('en-NZ', {
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
+const dateTimeFormat = new Intl.DateTimeFormat('en-NZ', {
+  day: 'numeric',
+  month: 'short',
+  hour: 'numeric',
+  minute: '2-digit',
+});
 
 export const JobDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: job, isLoading } = useJobDetail(Number(id));
-  const [tab, setTab] = useState<'info' | 'chat' | 'timeline' | 'photos'>('info');
 
   if (isLoading)
     return <div className="text-[var(--ink-soft)] text-sm p-4">Loading job…</div>;
   if (!job)
     return <div className="text-[var(--red)] text-sm p-4">Job not found.</div>;
 
+  const isCancelled = job.status === 'Cancelled';
+  const isComplete = job.status === 'Complete';
+  const currentStep = STEP_INDEX[job.status] ?? 0;
+
+  const history = [...job.statusHistory].sort(
+    (a, b) => new Date(a.changedAtUtc).getTime() - new Date(b.changedAtUtc).getTime(),
+  );
+
   return (
-    <div className="space-y-5 max-w-4xl">
-      {/* Back */}
-      <Link
-        to="/jobs"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]"
-      >
-        <ArrowLeft size={14} /> Back to Jobs
-      </Link>
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="text-[13px] text-[var(--ink)] opacity-60">
+        <Link to="/jobs" className="inline-flex items-center gap-1.5">
+          <ArrowLeft size={13} /> Jobs
+        </Link>{' '}
+        / <span className="mono">{formatJobId(job.id)}</span>
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--ink)]">{job.title}</h1>
-          <p className="text-sm text-[var(--ink-soft)]">
-            {job.category} · {job.address ?? 'No address'}
+          <h1 className="text-[24px] font-bold text-[var(--ink)] mb-1">{job.title}</h1>
+          <p className="mono text-[13px] text-[var(--ink)] opacity-60">
+            {formatJobId(job.id)} • {job.category} • {job.address ?? 'No address'}
           </p>
         </div>
-        <StatusBadge status={job.status} />
+        <StatusBadge status={job.status} size="lg" />
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--paper-line)]">
-        {(
-          [
-            ['info', 'Info'],
-            ['chat', `Chat (${job.chatTranscript.length})`],
-            ['timeline', 'Timeline'],
-            ['photos', `Photos (${job.photos.length})`],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={[
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              tab === key
-                ? 'border-[var(--brand-500)] text-[var(--brand-700)]'
-                : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {tab === 'info' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-[var(--paper-line)] rounded-lg p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-[var(--ink)]">Job Info</h2>
-            <InfoRow label="ID" value={String(job.id)} mono />
-            <InfoRow label="Status" value={job.status} />
-            <InfoRow label="Category" value={job.category} />
-            <InfoRow label="Urgency" value={job.urgency} />
-            <InfoRow label="Schedule" value={job.scheduleStatus} />
-            {job.scheduledDateUtc && (
-              <InfoRow
-                label="Scheduled"
-                value={new Date(job.scheduledDateUtc).toLocaleString()}
-              />
-            )}
-            <InfoRow label="Created" value={new Date(job.createdAtUtc).toLocaleString()} />
-            <InfoRow label="Updated" value={new Date(job.updatedAtUtc).toLocaleString()} />
-          </div>
-          <div className="border border-[var(--paper-line)] rounded-lg p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-[var(--ink)]">Participants</h2>
-            <div>
-              <p className="text-xs text-[var(--ink-soft)] mb-0.5">Homeowner</p>
-              <Link
-                to={`/users/${job.homeownerId}`}
-                className="text-sm text-[var(--brand-500)] hover:underline"
-              >
-                {job.homeownerName}
-              </Link>
+      {/* Status stepper */}
+      <div className="stepper">
+        {STEPS.map((label, i) => {
+          const done = i < currentStep || isComplete;
+          const active = i === currentStep && !isComplete;
+          const state = isCancelled && active ? 'cancelled' : done ? 'done' : active ? 'active' : '';
+          return (
+            <div key={label} className={`step ${state}`}>
+              <div className="step-line" />
+              <div className="step-dot" />
+              <div className="step-label">{isCancelled && active ? 'Cancelled' : label}</div>
             </div>
-            {job.matchedTradieId && (
-              <div>
-                <p className="text-xs text-[var(--ink-soft)] mb-0.5">Tradie</p>
-                <Link
-                  to={`/users/${job.matchedTradieId}`}
-                  className="text-sm text-[var(--brand-500)] hover:underline"
-                >
-                  {job.tradeName ?? job.matchedTradieId}
-                </Link>
+          );
+        })}
+      </div>
+
+      {/* Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card">
+            <h3 className="card-title">Job Details</h3>
+
+            {job.description && (
+              <p className="text-[15px] leading-relaxed text-[var(--ink)] mb-4 whitespace-pre-wrap">
+                {job.description}
+              </p>
+            )}
+
+            <div className="detail-row">
+              <span className="detail-label">Urgency</span>
+              <span
+                className="detail-value"
+                style={{ color: job.urgency === 'Urgent' ? 'var(--red-ink)' : undefined }}
+              >
+                {job.urgency}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Category</span>
+              <span className="detail-value">{job.category}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Schedule</span>
+              <span className="detail-value">{job.scheduleStatus}</span>
+            </div>
+            {job.scheduledDateUtc && (
+              <div className="detail-row">
+                <span className="detail-label">Scheduled</span>
+                <span className="detail-value">
+                  {dateTimeFormat.format(new Date(job.scheduledDateUtc))}
+                </span>
+              </div>
+            )}
+            <div className="detail-row">
+              <span className="detail-label">Posted</span>
+              <span className="detail-value">
+                {dateTimeFormat.format(new Date(job.createdAtUtc))}
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Last updated</span>
+              <span className="detail-value">
+                {dateTimeFormat.format(new Date(job.updatedAtUtc))}
+              </span>
+            </div>
+          </div>
+
+          {/* Photos */}
+          <div className="card">
+            <h3 className="card-title">
+              <ImageIcon size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
+              Photos ({job.photos.length})
+            </h3>
+            {job.photos.length === 0 ? (
+              <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No photos attached.</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {job.photos.map((photo) => (
+                  <a
+                    key={photo.id}
+                    href={photo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block aspect-4/3 rounded overflow-hidden border border-[var(--brand-100)] hover:border-[var(--brand-300)] transition-colors"
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.originalFileName ?? `Photo ${photo.id}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
               </div>
             )}
           </div>
-          {job.description && (
-            <div className="border border-[var(--paper-line)] rounded-lg p-5 col-span-full">
-              <h2 className="text-sm font-semibold text-[var(--ink)] mb-2">Description</h2>
-              <p className="text-sm text-[var(--ink-soft)] whitespace-pre-wrap">{job.description}</p>
+        </div>
+
+        {/* Participants */}
+        <div className="space-y-6">
+          <div className="card">
+            <h3 className="card-title">Homeowner</h3>
+            <div className="detail-row">
+              <span className="detail-label">Name</span>
+              <Link to={`/users/${job.homeownerId}`} className="detail-value cell-link">
+                {job.homeownerName}
+              </Link>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">User ID</span>
+              <span className="detail-value mono">{job.homeownerId}</span>
+            </div>
+          </div>
+
+          {job.matchedTradieId && (
+            <div className="card">
+              <h3 className="card-title">Tradie</h3>
+              <div className="detail-row">
+                <span className="detail-label">Name</span>
+                <Link to={`/users/${job.matchedTradieId}`} className="detail-value cell-link">
+                  {job.tradeName ?? job.matchedTradieId}
+                </Link>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Status</span>
+                <span className="detail-value">{job.status}</span>
+              </div>
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {tab === 'chat' && (
-        <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-[var(--paper-line)] flex items-center gap-2">
-            <MessageSquare size={14} className="text-[var(--ink-soft)]" />
-            <span className="text-sm font-medium text-[var(--ink)]">Chat Transcript (read-only)</span>
-          </div>
-          {job.chatTranscript.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-[var(--ink-soft)]">
-              No messages yet.
+      {/* Activity timeline */}
+      <div className="card">
+        <h3 className="card-title">Activity Timeline</h3>
+
+        <div className="timeline">
+          <div className="timeline-item">
+            <div className="timeline-time">
+              {timeFormat.format(new Date(job.createdAtUtc))}
             </div>
-          ) : (
-            <div className="divide-y divide-[var(--paper-line)] max-h-[500px] overflow-y-auto">
-              {job.chatTranscript.map((msg) => (
-                <div key={msg.id} className="px-5 py-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-[var(--ink)]">
-                      {msg.senderName}
-                    </span>
-                    <span className="text-xs text-[var(--ink-soft)]">
-                      {new Date(msg.sentAtUtc).toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[var(--ink-soft)]">{msg.content}</p>
+            <div>
+              <div className="timeline-event">Job posted by {job.homeownerName}</div>
+              <div className="timeline-meta">{dateTimeFormat.format(new Date(job.createdAtUtc))}</div>
+            </div>
+          </div>
+
+          {history.map((h) => (
+            <div key={h.id} className="timeline-item">
+              <div className="timeline-time">
+                {timeFormat.format(new Date(h.changedAtUtc))}
+              </div>
+              <div>
+                <div className="timeline-event">
+                  Status changed to <strong>{h.toStatus}</strong>
                 </div>
-              ))}
+                <div className="timeline-meta">
+                  {h.changedByName ?? h.changedByUserId} •{' '}
+                  {dateTimeFormat.format(new Date(h.changedAtUtc))}
+                  {h.reason ? ` • ${h.reason}` : ''}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      )}
+          ))}
 
-      {tab === 'timeline' && (
-        <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
-          <div className="px-5 py-3 border-b border-[var(--paper-line)] flex items-center gap-2">
-            <Clock size={14} className="text-[var(--ink-soft)]" />
-            <span className="text-sm font-medium text-[var(--ink)]">Status History</span>
-          </div>
-          {job.statusHistory.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-[var(--ink-soft)]">
-              No history yet.
-            </div>
-          ) : (
-            <div className="px-5 py-4">
-              <ol className="relative border-l border-[var(--paper-line)] ml-3 space-y-5">
-                {job.statusHistory.map((h) => (
-                  <li key={h.id} className="ml-5">
-                    <span className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-[var(--brand-500)] border-2 border-[var(--paper)]" />
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <StatusBadge status={h.fromStatus} />
-                      <span className="text-xs text-[var(--ink-soft)]">→</span>
-                      <StatusBadge status={h.toStatus} />
-                    </div>
-                    <p className="text-xs text-[var(--ink-soft)]">
-                      {h.changedByName ?? h.changedByUserId} ·{' '}
-                      {new Date(h.changedAtUtc).toLocaleString()}
-                    </p>
-                    {h.reason && (
-                      <p className="text-xs text-[var(--ink-soft)] mt-0.5 italic">{h.reason}</p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
+          {history.length === 0 && (
+            <p className="text-sm text-[var(--ink-soft)] py-4 text-center">
+              No status changes recorded yet.
+            </p>
           )}
         </div>
-      )}
+      </div>
 
-      {tab === 'photos' && (
-        <div className="border border-[var(--paper-line)] rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <ImageIcon size={14} className="text-[var(--ink-soft)]" />
-            <span className="text-sm font-medium text-[var(--ink)]">Job Photos</span>
+      {/* Chat transcript */}
+      <div className="card">
+        <h3 className="card-title">
+          <MessageSquare size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
+          Chat Transcript ({job.chatTranscript.length})
+        </h3>
+        {job.chatTranscript.length === 0 ? (
+          <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No messages yet.</p>
+        ) : (
+          <div className="max-h-[400px] overflow-y-auto">
+            {job.chatTranscript.map((msg) => (
+              <div key={msg.id} className="timeline-item">
+                <div className="timeline-time">{msg.senderName}</div>
+                <div>
+                  <div className="timeline-event">{msg.content}</div>
+                  <div className="timeline-meta">
+                    {dateTimeFormat.format(new Date(msg.sentAtUtc))}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          {job.photos.length === 0 ? (
-            <p className="text-sm text-[var(--ink-soft)] text-center py-8">No photos attached.</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {job.photos.map((photo) => (
-                <a
-                  key={photo.id}
-                  href={photo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block aspect-square rounded-lg overflow-hidden border border-[var(--paper-line)] hover:border-[var(--brand-300)] transition-colors"
-                >
-                  <img
-                    src={photo.url}
-                    alt={photo.originalFileName ?? `Photo ${photo.id}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
-
-

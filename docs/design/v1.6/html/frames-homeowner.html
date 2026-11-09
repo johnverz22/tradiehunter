@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 frames — homeowner</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .pg { background:#DCD8CF; padding:40px; display:flex; flex-wrap:wrap; gap:40px; font-family:var(--fb); }
+  .gradring { padding:2px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue)); }
+  .glowcta { box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 6px 16px rgba(227,139,41,.25), 0 0 12px rgba(227,139,41,.2); }
+  .stepnode { width:32px;height:32px;border-radius:50%;background:var(--navy);color:var(--on-brand);display:grid;place-items:center;font:700 14px var(--fb);flex:none; }
+  .stitch { border-left:2px dashed rgba(25,57,87,.2);margin-left:15px;padding-left:22px; }
+  .checkburst { background:radial-gradient(circle,var(--tint-success) 0%,transparent 70%); }
+</style></head>
+<body>
+<div class="pg">
+<!-- H07 HOMEOWNER DASHBOARD — needs attention · LIGHT -->
+<div class="frame w402" data-frame="H07-light">
+<div class="heroband" style="padding-bottom:32px">
+  <div class="bpdots" style="position:absolute;inset:0;opacity:.6;pointer-events:none"></div>
+  <img src="../assets/rings-3-navy.svg" style="position:absolute;right:-50px;top:-30px;width:260px;opacity:.22;pointer-events:none"/>
+  <div class="hero-statusbar statusbar on-dark"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 20px 0">
+    <div>
+      <div style="font:500 13px var(--fb);color:rgba(255,255,255,.65);letter-spacing:.03em;text-transform:uppercase">Good morning</div>
+      <div style="font:700 28px/1.1 var(--fd);color:#fff;letter-spacing:-.02em;margin-top:3px">Sarah 👋</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;margin-top:10px;background:rgba(255,255,255,.13);border-radius:999px;padding:5px 12px 5px 9px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font:500 12px var(--fb);color:rgba(255,255,255,.75)">Grey Lynn, Auckland</span>
+      </div>
+    </div>
+    <div style="position:relative;margin-top:4px">
+      <div class="ico-btn" style="color:#fff"><svg height="24" width="24"><use href="#i-bell"></use></svg></div>
+      <div style="position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--amber);border:2px solid var(--navy)"></div>
+    </div>
+  </div>
+</div>
+<div class="pad scroll" style="padding-top:20px">
+  <div class="eyebrow" style="margin-bottom:14px">Needs your attention</div>
+  <div class="card attcard" style="padding:18px">
+    <!-- Job headline -->
+    <div style="font:700 17px/1.2 var(--fd);letter-spacing:-.01em">Leaking kitchen tap</div>
+    <!-- Tradie + pill row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="gradring"><div class="av" style="width:32px;height:32px;border:2px solid var(--surface);font-size:12px;font-weight:700">MT</div></div>
+        <span style="font:500 14px var(--fb);color:var(--text-soft)">Mike Te Rangi</span>
+      </div>
+      <span class="pill pill-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Action needed</span>
+    </div>
+    <!-- Price + time row -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      <span style="font:700 22px var(--fb);font-variant-numeric:tabular-nums">$171.00</span>
+      <span class="sec">Today 2:00 pm</span>
+    </div>
+    <div class="cpb" style="margin-top:12px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap">Step 3 of 4 <span class="soft">· In progress</span></div></div>
+    <div class="btn btn-primary" style="height:48px;font-size:15px;margin-top:14px">Review completion</div>
+  </div>
+  <div class="card attcard" style="margin-top:10px;padding:18px">
+    <!-- Job headline -->
+    <div style="font:700 17px/1.2 var(--fd);letter-spacing:-.01em">Install two power points</div>
+    <!-- Tradie + pill row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="gradring"><div class="av" style="width:32px;height:32px;border:2px solid var(--surface);font-size:12px;font-weight:700">JK</div></div>
+        <span style="font:500 14px var(--fb);color:var(--text-soft)">Jess Kaur</span>
+      </div>
+      <span class="pill pill-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Payment due</span>
+    </div>
+    <!-- Price + time row -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      <span style="font:700 22px var(--fb);font-variant-numeric:tabular-nums">$128.25</span>
+      <span class="sec">Fri 9:00 am</span>
+    </div>
+    <div class="cpb" style="margin-top:12px"><div class="track"><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 1 of 4 <span class="soft">· Awaiting payment</span></div></div>
+    <div class="btn btn-secondary" style="height:48px;font-size:15px;margin-top:14px">Pay now</div>
+  </div>
+  <div class="eyebrow" style="margin:22px 0 14px">Booked</div>
+  <div class="card" style="padding:4px 18px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 0">
+      <div class="av" style="width:44px;height:44px;font-size:15px;flex:none">RW</div>
+      <div style="flex:1;min-width:0">
+        <div style="font:700 15px/1.2 var(--fd)">Deck repairs — back steps</div>
+        <div style="font:500 13px var(--fb);color:var(--text-soft);margin-top:2px">Rob Walker</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+          <div style="display:flex;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:var(--brand)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--brand)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--track)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--track)"></div></div>
+          <span style="font:500 11px var(--fb);color:var(--text-soft)">Step 2 of 4</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex:none">
+        <div style="font:700 16px var(--fb);font-variant-numeric:tabular-nums">$342.00</div>
+        <div class="sec" style="font-size:12px;margin-top:2px">Mon 10:30 am</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--line);padding:12px 0">
+      <div class="btn btn-tonal" style="height:44px;font-size:14px;width:100%">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Open chat
+      </div>
+    </div>
+  </div>
+</div>
+<div style="position:relative">
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H07 HOMEOWNER DASHBOARD — DARK -->
+<div class="frame w402 dark" data-frame="H07-dark" style="background:var(--paper-d)">
+<div class="heroband" style="padding-bottom:32px">
+  <div class="bpdots" style="position:absolute;inset:0;opacity:.6;pointer-events:none"></div>
+  <img src="../assets/rings-3-navy.svg" style="position:absolute;right:-50px;top:-30px;width:260px;opacity:.22;pointer-events:none"/>
+  <div class="hero-statusbar statusbar on-dark"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 20px 0">
+    <div>
+      <div style="font:500 13px var(--fb);color:rgba(255,255,255,.55);letter-spacing:.03em;text-transform:uppercase">Good morning</div>
+      <div style="font:700 28px/1.1 var(--fd);color:#fff;letter-spacing:-.02em;margin-top:3px">Sarah 👋</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;margin-top:10px;background:rgba(255,255,255,.13);border-radius:999px;padding:5px 12px 5px 9px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font:500 12px var(--fb);color:rgba(255,255,255,.7)">Grey Lynn, Auckland</span>
+      </div>
+    </div>
+    <div style="position:relative;margin-top:4px">
+      <div class="ico-btn" style="color:#fff"><svg height="24" width="24"><use href="#i-bell"></use></svg></div>
+      <div style="position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--amber);border:2px solid var(--navy)"></div>
+    </div>
+  </div>
+</div>
+<div class="pad scroll" style="padding-top:20px">
+  <div class="eyebrow" style="margin-bottom:14px">Needs your attention</div>
+  <div class="card attcard" style="padding:18px">
+    <!-- Job headline -->
+    <div style="font:700 17px/1.2 var(--fd);letter-spacing:-.01em">Leaking kitchen tap</div>
+    <!-- Tradie + pill row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="gradring"><div class="av" style="width:32px;height:32px;border:2px solid var(--surface);font-size:12px;font-weight:700">MT</div></div>
+        <span style="font:500 14px var(--fb);color:var(--text-soft)">Mike Te Rangi</span>
+      </div>
+      <span class="pill pill-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Action needed</span>
+    </div>
+    <!-- Price + time row -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      <span style="font:700 22px var(--fb);font-variant-numeric:tabular-nums">$171.00</span>
+      <span class="sec">Today 2:00 pm</span>
+    </div>
+    <div class="cpb" style="margin-top:12px"><div class="track"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div><div class="cap">Step 3 of 4 <span class="soft">· In progress</span></div></div>
+    <div class="btn btn-primary" style="height:48px;font-size:15px;margin-top:14px">Review completion</div>
+  </div>
+  <div class="card attcard" style="margin-top:10px;padding:18px">
+    <!-- Job headline -->
+    <div style="font:700 17px/1.2 var(--fd);letter-spacing:-.01em">Install two power points</div>
+    <!-- Tradie + pill row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="gradring"><div class="av" style="width:32px;height:32px;border:2px solid var(--surface);font-size:12px;font-weight:700">JK</div></div>
+        <span style="font:500 14px var(--fb);color:var(--text-soft)">Jess Kaur</span>
+      </div>
+      <span class="pill pill-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Payment due</span>
+    </div>
+    <!-- Price + time row -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      <span style="font:700 22px var(--fb);font-variant-numeric:tabular-nums">$128.25</span>
+      <span class="sec">Fri 9:00 am</span>
+    </div>
+    <div class="cpb" style="margin-top:12px"><div class="track"><div class="seg on"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div><div class="cap">Step 1 of 4 <span class="soft">· Awaiting payment</span></div></div>
+    <div class="btn btn-secondary" style="height:48px;font-size:15px;margin-top:14px">Pay now</div>
+  </div>
+  <div class="eyebrow" style="margin:22px 0 14px">Booked</div>
+  <div class="card" style="padding:4px 18px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 0">
+      <div class="av" style="width:44px;height:44px;font-size:15px;flex:none">RW</div>
+      <div style="flex:1;min-width:0">
+        <div style="font:700 15px/1.2 var(--fd)">Deck repairs — back steps</div>
+        <div style="font:500 13px var(--fb);color:var(--text-soft);margin-top:2px">Rob Walker</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+          <div style="display:flex;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:var(--brand)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--brand)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--track)"></div><div style="width:6px;height:6px;border-radius:50%;background:var(--track)"></div></div>
+          <span style="font:500 11px var(--fb);color:var(--text-soft)">Step 2 of 4</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex:none">
+        <div style="font:700 16px var(--fb);font-variant-numeric:tabular-nums">$342.00</div>
+        <div class="sec" style="font-size:12px;margin-top:2px">Mon 10:30 am</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--line);padding:12px 0">
+      <div class="btn btn-tonal" style="height:44px;font-size:14px;width:100%">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Open chat
+      </div>
+    </div>
+  </div>
+</div>
+<div style="position:relative">
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H07 EMPTY — first-time · LIGHT -->
+<div class="frame w402" data-frame="H07-empty-light">
+<div class="heroband" style="padding-bottom:28px">
+  <div class="bpdots" style="position:absolute;inset:0;opacity:.6;pointer-events:none"></div>
+  <img src="../assets/rings-3-navy.svg" style="position:absolute;right:-50px;top:-30px;width:260px;opacity:.22;pointer-events:none"/>
+  <div class="hero-statusbar statusbar on-dark"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 20px 0">
+    <div>
+      <div style="font:500 13px var(--fb);color:rgba(255,255,255,.65);letter-spacing:.03em;text-transform:uppercase">Good morning</div>
+      <div style="font:700 28px/1.1 var(--fd);color:#fff;letter-spacing:-.02em;margin-top:3px">Sarah 👋</div>
+    </div>
+    <div class="ico-btn" style="color:#fff;margin-top:4px"><svg height="24" width="24"><use href="#i-bell"></use></svg></div>
+  </div>
+</div>
+<div class="pad" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:56px">
+  <img src="../assets/il-01-light.svg" width="196" style="filter:drop-shadow(0 8px 24px rgba(25,57,87,.12))"/>
+  <div style="font:700 24px/1.15 var(--fd);letter-spacing:-.02em;margin-top:22px">Find a tradie you can trust</div>
+  <div class="sec" style="margin-top:8px;max-width:256px;line-height:1.5">Describe your job and get matched with a verified local in minutes.</div>
+  <!-- Trust stat row -->
+  <div style="display:flex;gap:10px;margin-top:24px;width:100%">
+    <div style="flex:1;background:var(--tint-brand);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--navy);letter-spacing:-.02em">&lt;5 min</div>
+      <div style="font:500 11px var(--fb);color:var(--text-soft)">to match</div>
+    </div>
+    <div style="flex:1;background:var(--tint-success);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--ink-success);letter-spacing:-.02em">100%</div>
+      <div style="font:500 11px var(--fb);color:var(--text-soft)">verified</div>
+    </div>
+    <div style="flex:1;background:var(--tint-accent);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--accent-text);letter-spacing:-.02em">Fixed</div>
+      <div style="font:500 11px var(--fb);color:var(--text-soft)">hourly rate</div>
+    </div>
+  </div>
+  <div class="btn btn-primary glowcta" style="margin-top:24px;width:100%;height:56px;font-size:17px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Post a job
+  </div>
+</div>
+<div style="position:relative">
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H07 EMPTY — first-time · DARK -->
+<div class="frame w402 dark" data-frame="H07-empty-dark" style="background:var(--paper-d)">
+<div class="heroband" style="padding-bottom:28px">
+  <div class="bpdots" style="position:absolute;inset:0;opacity:.6;pointer-events:none"></div>
+  <img src="../assets/rings-3-navy.svg" style="position:absolute;right:-50px;top:-30px;width:260px;opacity:.22;pointer-events:none"/>
+  <div class="hero-statusbar statusbar on-dark"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 20px 0">
+    <div>
+      <div style="font:500 13px var(--fb);color:rgba(255,255,255,.5);letter-spacing:.03em;text-transform:uppercase">Good morning</div>
+      <div style="font:700 28px/1.1 var(--fd);color:#fff;letter-spacing:-.02em;margin-top:3px">Sarah 👋</div>
+    </div>
+    <div class="ico-btn" style="color:#fff;margin-top:4px"><svg height="24" width="24"><use href="#i-bell"></use></svg></div>
+  </div>
+</div>
+<div class="pad" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:56px">
+  <img src="../assets/il-01-dark.svg" width="196" style="filter:drop-shadow(0 8px 24px rgba(0,0,0,.3))"/>
+  <div style="font:700 24px/1.15 var(--fd);letter-spacing:-.02em;margin-top:22px;color:var(--ink-d)">Find a tradie you can trust</div>
+  <div class="sec" style="margin-top:8px;max-width:256px;line-height:1.5">Describe your job and get matched with a verified local in minutes.</div>
+  <div style="display:flex;gap:10px;margin-top:24px;width:100%">
+    <div style="flex:1;background:var(--tint-brand);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--blue300);letter-spacing:-.02em">&lt;5 min</div>
+      <div style="font:500 11px var(--fb);color:var(--ink-soft-d)">to match</div>
+    </div>
+    <div style="flex:1;background:rgba(143,201,168,.12);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--ink-success-d);letter-spacing:-.02em">100%</div>
+      <div style="font:500 11px var(--fb);color:var(--ink-soft-d)">verified</div>
+    </div>
+    <div style="flex:1;background:var(--tint-accent);border-radius:16px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font:800 20px var(--fd);color:var(--amber);letter-spacing:-.02em">Fixed</div>
+      <div style="font:500 11px var(--fb);color:var(--ink-soft-d)">hourly rate</div>
+    </div>
+  </div>
+  <div class="btn btn-primary glowcta" style="margin-top:24px;width:100%;height:56px;font-size:17px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Post a job
+  </div>
+</div>
+<div style="position:relative">
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H09 POST A JOB -->
+<div class="frame w402" data-frame="H09-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Post a job</div><div class="grow"></div></div>
+<div class="pad scroll">
+<div class="stack16">
+<div class="field"><label>Job title</label><div class="input">Leaking kitchen tap</div><div class="cap" style="text-align:right;color:var(--text-soft);margin-top:4px">38/60</div></div>
+<div class="field"><label>Description</label><div class="input" style="height:96px;align-items:flex-start;padding-top:14px;color:var(--text-soft)">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp…</div></div>
+<div class="field"><label>Photos</label><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+<div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div>
+<div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div>
+<div class="phototile dash"><svg height="22" width="22"><use href="#i-plus"></use></svg></div>
+<div class="phototile dash" style="opacity:.4"><svg height="22" width="22"><use href="#i-plus"></use></svg></div>
+</div></div>
+<div class="field"><label>Category</label><div class="input spread"><span>Plumbing</span><svg height="20" style="transform:rotate(-90deg)" width="20"><use href="#i-back"></use></svg></div></div>
+<div class="grid2">
+<div class="field"><label>Hourly rate</label><div class="input">$85.50</div></div>
+<div class="field"><label>Est. hours</label><div class="input">2</div></div>
+</div>
+<div class="tile tinted"><div class="spread"><span class="sec">Estimated total</span><span style="font:700 28px var(--fb);color:var(--text-brand);font-variant-numeric:tabular-nums">$171.00</span></div>
+<div class="cap" style="color:var(--text-soft);margin-top:4px">2 h × $85.50 — you approve the final amount</div></div>
+<div class="field"><label>When</label><div class="input spread"><span><svg height="18" style="vertical-align:-3px;margin-right:6px" width="18"><use href="#i-cal"></use></svg>Today, 2:00 pm</span><svg height="20" style="transform:rotate(-90deg)" width="20"><use href="#i-back"></use></svg></div></div>
+<div class="field"><label>Urgency</label><div class="seg48"><div class="o on">Today</div><div class="o">This week</div><div class="o">Flexible</div></div>
+<div class="cap" style="color:var(--text-soft);margin-top:6px">Today — tradie expected within hours</div></div>
+<div class="field"><label>Suburb</label><div class="input"><svg height="18" width="18"><use href="#i-pin"></use></svg>Grey Lynn, Auckland</div></div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Post job</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H10 MATCHING -->
+<div class="frame w402" data-frame="H10-light" style="background:var(--bg-matching)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="pad center" style="flex:1;justify-content:center;position:relative">
+<img src="../assets/rings-3-navy.svg" style="position:absolute;width:300px;opacity:.9"/>
+<div class="av" style="width:96px;height:96px;font-size:34px;background:var(--surface);border:1px solid var(--line)">MT</div>
+<div class="h2" style="margin-top:28px">Finding your tradie</div>
+<div class="sec" style="margin-top:8px">Leaking kitchen tap · Grey Lynn</div>
+<div class="stack8" style="margin-top:32px;width:100%;max-width:240px">
+<div style="height:36px;border-radius:999px;background:var(--tint-success);display:flex;align-items:center;justify-content:center;font:600 14px var(--fb);color:var(--ink-success)">Searching nearby</div>
+<div style="height:36px;border-radius:999px;background:rgba(60,117,170,.12);display:flex;align-items:center;justify-content:center;font:600 14px var(--fb);color:var(--text-brand)">Contacting tradies</div>
+<div style="height:36px;border-radius:999px;background:rgba(25,57,87,.06);display:flex;align-items:center;justify-content:center;font:400 14px var(--fb);color:var(--text-soft)">Replied</div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-ghost">Cancel request</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H11 MATCH RESULT -->
+<div class="frame w402" data-frame="H11-light">
+<div class="heroband" style="padding-bottom:52px">
+<img class="rings" src="../assets/rings-3-white.svg" style="width:300px;top:-40px;left:50%;transform:translateX(-50%);height:auto"/>
+<div class="bpdots" style="position:absolute;inset:0;-webkit-mask-image:linear-gradient(180deg,#000 20%,transparent 90%);mask-image:linear-gradient(180deg,#000 20%,transparent 90%)"></div>
+<div class="hero-statusbar"><span>9:41</span><span class="si"></span></div>
+<div class="appbar" style="padding:4px 20px"><div class="back"><svg height="24" style="color:#fff" width="24"><use href="#i-back"></use></svg></div></div>
+<img src="../assets/route-line.svg" style="display:block;margin:8px auto 0;width:300px;filter:brightness(0) invert(1);opacity:.5"/>
+<div class="center" style="margin-top:6px"><div style="font:600 18px var(--fb);color:#fff">We found your tradie</div></div>
+</div>
+<div class="pad" style="flex:1;overflow:visible">
+<div class="card center" style="margin-top:16px">
+<div class="av ring" style="width:72px;height:72px;font-size:26px;background:var(--av-tradie);color:var(--on-brand);margin-top:-72px">MT<div class="vbdg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="font:700 20px var(--fb);margin-top:8px">Mike Te Rangi</div>
+<div class="row" style="margin-top:6px"><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="14" width="14"><use href="#i-doc"></use></svg>Insured</span></div>
+<div class="row" style="margin-top:8px"><svg height="16" width="16"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126 jobs) · 2.1 km away</span></div>
+</div>
+<div class="card" style="margin-top:14px;background:var(--tint-brand-soft)">
+<div class="spread body"><span>2 h × $85.50</span><b>$171.00</b></div>
+<div class="divider" style="margin:10px 0"></div>
+<div class="spread"><b style="font-size:16px">Total</b><span class="price">$171.00</span></div>
+<div class="cap" style="color:var(--text-soft);margin-top:6px">Pay after the job — by bank transfer, checked by us</div>
+</div>
+</div>
+<div class="sticky"><div class="stack8"><div class="btn btn-primary glowcta">Continue to payment</div><div class="btn btn-secondary">See another tradie</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H12 JOB DETAIL — in progress -->
+<div class="frame w402" data-frame="H12-inprogress-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="pad scroll">
+<div class="card" style="margin-top:14px">
+<div class="row"><div class="av" style="width:52px;height:52px;font-size:19px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="flex:1"><div class="title">Mike Te Rangi</div><div class="sec">Plumber · 4.8 ★ (126)</div></div>
+<span class="cap" style="color:var(--text-brand);font-weight:600">View profile</span></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate</div></div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="grid2"><div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Scheduled</div><b style="font-size:15px">Today, 2:00 pm</b></div>
+<div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Duration</div><b style="font-size:15px">~2 hours</b></div></div>
+<div class="row" style="margin-top:12px"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">14 Crummer Rd, Grey Lynn</span></div>
+<div class="spread" style="margin-top:10px"><span class="sec">Total</span><span class="price">$171.00</span></div>
+<div class="divider" style="margin:12px 0"></div>
+<div class="sec">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp. Two photos attached.</div>
+<div class="row" style="margin-top:10px"><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div></div>
+<div class="cap" style="margin-top:12px;color:var(--text-brand);font-weight:600">View all steps</div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Open chat</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H12 JOB DETAIL — in progress · DARK -->
+<div class="frame w402 dark" data-frame="H12-inprogress-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Leaking kitchen tap</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-active"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="pad scroll">
+<div class="card" style="margin-top:14px">
+<div class="row"><div class="av" style="width:52px;height:52px;font-size:19px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="flex:1"><div class="title">Mike Te Rangi</div><div class="sec">Plumber · 4.8 ★ (126)</div></div>
+<span class="cap" style="color:var(--text-brand);font-weight:600">View profile</span></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate</div></div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="grid2"><div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Scheduled</div><b style="font-size:15px">Today, 2:00 pm</b></div>
+<div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Duration</div><b style="font-size:15px">~2 hours</b></div></div>
+<div class="row" style="margin-top:12px"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">14 Crummer Rd, Grey Lynn</span></div>
+<div class="spread" style="margin-top:10px"><span class="sec">Total</span><span class="price">$171.00</span></div>
+<div class="divider" style="margin:12px 0"></div>
+<div class="sec">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp. Two photos attached.</div>
+<div class="row" style="margin-top:10px"><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div><div class="phototile" style="width:76px;height:56px"><svg height="18" width="18"><use href="#i-photo"></use></svg></div></div>
+<div class="cap" style="margin-top:12px;color:var(--text-brand);font-weight:600">View all steps</div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Open chat</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H12 JOB DETAIL — awaiting confirmation + dispute open -->
+<div class="frame w402" data-frame="H12-dispute-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl" style="font-size:18px">Deck repairs</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="status-strip"><div class="spread"><span class="pill pill-problem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Disputed</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2477-JB</span></div>
+<div class="cpb muted" style="margin-top:10px"><div class="track"><div class="seg" style="background:rgba(255,255,255,.55)"></div><div class="seg" style="background:rgba(255,255,255,.55)"></div><div class="seg" style="background:rgba(255,255,255,.55)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:rgba(255,255,255,.8)">Paused at step 3 <span class="soft" style="color:rgba(255,255,255,.6)">· Awaiting confirmation</span></div></div></div>
+<div class="pad scroll">
+<div class="card" style="margin-top:14px;background:var(--tint-danger);border-color:var(--danger-border)">
+<div class="row"><svg height="20" style="color:var(--danger-text)" width="20"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></g></svg><b style="color:var(--danger-text)">Dispute open</b></div>
+<div class="sec" style="margin-top:6px">Our team is reviewing this job. We'll message you within 2 business days.</div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="row"><div class="av" style="width:52px;height:52px;font-size:19px">RW</div>
+<div style="flex:1"><div class="title">Rob Walker</div><div class="sec">Builder · 4.6 ★ (89)</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-tonal btn-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</div></div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="spread"><span class="sec">Total</span><span class="price">$342.00</span></div>
+<div class="sec" style="margin-top:8px">Replace four rotten deck boards and refix the handrail.</div>
+</div>
+</div>
+<div class="sticky"><div class="btn disabled">Confirm completion</div><div class="helper-err">Completion can't be confirmed while a dispute is open</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H13 CHAT -->
+<div class="frame w402 bg-dots" data-frame="H13-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar" style="padding-bottom:8px"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="flex:1;min-width:0"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div>
+</div>
+<div class="pad"><div class="pill pill-waiting" style="background:rgba(60,117,170,.12);display:flex;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Step 3 of 4 · In progress</div></div>
+<div class="scroll" style="display:flex;flex-direction:column;gap:8px;padding:14px 20px">
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="cap center" style="width:100%;text-align:center;color:var(--text-soft);margin:4px 0">Today 1:47 pm</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+<div class="pad" style="padding-bottom:6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer"><div class="field2">Message Mike…</div><div class="ibtn send"><svg height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12L2 4l4 8-4 8 20-8z"/></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H13 CHAT · DARK -->
+<div class="frame w402 dark bg-dots" data-frame="H13-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar" style="padding-bottom:8px"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div style="flex:1;min-width:0"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div>
+</div>
+<div class="pad"><div class="pill pill-waiting" style="background:rgba(60,117,170,.20);display:flex;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Step 3 of 4 · In progress</div></div>
+<div class="scroll" style="display:flex;flex-direction:column;gap:8px;padding:14px 20px">
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="cap center" style="width:100%;text-align:center;color:var(--text-soft);margin:4px 0">Today 1:47 pm</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+<div class="pad" style="padding-bottom:6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer"><div class="field2">Message Mike…</div><div class="ibtn send"><svg height="20" width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12L2 4l4 8-4 8 20-8z"/></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H14 PAYMENT -->
+<div class="frame w402" data-frame="H14-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment</div></div>
+<div class="pad scroll">
+<div class="card center" style="background:linear-gradient(135deg,var(--navy),var(--blue));border:none;color:#fff">
+<div class="cap" style="color:rgba(255,255,255,.75)">Amount to pay</div>
+<div class="hero-num" style="margin-top:4px">$171.00</div>
+<div class="cap" style="color:rgba(255,255,255,.75);margin-top:4px">Leaking kitchen tap · Mike Te Rangi</div>
+</div>
+<div class="card" style="margin-top:14px">
+<div class="stitch stack16" style="margin-left:4px">
+<div class="row" style="margin-left:-38px"><div class="stepnode">1</div><div><b style="font-size:15px">Transfer to Mike</b><div class="sec">ANZ 06-0193-0455221-00</div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">2</div><div><b style="font-size:15px">Use this reference</b><div class="row"><span class="mono">FIXO-2481</span><span class="chip" style="height:28px;font-size:12px"><svg height="13" width="13"><use href="#i-copy"></use></svg>Copy</span></div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">3</div><div><b style="font-size:15px">Upload your receipt</b><div class="sec">We check it within 1 business day</div></div></div>
+</div>
+<div class="btn btn-tonal" style="margin-top:16px">Upload receipt</div>
+</div>
+<div class="cap" style="color:var(--text-soft);margin-top:12px">Pay within 48 h or the match expires. Your money goes straight to the tradie.</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">I've paid — submit receipt</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H15 PAYMENT STATUS ×4 -->
+<div class="frame w402" data-frame="H15-review-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment status</div></div>
+<div class="pad center" style="flex:1;margin-top:40px">
+<div class="av" style="width:80px;height:80px;background:rgba(60,117,170,.12)"><svg height="36" style="color:var(--blue)" width="36"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g></svg></div>
+<div class="h2" style="margin-top:18px">Under review</div>
+<div class="sec" style="margin-top:8px;max-width:280px">We're checking your receipt. This usually takes under a business day — we'll let you know.</div>
+<div class="card" style="margin-top:28px;width:100%"><div class="spread"><span class="sec">Amount</span><b>$171.00</b></div><div class="spread" style="margin-top:8px"><span class="sec">Reference</span><span class="mono">FIXO-2481</span></div></div>
+<div class="cap" style="color:var(--text-brand);font-weight:600;margin-top:14px">View receipt details</div>
+</div>
+<div class="spacer"></div>
+<div class="sticky"><div class="btn btn-primary">View job</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w402" data-frame="H15-success-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment status</div></div>
+<div class="pad center" style="flex:1;margin-top:40px">
+<div class="av checkburst" style="width:104px;height:104px;background:transparent"><svg height="56" style="color:var(--success-text)" width="56"><use href="#i-check-c"></use></svg></div>
+<div class="h2" style="margin-top:14px">Payment confirmed</div>
+<div class="sec" style="margin-top:8px;max-width:280px">Mike's been paid. The job is booked for today at 2:00 pm.</div>
+<div class="card" style="margin-top:28px;width:100%"><div class="spread"><span class="sec">Paid</span><b>$171.00</b></div><div class="spread" style="margin-top:8px"><span class="sec">Reference</span><span class="mono">FIXO-2481</span></div></div>
+</div>
+<div class="spacer"></div>
+<div class="sticky"><div class="btn btn-primary" style="width:100%">View job</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w402" data-frame="H15-rejected-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment status</div></div>
+<div class="pad center" style="flex:1;margin-top:40px">
+<div class="av" style="width:80px;height:80px;background:var(--tint-danger)"><svg height="36" style="color:var(--danger-text)" width="36"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></g></svg></div>
+<div class="h2" style="margin-top:18px">Receipt needs another look</div>
+<div class="sec" style="margin-top:8px;max-width:280px">The receipt was blurry — please upload a clearer photo or screenshot of the transfer.</div>
+<div class="card" style="margin-top:28px;width:100%"><div class="spread"><span class="sec">Amount</span><b>$171.00</b></div><div class="spread" style="margin-top:8px"><span class="sec">Reference</span><span class="mono">FIXO-2481</span></div></div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Upload again</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w402" data-frame="H15-expired-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment status</div></div>
+<div class="pad center" style="flex:1;margin-top:30px">
+<img src="../assets/il-05-light.svg" width="200"/>
+<div class="h2" style="margin-top:14px">Payment window expired</div>
+<div class="sec" style="margin-top:8px;max-width:280px">This match has been released. Start again to find another tradie — your job details are saved.</div>
+</div>
+<div class="sticky"><div class="stack8"><div class="btn btn-primary">Start again</div><div class="btn btn-ghost">Contact support</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H16 DISPUTE -->
+<div class="frame w402" data-frame="H16-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Raise a dispute</div></div>
+<div class="pad scroll">
+<div class="sec">Tell us what happened with <b style="color:var(--text)">Deck repairs — Rob Walker</b>. Our team reviews every dispute.</div>
+<div class="field" style="margin-top:16px"><label>What went wrong?</label><div class="input" style="height:120px;align-items:flex-start;padding-top:14px">The boards were replaced but the handrail is still loose, and the job was marked complete…</div></div>
+<div class="field" style="margin-top:16px"><label>Evidence photos</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<div class="tile" style="height:80px;display:grid;place-items:center;background:rgba(25,57,87,.06)"><svg height="22" style="color:var(--text-brand)" width="22"><use href="#i-cam"></use></svg></div>
+<div class="tile" style="height:80px;display:grid;place-items:center;background:rgba(25,57,87,.06)"><svg height="22" style="color:var(--text-brand)" width="22"><use href="#i-cam"></use></svg></div>
+<div class="tile" style="height:80px;display:grid;place-items:center;border-style:dashed;border-color:rgba(60,117,170,.45)"><svg height="22" style="color:var(--blue)" width="22"><use href="#i-plus"></use></svg></div>
+</div></div>
+<div class="card" style="margin-top:16px">
+<b style="font-size:15px">What happens next</b>
+<div class="stack8" style="margin-top:10px">
+<div class="row"><svg height="18" style="color:var(--blue)" width="18"><use href="#i-doc"></use></svg><span class="sec" style="color:var(--text)">We review both sides within 2 business days</span></div>
+<div class="row"><svg height="18" style="color:var(--blue)" width="18"><use href="#i-msg"></use></svg><span class="sec" style="color:var(--text)">We may message you and the tradie for details</span></div>
+<div class="row"><svg height="18" style="color:var(--blue)" width="18"><use href="#i-check-c"></use></svg><span class="sec" style="color:var(--text)">You'll get the outcome in the app and by email</span></div>
+</div>
+</div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Submit dispute</div><div class="btn btn-ghost">Cancel</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H17 PUBLIC TRADIE PROFILE ×2 -->
+<div class="frame w402" data-frame="H17-rated-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-flag"></use></svg></div></div>
+<div class="pad scroll">
+<div class="center" style="margin-top:4px">
+<div class="av" style="width:88px;height:88px;font-size:32px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div class="h2" style="margin-top:10px">Mike Te Rangi</div>
+<div class="sec">Plumber · Grey Lynn, Auckland</div>
+<div class="tile" style="margin-top:16px;width:100%"><div class="spread"><div class="row"><svg height="18" width="18"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126)</span></div><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-check-c"></use></svg>Licensed</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-doc"></use></svg>Insured</span></div><div class="sec" style="margin-top:8px">126 jobs completed · NZ Reg #E2491</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 8px">About</div>
+<div class="body" style="font-size:15px">Registered plumber, 12 years across Auckland. Taps, mixers, hot-water cylinders and small renovations. Tidy work, fair rates.</div>
+<div class="eyebrow" style="margin:20px 0 8px">Recent reviews</div>
+<div class="card"><div class="row"><b>4.8</b><svg height="16" width="16"><use href="#i-star"></use></svg><span class="sec" style="flex:1;text-align:right">Karen P. · Oct 2026</span></div><div class="sec" style="margin-top:6px;color:var(--text)">"Fixed our mixer tap same day. Clean, quick, fair price."</div></div>
+<div class="card" style="margin-top:10px"><div class="row"><b>5.0</b><svg height="16" width="16"><use href="#i-star"></use></svg><span class="sec" style="flex:1;text-align:right">Dan W. · Sep 2026</span></div><div class="sec" style="margin-top:6px;color:var(--text)">"Sorted a burst pipe at 7 pm. Can't recommend enough."</div></div>
+</div>
+<div class="sticky"><div class="btnrow"><div class="btn btn-tonal" style="height:56px;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-primary" style="flex:2">Request for a job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<div class="frame w402" data-frame="H17-new-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-flag"></use></svg></div></div>
+<div class="pad scroll">
+<div class="center" style="margin-top:4px">
+<div class="av" style="width:88px;height:88px;font-size:32px;background:var(--av-tradie);color:var(--on-brand)">JK<div class="vbdg" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div class="h2" style="margin-top:10px">Jess Kaur</div>
+<div class="sec">Electrician · Avondale, Auckland</div>
+<div class="tile" style="margin-top:16px;width:100%"><div class="spread"><b>New to Fixo</b><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-doc"></use></svg>Insured</span></div><div class="sec" style="margin-top:8px">Licenced electrician · 3 jobs completed</div></div>
+</div>
+<div class="eyebrow" style="margin:20px 0 8px">About</div>
+<div class="body" style="font-size:15px">EWRB-registered electrician. Power points, lighting, switchboard work and EV charger installs.</div>
+<div class="eyebrow" style="margin:20px 0 8px">Credentials</div>
+<div class="card stack8"><div class="row"><svg height="18" style="color:var(--success-text)" width="18"><use href="#i-check-c"></use></svg><span class="sec" style="color:var(--text)">Electrical licence — verified</span></div><div class="row"><svg height="18" style="color:var(--success-text)" width="18"><use href="#i-check-c"></use></svg><span class="sec" style="color:var(--text)">Public liability insurance — verified</span></div></div>
+</div>
+<div class="sticky"><div class="btnrow"><div class="btn btn-tonal" style="height:56px;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Message</div><div class="btn btn-primary" style="flex:2">Request for a job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H18 MESSAGES LIST -->
+<div class="frame w402" data-frame="H18-messages-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Messages</div><div class="grow"></div></div>
+<div class="scroll">
+<div class="msgrow"><div class="av" style="width:40px;height:40px;font-size:14px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:13px;height:13px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+<div class="tx"><div class="nm"><span>Mike Te Rangi</span><span class="cap" style="color:var(--text-soft)">1:47 pm</span></div><div class="pv"><span class="sec" style="font-size:12px">Leaking kitchen tap</span></div><div class="pv">No worries. If it's the cartridge I'll have…</div></div><div class="udot"></div></div>
+<div class="msgrow"><div class="av" style="width:40px;height:40px;font-size:14px">JK</div>
+<div class="tx"><div class="nm"><span>Jess Kaur</span><span class="cap" style="color:var(--text-soft)">11:20 am</span></div><div class="pv"><span class="sec" style="font-size:12px">Install two power points</span></div><div class="pv">I've sent through the certificate, all good…</div></div><div class="udot"></div></div>
+<div class="msgrow"><div class="av" style="width:40px;height:40px;font-size:14px">RW</div>
+<div class="tx"><div class="nm"><span>Rob Walker</span><span class="cap" style="color:var(--text-soft)">Tue</span></div><div class="pv"><span class="sec" style="font-size:12px">Deck repairs</span></div><div class="pv">I'll pick up the timber on the way Monday</div></div><svg height="16" style="color:var(--text-soft)" width="16"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></g></svg></div>
+<div class="msgrow"><div class="av" style="width:40px;height:40px;font-size:14px">AS</div>
+<div class="tx"><div class="nm"><span>Ana Singh</span><span class="cap" style="color:var(--text-soft)">Sep 28</span></div><div class="pv"><span class="sec" style="font-size:12px">Bathroom reno quote</span></div><div class="pv">Thanks Sarah, talk soon!</div></div><svg height="16" style="color:var(--success-text)" width="16"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></g></svg></div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H18 SELF PROFILE -->
+<div class="frame w402" data-frame="H18-profile-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Profile</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-pencil"></use></svg></div></div>
+<div class="pad scroll">
+<div class="center" style="margin:8px 0 20px"><div class="av" style="width:80px;height:80px;font-size:28px">SM</div><div class="h2" style="margin-top:10px">Sarah Mitchell</div><div class="sec">Homeowner · Grey Lynn</div></div>
+<div class="stack16">
+<div class="field"><label>Full name</label><div class="input">Sarah Mitchell</div></div>
+<div class="field"><label>Email</label><div class="input">sarah@example.co.nz</div></div>
+<div class="field"><label>Phone</label><div class="input">+64 21 555 014</div></div>
+<div class="field"><label>Member since</label><div class="input disabled">March 2026</div></div>
+<div class="field"><label>Address</label><div class="input">14 Crummer Rd, Grey Lynn</div></div>
+</div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab on"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H18 SETTINGS -->
+<div class="frame w402" data-frame="H18-settings-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Settings</div></div>
+<div class="pad scroll stack16">
+<div><div class="eyebrow" style="margin-bottom:8px">Account</div>
+<div class="card" style="padding:0"><div class="msgrow" style="height:56px"><span style="flex:1">Personal details</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Saved addresses</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Payment history</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div></div></div>
+<div><div class="eyebrow" style="margin-bottom:8px">Notifications</div>
+<div class="card" style="padding:0"><div class="msgrow" style="height:56px"><span style="flex:1">Push notifications</span><div class="switch on"><i></i></div></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Message previews</span><div class="switch on"><i></i></div></div></div></div>
+<div><div class="eyebrow" style="margin-bottom:8px">Support</div>
+<div class="card" style="padding:0"><div class="msgrow" style="height:56px"><span style="flex:1">Help centre</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div><div class="divider" style="margin:0 16px"></div><div class="msgrow" style="height:56px"><span style="flex:1">Report a problem</span><svg height="18" style="transform:rotate(180deg);color:var(--text-soft)" width="18"><use href="#i-back"></use></svg></div></div></div>
+<div class="btn" style="height:56px;color:var(--danger-text);font-weight:600">Log out</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- H08 SERVICE CATEGORIES · LIGHT -->
+<div class="frame w402" data-frame="H08-categories-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Categories</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-search"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="input" style="height:48px;border-radius:12px;margin-bottom:16px"><svg height="18" width="18" style="color:var(--text-soft)"><use href="#i-search"></use></svg><span style="color:var(--text-soft);font-size:15px">Search plumbing, electrical, building…</span></div>
+  <div class="eyebrow" style="margin-bottom:12px">Popular services</div>
+  <div class="grid2">
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-wrench"></use></svg></div>
+      <div class="cat-name">Plumbing</div>
+      <div class="cat-count">24 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-bolt"></use></svg></div>
+      <div class="cat-name">Electrical</div>
+      <div class="cat-count">38 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-hammer"></use></svg></div>
+      <div class="cat-name">Building</div>
+      <div class="cat-count">19 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-brush"></use></svg></div>
+      <div class="cat-name">Painting</div>
+      <div class="cat-count">15 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-tree"></use></svg></div>
+      <div class="cat-name">Landscaping</div>
+      <div class="cat-count">12 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-wrench"></use></svg></div>
+      <div class="cat-name">Handyman</div>
+      <div class="cat-count">42 active tradies</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px;padding:16px;background:var(--tint-brand);border:none">
+    <div class="spread"><div class="row"><div class="icon-tile" style="width:40px;height:40px;border-radius:10px"><svg height="20" width="20"><use href="#i-shield"></use></svg></div><div><b style="font-size:14px">All tradies vetted</b><div class="sec" style="font-size:12px">Licensed, insured & identity-checked</div></div></div></div>
+  </div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H08 SERVICE CATEGORIES · DARK -->
+<div class="frame w402 dark" data-frame="H08-categories-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Categories</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-search"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="input" style="height:48px;border-radius:12px;margin-bottom:16px"><svg height="18" width="18" style="color:var(--text-soft)"><use href="#i-search"></use></svg><span style="color:var(--text-soft);font-size:15px">Search plumbing, electrical, building…</span></div>
+  <div class="eyebrow" style="margin-bottom:12px">Popular services</div>
+  <div class="grid2">
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-wrench"></use></svg></div>
+      <div class="cat-name">Plumbing</div>
+      <div class="cat-count">24 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-bolt"></use></svg></div>
+      <div class="cat-name">Electrical</div>
+      <div class="cat-count">38 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-hammer"></use></svg></div>
+      <div class="cat-name">Building</div>
+      <div class="cat-count">19 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-brush"></use></svg></div>
+      <div class="cat-name">Painting</div>
+      <div class="cat-count">15 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-tree"></use></svg></div>
+      <div class="cat-name">Landscaping</div>
+      <div class="cat-count">12 active tradies</div>
+    </div>
+    <div class="cat-tile">
+      <div class="cat-icon"><svg><use href="#i-wrench"></use></svg></div>
+      <div class="cat-name">Handyman</div>
+      <div class="cat-count">42 active tradies</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px;padding:16px;background:var(--tint-brand);border:none">
+    <div class="spread"><div class="row"><div class="icon-tile" style="width:40px;height:40px;border-radius:10px"><svg height="20" width="20"><use href="#i-shield"></use></svg></div><div><b style="font-size:14px">All tradies vetted</b><div class="sec" style="font-size:12px">Licensed, insured & identity-checked</div></div></div></div>
+  </div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H10 NO MATCH EMPTY STATE · LIGHT -->
+<div class="frame w402" data-frame="H10-no-match-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Finding a match</div></div>
+<div class="pad center" style="flex:1;justify-content:center;padding:0 24px">
+  <div class="icon-tile" style="width:80px;height:80px;border-radius:24px;background:var(--tint-accent);color:var(--amber);margin-bottom:20px"><svg height="36" width="36"><use href="#i-clock"></use></svg></div>
+  <div class="h2">No tradies available right now</div>
+  <div class="sec" style="margin-top:10px;line-height:1.45">We couldn't find an available electrician in Grey Lynn for your requested time. We've saved your request and will notify you as soon as someone opens up.</div>
+  <div class="card" style="margin-top:24px;width:100%;padding:14px;background:var(--tint-brand);border:none;text-align:left">
+    <div class="spread"><b style="font-size:14px">Hot water cylinder check</b><span class="pill pill-waiting">Saved</span></div>
+    <div class="sec" style="margin-top:4px">Grey Lynn · Today, 2:00 pm</div>
+  </div>
+</div>
+<div class="sticky">
+  <div class="btn btn-primary">Save & notify me</div>
+  <div class="btn btn-ghost" style="margin-top:6px">Adjust job details</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H10 NO MATCH EMPTY STATE · DARK -->
+<div class="frame w402 dark" data-frame="H10-no-match-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Finding a match</div></div>
+<div class="pad center" style="flex:1;justify-content:center;padding:0 24px">
+  <div class="icon-tile" style="width:80px;height:80px;border-radius:24px;background:var(--tint-accent);color:var(--amber);margin-bottom:20px"><svg height="36" width="36"><use href="#i-clock"></use></svg></div>
+  <div class="h2">No tradies available right now</div>
+  <div class="sec" style="margin-top:10px;line-height:1.45">We couldn't find an available electrician in Grey Lynn for your requested time. We've saved your request and will notify you as soon as someone opens up.</div>
+  <div class="card" style="margin-top:24px;width:100%;padding:14px;background:var(--tint-brand);border:none;text-align:left">
+    <div class="spread"><b style="font-size:14px">Hot water cylinder check</b><span class="pill pill-waiting">Saved</span></div>
+    <div class="sec" style="margin-top:4px">Grey Lynn · Today, 2:00 pm</div>
+  </div>
+</div>
+<div class="sticky">
+  <div class="btn btn-primary">Save & notify me</div>
+  <div class="btn btn-ghost" style="margin-top:6px">Adjust job details</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H14 PAYMENT INSTRUCTIONS — COPY TOAST FEEDBACK · LIGHT -->
+<div class="frame w402" data-frame="H14-copy-toast-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Payment</div></div>
+<div class="pad scroll stack16">
+<div class="card attcard stack8">
+<div class="spread"><div class="sec">Amount to transfer</div><span class="price">$171.00</span></div>
+<div class="sec" style="color:var(--text)">Leaking kitchen tap · 1.5 hrs @ $95/hr + $28.50 call-out</div>
+</div>
+<div class="eyebrow">Payment steps</div>
+<div class="stitch stack20">
+<div class="row" style="margin-left:-38px"><div class="stepnode">1</div><div><b style="font-size:15px">Transfer to Mike</b><div class="sec">ANZ 06-0193-0455221-00</div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">2</div><div><b style="font-size:15px">Use this reference</b><div class="row"><span class="mono">FIXO-2481</span><span class="chip sel" style="height:28px;font-size:12px"><svg height="13" width="13"><use href="#i-check"></use></svg>Copied</span></div></div></div>
+<div class="row" style="margin-left:-38px"><div class="stepnode">3</div><div><b style="font-size:15px">Upload your receipt</b><div class="sec">We check it within 1 business day</div></div></div>
+</div>
+</div>
+<div style="position:relative">
+  <div class="toast" style="margin:0 20px 10px"><svg height="20" width="20"><use href="#i-check"></use></svg>Reference copied: FIXO-2481</div>
+</div>
+<div class="sticky"><div class="btn btn-primary"><svg height="22" width="22"><use href="#i-upload"></use></svg>Upload receipt screenshot</div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H17 TRADIE EXPANDED PROFILE · LIGHT -->
+<div class="frame w402" data-frame="H17-rated-expanded-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-flag"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="center" style="margin-top:4px">
+    <div class="av" style="width:88px;height:88px;font-size:32px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+    <div class="h2" style="margin-top:10px">Mike Te Rangi</div>
+    <div class="sec">Plumber · Grey Lynn, Auckland</div>
+    <div class="tile" style="margin-top:14px;width:100%"><div class="spread"><div class="row"><svg height="18" width="18"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126)</span></div><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-check-c"></use></svg>Licensed</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-doc"></use></svg>Insured</span></div><div class="sec" style="margin-top:8px">126 jobs completed · NZ Reg #E2491</div></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Recent work</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Mixer swap</span></div>
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Cylinder</span></div>
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Piping</span></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Rating breakdown</div>
+  <div class="card" style="padding:14px">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:20px">5★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"><div style="width:92%;height:100%;border-radius:3px;background:var(--amber)"></div></div><span style="width:30px;text-align:right" class="sec">92%</span></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><span style="width:20px">4★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"><div style="width:8%;height:100%;border-radius:3px;background:var(--amber)"></div></div><span style="width:30px;text-align:right" class="sec">8%</span></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><span style="width:20px">3★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"></div><span style="width:30px;text-align:right" class="sec">0%</span></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Reviews (126)</div>
+  <div class="card stack8">
+    <div class="row"><b>4.8</b><svg height="16" width="16"><use href="#i-star"></use></svg><span class="sec" style="flex:1;text-align:right">Karen P. · Oct 2026</span></div>
+    <div class="sec" style="color:var(--text)">"Fixed our mixer tap same day. Clean, quick, fair price."</div>
+  </div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Book Mike · $95/hr</div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H17 TRADIE EXPANDED PROFILE · DARK -->
+<div class="frame w402 dark" data-frame="H17-rated-expanded-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-flag"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="center" style="margin-top:4px">
+    <div class="av" style="width:88px;height:88px;font-size:32px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:60%;height:60%"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+    <div class="h2" style="margin-top:10px">Mike Te Rangi</div>
+    <div class="sec">Plumber · Grey Lynn, Auckland</div>
+    <div class="tile" style="margin-top:14px;width:100%"><div class="spread"><div class="row"><svg height="18" width="18"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(126)</span></div><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-shield"></use></svg>Verified</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-check-c"></use></svg>Licensed</span><span class="chip" style="height:26px;font-size:12px"><svg height="13" width="13"><use href="#i-doc"></use></svg>Insured</span></div><div class="sec" style="margin-top:8px">126 jobs completed · NZ Reg #E2491</div></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Recent work</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Mixer swap</span></div>
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Cylinder</span></div>
+    <div class="phototile" style="height:84px;border-radius:12px;background:linear-gradient(135deg,var(--map-a),var(--map-b));position:relative;overflow:hidden"><img src="../assets/contours.svg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"/><span style="position:absolute;bottom:4px;left:6px;font:500 11px var(--fb);color:var(--text-brand)">Piping</span></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Rating breakdown</div>
+  <div class="card" style="padding:14px">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span style="width:20px">5★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"><div style="width:92%;height:100%;border-radius:3px;background:var(--amber)"></div></div><span style="width:30px;text-align:right" class="sec">92%</span></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><span style="width:20px">4★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"><div style="width:8%;height:100%;border-radius:3px;background:var(--amber)"></div></div><span style="width:30px;text-align:right" class="sec">8%</span></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px"><span style="width:20px">3★</span><div style="flex:1;height:6px;border-radius:3px;background:var(--track)"></div><span style="width:30px;text-align:right" class="sec">0%</span></div>
+  </div>
+  <div class="eyebrow" style="margin:20px 0 8px">Reviews (126)</div>
+  <div class="card stack8">
+    <div class="row"><b>4.8</b><svg height="16" width="16"><use href="#i-star"></use></svg><span class="sec" style="flex:1;text-align:right">Karen P. · Oct 2026</span></div>
+    <div class="sec" style="color:var(--text)">"Fixed our mixer tap same day. Clean, quick, fair price."</div>
+  </div>
+</div>
+<div class="sticky"><div class="btn btn-primary">Book Mike · $95/hr</div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H19 BROWSE TRADIES LIST · LIGHT -->
+<div class="frame w402" data-frame="H19-tradie-list-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Find a Tradie</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-search"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="faderow" style="margin-bottom:14px">
+    <div class="chip sel">All trades</div>
+    <div class="chip outline">Available today</div>
+    <div class="chip outline">Top rated (4.8+)</div>
+    <div class="chip outline">Grey Lynn</div>
+  </div>
+  <div class="stack16">
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Mike Te Rangi</b><span class="pill pill-action" style="height:22px;font-size:11px">Available</span></div>
+            <div class="sec" style="font-size:13px">Master Electrician · 2.4 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>4.9</b><span class="sec">(48 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$95<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">WH<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Wiremu Henare</b><span class="pill pill-waiting" style="height:22px;font-size:11px">Tomorrow</span></div>
+            <div class="sec" style="font-size:13px">Registered Plumber · 4.1 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(32 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$90<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">DC<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Dave Cooper</b><span class="pill pill-action" style="height:22px;font-size:11px">Available</span></div>
+            <div class="sec" style="font-size:13px">Licensed Builder · 3.8 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>5.0</b><span class="sec">(19 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$85<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab on"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H19 BROWSE TRADIES LIST · DARK -->
+<div class="frame w402 dark" data-frame="H19-tradie-list-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Find a Tradie</div><div class="grow"></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-search"></use></svg></div></div>
+<div class="pad scroll">
+  <div class="faderow" style="margin-bottom:14px">
+    <div class="chip sel">All trades</div>
+    <div class="chip outline">Available today</div>
+    <div class="chip outline">Top rated (4.8+)</div>
+    <div class="chip outline">Grey Lynn</div>
+  </div>
+  <div class="stack16">
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">MT<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Mike Te Rangi</b><span class="pill pill-action" style="height:22px;font-size:11px">Available</span></div>
+            <div class="sec" style="font-size:13px">Master Electrician · 2.4 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>4.9</b><span class="sec">(48 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$95<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">WH<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Wiremu Henare</b><span class="pill pill-waiting" style="height:22px;font-size:11px">Tomorrow</span></div>
+            <div class="sec" style="font-size:13px">Registered Plumber · 4.1 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>4.8</b><span class="sec">(32 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$90<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div class="spread">
+        <div class="row">
+          <div class="av" style="width:48px;height:48px;font-size:18px;background:var(--av-tradie);color:var(--on-brand)">DC<div class="vbdg" style="width:16px;height:16px"><svg height="8" width="8"><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+          <div>
+            <div class="spread" style="gap:8px"><b>Dave Cooper</b><span class="pill pill-action" style="height:22px;font-size:11px">Available</span></div>
+            <div class="sec" style="font-size:13px">Licensed Builder · 3.8 km</div>
+          </div>
+        </div>
+      </div>
+      <div class="spread" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+        <div class="row"><svg height="15" width="15"><use href="#i-star"></use></svg><b>5.0</b><span class="sec">(19 jobs)</span></div>
+        <span style="font:700 16px var(--fb)">$85<span class="sec" style="font-size:13px;font-weight:400">/hr</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab on"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H20 NOTIFICATIONS INBOX · LIGHT -->
+<div class="frame w402" data-frame="H20-notifications-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Notifications</div><div class="grow"></div><div class="sec" style="font-size:13px;font-weight:600;color:var(--text-brand)">Mark read</div></div>
+<div class="pad scroll">
+  <div class="faderow" style="margin-bottom:14px">
+    <div class="chip sel">All</div>
+    <div class="chip outline">Jobs</div>
+    <div class="chip outline">Payments</div>
+    <div class="chip outline">Reminders</div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-accent);color:var(--amber)"><svg height="20" width="20"><use href="#i-nav"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Tradie on the way</b><span class="cap" style="color:var(--text-soft)">10m ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Mike Te Rangi is en route. Estimated arrival 2:00 pm.</div>
+      </div>
+      <div class="udot" style="margin-top:6px"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-danger);color:var(--ink-danger)"><svg height="20" width="20"><use href="#i-wallet"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Payment required</b><span class="cap" style="color:var(--text-soft)">2h ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Jess Kaur completed two power points. $128.25 due.</div>
+      </div>
+      <div class="udot" style="margin-top:6px"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-brand);color:var(--text-brand)"><svg height="20" width="20"><use href="#i-check"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Job matched</b><span class="cap" style="color:var(--text-soft)">Yesterday</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Mike Te Rangi accepted your request for Leaking tap.</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-brand);color:var(--text-brand)"><svg height="20" width="20"><use href="#i-cal"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Upcoming booking</b><span class="cap" style="color:var(--text-soft)">2d ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Deck repairs with Rob Walker starts Mon at 10:30 am.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+
+<!-- H20 NOTIFICATIONS INBOX · DARK -->
+<div class="frame w402 dark" data-frame="H20-notifications-dark" style="background:var(--paper-d)">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewBox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Notifications</div><div class="grow"></div><div class="sec" style="font-size:13px;font-weight:600;color:var(--text-brand)">Mark read</div></div>
+<div class="pad scroll">
+  <div class="faderow" style="margin-bottom:14px">
+    <div class="chip sel">All</div>
+    <div class="chip outline">Jobs</div>
+    <div class="chip outline">Payments</div>
+    <div class="chip outline">Reminders</div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-accent);color:var(--amber)"><svg height="20" width="20"><use href="#i-nav"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Tradie on the way</b><span class="cap" style="color:var(--text-soft)">10m ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Mike Te Rangi is en route. Estimated arrival 2:00 pm.</div>
+      </div>
+      <div class="udot" style="margin-top:6px"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-danger);color:var(--ink-danger)"><svg height="20" width="20"><use href="#i-wallet"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Payment required</b><span class="cap" style="color:var(--text-soft)">2h ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Jess Kaur completed two power points. $128.25 due.</div>
+      </div>
+      <div class="udot" style="margin-top:6px"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-brand);color:var(--text-brand)"><svg height="20" width="20"><use href="#i-check"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Job matched</b><span class="cap" style="color:var(--text-soft)">Yesterday</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Mike Te Rangi accepted your request for Leaking tap.</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="msgrow" style="padding:14px 16px;align-items:flex-start">
+      <div class="icon-tile" style="width:40px;height:40px;border-radius:12px;background:var(--tint-brand);color:var(--text-brand)"><svg height="20" width="20"><use href="#i-cal"></use></svg></div>
+      <div class="tx" style="flex:1">
+        <div class="spread"><b style="font-size:14px">Upcoming booking</b><span class="cap" style="color:var(--text-soft)">2d ago</span></div>
+        <div class="sec" style="font-size:13px;margin-top:2px">Deck repairs with Rob Walker starts Mon at 10:30 am.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewBox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+%%SPRITE%%
+</body></html>

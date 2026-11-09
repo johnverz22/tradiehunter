@@ -8,6 +8,12 @@ interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  /** Keeps Confirm disabled until the caller's input is valid (e.g. a required reason). */
+  confirmDisabled?: boolean;
+  /** `lg` for content that needs room, e.g. an image preview. Defaults to the narrow confirm layout. */
+  size?: 'sm' | 'lg';
+  /** Optional extra content below the message, e.g. a reason field or an inline error. */
+  children?: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -19,6 +25,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   destructive = false,
+  confirmDisabled = false,
+  size = 'sm',
+  children,
   onConfirm,
   onCancel,
 }) => {
@@ -42,7 +51,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       onClick={onCancel}
     >
       <div
-        className="bg-paper border border-paper-line rounded-lg shadow-xl p-6 max-w-sm w-full"
+        className={`card-pop p-6 w-full ${size === 'lg' ? 'max-w-2xl' : 'max-w-sm'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4 mb-4">
@@ -59,20 +68,20 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
         </div>
 
+        {children}
+
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded border border-[var(--paper-line)] text-[var(--ink-soft)] hover:bg-[var(--paper-line)] transition-colors"
+            className="btn btn-ghost"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={
-              destructive
-                ? 'px-4 py-2 text-sm rounded bg-[var(--red)] text-white hover:opacity-90 transition-opacity'
-                : 'px-4 py-2 text-sm rounded bg-[var(--brand-500)] text-white hover:bg-[var(--brand-700)] transition-colors'
-            }
+            disabled={confirmDisabled}
+            className={destructive ? 'btn' : 'btn btn-primary'}
+            style={destructive ? { background: 'var(--red)', color: '#fff' } : undefined}
           >
             {confirmLabel}
           </button>

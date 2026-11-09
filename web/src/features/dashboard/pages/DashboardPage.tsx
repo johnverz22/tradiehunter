@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { useDashboardStats } from '../hooks/useDashboard';
+import { useDashboardStats, useDashboardMetrics } from '../hooks/useDashboard';
 import { useJobList } from '../../jobs/hooks/useJobs';
 import { useDisputeList } from '../../disputes/hooks/useDisputes';
 import { useUserList } from '../../users/hooks/useUsers';
@@ -35,6 +35,10 @@ export const DashboardPage: React.FC = () => {
     error: statsErrObj,
     refetch: refetchStats,
   } = useDashboardStats();
+
+  // P8-08: marketplace-health metrics (activation, match/payment timing, response).
+  const { data: metrics } = useDashboardMetrics();
+  const window30 = metrics?.last30Days;
 
   // Supporting tables — independent queries so one failure doesn't blank the page.
   const { data: jobsData, isLoading: jobsLoading } = useJobList({ page: 1, pageSize: 5 });
@@ -74,7 +78,7 @@ export const DashboardPage: React.FC = () => {
         </div>
         <button
           onClick={() => refetchStats()}
-          className="px-4 py-2 text-sm rounded border border-[var(--paper-line)] text-[var(--ink-soft)] hover:bg-[var(--paper-line)] transition-colors"
+          className="btn btn-ghost"
         >
           Retry
         </button>
@@ -94,49 +98,74 @@ export const DashboardPage: React.FC = () => {
         >
           Dashboard
         </h1>
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[var(--brand-100)] text-[var(--brand-900)]">
+        <span className="pill pill-brand">
           Admin
         </span>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-5 shadow-sm">
-          <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">Total Users</div>
-          <div
-            className="text-[28px] font-semibold text-[var(--ink)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {stats.totalUsers}
+        {(
+          [
+            ['Total Users', stats.totalUsers, 'var(--ink)'],
+            ['Active Jobs', stats.activeJobs, 'var(--ink)'],
+            ['Flagged Disputes', stats.pendingDisputes, 'var(--red-ink)'],
+            ['Pending Verifications', stats.todaySignups, 'var(--amber-ink)'],
+          ] as [string, number, string][]
+        ).map(([label, value, color]) => (
+          <div key={label} className="card !p-5">
+            <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">{label}</div>
+            <div
+              className="text-[28px] font-semibold leading-tight"
+              style={{ fontFamily: 'var(--font-mono)', color }}
+            >
+              {value.toLocaleString()}
+            </div>
           </div>
-        </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-5 shadow-sm">
-          <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">Active Jobs</div>
-          <div
-            className="text-[28px] font-semibold text-[var(--ink)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {stats.activeJobs}
-          </div>
-        </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-5 shadow-sm">
-          <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">Flagged Disputes</div>
-          <div
-            className="text-[28px] font-semibold text-[var(--red)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {stats.pendingDisputes}
-          </div>
-        </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-5 shadow-sm">
-          <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">Pending Verifications</div>
-          <div
-            className="text-[28px] font-semibold text-[var(--amber)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {stats.todaySignups}
-          </div>
-        </div>
+        ))}
       </div>
+
+      {/* ── P8-08: marketplace health ─────────────────────────────── */}
+      {window30 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2
+              className="text-[18px] font-semibold text-[var(--ink)]"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Marketplace Health · last 30 days
+            </h2>
+            <span className="text-[13px] text-[var(--ink)] opacity-60">
+              {window30.totalJobs} jobs · {window30.totalSignups} signups
+            </span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {(
+              [
+                ['Activation rate', `${window30.activationRatePct.toFixed(1)}%`],
+                [
+                  'Match → payment',
+                  `${(window30.avgMatchToAwaitingPaymentHours ?? window30.avgMatchToConfirmationHours).toFixed(1)}h`,
+                ],
+                [
+                  'Payment verification',
+                  `${(window30.avgPaymentVerificationHours ?? 0).toFixed(1)}h`,
+                ],
+                ['Tradie response', `${window30.tradieResponseRatePct.toFixed(1)}%`],
+              ] as [string, string][]
+            ).map(([label, value]) => (
+              <div key={label} className="card !p-5">
+                <div className="text-[13px] text-[var(--ink)] opacity-60 mb-2">{label}</div>
+                <div
+                  className="text-[28px] font-semibold leading-tight"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Flagged disputes ─────────────────────────────────────────── */}
       <div>
@@ -154,15 +183,12 @@ export const DashboardPage: React.FC = () => {
             View all
           </Link>
         </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="table">
             <thead>
               <tr>
                 {['Job ID', 'Issue', 'Reported By', 'Date', 'Status', 'Action'].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]"
-                  >
+                  <th key={h} className="th">
                     {h}
                   </th>
                 ))}
@@ -171,43 +197,32 @@ export const DashboardPage: React.FC = () => {
             <tbody>
               {disputesLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={6} className="td text-center cell-muted">
                     Loading disputes…
                   </td>
                 </tr>
               ) : !disputesData || disputesData.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={6} className="td text-center cell-muted">
                     No flagged disputes
                   </td>
                 </tr>
               ) : (
                 disputesData.items.map((d) => (
-                  <tr
-                    key={d.jobId}
-                    className="bg-red-50/40 hover:bg-[var(--paper)]"
-                  >
-                    <td
-                      className="px-4 py-3.5 text-sm text-[var(--ink)]"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
-                    >
-                      {formatJobId(d.jobId)}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">
+                  <tr key={d.jobId}>
+                    <td className="td mono">{formatJobId(d.jobId)}</td>
+                    <td className="td">
                       {d.flagReason ?? d.jobTitle}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{d.homeownerName}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">
+                    <td className="td">{d.homeownerName}</td>
+                    <td className="td cell-muted">
                       {new Date(d.flaggedAtUtc).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3.5 text-sm">
+                    <td className="td">
                       <StatusBadge status={d.disputeStatus} />
                     </td>
-                    <td className="px-4 py-3.5 text-sm">
-                      <Link
-                        to={`/disputes/${d.jobId}`}
-                        className="text-[13px] text-[var(--brand-500)] font-medium hover:underline"
-                      >
+                    <td className="td">
+                      <Link to={`/disputes/${d.jobId}`} className="action-link">
                         Review
                       </Link>
                     </td>
@@ -235,15 +250,12 @@ export const DashboardPage: React.FC = () => {
             View all
           </Link>
         </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="table">
             <thead>
               <tr>
                 {['Job ID', 'Description', 'Homeowner', 'Tradie', 'Status', 'Posted'].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]"
-                  >
+                  <th key={h} className="th">
                     {h}
                   </th>
                 ))}
@@ -252,39 +264,31 @@ export const DashboardPage: React.FC = () => {
             <tbody>
               {jobsLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={6} className="td text-center cell-muted">
                     Loading recent jobs…
                   </td>
                 </tr>
               ) : !jobsData || jobsData.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={6} className="td text-center cell-muted">
                     No jobs yet
                   </td>
                 </tr>
               ) : (
                 jobsData.items.map((j) => (
-                  <tr key={j.id} className="hover:bg-[var(--paper)]">
-                    <td
-                      className="px-4 py-3.5 text-sm text-[var(--ink)]"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
-                    >
-                      <Link
-                        to={`/jobs/${j.id}`}
-                        className="text-[var(--brand-500)] hover:underline"
-                      >
+                  <tr key={j.id}>
+                    <td className="td mono">
+                      <Link to={`/jobs/${j.id}`} className="cell-link">
                         {formatJobId(j.id)}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{j.title}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{j.homeownerName}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">
-                      {j.tradeName ?? '—'}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm">
+                    <td className="td">{j.title}</td>
+                    <td className="td">{j.homeownerName}</td>
+                    <td className="td cell-muted">{j.tradeName ?? '—'}</td>
+                    <td className="td">
                       <StatusBadge status={j.status} />
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">
+                    <td className="td cell-muted">
                       {new Date(j.createdAtUtc).toLocaleDateString()}
                     </td>
                   </tr>
@@ -311,15 +315,12 @@ export const DashboardPage: React.FC = () => {
             View all
           </Link>
         </div>
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="table-container">
+          <table className="table">
             <thead>
               <tr>
                 {['Name', 'Trade', 'Email', 'Applied', 'Action'].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]"
-                  >
+                  <th key={h} className="th">
                     {h}
                   </th>
                 ))}
@@ -328,30 +329,27 @@ export const DashboardPage: React.FC = () => {
             <tbody>
               {usersLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={5} className="td text-center cell-muted">
                     Loading verifications…
                   </td>
                 </tr>
               ) : pendingVerifications.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-[var(--ink-soft)]">
+                  <td colSpan={5} className="td text-center cell-muted">
                     No pending verifications
                   </td>
                 </tr>
               ) : (
                 pendingVerifications.map((u) => (
-                  <tr key={u.id} className="hover:bg-[var(--paper)]">
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{u.fullName}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{u.role}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">{u.email}</td>
-                    <td className="px-4 py-3.5 text-sm text-[var(--ink)]">
+                  <tr key={u.id}>
+                    <td className="td">{u.fullName}</td>
+                    <td className="td"><StatusBadge status={u.role} /></td>
+                    <td className="td mono cell-muted">{u.email}</td>
+                    <td className="td cell-muted">
                       {new Date(u.createdAtUtc).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3.5 text-sm">
-                      <Link
-                        to={`/users/${u.id}`}
-                        className="text-[13px] text-[var(--brand-500)] font-medium hover:underline"
-                      >
+                    <td className="td">
+                      <Link to={`/users/${u.id}`} className="action-link">
                         Verify
                       </Link>
                     </td>

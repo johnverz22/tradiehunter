@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
-import { useUserDetail, useVerifyUser, useDeactivateUser } from '../hooks/useUsers';
+import { useUserDetail, useVerifyUser, useDeactivateUser, useWarnUser, useSuspendUser, useResolveUserFlags } from '../hooks/useUsers';
 
 function describeUserError(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -31,8 +31,12 @@ export const UserDetailPage: React.FC = () => {
   const { data: user, isLoading, isError, error, refetch } = useUserDetail(id ?? '');
   const verifyMutation = useVerifyUser();
   const deactivateMutation = useDeactivateUser();
+  const warnMutation = useWarnUser();
+  const suspendMutation = useSuspendUser();
+  const resolveFlagsMutation = useResolveUserFlags();
 
-  const [confirmModal, setConfirmModal] = useState<'verify' | 'deactivate' | null>(null);
+  const [confirmModal, setConfirmModal] = useState<'verify' | 'deactivate' | 'warn' | 'suspend' | 'resolveFlags' | null>(null);
+  const [actionReason, setActionReason] = useState('');
 
   if (!id) {
     return (
@@ -69,7 +73,7 @@ export const UserDetailPage: React.FC = () => {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 text-sm rounded border border-[var(--paper-line)] text-[var(--ink-soft)] hover:bg-[var(--paper-line)] transition-colors"
+          className="btn btn-ghost"
         >
           Retry
         </button>
@@ -83,7 +87,17 @@ export const UserDetailPage: React.FC = () => {
       await deactivateMutation.mutateAsync(user.id);
       navigate('/users');
     }
+    else if (confirmModal === 'warn') {
+      await warnMutation.mutateAsync({ id: user.id, reason: actionReason });
+    }
+    else if (confirmModal === 'suspend') {
+      await suspendMutation.mutateAsync({ id: user.id, reason: actionReason });
+    }
+    else if (confirmModal === 'resolveFlags') {
+      await resolveFlagsMutation.mutateAsync(user.id);
+    }
     setConfirmModal(null);
+    setActionReason('');
   };
 
   const initials = (user.fullName || 'U')
@@ -119,23 +133,16 @@ export const UserDetailPage: React.FC = () => {
             </h1>
             <div className="text-sm text-[var(--ink)] opacity-70">
               {user.tradeType || user.role} •{' '}
-              <span
-                className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                  user.isVerified
-                    ? 'bg-green-100 text-[var(--green)]'
-                    : 'bg-[var(--brand-100)] text-[var(--brand-900)]'
-                }`}
-              >
-                {user.isVerified ? 'Verified' : 'Unverified'}
-              </span>
+              <StatusBadge status={user.isVerified ? 'Verified' : 'Unverified'} />
             </div>
           </div>
         </div>
+        
         <div className="flex items-center gap-3 shrink-0">
           {!user.isVerified && user.role === 'Tradie' && (
             <button
               onClick={() => setConfirmModal('verify')}
-              className="px-5 py-2.5 rounded text-sm font-semibold bg-[var(--green)] text-white hover:opacity-90 transition-opacity"
+              className="btn" style={{ background: 'var(--green)', color: '#fff' }}
             >
               Verify NZBN
             </button>
@@ -143,92 +150,125 @@ export const UserDetailPage: React.FC = () => {
           {user.isActive && (
             <button
               onClick={() => setConfirmModal('deactivate')}
-              className="px-5 py-2.5 rounded text-sm font-semibold border border-[var(--red)] text-[var(--red)] hover:bg-[var(--red)] hover:text-white transition-colors"
+              className="btn btn-danger"
             >
               Deactivate
             </button>
           )}
+          {user.flags?.some(f => !f.resolved) && (
+            <button
+              onClick={() => setConfirmModal('resolveFlags')}
+              className="btn"
+            >
+              Resolve Flags
+            </button>
+          )}
+          {user.isActive && (
+            <>
+              <button onClick={() => setConfirmModal('warn')} className="btn btn-ghost" style={{ color: 'var(--amber)' }}>Warn</button>
+              <button onClick={() => setConfirmModal('suspend')} className="btn btn-ghost" style={{ color: 'var(--red)' }}>Suspend</button>
+            </>
+          )}
         </div>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-6 shadow-sm">
-          <h3
-            className="text-[16px] font-semibold text-[var(--ink)] mb-4 pb-3 border-b border-[var(--brand-100)]"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Account Details
-          </h3>
+        <div className="card">
+          <h3 className="card-title">Account Details</h3>
           <div className="space-y-0">
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">User ID</span>
-              <span
-                className="text-sm font-medium text-[var(--ink)]"
-                style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
-              >
-                {user.id}
-              </span>
+            <div className="detail-row">
+              <span className="detail-label">User ID</span>
+              <span className="detail-value mono">{user.id}</span>
             </div>
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Email</span>
-              <span className="text-sm font-medium text-[var(--ink)]">{user.email}</span>
+            <div className="detail-row">
+              <span className="detail-label">Email</span>
+              <span className="detail-value">{user.email}</span>
             </div>
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Joined</span>
-              <span className="text-sm font-medium text-[var(--ink)]">
+            <div className="detail-row">
+              <span className="detail-label">Joined</span>
+              <span className="detail-value">
                 {new Date(user.createdAtUtc).toLocaleDateString('en-NZ', {
                   month: 'short',
                   year: 'numeric',
                 })}
               </span>
             </div>
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Status</span>
+            <div className="detail-row">
+              <span className="detail-label">Status</span>
               <span
-                className="text-sm font-medium"
-                style={{ color: user.isActive ? 'var(--green)' : 'var(--red)' }}
+                className="detail-value"
+                style={{ color: user.isActive ? 'var(--green-ink)' : 'var(--red-ink)' }}
               >
                 {user.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
             {user.businessName && (
-              <div className="flex justify-between py-2.5">
-                <span className="text-[13px] text-[var(--ink)] opacity-60">Business</span>
-                <span className="text-sm font-medium text-[var(--ink)]">{user.businessName}</span>
+              <div className="detail-row">
+                <span className="detail-label">Business</span>
+                <span className="detail-value">{user.businessName}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded p-6 shadow-sm">
-          <h3
-            className="text-[16px] font-semibold text-[var(--ink)] mb-4 pb-3 border-b border-[var(--brand-100)]"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Performance
-          </h3>
+        <div className="card">
+          <h3 className="card-title">Performance</h3>
           <div className="space-y-0">
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Rating</span>
-              <span className="text-sm font-medium text-[var(--ink)]">
+            <div className="detail-row">
+              <span className="detail-label">Rating</span>
+              <span className="detail-value">
                 ★ {user.averageRating.toFixed(1)} ({user.reviewCount} reviews)
               </span>
             </div>
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Jobs Completed</span>
-              <span className="text-sm font-medium text-[var(--ink)]">{user.jobCount}</span>
+            <div className="detail-row">
+              <span className="detail-label">Jobs Completed</span>
+              <span className="detail-value">{user.jobCount}</span>
             </div>
-            <div className="flex justify-between py-2.5 border-b border-[var(--brand-100)]">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Role</span>
-              <span className="text-sm font-medium text-[var(--ink)]">{user.role}</span>
+            <div className="detail-row">
+              <span className="detail-label">Role</span>
+              <span className="detail-value">{user.role}</span>
             </div>
-            <div className="flex justify-between py-2.5">
-              <span className="text-[13px] text-[var(--ink)] opacity-60">Disputes</span>
-              <span className="text-sm font-medium text-[var(--ink)]">0</span>
+            <div className="detail-row">
+              <span className="detail-label">Disputes</span>
+              <span className="detail-value">0</span>
             </div>
           </div>
         </div>
       </div>
+
+      
+      {user.flags && user.flags.length > 0 && (
+        <div>
+          <h2 className="text-[18px] font-semibold text-[var(--ink)] mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+            Account Flags
+          </h2>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="th">Type</th>
+                  <th className="th">Counter</th>
+                  <th className="th">Status</th>
+                  <th className="th">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {user.flags.map((flag) => (
+                  <tr key={flag.id}>
+                    <td className="td font-medium">{flag.type}</td>
+                    <td className="td">{flag.counter}</td>
+                    <td className="td">
+                      <StatusBadge status={flag.resolved ? 'Resolved' : flag.thresholdHit ? 'ThresholdHit' : 'Open'} />
+                    </td>
+                    <td className="td">{new Date(flag.createdAtUtc).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {user.recentJobs.length > 0 && (
         <div>
@@ -238,42 +278,42 @@ export const UserDetailPage: React.FC = () => {
           >
             Recent Jobs
           </h2>
-          <div className="bg-[var(--paper)] border border-[var(--paper-line)] rounded shadow-sm overflow-hidden">
-            <table className="w-full">
+          <div className="table-container">
+            <table className="table">
               <thead>
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]">
+                  <th className="th">
                     Job ID
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]">
+                  <th className="th">
                     Description
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]">
+                  <th className="th">
                     Homeowner
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]">
+                  <th className="th">
                     Status
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--ink)] opacity-60 border-b border-[var(--brand-100)] bg-[var(--paper)]">
+                  <th className="th">
                     Date
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {user.recentJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-[var(--paper)]">
+                  <tr key={job.id} >
                     <td
-                      className="px-4 py-3 text-sm text-[var(--ink)]"
+                      className="td"
                       style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
                     >
                       JOB-{String(job.id).padStart(5, '0')}
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--ink)]">{job.title}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--ink)]">{job.homeownerName}</td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="td">{job.title}</td>
+                    <td className="td">{job.homeownerName}</td>
+                    <td className="td">
                       <StatusBadge status={job.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--ink)]">
+                    <td className="td">
                       {new Date(job.createdAtUtc).toLocaleDateString()}
                     </td>
                   </tr>
@@ -284,23 +324,48 @@ export const UserDetailPage: React.FC = () => {
         </div>
       )}
 
+      
+      
       <ConfirmModal
         open={confirmModal !== null}
         title={
-          confirmModal === 'verify'
-            ? `Verify ${user.fullName}?`
-            : `Deactivate ${user.fullName}?`
+          confirmModal === 'verify' ? `Verify ${user.fullName}?` :
+          confirmModal === 'deactivate' ? `Deactivate ${user.fullName}?` :
+          confirmModal === 'warn' ? `Warn ${user.fullName}?` :
+          confirmModal === 'suspend' ? `Suspend ${user.fullName}?` :
+          confirmModal === 'resolveFlags' ? `Resolve flags for ${user.fullName}?` : ''
         }
         message={
-          confirmModal === 'verify'
-            ? 'This will mark the tradie as verified and make them eligible for job matches.'
-            : 'This will disable login for this user. You will be redirected to the user list.'
+          confirmModal === 'verify' ? 'This will mark the tradie as verified and make them eligible for job matches.' :
+          confirmModal === 'deactivate' ? 'This will disable login for this user. You will be redirected to the user list.' :
+          confirmModal === 'resolveFlags' ? 'This will mark all open flags as resolved for this user.' :
+          (confirmModal === 'warn' || confirmModal === 'suspend') ? 'Please provide a reason for this action. It will be recorded.' : ''
         }
-        confirmLabel={confirmModal === 'verify' ? 'Verify' : 'Deactivate'}
-        destructive={confirmModal === 'deactivate'}
+        confirmLabel={
+          confirmModal === 'verify' ? 'Verify' : 
+          confirmModal === 'deactivate' ? 'Deactivate' :
+          confirmModal === 'warn' ? 'Send Warning' :
+          confirmModal === 'suspend' ? 'Suspend Account' :
+          confirmModal === 'resolveFlags' ? 'Resolve Flags' : ''
+        }
+        destructive={['deactivate', 'warn', 'suspend'].includes(confirmModal || '')}
+        confirmDisabled={(confirmModal === 'warn' || confirmModal === 'suspend') && actionReason.trim().length === 0}
         onConfirm={handleAction}
-        onCancel={() => setConfirmModal(null)}
-      />
+        onCancel={() => { setConfirmModal(null); setActionReason(''); }}
+      >
+        {(confirmModal === 'warn' || confirmModal === 'suspend') && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1">Reason (required)</label>
+            <textarea 
+              className="field field-multiline w-full resize-none" 
+              rows={3} 
+              value={actionReason} 
+              onChange={e => setActionReason(e.target.value)}
+              placeholder="Enter reason..."
+            />
+          </div>
+        )}
+      </ConfirmModal>
     </div>
   );
 };

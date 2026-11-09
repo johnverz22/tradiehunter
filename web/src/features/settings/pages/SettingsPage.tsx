@@ -71,8 +71,8 @@ export const SettingsPage: React.FC = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Locale */}
-        <section className="border border-[var(--paper-line)] rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-[var(--ink)]">Locale &amp; Region</h2>
+        <section className="card space-y-4">
+          <h2 className="card-title">Locale &amp; Region</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -106,8 +106,8 @@ export const SettingsPage: React.FC = () => {
         </section>
 
         {/* Matching */}
-        <section className="border border-[var(--paper-line)] rounded-lg p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-[var(--ink)]">Matching</h2>
+        <section className="card space-y-4">
+          <h2 className="card-title">Matching</h2>
           <FormField
             label="Default match radius (km)"
             type="number"
@@ -118,8 +118,8 @@ export const SettingsPage: React.FC = () => {
         </section>
 
         {/* Feature flags */}
-        <section className="border border-[var(--paper-line)] rounded-lg p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-[var(--ink)]">Feature Flags</h2>
+        <section className="card space-y-3">
+          <h2 className="card-title">Feature Flags</h2>
           <ToggleField
             label="Chat"
             description="Enable in-app chat for jobs"
@@ -142,7 +142,7 @@ export const SettingsPage: React.FC = () => {
           <button
             type="submit"
             disabled={!isDirty || updateMutation.isPending}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded bg-[var(--brand-500)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:ring-offset-2"
+            className="btn btn-primary"
           >
             <Save size={14} />
             {updateMutation.isPending ? 'Saving…' : 'Save Settings'}
@@ -167,10 +167,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       <label className="block text-sm font-medium text-[var(--ink)] mb-1">{label}</label>
       <input
         ref={ref}
-        className={[
-          'w-full px-3 py-2 text-sm border rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)]',
-          error ? 'border-[var(--red)]' : 'border-[var(--paper-line)]',
-        ].join(' ')}
+        className={error ? 'field field-invalid' : 'field'}
         {...props}
       />
       {hint && !error && <p className="text-xs text-[var(--ink-soft)] mt-1">{hint}</p>}

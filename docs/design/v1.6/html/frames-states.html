@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 frames — error &amp; empty states</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>.pg { background:#DCD8CF; padding:40px; display:flex; flex-wrap:wrap; gap:40px; font-family:var(--fb); }</style>
+</head><body>
+<div class="pg">
+<!-- Request expired (tradie) -->
+<div class="frame w440" data-frame="E-request-expired-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-03-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">This request expired</div>
+<div class="sec" style="margin-top:8px;max-width:270px">Another tradie may have accepted this job. New leads arrive all the time.</div>
+<div class="btn btn-primary" style="margin-top:28px;padding:0 32px">View open leads</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- Job not found (homeowner) -->
+<div class="frame w402" data-frame="E-job-not-found-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-04-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">We couldn't find this job</div>
+<div class="sec" style="margin-top:8px;max-width:270px">It may have been removed or the link is old.</div>
+<div class="btn btn-primary" style="margin-top:28px;padding:0 32px">Back to my jobs</div>
+<div class="btn btn-ghost" style="margin-top:6px">Contact support</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- Job no longer available (tradie) -->
+<div class="frame w440" data-frame="E-job-unavailable-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-04-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">This job is no longer available</div>
+<div class="sec" style="margin-top:8px;max-width:270px">The homeowner cancelled it or it was filled by someone else.</div>
+<div class="btn btn-primary" style="margin-top:28px;padding:0 32px">Back to dashboard</div>
+<div class="btn btn-ghost" style="margin-top:6px">Contact support</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- Payment expired -->
+<div class="frame w402" data-frame="E-payment-expired-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-05-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">Payment window expired</div>
+<div class="sec" style="margin-top:8px;max-width:270px">This match has been released. Start again — your job details are saved.</div>
+<div class="btn btn-primary" style="margin-top:28px;padding:0 32px">Start again</div>
+<div class="btn btn-ghost" style="margin-top:6px">Contact support</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- No messages -->
+<div class="frame w402" data-frame="E-no-messages-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar"><div class="ttl" style="font-size:24px">Messages</div><div class="grow"></div></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-02-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">No messages yet</div>
+<div class="sec" style="margin-top:8px;max-width:270px">When you're matched with a tradie, your chat will show up here.</div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewbox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- Empty tradie lead queue -->
+<div class="frame w440" data-frame="E-empty-leads-light">
+<div class="heroband" style="padding-bottom:18px">
+<img src="../assets/rings-3-white.svg" style="position:absolute;top:-30px;right:-40px;width:260px"/>
+<div class="bpdots" style="position:absolute;inset:0"></div>
+<div class="hero-statusbar"><span>9:41</span><span class="si"></span></div>
+<div class="pad" style="position:relative">
+<div class="cap" style="color:rgba(255,255,255,.75)">Earned this week (net)</div>
+<div class="hero-num">$1,246.80</div>
+</div>
+</div>
+<div class="pad center" style="flex:1;justify-content:center">
+<img src="../assets/il-08-light.svg" width="200"/>
+<div class="h2" style="margin-top:20px">No new leads right now</div>
+<div class="sec" style="margin-top:8px;max-width:280px">We'll ping you when a job near Grey Lynn matches your services.</div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- First-time homeowner dashboard (hero, uses IL-01) — see H07-empty for working variant -->
+<div class="frame w402" data-frame="E-first-run-light" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm))">
+<img class="blob blob-blue" src="../assets/blob-blue.svg" style="top:-50px;right:-80px;width:260px;height:260px"/>
+<img class="blob blob-peach" src="../assets/blob-peach.svg" style="bottom:40px;left:-90px;width:280px;height:280px"/>
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="pad center" style="flex:1;justify-content:center;position:relative">
+<img src="../assets/il-01-light.svg" width="220"/>
+<div class="h1" style="margin-top:24px">Kia ora, Sarah</div>
+<div class="sec" style="margin-top:8px;max-width:280px">Ready when you are — post a job and get matched with a verified local tradie.</div>
+<div class="btn btn-primary" style="margin-top:28px;padding:0 36px">Post your first job</div>
+</div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+%%SPRITE%%
+</body></html>

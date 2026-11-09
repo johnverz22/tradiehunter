@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, CheckCircle, XCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, CheckCircle, XCircle, } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
-import { Pagination } from '../../../components/Pagination';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { Pagination } from '../../../components/Pagination';
 import { useUserList, useVerifyUser, useDeactivateUser } from '../hooks/useUsers';
+
+const PAGE_SIZE = 20;
 
 type SortKey = 'fullName' | 'email' | 'role' | 'createdAt';
 
 export const UserListPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortKey>('createdAt');
   const [sortDesc, setSortDesc] = useState(true);
@@ -21,7 +24,7 @@ export const UserListPage: React.FC = () => {
     name: string;
   } | null>(null);
 
-  const { data, isLoading } = useUserList({ search, role, page, pageSize: 20, sortBy, sortDesc });
+  const { data, isLoading } = useUserList({ search, role, flaggedOnly, page, pageSize: PAGE_SIZE, sortBy, sortDesc });
   const verifyMutation = useVerifyUser();
   const deactivateMutation = useDeactivateUser();
 
@@ -49,40 +52,60 @@ export const UserListPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-[var(--ink)]">Users</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          {data ? `${data.totalCount.toLocaleString()} total` : ''}
-        </p>
+        {data && (
+          <div className="flex flex-wrap gap-4 mt-3">
+            <div className="stat-pill">
+              <strong>{data.totalCount.toLocaleString()}</strong> {role || 'All roles'}
+            </div>
+            <div className="stat-pill">
+              <strong>{data.items.length}</strong> on this page
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]" />
           <input
             type="search"
+            className="field field-search"
             placeholder="Search name or email…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--paper-line)] rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)]"
           />
         </div>
-        <select
-          value={role}
-          onChange={(e) => { setRole(e.target.value); setPage(1); }}
-          className="px-3 py-2 text-sm border border-[var(--paper-line)] rounded bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)]"
-        >
-          <option value="">All roles</option>
-          <option value="Admin">Admin</option>
-          <option value="Homeowner">Homeowner</option>
-          <option value="Tradie">Tradie</option>
-        </select>
+        <span className="select-wrap">
+          <select
+            className="select-field"
+            value={role}
+            onChange={(e) => { setRole(e.target.value); setPage(1); }}
+            aria-label="Filter by role"
+          >
+            <option value="">All roles</option>
+            <option value="Superadmin">Superadmin</option>
+            <option value="Staff">Staff</option>
+            <option value="Homeowner">Homeowner</option>
+            <option value="Tradie">Tradie</option>
+          </select>
+        </span>
+        <label className="flex items-center gap-2 text-sm text-[var(--ink)] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={flaggedOnly}
+            onChange={(e) => { setFlaggedOnly(e.target.checked); setPage(1); }}
+            className="rounded border-gray-300 text-[var(--brand-500)] focus:ring-[var(--brand-500)]"
+          />
+          Flagged Accounts Only
+        </label>
       </div>
 
       {/* Table */}
-      <div className="border border-[var(--paper-line)] rounded-lg overflow-hidden">
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--paper-line)]/50">
+          <table className="table">
+            <thead>
               <tr>
                 {(
                   [
@@ -95,79 +118,68 @@ export const UserListPage: React.FC = () => {
                   <th
                     key={key}
                     onClick={() => toggleSort(key)}
-                    className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide cursor-pointer hover:text-[var(--ink)] select-none"
+                    className="th th-sortable"
                   >
                     {label}
                     <SortIcon col={key} />
                   </th>
                 ))}
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Verified</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">Actions</th>
+                <th className="th">Status</th>
+                <th className="th">Verified</th>
+                <th className="th text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--paper-line)]">
+            <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">
-                    Loading…
-                  </td>
+                  <td colSpan={7} className="td text-center cell-muted">Loading…</td>
                 </tr>
               ) : data?.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--ink-soft)]">
-                    No users found.
-                  </td>
+                  <td colSpan={7} className="td text-center cell-muted">No users found.</td>
                 </tr>
               ) : (
                 data?.items.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-[var(--paper-line)]/30 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-[var(--ink)]">
-                      <Link
-                        to={`/users/${user.id}`}
-                        className="hover:text-[var(--brand-500)] hover:underline"
-                      >
+                  <tr key={user.id}>
+                    <td className="td">
+                      <Link to={`/users/${user.id}`} className="cell-link flex items-center gap-2">
                         {user.fullName || '—'}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={user.role} />
-                    </td>
-                    <td className="px-4 py-3 text-[var(--ink-soft)]">
+                    <td className="td mono cell-muted">{user.email}</td>
+                    <td className="td"><StatusBadge status={user.role} /></td>
+                    <td className="td cell-muted">
                       {new Date(user.createdAtUtc).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="td">
                       <StatusBadge status={user.isActive ? 'Active' : 'Inactive'} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="td">
                       {user.isVerified ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                          <CheckCircle size={13} /> Verified
+                        <span className="pill pill-green">
+                          <CheckCircle size={12} className="inline -mt-0.5" /> Verified
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-[var(--ink-soft)]">
-                          <XCircle size={13} /> Unverified
+                        <span className="pill pill-amber">
+                          <XCircle size={12} className="inline -mt-0.5" /> Unverified
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="td">
                       <div className="flex items-center justify-end gap-2">
                         {!user.isVerified && user.role === 'Tradie' && (
                           <button
+                            className="btn btn-ghost !py-1 !px-2.5 !text-xs"
                             onClick={() =>
                               setConfirmAction({ type: 'verify', id: user.id, name: user.fullName })
                             }
-                            className="text-xs px-2.5 py-1 rounded border border-[var(--brand-300)] text-[var(--brand-700)] hover:bg-[var(--brand-100)] transition-colors"
                           >
                             Verify
                           </button>
                         )}
                         {user.isActive && (
                           <button
+                            className="btn btn-danger !py-1 !px-2.5 !text-xs"
                             onClick={() =>
                               setConfirmAction({
                                 type: 'deactivate',
@@ -175,7 +187,6 @@ export const UserListPage: React.FC = () => {
                                 name: user.fullName,
                               })
                             }
-                            className="text-xs px-2.5 py-1 rounded border border-red-200 text-[var(--red)] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           >
                             Deactivate
                           </button>
@@ -188,15 +199,18 @@ export const UserListPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {data && (
-        <Pagination
-          page={data.page}
-          totalPages={data.totalPages}
-          onPageChange={setPage}
-        />
-      )}
+        {data && (
+          <Pagination
+            page={data.page}
+            totalPages={data.totalPages}
+            pageSize={data.pageSize}
+            totalCount={data.totalCount}
+            itemLabel="users"
+            onPageChange={setPage}
+          />
+        )}
+      </div>
 
       {/* Confirm modal */}
       <ConfirmModal

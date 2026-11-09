@@ -1,0 +1,14 @@
+import { chromium } from '@playwright/test';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ baseURL: 'http://localhost:5173' });
+const page = await ctx.newPage();
+page.on('console', m => console.log('[console]', m.type(), m.text().slice(0,200)));
+page.on('response', r => { if (r.url().includes('/api/')) console.log('[api]', r.status(), r.url()); });
+await page.goto('/login');
+await page.getByLabel('Email Address').fill('staff@fixo.test');
+await page.getByLabel('Password').fill('Test1234!');
+await page.getByRole('button', { name: 'Sign In' }).click();
+await page.waitForTimeout(6000);
+console.log('[url]', page.url());
+console.log('[cookies]', JSON.stringify(await ctx.cookies(), null, 1));
+await browser.close();

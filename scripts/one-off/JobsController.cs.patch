@@ -1,0 +1,6 @@
+        try
+        {
+            var role = job.HomeownerId == userId ? UserRole.Homeowner : UserRole.Tradie;
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.Cancelled, userId, role, null, request.Reason);
+            return Ok(dto);
+        }

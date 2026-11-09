@@ -1,140 +1,268 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../models/marketplace.dart';
+import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
-import '../../widgets/fixo_buttons.dart';
-import '../../widgets/fixo_cards.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/fixo_states.dart';
-import '../../widgets/tradie_widgets.dart';
-import '../widgets/modern_job_card.dart';
+import '../widgets/homeowner_dashboard_header.dart';
+import '../widgets/homeowner_job_summary.dart';
 
-/// Mockup 05-homeowner-home, restyled.
-///
-/// NOTE ON MVVM: the provided archive has no dedicated
-/// `HomeownerViewModel` — this screen (like the original
-/// `homeowner_home_screen.dart`) reads `jobsViewModelProvider` and
-/// `profileViewModelProvider` directly. Every provider read, notifier
-/// call, SignalR subscription and state variable below is copied
-/// unchanged from the original file; only the widget tree changed.
-/// Class kept as `HomeownerHomeScreen` so existing router imports keep
-/// working if you replace the old file's contents with this one.
-class HomeownerHomeScreen extends ConsumerStatefulWidget {
-  const HomeownerHomeScreen({super.key});
+/// Homeowner dashboard — visual modernization only.
+/// Providers, SignalR wiring, and callbacks unchanged.
+class HomeownerDashboardView extends ConsumerStatefulWidget {
+  const HomeownerDashboardView({super.key});
 
   @override
-  ConsumerState<HomeownerHomeScreen> createState() => _HomeownerHomeScreenState();
+  ConsumerState<HomeownerDashboardView> createState() =>
+      _HomeownerDashboardViewState();
 }
 
-class _HomeownerHomeScreenState extends ConsumerState<HomeownerHomeScreen> {
+class _HomeownerDashboardViewState
+    extends ConsumerState<HomeownerDashboardView> {
+  StreamSubscription<JobStatusEvent>? _statusSubscription;
+  bool _showPast = false;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs());
+    Future.microtask(
+      () => ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs(),
+    );
     _initSignalR();
   }
 
   Future<void> _initSignalR() async {
     final hub = ref.read(jobHubClientProvider);
-    const baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:5000');
+    final baseUrl = resolveBaseUrl();
 
     await hub.connect(baseUrl: baseUrl);
+    if (!mounted) return;
 
-    hub.onJobStatusChanged.listen((e) {
-      ref.read(jobsViewModelProvider.notifier).applyStatusUpdate(e.jobId, e.status);
+    _statusSubscription = hub.onJobStatusChanged.listen((e) {
+      ref
+          .read(jobsViewModelProvider.notifier)
+          .applyStatusUpdate(e.jobId, e.status);
     });
   }
 
-  FixoBadgeKind _kindFor(String status) {
-    return status == 'Matched' || status == 'Confirmed' || status == 'Complete'
-        ? FixoBadgeKind.verified
-        : FixoBadgeKind.hold;
+  @override
+  void dispose() {
+    _statusSubscription?.cancel();
+    super.dispose();
   }
+
+  Widget _eyebrow(String title) => Padding(
+    padding: const EdgeInsets.only(top: 22, bottom: 14),
+    child: Text(
+      title,
+      style: TextStyle(
+        fontFamily: DesignTokens.fontBody,
+        fontSize: DesignTokens.fontSizeCaption,
+        fontWeight: FW.semibold,
+        color: DesignTokens.inkSoft(
+          Theme.of(context).brightness == Brightness.dark,
+        ),
+      ),
+    ),
+  );
+
+  Widget _jobs(List<Job> jobs, {bool isAttention = false}) =>
+      SliverList.separated(
+        itemCount: jobs.length,
+        separatorBuilder: (_, _) =>
+            const SizedBox(height: DesignTokens.cardGap),
+        itemBuilder: (context, index) =>
+            homeownerJobSummary(context, jobs[index], isAttention: isAttention),
+      );
 
   @override
   Widget build(BuildContext context) {
     final jobsState = ref.watch(jobsViewModelProvider);
     final profileState = ref.watch(profileViewModelProvider);
-    final theme = Theme.of(context);
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final firstName = (profileState.profile?['firstName'] as String? ?? '')
+        .trim();
+    final attention = jobsState.jobs
+        .where((j) => needsHomeownerAttention(j.status))
+        .toList();
 
-    final firstName = profileState.profile?['firstName'] as String? ?? '';
-    final lastName = profileState.profile?['lastName'] as String? ?? '';
-    final initials = '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
-        .toUpperCase();
-    final greeting = firstName.isNotEmpty ? 'Hey $firstName,' : 'Hey there,';
+    int attentionPriority(String status) {
+      switch (status) {
+        case 'AwaitingPayment':
+          return 0;
+        case 'AwaitingConfirmation':
+          return 1;
+        case 'Disputed':
+          return 2;
+        case 'PaymentReview':
+          return 3;
+        default:
+          return 4;
+      }
+    }
 
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const FixoWordmark(fontSize: 22),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: FixoAvatar(initials: initials.isNotEmpty ? initials : '?'),
-          ),
-        ],
-      ),
-      body: SafeArea(
+    attention.sort((a, b) {
+      final pA = attentionPriority(a.status);
+      final pB = attentionPriority(b.status);
+      if (pA != pB) return pA.compareTo(pB);
+
+      final dateA = a.scheduledStartUtc ?? a.createdAtUtc;
+      final dateB = b.scheduledStartUtc ?? b.createdAtUtc;
+      if (dateA != null && dateB != null) {
+        return dateA.compareTo(dateB);
+      } else if (dateA != null) {
+        return -1;
+      } else if (dateB != null) {
+        return 1;
+      }
+      return 0;
+    });
+
+    final booked = jobsState.jobs
+        .where((j) => j.status == 'Booked' || j.status == 'InProgress')
+        .toList();
+    final active = jobsState.jobs
+        .where(
+          (j) =>
+              !isPastHomeownerJob(j.status) &&
+              !needsHomeownerAttention(j.status) &&
+              j.status != 'Booked' &&
+              j.status != 'InProgress',
+        )
+        .toList();
+    final past = jobsState.jobs
+        .where((j) => isPastHomeownerJob(j.status))
+        .toList();
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light, // white icons over brand header
+      child: Scaffold(
+        key: const Key('homeowner_dashboard'),
+        body: SafeArea(
         top: false,
-        child: jobsState.isLoading && jobsState.jobs.isEmpty
-            ? const FixoLoading(label: 'Loading your jobs...')
-            : jobsState.error != null && jobsState.jobs.isEmpty
-                ? FixoErrorState(
-                    message: jobsState.error!,
-                    onRetry: () => ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs(),
-                  )
-                : RefreshIndicator(
-                    onRefresh: () => ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs(),
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(24, 8, 24, 120 + bottomPadding),
-                      children: [
-                        Text(
-                          greeting,
-                          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Here's what's happening with your jobs.",
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                        const SizedBox(height: 20),
-                        if (jobsState.jobs.isEmpty)
-                          FixoEmptyState(
-                            icon: Icons.home_repair_service_outlined,
-                            title: 'No active jobs right now.',
-                            subtitle: "Post a job and we'll match you in minutes.",
-                            actionLabel: 'Post a Job',
-                            onAction: () => context.push('/jobs/new'),
+        child: Column(
+          children: [
+            // ── Brand header — light-blue abstract bg shared with every
+            // app bar ─────────────────────────────────────────────────
+            HomeownerDashboardHeader(firstName: firstName, now: DateTime.now()),
+            Expanded(
+              child: jobsState.isLoading && jobsState.jobs.isEmpty
+                  ? const FixoLoading(label: 'Loading your jobs...')
+                  : jobsState.error != null && jobsState.jobs.isEmpty
+                  ? FixoErrorState(
+                      message: 'Could not load your jobs. Please try again.',
+                      onRetry: () => ref
+                          .read(jobsViewModelProvider.notifier)
+                          .loadHomeownerJobs(),
+                    )
+                  : Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 760),
+                        child: RefreshIndicator(
+                          onRefresh: () => ref
+                              .read(jobsViewModelProvider.notifier)
+                              .loadHomeownerJobs(),
+                          child: CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s3, Space.gutter, Space.navClearance),
+                                sliver: SliverMainAxisGroup(
+                                  slivers: [
+                                    SliverToBoxAdapter(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (jobsState.error != null)
+                                            JobsRefreshNotice(
+                                              onRetry: () => ref
+                                                  .read(
+                                                    jobsViewModelProvider
+                                                        .notifier,
+                                                  )
+                                                  .loadHomeownerJobs(),
+                                            ),
+                                          if (jobsState.jobs.isEmpty)
+                                            HomeownerDashboardEmpty(
+                                              onPost: () =>
+                                                  context.push('/jobs/new'),
+                                            ),
+                                          if (attention.isNotEmpty)
+                                            _eyebrow('Needs your attention'),
+                                        ],
+                                      ),
+                                    ),
+                                    _jobs(attention, isAttention: true),
+                                    if (booked.isNotEmpty) ...[
+                                      SliverToBoxAdapter(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _eyebrow('Booked'),
+                                            HomeownerBookedJobs(jobs: booked),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    if (active.isNotEmpty) ...[
+                                      SliverToBoxAdapter(
+                                        child: _eyebrow('Active jobs'),
+                                      ),
+                                      _jobs(active),
+                                    ],
+                                    if (past.isNotEmpty) ...[
+                                      SliverToBoxAdapter(
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(top: 22),
+                                          child: Semantics(
+                                            expanded: _showPast,
+                                            child: TextButton.icon(
+                                              onPressed: () => setState(
+                                                () => _showPast = !_showPast,
+                                              ),
+                                              icon: Icon(
+                                                _showPast
+                                                    ? Icons.expand_less
+                                                    : Icons.expand_more,
+                                              ),
+                                              label: Text(
+                                                'Past jobs (${past.length})',
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_showPast) _jobs(past),
+                                    ],
+                                    if (jobsState.jobs.isNotEmpty)
+                                      SliverToBoxAdapter(
+                                        child: TextButton(
+                                          onPressed: () => context.go('/jobs'),
+                                          child: const Text('See all jobs'),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        for (final job in jobsState.jobs) ...[
-                          ModernJobCard(
-                            title: job.title,
-                            referenceId: job.id,
-                            category: job.category,
-                            location: job.suburb,
-                            statusLabel: job.status,
-                            statusKind: _kindFor(job.status),
-                            stage: job.stage,
-                            onTap: () => context.push('/chat/${job.id}'),
-                          ),
-                          const SizedBox(height: 14),
-                        ],
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/jobs/new'),
-        backgroundColor: DesignTokens.amber,
-        foregroundColor: DesignTokens.onAmber,
-        icon: const Icon(Icons.add),
-        label: const Text('Post a Job', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-    );
+    ), // Scaffold
+    ); // AnnotatedRegion
   }
 }

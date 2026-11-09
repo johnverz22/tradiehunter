@@ -42,7 +42,7 @@ public class ReviewService : IReviewService
             ?? throw new KeyNotFoundException($"Job {jobId} not found.");
 
         // Only completed jobs can be reviewed.
-        if (job.Status != JobStatus.Complete)
+        if (job.Status != JobStatus.Completed)
             throw new InvalidOperationException("Reviews can only be submitted for completed jobs.");
 
         // Reviewer must be a participant.
@@ -65,6 +65,17 @@ public class ReviewService : IReviewService
         if (alreadyExists)
             throw new InvalidOperationException("You have already reviewed this job.");
 
+        // P10-11: Blind Review Logic
+        var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.JobId == jobId);
+        DateTime? revealAfter = existingReview == null 
+            ? DateTime.UtcNow.AddDays(7) 
+            : DateTime.UtcNow;
+
+        if (existingReview != null)
+        {
+            existingReview.RevealAfterUtc = revealAfter;
+        }
+
         var review = new Review
         {
             JobId        = jobId,
@@ -73,6 +84,7 @@ public class ReviewService : IReviewService
             Rating       = request.Rating,
             Comment      = request.Comment,
             CreatedAtUtc = DateTime.UtcNow,
+            RevealAfterUtc = revealAfter
         };
 
         _context.Reviews.Add(review);
@@ -96,13 +108,29 @@ public class ReviewService : IReviewService
     {
         var reviews = await _context.Reviews
             .Include(r => r.Reviewer)
+            .Include(r => r.Job)
             .Where(r => r.JobId == jobId)
             .OrderByDescending(r => r.CreatedAtUtc)
             .ToListAsync();
 
+        var now = DateTime.UtcNow;
+        var items = reviews.Select(r => 
+        {
+            var isDisputed = r.Job.IsFlagged && r.Job.DisputeStatus != "Resolved";
+            var isHidden = isDisputed || (r.RevealAfterUtc.HasValue && r.RevealAfterUtc.Value > now);
+            
+            var dto = MapToDto(r);
+            if (isHidden)
+            {
+                dto.Rating = 0;
+                dto.Comment = "This review is currently hidden.";
+            }
+            return dto;
+        }).ToList();
+
         return new ReviewListResponse
         {
-            Items      = reviews.Select(MapToDto).ToList(),
+            Items      = items,
             TotalCount = reviews.Count,
             Page       = 1,
             PageSize   = reviews.Count,

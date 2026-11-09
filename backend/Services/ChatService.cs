@@ -1,5 +1,6 @@
 using FixoApi.Data;
 using FixoApi.DTOs;
+using FixoApi.Enums;
 using FixoApi.Hubs;
 using FixoApi.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -55,10 +56,32 @@ public class ChatService : IChatService
         return job.HomeownerId == userId || job.MatchedTradieId == userId;
     }
 
+    // ── Chat access guard (P5-08) ─────────────────────────────────────────────
+
+    /// Returns true when the job is in an active state where chat is permitted.
+    /// Chat is open for: Matched, AwaitingPayment, PaymentReview, Booked, InProgress.
+    /// Chat is locked (read-only) for: Completed, Cancelled, Disputed, Expired.
+    public async Task<bool> IsChatOpenAsync(int jobId)
+    {
+        var status = await _context.Jobs
+            .AsNoTracking()
+            .Where(j => j.Id == jobId)
+            .Select(j => (JobStatus?)j.Status)
+            .FirstOrDefaultAsync();
+
+        if (status == null) return false;
+
+        return status is not (JobStatus.Completed or JobStatus.Cancelled or JobStatus.Disputed);
+    }
+
     // ── Save & broadcast ──────────────────────────────────────────────────────
 
     public async Task<ChatMessageDto> SaveMessageAsync(int jobId, string senderId, string content)
     {
+        // P5-08: Reject messages once the job is closed to new chat.
+        if (!await IsChatOpenAsync(jobId))
+            throw new InvalidOperationException("Chat is closed for this job.");
+
         var message = new ChatMessage
         {
             JobId     = jobId,
@@ -154,6 +177,92 @@ public class ChatService : IChatService
             .FirstOrDefaultAsync();
 
         return job == null ? (string.Empty, null) : (job.HomeownerId, job.MatchedTradieId);
+    }
+
+    // ── Conversation summaries (inbox) ─────────────────────────────────────
+
+    /// <inheritdoc />
+    public async Task<List<ConversationSummaryDto>> GetConversationsAsync(
+        string userId, int limit = 50)
+    {
+        // Only jobs with a real two-party thread: a matched counterparty must
+        // exist, otherwise there is nobody to talk to (fixture-title-only rows).
+        var jobs = await _context.Jobs
+            .AsNoTracking()
+            .Where(j => j.MatchedTradieId != null &&
+                        (j.HomeownerId == userId || j.MatchedTradieId == userId))
+            .Select(j => new
+            {
+                j.Id,
+                j.Title,
+                j.Status,
+                j.UpdatedAtUtc,
+                OtherId = j.HomeownerId == userId ? j.MatchedTradieId! : j.HomeownerId,
+            })
+            .ToListAsync();
+
+        if (jobs.Count == 0) return new List<ConversationSummaryDto>();
+
+        var jobIds = jobs.Select(j => j.Id).ToList();
+
+        // Newest message id per job (Ids are sequential = chronological).
+        var lastIds = await _context.ChatMessages
+            .AsNoTracking()
+            .Where(m => jobIds.Contains(m.JobId))
+            .GroupBy(m => m.JobId)
+            .Select(g => new { JobId = g.Key, MaxId = g.Max(m => m.Id) })
+            .ToListAsync();
+        var maxIds = lastIds.Select(x => x.MaxId).ToList();
+        var lastMessages = await _context.ChatMessages
+            .AsNoTracking()
+            .Where(m => maxIds.Contains(m.Id))
+            .Select(m => new { m.JobId, m.Content, m.SenderId, m.SentAtUtc })
+            .ToListAsync();
+
+        // Real unread count: messages from the other party never marked read.
+        var unread = await _context.ChatMessages
+            .AsNoTracking()
+            .Where(m => jobIds.Contains(m.JobId) &&
+                        m.SenderId != userId && m.ReadAtUtc == null)
+            .GroupBy(m => m.JobId)
+            .Select(g => new { JobId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var otherIds = jobs.Select(j => j.OtherId).Distinct().ToList();
+        var names = await _context.Users
+            .AsNoTracking()
+            .Where(u => otherIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.FirstName })
+            .ToListAsync();
+
+        var lastByJob = lastMessages.ToDictionary(m => m.JobId);
+        var unreadByJob = unread.ToDictionary(u => u.JobId);
+        var nameById = names.ToDictionary(u => u.Id);
+
+        return jobs
+            .Select(j =>
+            {
+                lastByJob.TryGetValue(j.Id, out var last);
+                var dto = new ConversationSummaryDto
+                {
+                    JobId = j.Id,
+                    JobTitle = j.Title,
+                    Status = j.Status.ToString(),
+                    OtherUserId = j.OtherId,
+                    OtherFirstName = nameById.TryGetValue(j.OtherId, out var n)
+                        ? n.FirstName
+                        : string.Empty,
+                    LastMessageContent = last?.Content,
+                    LastMessageSentByMe = last?.SenderId == userId,
+                    LastMessageSentAtUtc = last?.SentAtUtc,
+                    UnreadCount = unreadByJob.TryGetValue(j.Id, out var u) ? u.Count : 0,
+                };
+                return (dto, sortKey: last?.SentAtUtc ?? j.UpdatedAtUtc);
+            })
+            .OrderByDescending(x => x.sortKey)
+            .Take(Math.Clamp(limit, 1, 100))
+            .Select(x => x.dto)
+            .ToList();
     }
 
     // ── Private: FCM push for chat ────────────────────────────────────────────

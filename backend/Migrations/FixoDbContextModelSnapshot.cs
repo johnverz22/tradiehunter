@@ -24,6 +24,53 @@ namespace FixoApi.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FixoApi.Models.AccountFlag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Counter")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("Resolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ThresholdHit")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AccountFlags");
+                });
+
             modelBuilder.Entity("FixoApi.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -31,6 +78,11 @@ namespace FixoApi.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
+
+                    b.Property<string>("AuthProvider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -45,6 +97,12 @@ namespace FixoApi.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("EmailVerifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -80,6 +138,12 @@ namespace FixoApi.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RegistrationToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RegistrationTokenExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
@@ -104,6 +168,55 @@ namespace FixoApi.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("FixoApi.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Action", "CreatedAtUtc");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("FixoApi.Models.ChatMessage", b =>
@@ -172,6 +285,129 @@ namespace FixoApi.Migrations
                     b.ToTable("DeviceTokens");
                 });
 
+            modelBuilder.Entity("FixoApi.Models.Dispute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecidedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OpenReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("OpenedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OpenedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId")
+                        .IsUnique();
+
+                    b.ToTable("Disputes");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.DisputeEvidence", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisputeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileKey")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("SubmittedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TextContent")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeId");
+
+                    b.ToTable("DisputeEvidences");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.EmailOtp", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ConsumedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailOtps");
+                });
+
             modelBuilder.Entity("FixoApi.Models.Job", b =>
                 {
                     b.Property<int>("Id")
@@ -183,6 +419,16 @@ namespace FixoApi.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
+
+                    b.Property<string>("AutoCompleteJobId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CancelReasonCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CancelledByUserId")
+                        .HasColumnType("text");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -205,6 +451,9 @@ namespace FixoApi.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTime?>("EndedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FlagReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -216,6 +465,12 @@ namespace FixoApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Hours")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsFlagged")
                         .HasColumnType("boolean");
 
@@ -224,6 +479,13 @@ namespace FixoApi.Migrations
 
                     b.Property<string>("MatchedTradieId")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("PaymentDueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReferenceCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("ReminderJobIds")
                         .HasMaxLength(200)
@@ -236,11 +498,17 @@ namespace FixoApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("ScheduledDateUtc")
+                    b.Property<DateTimeOffset>("ScheduledStartUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ScheduledTimeSlot")
                         .HasColumnType("text");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -250,6 +518,9 @@ namespace FixoApi.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -268,7 +539,57 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("MatchedTradieId");
 
+                    b.HasIndex("ReferenceCode")
+                        .IsUnique();
+
                     b.ToTable("Jobs");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.JobOffer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("HangfireJobId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("OfferedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Response")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TradieId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId");
+
+                    b.HasIndex("TradieId");
+
+                    b.HasIndex("JobId", "Response");
+
+                    b.HasIndex("JobId", "TradieId")
+                        .IsUnique();
+
+                    b.ToTable("JobOffers");
                 });
 
             modelBuilder.Entity("FixoApi.Models.JobPhoto", b =>
@@ -278,6 +599,12 @@ namespace FixoApi.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BlobKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("S3Key");
 
                     b.Property<string>("ContentType")
                         .HasMaxLength(100)
@@ -289,11 +616,6 @@ namespace FixoApi.Migrations
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(260)
                         .HasColumnType("character varying(260)");
-
-                    b.Property<string>("S3Key")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("UploadedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -313,6 +635,10 @@ namespace FixoApi.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("ChangedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -331,6 +657,9 @@ namespace FixoApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("ReasonCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("ToStatus")
                         .IsRequired()
                         .HasColumnType("text");
@@ -340,6 +669,228 @@ namespace FixoApi.Migrations
                     b.HasIndex("JobId");
 
                     b.ToTable("JobStatusHistory");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProviderReference")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ReUploadCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceiptFileKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("ReceiptHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VerifiedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderReference")
+                        .IsUnique();
+
+                    b.HasIndex("ReceiptHash")
+                        .IsUnique();
+
+                    b.HasIndex("VerifiedBy");
+
+                    b.HasIndex("Status", "SubmittedAtUtc");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.PayoutBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PayoutCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("PeriodEndUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("PeriodStartUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("PayoutBatches");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ConsumedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.Refund", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("FinalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("HoursWorked")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("HoursWorkedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Penalty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ProcessedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProofFileKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("SuggestedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TransferReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Refunds");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Review", b =>
@@ -361,11 +912,18 @@ namespace FixoApi.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("RevealAfterUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("RevieweeId")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ReviewerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -384,6 +942,221 @@ namespace FixoApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixoApi.Models.Service", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LicenceBoard")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RequiresLicence")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Services");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Category = "Plumber",
+                            LicenceBoard = "PGDB",
+                            Name = "Plumbing",
+                            RequiresLicence = true
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Category = "Plumber",
+                            LicenceBoard = "PGDB",
+                            Name = "Gasfitting",
+                            RequiresLicence = true
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Category = "Electrician",
+                            LicenceBoard = "EWRB",
+                            Name = "Electrical Wiring",
+                            RequiresLicence = true
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Category = "Electrician",
+                            Name = "Appliance Repair",
+                            RequiresLicence = false
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Category = "Builder",
+                            LicenceBoard = "LBP",
+                            Name = "Carpentry",
+                            RequiresLicence = true
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Category = "Builder",
+                            Name = "Decking",
+                            RequiresLicence = false
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Category = "Builder",
+                            LicenceBoard = "LBP",
+                            Name = "Roofing",
+                            RequiresLicence = true
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Category = "Painter",
+                            Name = "Painting",
+                            RequiresLicence = false
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Category = "Landscaper",
+                            Name = "Lawn Mowing",
+                            RequiresLicence = false
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Category = "General",
+                            Name = "General Handyman",
+                            RequiresLicence = false
+                        });
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradieCredential", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TradieProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedById");
+
+                    b.HasIndex("TradieProfileId");
+
+                    b.ToTable("TradieCredentials");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradiePayout", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BankAccountName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BankAccountNumber")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("CommissionAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CommissionPercent")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("GrossAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("PayoutBatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessedById")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TradieId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TransferReference")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobId")
+                        .IsUnique();
+
+                    b.HasIndex("PayoutBatchId");
+
+                    b.HasIndex("ProcessedById");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TradieId");
+
+                    b.ToTable("TradiePayouts");
+                });
+
             modelBuilder.Entity("FixoApi.Models.TradieProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -395,11 +1168,26 @@ namespace FixoApi.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
+                    b.Property<string>("BankAccountName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BankAccountNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("BankAccountVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("BusinessName")
                         .HasColumnType("text");
 
+                    b.Property<int>("CancellationCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("DeviceToken")
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasInsurance")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
@@ -430,6 +1218,90 @@ namespace FixoApi.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("TradieProfiles");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradieRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TradieProfileId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("TradieProfileId");
+
+                    b.ToTable("TradieRates");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradieSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval");
+
+                    b.Property<int>("TradieProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Weekday")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TradieProfileId");
+
+                    b.ToTable("TradieSchedules");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.UserBlock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BlockedId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("BlockerId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockedId");
+
+                    b.HasIndex("BlockerId", "BlockedId")
+                        .IsUnique();
+
+                    b.ToTable("UserBlocks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -594,6 +1466,39 @@ namespace FixoApi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FixoApi.Models.Dispute", b =>
+                {
+                    b.HasOne("FixoApi.Models.Job", "Job")
+                        .WithMany()
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.DisputeEvidence", b =>
+                {
+                    b.HasOne("FixoApi.Models.Dispute", "Dispute")
+                        .WithMany("Evidence")
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dispute");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.EmailOtp", b =>
+                {
+                    b.HasOne("FixoApi.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FixoApi.Models.Job", b =>
                 {
                     b.HasOne("FixoApi.Models.ApplicationUser", "Homeowner")
@@ -610,6 +1515,25 @@ namespace FixoApi.Migrations
                     b.Navigation("Homeowner");
 
                     b.Navigation("MatchedTradie");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.JobOffer", b =>
+                {
+                    b.HasOne("FixoApi.Models.Job", "Job")
+                        .WithMany("Offers")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FixoApi.Models.ApplicationUser", "Tradie")
+                        .WithMany()
+                        .HasForeignKey("TradieId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Job");
+
+                    b.Navigation("Tradie");
                 });
 
             modelBuilder.Entity("FixoApi.Models.JobPhoto", b =>
@@ -632,6 +1556,53 @@ namespace FixoApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.Payment", b =>
+                {
+                    b.HasOne("FixoApi.Models.Job", "Job")
+                        .WithOne("Payment")
+                        .HasForeignKey("FixoApi.Models.Payment", "JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FixoApi.Models.ApplicationUser", "VerifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("VerifiedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Job");
+
+                    b.Navigation("VerifiedByUser");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.RefreshToken", b =>
+                {
+                    b.HasOne("FixoApi.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.Refund", b =>
+                {
+                    b.HasOne("FixoApi.Models.Job", "Job")
+                        .WithOne("Refund")
+                        .HasForeignKey("FixoApi.Models.Refund", "JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FixoApi.Models.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Job");
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Review", b =>
@@ -661,6 +1632,55 @@ namespace FixoApi.Migrations
                     b.Navigation("Reviewer");
                 });
 
+            modelBuilder.Entity("FixoApi.Models.TradieCredential", b =>
+                {
+                    b.HasOne("FixoApi.Models.ApplicationUser", "ReviewedBy")
+                        .WithMany()
+                        .HasForeignKey("ReviewedById");
+
+                    b.HasOne("FixoApi.Models.TradieProfile", "TradieProfile")
+                        .WithMany()
+                        .HasForeignKey("TradieProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReviewedBy");
+
+                    b.Navigation("TradieProfile");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradiePayout", b =>
+                {
+                    b.HasOne("FixoApi.Models.Job", "Job")
+                        .WithOne()
+                        .HasForeignKey("FixoApi.Models.TradiePayout", "JobId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FixoApi.Models.PayoutBatch", "PayoutBatch")
+                        .WithMany("Payouts")
+                        .HasForeignKey("PayoutBatchId");
+
+                    b.HasOne("FixoApi.Models.ApplicationUser", "ProcessedBy")
+                        .WithMany()
+                        .HasForeignKey("ProcessedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FixoApi.Models.ApplicationUser", "Tradie")
+                        .WithMany()
+                        .HasForeignKey("TradieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Job");
+
+                    b.Navigation("PayoutBatch");
+
+                    b.Navigation("ProcessedBy");
+
+                    b.Navigation("Tradie");
+                });
+
             modelBuilder.Entity("FixoApi.Models.TradieProfile", b =>
                 {
                     b.HasOne("FixoApi.Models.ApplicationUser", "User")
@@ -670,6 +1690,36 @@ namespace FixoApi.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradieRate", b =>
+                {
+                    b.HasOne("FixoApi.Models.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FixoApi.Models.TradieProfile", "TradieProfile")
+                        .WithMany()
+                        .HasForeignKey("TradieProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Service");
+
+                    b.Navigation("TradieProfile");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.TradieSchedule", b =>
+                {
+                    b.HasOne("FixoApi.Models.TradieProfile", "TradieProfile")
+                        .WithMany()
+                        .HasForeignKey("TradieProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TradieProfile");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -723,15 +1773,31 @@ namespace FixoApi.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FixoApi.Models.Dispute", b =>
+                {
+                    b.Navigation("Evidence");
+                });
+
             modelBuilder.Entity("FixoApi.Models.Job", b =>
                 {
                     b.Navigation("ChatMessages");
 
+                    b.Navigation("Offers");
+
+                    b.Navigation("Payment");
+
                     b.Navigation("Photos");
+
+                    b.Navigation("Refund");
 
                     b.Navigation("Reviews");
 
                     b.Navigation("StatusHistory");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.PayoutBatch", b =>
+                {
+                    b.Navigation("Payouts");
                 });
 #pragma warning restore 612, 618
         }

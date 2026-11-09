@@ -23,6 +23,8 @@ public class TradieProfile
     public bool IsVerified { get; set; } = false;
     
     public bool IsAvailable { get; set; } = true;
+    
+    public bool HasInsurance { get; set; } = false;
 
     [Column(TypeName = "geometry (Point, 4326)")]
     public Point? Location { get; set; }
@@ -33,4 +35,14 @@ public class TradieProfile
     public decimal ServiceRadiusKm { get; set; } = 25m;
     
     public string? DeviceToken { get; set; }
+
+    public string? BankAccountName { get; set; }
+    
+    // TODO: Consider encryption for this field as per P10 implementation notes
+    public string? BankAccountNumber { get; set; }
+    
+    public bool BankAccountVerified { get; set; } = false;
+
+    /// <summary>Running total of tradie-initiated cancellations (P6-02). Used to flag repeated cancellers.</summary>
+    public int CancellationCount { get; set; } = 0;
 }

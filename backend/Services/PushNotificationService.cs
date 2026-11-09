@@ -9,20 +9,29 @@ namespace FixoApi.Services;
 public class PushNotificationService
 {
     private readonly ILogger<PushNotificationService> _logger;
+    private readonly FixoApi.Options.BrandOptions _brand;
 
-    public PushNotificationService(ILogger<PushNotificationService> logger)
+    public PushNotificationService(ILogger<PushNotificationService> logger, Microsoft.Extensions.Options.IOptions<FixoApi.Options.BrandOptions> brandOptions)
     {
         _logger = logger;
+        _brand = brandOptions.Value;
     }
 
     /// <summary>Send a push notification to a single device token.</summary>
     public async Task SendAsync(string deviceToken, string title, string body,
         Dictionary<string, string>? data = null)
     {
+        var finalTitle = string.IsNullOrWhiteSpace(title) ? _brand.AppName : title;
+        // Spec implies we might want to just prepend or use the AppName. I will prepend.
+        if (!finalTitle.Contains(_brand.AppName))
+        {
+            finalTitle = $"{_brand.AppName}: {finalTitle}";
+        }
+
         var message = new Message
         {
             Fid = deviceToken,
-            Notification = new Notification { Title = title, Body = body },
+            Notification = new Notification { Title = finalTitle, Body = body },
             Data = data ?? new Dictionary<string, string>(),
             Apns = new ApnsConfig
             {
@@ -67,10 +76,16 @@ public class PushNotificationService
         var tokens = deviceTokens.ToList();
         if (tokens.Count == 0) return Array.Empty<string>();
 
+        var finalTitle = string.IsNullOrWhiteSpace(title) ? _brand.AppName : title;
+        if (!finalTitle.Contains(_brand.AppName))
+        {
+            finalTitle = $"{_brand.AppName}: {finalTitle}";
+        }
+
         var message = new MulticastMessage
         {
             Fids = tokens,
-            Notification = new Notification { Title = title, Body = body },
+            Notification = new Notification { Title = finalTitle, Body = body },
             Data = data ?? new Dictionary<string, string>(),
             Apns = new ApnsConfig { Aps = new Aps { Sound = "default" } },
             Android = new AndroidConfig { Priority = Priority.High }

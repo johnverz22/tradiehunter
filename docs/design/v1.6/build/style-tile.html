@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 Style Tile</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .tilepage { width: 1080px; background: var(--paper); padding: 48px; font-family: var(--fb); }
+  .st-h { font: 700 30px var(--fd); color: var(--navy); }
+  .st-sub { font: 400 14px var(--fb); color: var(--text-soft); margin: 6px 0 32px; }
+  .st-sec { font: 600 13px var(--fb); letter-spacing: .09em; text-transform: uppercase; color: rgba(25,57,87,.6); margin: 36px 0 14px; }
+  .swrow { display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 8px; align-items: stretch; }
+  .sw { height: 56px; border-radius: 10px; border: 1px solid var(--line); display: flex; align-items: flex-end; padding: 5px 8px; font: 500 10px var(--fm); color: var(--text); }
+  .swname { font: 600 13px var(--fb); display: flex; flex-direction: column; justify-content: center; }
+  .swname small { font: 500 10px var(--fm); color: var(--text-soft); }
+  .src { height: 56px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font: 600 11px var(--fm); }
+  .grow-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .gsw { height: 92px; border-radius: 14px; border: 1px solid var(--line); padding: 10px; display: flex; align-items: flex-end; font: 600 11px var(--fm); color: var(--navy); }
+  .specrow { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); }
+  .specrow > div { padding: 24px 28px; }
+  .specrow .lt { background: var(--paper); } .specrow .dk { background: var(--paper-d); color: var(--ink-d); }
+  .shrow { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .rrow { display: flex; gap: 14px; align-items: flex-end; }
+  .rbox { background: rgba(60,117,170,.12); border: 1px solid var(--blue300); width: 84px; height: 84px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font: 500 10px var(--fm); color: var(--navy); }
+  .icgrid { display: grid; grid-template-columns: repeat(10, 56px); gap: 8px; }
+  .icgrid .cell { width: 56px; height: 56px; background: #fff; border: 1px solid var(--line); border-radius: 12px; display: grid; place-items: center; color: var(--navy); }
+  .icgrid svg { width: 24px; height: 24px; }
+  .illrow { display: flex; gap: 20px; }
+  .illrow .il { border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+</style></head>
+<body>
+<div class="tilepage" data-frame="style-tile">
+<div class="st-h">v1.7 Style Tile — TradieHunter</div>
+<div class="st-sub">Colour, type, depth and shape tokens. All values confirmed against <code>mobile/lib/theme/design_tokens.dart</code> (hue 209). No hues outside the six source colours.</div>
+<div class="st-sec">Source colours + tints over cream (6 / 12 / 20 / 32%)</div>
+<div class="swrow">
+<div class="swname">Source</div><div class="swname">6%<small>tint</small></div><div class="swname">12%<small>tint</small></div><div class="swname">20%<small>tonal</small></div><div class="swname">32%<small>accent</small></div>
+</div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#193957;color:#fff">NAVY #193957</div><div class="sw" style="background:#E9E9E5">#E9E9E5</div><div class="sw" style="background:#DBDEDC">#DBDEDC</div><div class="sw" style="background:#CACFD0">#CACFD0</div><div class="sw" style="background:#AFB8BE">#AFB8BE</div></div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#E38B29;color:#241300">AMBER #E38B29</div><div class="sw" style="background:#F5EEE2">#F5EEE2</div><div class="sw" style="background:#F4E7D6">#F4E7D6</div><div class="sw" style="background:#F2DFC7">#F2DFC7</div><div class="sw" style="background:#F0D2AF">#F0D2AF</div></div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#3C75AA;color:#fff">BLUE #3C75AA</div><div class="sw" style="background:#EBECEA">#EBECEA</div><div class="sw" style="background:#E0E5E6">#E0E5E6</div><div class="sw" style="background:#D1DBE0">#D1DBE0</div><div class="sw" style="background:#BACBD8">#BACBD8</div></div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#F6F4EE">CREAM #F6F4EE</div><div class="src" style="background:#FFFFFF;border:1px solid var(--line)">SURFACE #FFFFFF</div><div class="src" style="background:#3A7D5C;color:#fff">GREEN #3A7D5C</div><div class="src" style="background:#B23A2E;color:#fff">RED #B23A2E</div><div class="src" style="background:#B96A18;color:#fff">AMBER-DK #B96A18</div></div>
+<div class="st-sec">Tints over dark surface #14181B</div>
+<div class="swrow">
+<div class="swname">Source</div><div class="swname">6%</div><div class="swname">12%</div><div class="swname">20%</div><div class="swname">32%</div>
+</div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#193957;color:#fff">NAVY</div><div class="sw" style="background:#141A1F;color:#9AA4AC">#141A1F</div><div class="sw" style="background:#151C22;color:#9AA4AC">#151C22</div><div class="sw" style="background:#151F27;color:#9AA4AC">#151F27</div><div class="sw" style="background:#16232E;color:#ECEAE3">#16232E</div></div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#E38B29;color:#241300">AMBER</div><div class="sw" style="background:#201F1C;color:#9AA4AC">#201F1C</div><div class="sw" style="background:#2D261D;color:#ECEAE3">#2D261D</div><div class="sw" style="background:#3D2F1E;color:#ECEAE3">#3D2F1E</div><div class="sw" style="background:#563D1F;color:#ECEAE3">#563D1F</div></div>
+<div class="swrow" style="margin-top:8px"><div class="src" style="background:#3C75AA;color:#fff">BLUE</div><div class="sw" style="background:#161E24;color:#9AA4AC">#161E24</div><div class="sw" style="background:#19232C;color:#ECEAE3">#19232C</div><div class="sw" style="background:#1C2B38;color:#ECEAE3">#1C2B38</div><div class="sw" style="background:#213649;color:#ECEAE3">#213649</div></div>
+<div class="st-sec">Named gradients</div>
+<div class="grow-grid">
+<div class="gsw" style="background:linear-gradient(135deg,#193957,#3C75AA);color:#fff">heroGradient · 135°<br/>navy→blue</div>
+<div class="gsw" style="background:linear-gradient(180deg,var(--paper),var(--paper-warm))">warmBg · ↓<br/>cream→peach</div>
+<div class="gsw" style="background:linear-gradient(180deg,#E0E5E6,#F6F4EE)">coolBg · ↓<br/>blue12%→cream</div>
+<div class="gsw" style="background:linear-gradient(180deg,#EB9A3F,#E38B29);color:#241300">ctaSheen · ↓<br/>primary CTA</div>
+</div>
+<div class="st-sec">Typography — 8 roles · light / dark</div>
+<div class="specrow">
+<div class="lt stack8">
+<div style="font:700 40px var(--fd);font-variant-numeric:tabular-nums;letter-spacing:-.01em">$1,246.80 <span class="cap" style="color:var(--text-soft)">Hero numbers · SG 40/700</span></div>
+<div class="h1">Display heading <span class="cap" style="color:var(--text-soft)">SG 28/700</span></div>
+<div class="h2">Section heading <span class="cap" style="color:var(--text-soft)">SG 20/600</span></div>
+<div class="title">Card title — Leaking kitchen tap <span class="cap" style="color:var(--text-soft)">Plex 18/600</span></div>
+<div class="price">$171.00 <span class="cap" style="color:var(--text-soft)">Price · Plex 24/700 tabular</span></div>
+<div class="body">Body text — job descriptions and messages. <span class="cap" style="color:var(--text-soft)">Plex 16/400</span></div>
+<div class="sec">Secondary — metadata, distance, timestamps. <span class="cap">Plex 14/400</span></div>
+<div class="cap" style="color:var(--text-soft)">CAPTION · LABEL — 12/500 minimum <span class="cap">Plex 12/500</span></div>
+<div class="mono">FIXO-2481-JB <span class="cap" style="font-family:var(--fb);color:var(--text-soft)">Mono · reference codes only</span></div>
+</div>
+<div class="dk stack8">
+<div style="font:700 40px var(--fd);font-variant-numeric:tabular-nums;letter-spacing:-.01em">$1,246.80</div>
+<div style="font:700 28px var(--fd)">Display heading</div>
+<div style="font:600 20px var(--fd)">Section heading</div>
+<div style="font:600 18px/1.3 var(--fb)">Card title — Leaking kitchen tap</div>
+<div style="font:700 24px var(--fb);font-variant-numeric:tabular-nums">$171.00</div>
+<div style="font:400 16px var(--fb)">Body text — job descriptions and messages.</div>
+<div style="font:400 14px var(--fb);color:var(--ink-soft-d)">Secondary — metadata, distance, timestamps.</div>
+<div style="font:500 12px var(--fb);color:var(--ink-soft-d)">CAPTION · LABEL — 12/500 minimum</div>
+<div class="mono" style="color:var(--blue300)">FIXO-2481-JB</div>
+</div>
+</div>
+<div class="st-sec">Shadows</div>
+<div class="shrow">
+<div class="card" style="height:88px"><div class="cap" style="color:var(--text-soft)">Card — two-layer<br/>0 1 2 + 0 8 24 · navy 6–8%</div></div>
+<div class="card" style="height:88px;border-radius:28px;box-shadow:0 -12px 32px rgba(25,57,87,.12)"><div class="cap" style="color:var(--text-soft)">Sheet<br/>0 -12 32 · navy 12%</div></div>
+<div class="card" style="height:88px;border:none;background:linear-gradient(180deg,#EB9A3F,#E38B29);box-shadow:0 6px 16px rgba(227,139,41,.25);color:#241300"><div class="cap" style="color:#241300">CTA<br/>0 6 16 · amber 25%</div></div>
+</div>
+<div class="st-sec">Radius reference (spec tokens: ctl 14, tile 16, card 20, sheet 28, pill 999; 4/12 component-level)</div>
+<div class="rrow">
+<div class="rbox" style="border-radius:4px">4<small style="display:block;opacity:.6">inner</small></div>
+<div class="rbox" style="border-radius:12px">12<small style="display:block;opacity:.6">cell/otp</small></div>
+<div class="rbox" style="border-radius:14px">14<small style="display:block;opacity:.6">r-ctl</small></div>
+<div class="rbox" style="border-radius:16px">16<small style="display:block;opacity:.6">r-tile</small></div>
+<div class="rbox" style="border-radius:20px">20<small style="display:block;opacity:.6">r-card</small></div>
+<div class="rbox" style="border-radius:28px">28<small style="display:block;opacity:.6">r-sheet</small></div>
+<div class="rbox" style="border-radius:999px;width:120px">pill<small style="display:block;opacity:.6">r-pill</small></div>
+</div>
+<div class="st-sec">Icon sample — rounded duotone 24px · navy stroke + single accent</div>
+<div class="icgrid">
+<div class="cell"><svg><use href="#i-home"></use></svg></div><div class="cell"><svg><use href="#i-jobs"></use></svg></div>
+<div class="cell"><svg><use href="#i-msg"></use></svg></div><div class="cell"><svg><use href="#i-user"></use></svg></div>
+<div class="cell"><svg><use href="#i-nav"></use></svg></div><div class="cell"><svg><use href="#i-pin"></use></svg></div>
+<div class="cell"><svg><use href="#i-clock"></use></svg></div><div class="cell"><svg><use href="#i-check-c"></use></svg></div>
+<div class="cell"><svg><use href="#i-alert"></use></svg></div><div class="cell"><svg><use href="#i-call"></use></svg></div>
+<div class="cell"><svg><use href="#i-cam"></use></svg></div><div class="cell"><svg><use href="#i-cal"></use></svg></div>
+<div class="cell"><svg><use href="#i-card"></use></svg></div><div class="cell"><svg><use href="#i-doc"></use></svg></div>
+<div class="cell"><svg><use href="#i-wrench"></use></svg></div><div class="cell"><svg><use href="#i-shield"></use></svg></div>
+<div class="cell"><svg><use href="#i-star"></use></svg></div><div class="cell"><svg><use href="#i-bell"></use></svg></div>
+<div class="cell"><svg><use href="#i-upload"></use></svg></div><div class="cell"><svg><use href="#i-wallet"></use></svg></div>
+</div>
+<div class="st-sec">Spot illustration samples — IL-01, IL-02 (200px)</div>
+<div class="illrow">
+<img alt="IL-01" class="il" height="200" src="../assets/il-01-light.svg" width="200"/>
+<img alt="IL-02" class="il" height="200" src="../assets/il-02-light.svg" width="200"/>
+</div>
+</div>
+<!-- Inline SVG icon sprite: rounded-duotone, 2px stroke, single accent fill.
+     Paste inside <body> of each frame file. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="9.5" y="14" width="5" height="6.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-jobs" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 7V5.8A1.8 1.8 0 0 1 10.3 4h3.4a1.8 1.8 0 0 1 1.8 1.8V7" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="11" width="4" height="3.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="12.8" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="16.6" cy="10.5" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-call" viewBox="0 0 24 24"><path d="M7.2 4.6 9 3.9c.6-.2 1.3.1 1.6.6l1.3 2.3c.3.5.2 1.2-.3 1.6l-1.1.9a13.2 13.2 0 0 0 5.2 5.2l.9-1.1c.4-.5 1.1-.6 1.6-.3l2.3 1.3c.5.3.8 1 .6 1.6l-.7 1.8c-.2.6-.9 1-1.5.9C10.6 18.6 5.4 13.4 4.3 6.1c-.1-.6.3-1.3.9-1.5Z" fill="#3C75AA"/><path d="M14 4.5a5.5 5.5 0 0 1 5.5 5.5M14.5 8a2 2 0 0 1 2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-nav" viewBox="0 0 24 24"><path d="M12 3.5 19.5 20 12 16.5 4.5 20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.5 19.5 20 12 16.5Z" fill="#E38B29"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#E38B29"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4.5 4.5 8.5-9.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12.4 3 3 5.3-6" fill="none" stroke="#3A7D5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-excl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.8v12.4c0 .8.9 1.3 1.6.9l9.6-6.2a1.05 1.05 0 0 0 0-1.8L9.6 4.9c-.7-.4-1.6.1-1.6.9Z" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.3l-4.8 2.6.9-5.4-3.9-3.8 5.4-.8Z" fill="#E38B29"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 19 6v5.5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.8 11.8 2.3 2.3 4.2-4.7" fill="none" stroke="#3A7D5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="#3C75AA" stroke-width="2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4.5 11.5 20 4l-7.5 15.5-2.2-6.3Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="13" width="3.5" height="3" rx="0.8" fill="#E38B29"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 9.5h17" stroke="currentColor" stroke-width="2"/><rect x="7" y="13.5" width="5" height="2.2" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3.5V8h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12.5h6M9 16h4" stroke="#3C75AA" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5v-11M7.5 8.5 12 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M20.2 6.9a5 5 0 0 1-6.6 6.6L7 20.1a2.1 2.1 0 0 1-3-3l6.6-6.6a5 5 0 0 1 6.6-6.6l-2.8 2.8.9 2.5 2.5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6.2" cy="17.8" r="1" fill="#E38B29"/></symbol>
+<symbol id="i-brush" viewBox="0 0 24 24"><path d="M18 3l3 3-9.5 9.5c-.8.8-1.8 1.3-2.9 1.4L4 18l1.1-4.6c.1-1.1.6-2.1 1.4-2.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" stroke="currentColor" stroke-width="2"/><path d="M4 18c0 1.7 1.3 3 3 3 1.2 0 2.2-.7 2.7-1.8" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 2L5 12h4l-3 6h12l-3-6h4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 18v4" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-hammer" viewBox="0 0 24 24"><path d="M15 4l5 3-2 3-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 6l-9.5 9.5a2.1 2.1 0 0 0 3 3L17 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="17" y="5" width="4" height="3" rx="0.5" fill="var(--amber)"/></symbol>
+<!-- Deprecated alias: prefer #i-home -->
+<symbol id="i-house" viewBox="0 0 24 24"><use href="#i-home"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0v4l1.5 3h-15L6 14Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 19.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="5.5" r="2.4" fill="#E38B29"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M18 6l-1.8 1.8M7.8 16.2 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.4a2.6 2.6 0 1 1 3.7 2.9c-.8.4-1.2.8-1.2 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4.5H7A1.5 1.5 0 0 0 5.5 6v12A1.5 1.5 0 0 0 7 19.5h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 12h10M17 8.5 20.5 12 17 15.5" fill="none" stroke="#B23A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="m15.5 4.5 4 4L8.5 19.5l-4.7.7.7-4.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="#E38B29" stroke-width="2"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 12.5h5.5v3H15a1.5 1.5 0 0 1 0-3Z" fill="#E38B29"/><path d="M3.5 9V7.5A1.5 1.5 0 0 1 5 6h11" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 15.5h-1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9.8" r="1.8" fill="#3C75AA"/><path d="m4.5 17.5 4.5-4.5 3.5 3.5 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 5c4-1.8 7 1.8 12 0v9c-5 1.8-8-1.8-12 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="1.4" fill="#E38B29"/></symbol>
+</defs>
+</svg>
+
+</body></html>

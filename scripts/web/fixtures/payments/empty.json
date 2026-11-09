@@ -1,0 +1,21 @@
+{
+  "_comment": "Nothing awaiting review: the queue must show its empty state, no pagination and no action buttons.",
+  "route": "/payments",
+  "prefetch": [
+    {
+      "key": ["admin", "payments", "pending", { "page": 1, "pageSize": 20 }],
+      "url": "/admin/payments/pending",
+      "body": { "items": [], "totalCount": 0, "page": 1, "pageSize": 20, "totalPages": 0 }
+    }
+  ],
+  "expect": [
+    { "label": "empty state text", "needle": "No payments awaiting review." },
+    { "label": "awaiting-review count is 0", "needle": ">0</strong> awaiting review" },
+    { "label": "loading row is gone", "needle": "Loading…", "present": false },
+    { "label": "no Verify buttons", "needle": ">Verify</button>", "present": false },
+    { "label": "no Reject buttons", "needle": ">Reject</button>", "present": false },
+    { "label": "no pagination summary", "needle": "Showing ", "present": false },
+    { "label": "no page buttons", "needle": "aria-label=\"Next page\"", "present": false },
+    { "label": "no reject-reason field", "needle": "Reason for rejection", "present": false }
+  ]
+}

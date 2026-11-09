@@ -1,0 +1,71 @@
+{
+  "_comment": "User detail page: full profile, trade info, ratings, flags, recent jobs, and admin moderation controls.",
+  "page": "features/users/pages/UserDetailPage",
+  "route": "/users/u-102",
+  "path": "/users/:id",
+  "prefetch": [
+    {
+      "key": ["admin", "users", "u-102"],
+      "url": "/admin/users/u-102",
+      "body": {
+        "id": "u-102",
+        "fullName": "Bob Vance",
+        "email": "bob@refrigeration.nz",
+        "role": "Tradie",
+        "isActive": true,
+        "isVerified": true,
+        "createdAtUtc": "2026-10-18T09:00:00Z",
+        "jobCount": 12,
+        "tradeType": "Refrigeration",
+        "businessName": "Vance Refrigeration Ltd",
+        "averageRating": 4.9,
+        "reviewCount": 15,
+        "flags": [
+          {
+            "id": 1,
+            "userId": "u-102",
+            "type": "RepeatCanceller",
+            "counter": 2,
+            "thresholdHit": false,
+            "createdAtUtc": "2026-10-20T10:00:00Z",
+            "note": "Cancelled 2 jobs late",
+            "resolved": false
+          }
+        ],
+        "recentJobs": [
+          {
+            "id": 55,
+            "title": "Coolroom service",
+            "category": "Refrigeration",
+            "status": "Completed",
+            "homeownerName": "Pam Beesly",
+            "createdAtUtc": "2026-10-22T08:00:00Z",
+            "updatedAtUtc": "2026-10-22T14:00:00Z"
+          }
+        ],
+        "recentReviews": [
+          {
+            "id": 10,
+            "jobId": 55,
+            "rating": 5,
+            "comment": "Great work on the coolroom!",
+            "reviewerName": "Pam Beesly",
+            "createdAtUtc": "2026-10-22T16:00:00Z"
+          }
+        ]
+      }
+    }
+  ],
+  "expect": [
+    { "label": "breadcrumbs", "needle": "Users" },
+    { "label": "full name heading", "needle": "Bob Vance" },
+    { "label": "business name", "needle": "Vance Refrigeration Ltd" },
+    { "label": "trade type", "needle": "Refrigeration" },
+    { "label": "email", "needle": "bob@refrigeration.nz" },
+    { "label": "rating value", "needle": "4.9" },
+    { "label": "flag type", "needle": "RepeatCanceller" },
+    { "label": "recent job title", "needle": "Coolroom service" },
+    { "label": "recent job homeowner", "needle": "Pam Beesly" },
+    { "label": "formatted job id", "needle": "JOB-00055" }
+  ]
+}

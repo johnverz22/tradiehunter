@@ -239,7 +239,7 @@ namespace FixoApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("ScheduledDateUtc")
+                    b.Property<DateTime?>("ScheduledStart")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ScheduledTimeSlot")

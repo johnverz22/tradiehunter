@@ -1,0 +1,80 @@
+{
+  "_comment": "Dispute detail page: displays flag reason, homeowner/tradie cards, evidence files/notes, time logs, chat history, and refund action buttons.",
+  "page": "features/disputes/pages/DisputeDetailPage",
+  "route": "/disputes/310",
+  "path": "/disputes/:jobId",
+  "prefetch": [
+    {
+      "key": ["admin", "disputes", 310],
+      "url": "/admin/disputes/310",
+      "body": {
+        "jobId": 310,
+        "jobTitle": "Blocked drain in driveway",
+        "homeownerName": "Stanley Hudson",
+        "tradieName": "Dwight Schrute",
+        "status": "Disputed",
+        "disputeStatus": "Open",
+        "flagReason": "Tradie damaged driveway paver",
+        "flaggedAtUtc": "2026-10-25T11:00:00Z",
+        "evidence": [
+          {
+            "id": 1,
+            "submittedBy": "Stanley Hudson",
+            "type": "Text",
+            "textContent": "Cracked paver right by the access pit.",
+            "createdAtUtc": "2026-10-25T11:30:00Z"
+          }
+        ],
+        "timeLogs": [
+          {
+            "id": 1,
+            "jobId": 310,
+            "tradieUserId": "u-dwight",
+            "checkInAtUtc": "2026-10-25T10:00:00Z",
+            "checkOutAtUtc": "2026-10-25T11:00:00Z"
+          }
+        ],
+        "chatTranscript": [
+          {
+            "id": "m1",
+            "senderId": "u-dwight",
+            "senderName": "Dwight Schrute",
+            "senderRole": "Tradie",
+            "content": "I was very careful around the pavers.",
+            "sentAtUtc": "2026-10-25T11:15:00Z"
+          }
+        ],
+        "homeownerDetail": {
+          "id": "u-stanley",
+          "fullName": "Stanley Hudson",
+          "email": "stanley@dunder.nz",
+          "role": "Homeowner",
+          "isActive": true,
+          "isVerified": true,
+          "createdAtUtc": "2026-10-01T08:00:00Z",
+          "jobCount": 5
+        },
+        "tradieDetail": {
+          "id": "u-dwight",
+          "fullName": "Dwight Schrute",
+          "email": "dwight@schrute.nz",
+          "role": "Tradie",
+          "isActive": true,
+          "isVerified": true,
+          "createdAtUtc": "2026-10-01T08:00:00Z",
+          "jobCount": 18
+        }
+      }
+    }
+  ],
+  "expect": [
+    { "label": "job title heading", "needle": "Blocked drain in driveway" },
+    { "label": "flag reason text", "needle": "Tradie damaged driveway paver" },
+    { "label": "homeowner party", "needle": "Stanley Hudson" },
+    { "label": "tradie party", "needle": "Dwight Schrute" },
+    { "label": "evidence text", "needle": "Cracked paver right by the access pit." },
+    { "label": "chat content", "needle": "I was very careful around the pavers." },
+    { "label": "full refund action button", "needle": "Full Refund" },
+    { "label": "partial refund action button", "needle": "Partial Refund" }
+  ]
+}

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><title>v1.7 frames — iPad</title>
+<link href="../fonts/fonts.css" rel="stylesheet"/>
+<link href="kit.css" rel="stylesheet"/>
+<style>
+  .pg { background:#DCD8CF; padding:40px; display:flex; flex-wrap:wrap; gap:40px; font-family:var(--fb); }
+  .gradring { padding:2px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue)); }
+  .listitem { padding:14px 16px;border-bottom:1px solid var(--line); }
+  .listitem.sel { background:rgba(60,117,170,.10);border-left:3px solid var(--blue); }
+</style></head>
+<body>
+<div class="pg">
+<!-- IPAD HOMEOWNER DASHBOARD — master-detail, ≥744pt -->
+<div class="frame w834" data-frame="IPAD-dashboard-light" style="flex-direction:row">
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div style="background:var(--navy);color:#fff;padding:16px 16px 14px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Welcome back</div>
+<div style="font:700 22px var(--fd)">Sarah</div>
+</div>
+<div class="scroll">
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">Leaking kitchen tap</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Review</span></div><div class="sec" style="margin-top:4px">$171.00 · Today 2:00 pm</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Install two power points</b><span class="pill pill-waiting"><svg><use href="#i-excl"></use></svg>Payment due</span></div><div class="sec" style="margin-top:4px">$128.25 · Fri 9:00 am</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Deck repairs</b><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Active</span></div><div class="sec" style="margin-top:4px">$342.00 · Mon 10:30 am</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Garden tidy-up</b><span class="pill pill-done"><svg><use href="#i-check"></use></svg>Done</span></div><div class="sec" style="margin-top:4px">$205.00 · Completed 12 Oct</div></div>
+</div>
+<div class="navbar" style="border-top:1px solid var(--line)"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewbox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="status-strip" style="margin:0 24px;border-radius:16px"><div class="spread"><span class="pill pill-active"><svg><use href="#i-play"></use></svg>In progress</span><span style="font:500 12px var(--fb);opacity:.85">FIXO-2481-JB</span></div>
+<div class="cpb" style="margin-top:10px"><div class="track"><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg on" style="background:var(--surface)"></div><div class="seg" style="background:rgba(255,255,255,.25)"></div></div><div class="cap" style="color:#fff">Step 3 of 4 <span class="soft" style="color:rgba(255,255,255,.75)">· In progress</span></div></div></div>
+<div class="scroll" style="padding:16px 24px">
+<div class="maxw stack16">
+<div class="h1" style="font-size:24px">Leaking kitchen tap</div>
+<div class="card"><div class="row"><div class="av" style="width:52px;height:52px;font-size:19px;background:#3C75AA;color:#fff">MT<div class="vbdg"><svg><use href="#i-check" style="stroke:#fff"></use></svg></div></div>
+<div style="flex:1"><div class="title">Mike Te Rangi</div><div class="sec">Plumber · 4.8 ★ (126)</div></div></div>
+<div class="btnrow" style="margin-top:14px"><div class="btn btn-tonal btn-tile"><svg><use href="#i-msg"></use></svg>Message</div><div class="btn btn-tonal btn-tile"><svg><use href="#i-call"></use></svg>Call</div><div class="btn btn-tonal btn-tile"><svg><use href="#i-nav"></use></svg>Navigate</div></div></div>
+<div class="card"><div class="grid2"><div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Scheduled</div><b style="font-size:15px">Today, 2:00 pm</b></div>
+<div class="tile" style="border:none;background:var(--paper);padding:12px"><div class="cap" style="color:var(--text-soft)">Duration</div><b style="font-size:15px">~2 hours</b></div></div>
+<div class="row" style="margin-top:12px"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">14 Crummer Rd, Grey Lynn</span></div>
+<div class="spread" style="margin-top:10px"><span class="sec">Total</span><span class="price">$171.00</span></div></div>
+<div class="btn btn-primary" style="max-width:320px">Review completion</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- IPAD MESSAGES master-detail -->
+<div class="frame w834" data-frame="IPAD-messages-light" style="flex-direction:row"><div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div class="appbar"><div class="ttl" style="font-size:22px">Messages</div></div>
+<div class="scroll">
+<div class="listitem sel"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div><div class="tx" style="flex:1"><div class="spread"><b>Mike Te Rangi</b><span class="cap" style="color:var(--text-soft)">1:47 pm</span></div><div class="pv sec" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">No worries, I'll have a spare…</div></div><div class="udot"></div></div></div>
+<div class="listitem"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px">JK</div><div class="tx" style="flex:1"><div class="spread"><b>Jess Kaur</b><span class="cap" style="color:var(--text-soft)">11:20 am</span></div><div class="pv sec">Certificate sent through</div></div><div class="udot"></div></div></div>
+<div class="listitem"><div class="row"><div class="av" style="width:40px;height:40px;font-size:14px">RW</div><div class="tx" style="flex:1"><div class="spread"><b>Rob Walker</b><span class="cap" style="color:var(--text-soft)">Tue</span></div><div class="pv sec">Picking up timber Monday</div></div></div></div>
+</div>
+<div class="navbar"><div class="tab"><span class="ind"><svg><use href="#i-home"></use></svg></span>Home</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab slot"></div><div class="tab on"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div><div class="fab"><svg viewbox="0 0 24 24"><use href="#i-plus"></use></svg></div></div>
+</div>
+<div class="detail-pane bpdots">
+<div class="appbar" style="border-bottom:1px solid var(--line)"><div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div style="flex:1"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="scroll" style="display:flex;flex-direction:column">
+<div class="maxw" style="display:flex;flex-direction:column;gap:8px;padding:16px 24px;width:100%">
+<div class="pill pill-waiting" style="align-self:center;background:rgba(60,117,170,.12)"><svg><use href="#i-clock"></use></svg>Step 3 of 4 · In progress</div>
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+</div>
+<div class="maxw" style="width:100%;padding:0 24px 6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer maxw" style="width:100%"><div class="ibtn cam"><svg height="24" width="24"><use href="#i-cam"></use></svg></div><div class="field2">Message…</div><div class="ibtn send"><svg height="22" width="22"><use href="#i-send"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+</div>
+</div>
+<!-- IPAD POST A JOB — 640 centred -->
+<div class="frame w834" data-frame="IPAD-postjob-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar maxw" style="width:100%"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div><div class="ttl">Post a job</div><div class="grow"></div></div>
+<div class="scroll"><div class="maxw pad stack16">
+<div class="field"><label>Job title</label><div class="input">Leaking kitchen tap</div></div>
+<div class="field"><label>Description</label><div class="input" style="height:110px;align-items:flex-start;padding-top:14px;color:var(--text-soft)">Mixer tap drips constantly, gets worse overnight…</div></div>
+<div class="field"><label>Photos</label><div class="row"><div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div><div class="phototile"><svg height="20" width="20"><use href="#i-photo"></use></svg></div><div class="phototile" style="background:var(--surface);border:1.5px dashed rgba(60,117,170,.45)"><svg height="20" width="20"><use href="#i-plus"></use></svg></div></div></div>
+<div class="grid2">
+<div class="field"><label>Hourly rate</label><div class="input">$85.50</div></div>
+<div class="field"><label>Est. hours</label><div class="input">2</div></div>
+</div>
+<div class="tile tinted"><div class="spread"><span class="sec">Estimated total</span><span style="font:700 28px var(--fb);color:var(--text-brand);font-variant-numeric:tabular-nums">$171.00</span></div></div>
+<div class="field"><label>Urgency</label><div class="seg48"><div class="o on">Today</div><div class="o">This week</div><div class="o">Flexible</div></div></div>
+</div></div>
+<div class="sticky"><div class="maxw" style="width:100%;padding:0 20px"><div class="btn btn-primary">Post job</div></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- IPAD CHAT — 640 column centred -->
+<div class="frame w834 bpdots" data-frame="IPAD-chat-light">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="appbar maxw" style="width:100%"><div class="back"><svg height="24" width="24"><use href="#i-back"></use></svg></div>
+<div class="av" style="width:40px;height:40px;font-size:14px;background:#3C75AA;color:#fff">MT</div>
+<div style="flex:1"><div style="font:600 16px var(--fb)">Mike Te Rangi</div><div class="cap" style="color:var(--text-soft)">Leaking kitchen tap</div></div>
+<div class="ico-btn"><svg height="22" width="22"><use href="#i-call"></use></svg></div><div class="ico-btn"><svg height="22" width="22"><use href="#i-more"></use></svg></div></div>
+<div class="scroll" style="display:flex;flex-direction:column">
+<div class="maxw" style="display:flex;flex-direction:column;gap:8px;padding:16px 24px;width:100%">
+<div class="pill pill-waiting" style="align-self:center;background:rgba(60,117,170,.12)"><svg><use href="#i-clock"></use></svg>Step 3 of 4 · In progress</div>
+<div class="bubble recv">Hi Sarah, I'm on my way — about 15 minutes out.</div>
+<div class="bubble sent">Great, thanks! The tap's in the kitchen under the window.</div>
+<div class="bubble recv">No worries. If it's the cartridge I'll have a spare in the ute.</div>
+<div class="bubble sent">Perfect, see you soon</div>
+</div>
+</div>
+<div class="maxw" style="width:100%;padding:0 24px 6px"><div class="faderow"><span class="chip">On my way</span><span class="chip">Running late</span><span class="chip">All done</span><span class="chip">Need anything?</span></div></div>
+<div class="composer maxw" style="width:100%"><div class="ibtn cam"><svg height="24" width="24"><use href="#i-cam"></use></svg></div><div class="field2">Message…</div><div class="ibtn send"><svg height="22" width="22"><use href="#i-send"></use></svg></div></div>
+<div class="homebar"><i></i></div>
+</div>
+<!-- IPAD LEFT RAIL ≥1024pt -->
+<div class="frame w834" data-frame="IPAD-rail-light" style="flex-direction:row">
+<div class="rail">
+<div class="tab on"><svg><use href="#i-home"></use></svg>Home</div>
+<div class="tab"><svg><use href="#i-jobs"></use></svg>Jobs</div>
+<div class="tab"><svg><use href="#i-plus"></use></svg>Post job</div>
+<div class="tab"><svg><use href="#i-msg"></use></svg>Messages</div>
+<div class="tab"><svg><use href="#i-user"></use></svg>Profile</div>
+</div>
+<div class="md" style="flex:1">
+<div class="list-pane" style="border-right:1px solid var(--line)">
+<div style="background:var(--navy);color:#fff;padding:16px 16px 14px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Welcome back</div>
+<div style="font:700 22px var(--fd)">Sarah</div>
+</div>
+<div class="scroll">
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">Leaking kitchen tap</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Review</span></div><div class="sec" style="margin-top:4px">$171.00 · Today</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Install two power points</b><span class="pill pill-action"><svg><use href="#i-excl"></use></svg>Pay now</span></div><div class="sec" style="margin-top:4px">$128.25 · Fri</div></div>
+</div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="pad center" style="flex:1;justify-content:center">
+<div class="av" style="width:72px;height:72px;background:rgba(60,117,170,.12)"><svg height="30" style="color:var(--blue)" width="30"><use href="#i-jobs"></use></svg></div>
+<div class="h2" style="margin-top:16px">Select a job to view details</div>
+<div class="sec" style="margin-top:8px">Choose a job from the list on the left.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- IPAD TRADIE DASHBOARD -->
+<div class="frame w834" data-frame="IPAD-tradie-light" style="flex-direction:row">
+<div class="md" style="flex:1">
+<div class="list-pane">
+<div style="background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:16px">
+<div class="cap" style="color:rgba(255,255,255,.75)">Earned this week (net)</div>
+<div style="font:700 30px var(--fd);font-variant-numeric:tabular-nums">$1,246.80</div>
+</div>
+<div class="scroll">
+<div class="eyebrow" style="padding:12px 16px 6px">New leads</div>
+<div class="listitem sel"><div class="spread"><b style="font-size:15px">$171.00</b><span class="urg high">HIGH</span></div><div class="sec" style="margin-top:4px">Leaking kitchen tap — Grey Lynn</div><div class="cap" style="color:var(--accent-text);font-weight:700;margin-top:4px">04:12 left</div></div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">$256.50</b><span class="urg low">FLEXIBLE</span></div><div class="sec" style="margin-top:4px">Replace vanity mixer — Ponsonby</div><div class="cap" style="color:var(--accent-text);font-weight:700;margin-top:4px">09:57 left</div></div>
+<div class="eyebrow" style="padding:14px 16px 6px">Today</div>
+<div class="listitem"><div class="spread"><b style="font-size:15px">Deck repairs</b><span class="pill pill-active"><svg><use href="#i-play"></use></svg>Active</span></div><div class="sec" style="margin-top:4px">$342.00 · 2:00 pm</div></div>
+</div>
+<div class="navbar"><div class="tab on"><span class="ind"><svg><use href="#i-home"></use></svg></span>Dashboard</div><div class="tab"><span class="ind"><svg><use href="#i-jobs"></use></svg></span>Jobs</div><div class="tab"><span class="ind"><svg><use href="#i-msg"></use></svg></span>Messages</div><div class="tab"><span class="ind"><svg><use href="#i-user"></use></svg></span>Profile</div></div>
+</div>
+<div class="detail-pane">
+<div class="statusbar"><span>9:41</span><span class="si"><svg height="12" viewbox="0 0 18 12" width="18"><rect fill="currentColor" height="5" rx="1" width="3" x="0" y="7"></rect><rect fill="currentColor" height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect fill="currentColor" height="10" rx="1" width="3" x="10" y="2"></rect><rect fill="currentColor" height="12" opacity=".35" rx="1" width="3" x="15" y="0"></rect></svg></span></div>
+<div class="scroll" style="padding:16px 24px"><div class="maxw stack16">
+<div class="row"><div class="title" style="flex:1;font-size:20px">Leaking kitchen tap</div><span class="chip">Plumbing</span></div>
+<div class="countdown"><div class="row" style="justify-content:space-between;margin-bottom:5px"><b style="font-size:14px">Respond within</b><span class="cdown-t urgent" style="font-size:16px">04:12</span></div><div class="track t8"><div class="fill urgent" style="width:62%"></div></div></div>
+<div class="card"><div class="spread"><span class="sec">Estimated</span><b style="font-size:16px">2 h × $85.50/h</b></div>
+<div class="spread" style="margin-top:8px"><span class="sec">Total</span><span class="price">$171.00</span></div>
+<div class="divider" style="margin:12px 0"></div>
+<div class="row"><svg height="18" width="18"><use href="#i-pin"></use></svg><span class="sec">Grey Lynn, Auckland — exact address after accept</span></div>
+<div class="row" style="margin-top:8px"><svg height="18" width="18"><use href="#i-cal"></use></svg><span class="sec">Today, 2:00 pm · ~2 hours</span></div>
+<div class="body" style="font-size:15px;margin-top:12px">Mixer tap drips constantly, gets worse overnight. Cupboard underneath is damp.</div>
+<div class="row" style="margin-top:10px"><div class="phototile"><svg height="18" width="18"><use href="#i-photo"></use></svg></div><div class="phototile"><svg height="18" width="18"><use href="#i-photo"></use></svg></div></div></div>
+<div class="btnrow" style="max-width:480px"><div class="btn btn-secondary" style="flex:1;height:56px">Decline</div><div class="btn btn-primary" style="flex:2;height:56px">Accept job</div></div>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline SVG icon sprite: rounded-duotone, 2px stroke, single accent fill.
+     Paste inside <body> of each frame file. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="9.5" y="14" width="5" height="6.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-jobs" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 7V5.8A1.8 1.8 0 0 1 10.3 4h3.4a1.8 1.8 0 0 1 1.8 1.8V7" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="11" width="4" height="3.5" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="12.8" cy="10.5" r="1.2" fill="#E38B29"/><circle cx="16.6" cy="10.5" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/></symbol>
+<symbol id="i-call" viewBox="0 0 24 24"><path d="M7.2 4.6 9 3.9c.6-.2 1.3.1 1.6.6l1.3 2.3c.3.5.2 1.2-.3 1.6l-1.1.9a13.2 13.2 0 0 0 5.2 5.2l.9-1.1c.4-.5 1.1-.6 1.6-.3l2.3 1.3c.5.3.8 1 .6 1.6l-.7 1.8c-.2.6-.9 1-1.5.9C10.6 18.6 5.4 13.4 4.3 6.1c-.1-.6.3-1.3.9-1.5Z" fill="#3C75AA"/><path d="M14 4.5a5.5 5.5 0 0 1 5.5 5.5M14.5 8a2 2 0 0 1 2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-nav" viewBox="0 0 24 24"><path d="M12 3.5 19.5 20 12 16.5 4.5 20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.5 19.5 20 12 16.5Z" fill="#E38B29"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#E38B29"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4.5 4.5 8.5-9.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check-c" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12.4 3 3 5.3-6" fill="none" stroke="#3A7D5C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-excl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.8v12.4c0 .8.9 1.3 1.6.9l9.6-6.2a1.05 1.05 0 0 0 0-1.8L9.6 4.9c-.7-.4-1.6.1-1.6.9Z" fill="currentColor"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.3l-4.8 2.6.9-5.4-3.9-3.8 5.4-.8Z" fill="#E38B29"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 19 6v5.5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.8 11.8 2.3 2.3 4.2-4.7" fill="none" stroke="#3A7D5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="#3C75AA" stroke-width="2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M4.5 11.5 20 4l-7.5 15.5-2.2-6.3Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="13" width="3.5" height="3" rx="0.8" fill="#E38B29"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 9.5h17" stroke="currentColor" stroke-width="2"/><rect x="7" y="13.5" width="5" height="2.2" rx="1" fill="#E38B29"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h7L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3.5V8h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12.5h6M9 16h4" stroke="#3C75AA" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15.5v-11M7.5 8.5 12 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M20.2 6.9a5 5 0 0 1-6.6 6.6L7 20.1a2.1 2.1 0 0 1-3-3l6.6-6.6a5 5 0 0 1 6.6-6.6l-2.8 2.8.9 2.5 2.5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6.2" cy="17.8" r="1" fill="#E38B29"/></symbol>
+<symbol id="i-brush" viewBox="0 0 24 24"><path d="M18 3l3 3-9.5 9.5c-.8.8-1.8 1.3-2.9 1.4L4 18l1.1-4.6c.1-1.1.6-2.1 1.4-2.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 7l3 3" stroke="currentColor" stroke-width="2"/><path d="M4 18c0 1.7 1.3 3 3 3 1.2 0 2.2-.7 2.7-1.8" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 2L5 12h4l-3 6h12l-3-6h4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 18v4" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-hammer" viewBox="0 0 24 24"><path d="M15 4l5 3-2 3-5-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 6l-9.5 9.5a2.1 2.1 0 0 0 3 3L17 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="17" y="5" width="4" height="3" rx="0.5" fill="var(--amber)"/></symbol>
+<!-- Deprecated alias: prefer #i-home -->
+<symbol id="i-house" viewBox="0 0 24 24"><use href="#i-home"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 0 1 12 0v4l1.5 3h-15L6 14Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 19.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="18" cy="5.5" r="2.4" fill="#E38B29"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M18 6l-1.8 1.8M7.8 16.2 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.4a2.6 2.6 0 1 1 3.7 2.9c-.8.4-1.2.8-1.2 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.2" fill="#E38B29"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4.5H7A1.5 1.5 0 0 0 5.5 6v12A1.5 1.5 0 0 0 7 19.5h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 12h10M17 8.5 20.5 12 17 15.5" fill="none" stroke="#B23A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="m15.5 4.5 4 4L8.5 19.5l-4.7.7.7-4.7Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="#E38B29" stroke-width="2"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 12.5h5.5v3H15a1.5 1.5 0 0 1 0-3Z" fill="#E38B29"/><path d="M3.5 9V7.5A1.5 1.5 0 0 1 5 6h11" stroke="currentColor" stroke-width="2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 15.5h-1a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-photo" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9.8" r="1.8" fill="#3C75AA"/><path d="m4.5 17.5 4.5-4.5 3.5 3.5 3-3 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 5c4-1.8 7 1.8 12 0v9c-5 1.8-8-1.8-12 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="1.4" fill="#E38B29"/></symbol>
+</defs>
+</svg>
+
+</body></html>

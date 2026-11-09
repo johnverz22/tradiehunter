@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace FixoApi.Models;
 
 /// <summary>
-/// Photo attached to a job. Stored in MinIO under jobs/{jobId}/{guid}.{ext}.
+/// Photo attached to a job. Stored as a blob under jobs/{jobId}/{guid}.{ext}.
 /// </summary>
 public class JobPhoto
 {
@@ -16,10 +16,12 @@ public class JobPhoto
     [ForeignKey(nameof(JobId))]
     public Job Job { get; set; } = null!;
 
-    /// <summary>S3 object key, e.g. jobs/42/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg</summary>
+    /// <summary>Blob name, e.g. jobs/42/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg</summary>
+    /// <remarks>Column keeps the legacy S3Key name to avoid a data migration.</remarks>
     [Required]
     [MaxLength(500)]
-    public string S3Key { get; set; } = string.Empty;
+    [Column("S3Key")]
+    public string BlobKey { get; set; } = string.Empty;
 
     [MaxLength(260)]
     public string? OriginalFileName { get; set; }

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="140" viewBox="0 0 360 140">
+  <path d="M40 100 C 110 30, 200 130, 320 44" fill="none" stroke="#193957" stroke-opacity="0.12" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 10"/>
+  <g transform="translate(40 100)"><path d="M0-26a13 13 0 0 1 13 13C13-4 0 8 0 8S-13-4-13-13a13 13 0 0 1 13-13Z" fill="#3C75AA"/><circle cy="-13" r="5" fill="#F6F4EE"/></g>
+  <g transform="translate(320 44)"><path d="M0-26a13 13 0 0 1 13 13C13-4 0 8 0 8S-13-4-13-13a13 13 0 0 1 13-13Z" fill="#E38B29"/><circle cy="-13" r="5" fill="#F6F4EE"/></g>
+</svg>

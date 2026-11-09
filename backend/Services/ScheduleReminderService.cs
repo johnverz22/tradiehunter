@@ -44,7 +44,7 @@ public class ScheduleReminderService
         }
 
         // Don't remind for cancelled or already-complete jobs.
-        if (job.Status is JobStatus.Cancelled or JobStatus.Complete)
+        if (job.Status is JobStatus.Cancelled or JobStatus.Completed)
         {
             _logger.LogInformation(
                 "Reminder skipped — job {JobId} is {Status}", jobId, job.Status);
@@ -53,7 +53,7 @@ public class ScheduleReminderService
 
         // Build reminder copy.
         var slotLabel = job.ScheduledTimeSlot?.ToString().ToLower() ?? "scheduled time";
-        var dateStr   = job.ScheduledDateUtc?.ToString("ddd d MMM") ?? "your upcoming appointment";
+        var dateStr   = job.ScheduledStart?.ToString("ddd d MMM") ?? "your upcoming appointment";
         var body      = window == "1h"
             ? $"Your job starts in 1 hour — {job.Title} ({slotLabel} on {dateStr})."
             : $"Reminder: \"{job.Title}\" is tomorrow, {dateStr} ({slotLabel}).";

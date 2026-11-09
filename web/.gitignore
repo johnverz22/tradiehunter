@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Throwaway SSR probe output written by scripts/web/render-probe.py
+.probe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +25,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+e2e/.auth/

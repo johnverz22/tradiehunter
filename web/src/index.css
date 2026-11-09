@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './theme/design-tokens.css';
+@import './theme/components.css';
 
 /* ── Dark mode: driven by data-theme attribute, not OS media query.
    This makes Tailwind's dark: variants respond to the toggle button
@@ -12,6 +13,7 @@
 @theme {
   --color-paper: var(--paper);
   --color-paper-line: var(--paper-line);
+  --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-brand-900: var(--brand-900);
@@ -89,8 +91,12 @@ code {
   color: var(--ink);
 }
 
-/* ── Focus ──────────────────────────────────────────── */
-:focus-visible {
+/* ── Focus ────────────────────────────────────────────
+   Thin 2px outline sitting outside the field, per the
+   mockups. A box-shadow ring (Tailwind's ring-2) stacks
+   on top of the border and reads as a heavy 3px band —
+   fields and selects both use this instead. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--brand-500);
   outline-offset: 2px;
 }

@@ -9,8 +9,10 @@ namespace FixoApi.Hubs;
 /// Registered at /hubs/jobs.
 ///
 /// Server → Client methods:
-///   • NewJobMatch(NewJobMatchPayload)  — pushed to matched tradies
-///   • JobStatusChanged(jobId, status) — pushed to homeowner + matched tradie
+///   • NewJobMatch(NewJobMatchPayload)       — pushed to matched tradies
+///   • JobStatusChanged(JobStatusChangedPayload) — every status transition
+///   • OfferLifecycleEvent(OfferLifecyclePayload) — sequential offer events
+///     (OfferCreated | OfferExpired | OfferAccepted | OfferDeclined)
 ///
 /// Client → Server methods:
 ///   • JoinJobGroup(jobId) — client subscribes to a specific job's updates
