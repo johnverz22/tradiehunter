@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../widgets/fixo_cards.dart';
@@ -72,6 +73,9 @@ class _StatusStripState extends State<StatusStrip>
     final stepLabel = hasProgress
         ? JobStatusPresentation.progressLabels[stepIndex]
         : presentation.label;
+    final shouldShowSublabel = hasProgress &&
+        stepLabel.trim().toLowerCase() !=
+            presentation.label.trim().toLowerCase();
 
     final muted = isDisputed || widget.status == 'Cancelled';
 
@@ -100,6 +104,7 @@ class _StatusStripState extends State<StatusStrip>
                   child: StatusBadge(
                     label: presentation.label,
                     kind: presentation.kind,
+                    icon: presentation.chipIcon,
                     onDark: true,
                   ),
                 ),
@@ -111,14 +116,37 @@ class _StatusStripState extends State<StatusStrip>
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
-                    child: Text(
-                      widget.referenceCode!,
-                      style: TextStyle(
-                        fontFamily: DesignTokens.fontMono,
-                        fontSize: DesignTokens.fontSizeCaption,
-                        fontWeight: FW.medium,
-                        color:
-                            Colors.white.withValues(alpha: Alpha.textOnGradient),
+                    child: Semantics(
+                      button: true,
+                      label:
+                          'Job code: ${widget.referenceCode}, long-press to copy',
+                      child: Tooltip(
+                        message: 'Long-press to copy job code',
+                        child: GestureDetector(
+                          key: const Key('status_strip_job_code'),
+                          onLongPress: () {
+                            Clipboard.setData(
+                              ClipboardData(text: widget.referenceCode!),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Job code copied: ${widget.referenceCode}',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            widget.referenceCode!,
+                            style: TextStyle(
+                              fontFamily: DesignTokens.fontMono,
+                              fontSize: DesignTokens.fontSizeMono,
+                              fontWeight: FW.medium,
+                              color: Colors.white
+                                  .withValues(alpha: Alpha.textOnGradient),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -132,7 +160,7 @@ class _StatusStripState extends State<StatusStrip>
               completedSteps: completedSteps,
               totalSteps: 4,
               label: 'Step $completedSteps of 4',
-              sublabel: stepLabel,
+              sublabel: shouldShowSublabel ? stepLabel : null,
               muted: muted,
               onDark: true,
               onCaptionTap: _toggle,

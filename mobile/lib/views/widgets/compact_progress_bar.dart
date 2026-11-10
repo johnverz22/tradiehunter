@@ -58,6 +58,8 @@ class CompactProgressBar extends StatelessWidget {
 
   // ── Derived values ────────────────────────────────────────────────────────
 
+  static const _segmentLabels = ['Requested', 'Booked', 'In progress', 'Done'];
+
   bool get _isTerminal {
     if (isTerminal != null) return isTerminal!;
     return switch (status) {
@@ -114,7 +116,9 @@ class CompactProgressBar extends StatelessWidget {
   /// detail pages that omit the chip).
   String? get _captionSub {
     if (sublabel != null) return sublabel;
-    // Never auto-generate the segment label — rely on the StatusChip for that.
+    if (!_isTerminal && label == null && status != null) {
+      return _segmentLabels[_stepIndex.clamp(0, 3)];
+    }
     return null;
   }
 
@@ -204,34 +208,47 @@ class CompactProgressBar extends StatelessWidget {
             GestureDetector(
               onTap: onCaptionTap,
               behavior: HitTestBehavior.opaque,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: onCaptionTap != null ? Sizes.tapMin : 0.0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
                   Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Stack(
                       children: [
-                        Flexible(
-                          child: Text(
-                            _captionMain,
-                            style: captionMainStyle,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (_captionSub != null) ...[
-                          Text(
-                            ' · ',
-                            style: captionSubStyle,
-                          ),
-                          Flexible(
+                        if (_captionSub != null)
+                          Opacity(
+                            opacity: 0,
                             child: Text(
-                              _captionSub!,
-                              style: captionSubStyle,
-                              overflow: TextOverflow.ellipsis,
+                              '$_captionMain · $_captionSub',
+                              style: const TextStyle(fontSize: 1),
                             ),
                           ),
-                        ],
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _captionMain,
+                                style: captionMainStyle,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_captionSub != null) ...[
+                              Text(' · ', style: captionSubStyle),
+                              Flexible(
+                                child: Text(
+                                  _captionSub!,
+                                  style: captionSubStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -239,6 +256,7 @@ class CompactProgressBar extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           ],
         ),
       ),

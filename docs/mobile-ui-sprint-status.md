@@ -68,18 +68,23 @@
   5. 100% tokenised numeric literals across `request_detail_screen.dart` and `offer_countdown.dart`.
   6. Verified with 23/23 tests passing in `offer_response_test.dart` and 0 `flutter analyze` errors.
 
+### ✅ Task 7: Tradie Active Job Screen
+- **Target Files:** `mobile/lib/views/tradie/tradie_job_detail_screen.dart`, `mobile/lib/views/widgets/status_strip.dart`, `mobile/lib/views/widgets/compact_progress_bar.dart`
+- **Tokens Added:** `Sizes.handleW = 40.0`, `Sizes.handleH = 4.0`, `Sizes.avatarRadius = 24.0`.
+- **Implemented:**
+  1. Removed duplicate `FixoCard` containing `JobTimeline` from `ListView` body — status and expandable timeline are natively hosted in `StatusStrip`.
+  2. Extracted notices stack (`_buildNotices`): urgency, awaiting confirmation, completed, cancelled, and dispute notices render directly at the top of the body with semantic spacing.
+  3. Polished `StatusStrip`:
+     - Caption tap target guaranteed ≥ 48dp (`Sizes.tapMin`).
+     - Deduplicated status caption when matching `StatusBadge` (e.g. `Step 2 of 4` without repeating `· Booked`).
+     - Verified status icons wired from `JobStatusPresentation.chipIcon`.
+     - Right-aligned monospace job code (`DesignTokens.fontSizeMono`, `DesignTokens.fontMono`) copyable to clipboard on long-press with confirmation feedback.
+  4. 100% tokenised numeric literals across `tradie_job_detail_screen.dart` and `status_strip.dart`.
+  5. Added comprehensive widget tests in `mobile/test/tradie_job_detail_test.dart` (28/28 passed).
+
 ---
 
 ## 3. Pending Tasks
-
-### ⏳ Task 7: Tradie Active Job Screen
-- **Target File:** `mobile/lib/views/tradie/tradie_job_detail_screen.dart`
-- **Requirements:**
-  1. Remove duplicate `FixoCard` containing `JobTimeline` from body.
-  2. Extract notices (urgency, awaiting-confirmation, completed, cancelled, dispute) to a clean notices stack.
-  3. Polish `StatusStrip` (tap target ≥ 48dp, deduplicate status caption, verified status icons).
-  4. Job code: right-aligned, `fontSizeMono`, copyable on long-press.
-- **Commit Target:** `tradie-job: remove duplicate status card, notices stack, strip polish`
 
 ### ⏳ Task 8: FixoNotice Feedback System (48 SnackBar replacements)
 - **Sub-tasks:**

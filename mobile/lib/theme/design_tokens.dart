@@ -154,6 +154,9 @@ abstract class Sizes {
   static const double iconEmpty            = 72.0;  // empty state icon size
   static const double photoMinScale        = 1.0;   // InteractiveViewer min scale
   static const double photoMaxScale        = 4.0;   // InteractiveViewer max zoom scale
+  static const double handleW              = 40.0;  // bottom sheet drag handle width
+  static const double handleH              = 4.0;   // bottom sheet drag handle height
+  static const double avatarRadius         = 24.0;  // standard contact avatar radius (48dp diameter)
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────

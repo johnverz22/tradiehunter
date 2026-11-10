@@ -10,6 +10,7 @@ import '../../models/marketplace.dart';
 import '../../network/external_launcher.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/locale_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
@@ -18,7 +19,6 @@ import '../../widgets/rating_sheet.dart';
 import '../../widgets/tradie_widgets.dart';
 import '../widgets/cancel_job_sheet.dart';
 import '../widgets/job_info_grid.dart';
-import '../widgets/job_timeline.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
@@ -387,7 +387,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
     // locale config; when it can't be loaded the net line is omitted rather
     // than estimated.
     final total = job.totalAmount;
-    final grossLabel = total != null ? '\$${total.toStringAsFixed(2)}' : null;
+    final grossLabel = total != null ? formatMoney(total) : null;
     final commissionPercent = Decimal.tryParse(
       '${ref.watch(localeConfigProvider).valueOrNull?['commissionPercent'] ?? ''}',
     );
@@ -445,77 +445,20 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
             child: ListView(
         padding: FixoPadding.page,
         children: [
-          // ── Card 1: Status Card ───────────────────────────────────────────
-          FixoCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (job.urgency != null &&
-                    (job.urgency == 'Emergency' || job.urgency == 'High'))
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: Space.s3),
-                    child: StatusBadge(
-                      label: job.urgency!.toUpperCase(),
-                      kind: FixoBadgeKind.actionNeeded,
-                    ),
-                  ),
-                JobTimeline(status: status, onRefresh: _load),
-                if (status == 'AwaitingConfirmation') ...[
-                  const SizedBox(height: Space.s4),
-                  FixoInfoBanner(
-                    icon: Icons.hourglass_top_outlined,
-                    color: DesignTokens.amber,
-                    message:
-                        'Waiting for the homeowner to confirm the work is complete. '
-                        'They have 48 hours — if they don\'t respond the job '
-                        'auto-completes.',
-                  ),
-                ],
-                if (status == 'Completed') ...[
-                  const SizedBox(height: Space.s4),
-                  FixoInfoBanner(
-                    icon: Icons.check_circle_outline,
-                    color: DesignTokens.brand500,
-                    message: 'Job completed. Thank you!',
-                  ),
-                ],
-                if (status == 'Cancelled') ...[
-                  const SizedBox(height: Space.s4),
-                  FixoInfoBanner(
-                    icon: Icons.cancel_outlined,
-                    color: theme.colorScheme.error,
-                    message: 'This job was cancelled.',
-                  ),
-                ],
-                // Dispute banner: shown only on non-terminal jobs with an active dispute.
-                if (status != 'Completed' &&
-                    status != 'Cancelled' &&
-                    (status == 'Disputed' ||
-                        job.disputeStatus == 'Open' ||
-                        job.disputeStatus == 'UnderReview')) ...[
-                  const SizedBox(height: Space.s4),
-                  FixoInfoBanner(
-                    icon: Icons.gavel,
-                    color: theme.colorScheme.error,
-                    message: 'This job has an active dispute under review.',
-                  ),
-                ],
-              ],
-            ),
-          ),
+          // ── Notices stack ────────────────────────────────────────────────
+          ..._buildNotices(job, status, theme),
 
-          // ── Card 2: People Card (Homeowner contact, Booked+ only) ─────────
+          // ── Card 1: People Card (Homeowner contact, Booked+ only) ─────────
           if (_contact != null) ...[
-            const SizedBox(height: Space.s4),
             _ContactCard(
               contact: _contact!,
               onMessage: () => context.push('/chat/${widget.jobId}'),
               onCall: (phone) => _call(phone),
             ),
+            const SizedBox(height: Space.s4),
           ],
 
-          // ── Card 3: Details Card ──────────────────────────────────────────
-          const SizedBox(height: Space.s4),
+          // ── Card 2: Details Card ──────────────────────────────────────────
           FixoCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,7 +520,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
                       label:
                           'You earn (after '
                           '${commissionPercent.toStringAsFixed(1)}% platform fee)',
-                      value: '\$${net.toStringAsFixed(2)}',
+                      value: formatMoney(net),
                       icon: Icons.payments_outlined,
                     ),
                     const SizedBox(height: Space.s2),
@@ -615,7 +558,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
               child: TextButton.icon(
                 icon: Icon(
                   Icons.help_outline,
-                  size: 16,
+                  size: Sizes.iconInfo,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 label: Text(
@@ -690,7 +633,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
                 Icon(
                   Icons.hourglass_top_outlined,
                   color: DesignTokens.brand500,
-                  size: 20,
+                  size: Sizes.iconAction,
                 ),
                 const SizedBox(width: Space.s2_5),
                 Expanded(
@@ -723,6 +666,88 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
 
     // No action bar for other statuses.
     return null;
+  }
+
+  List<Widget> _buildNotices(Job job, String status, ThemeData theme) {
+    final notices = <Widget>[];
+
+    if (job.urgency != null &&
+        (job.urgency == 'Emergency' || job.urgency == 'High')) {
+      notices.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: Space.s3),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: StatusBadge(
+              label: job.urgency!.toUpperCase(),
+              kind: FixoBadgeKind.actionNeeded,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (status == 'AwaitingConfirmation') {
+      notices.add(
+        const Padding(
+          padding: EdgeInsets.only(bottom: Space.s3),
+          child: FixoInfoBanner(
+            icon: Icons.hourglass_top_outlined,
+            color: DesignTokens.amber,
+            message:
+                'Waiting for the homeowner to confirm the work is complete. '
+                'They have 48 hours — if they don\'t respond the job '
+                'auto-completes.',
+          ),
+        ),
+      );
+    }
+
+    if (status == 'Completed') {
+      notices.add(
+        const Padding(
+          padding: EdgeInsets.only(bottom: Space.s3),
+          child: FixoInfoBanner(
+            icon: Icons.check_circle_outline,
+            color: DesignTokens.brand500,
+            message: 'Job completed. Thank you!',
+          ),
+        ),
+      );
+    }
+
+    if (status == 'Cancelled') {
+      notices.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: Space.s3),
+          child: FixoInfoBanner(
+            icon: Icons.cancel_outlined,
+            color: theme.colorScheme.error,
+            message: 'This job was cancelled.',
+          ),
+        ),
+      );
+    }
+
+    // Dispute banner: shown only on non-terminal jobs with an active dispute.
+    if (status != 'Completed' &&
+        status != 'Cancelled' &&
+        (status == 'Disputed' ||
+            job.disputeStatus == 'Open' ||
+            job.disputeStatus == 'UnderReview')) {
+      notices.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: Space.s3),
+          child: FixoInfoBanner(
+            icon: Icons.gavel,
+            color: theme.colorScheme.error,
+            message: 'This job has an active dispute under review.',
+          ),
+        ),
+      );
+    }
+
+    return notices;
   }
 
   /// Returns true if the job is at a stage where the exact address
@@ -765,8 +790,8 @@ class _NavigateButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 40,
-                  height: 4,
+                  width: Sizes.handleW,
+                  height: Sizes.handleH,
                   margin: const EdgeInsets.only(bottom: Space.s4),
                   decoration: BoxDecoration(
                     color: DesignTokens.paperLine(isDark),
@@ -824,7 +849,7 @@ class _NavigateButton extends StatelessWidget {
       onPressed: () => _showMapPicker(context),
       icon: Icons.directions_outlined,
       label: 'Navigate',
-      height: 48,
+      height: Sizes.tapMin,
     );
   }
 }
@@ -859,7 +884,7 @@ class _ContactCard extends StatelessWidget {
                 initials: contact.firstName.isNotEmpty
                     ? contact.firstName[0].toUpperCase()
                     : 'H',
-                radius: 24,
+                radius: Sizes.avatarRadius,
               ),
               const SizedBox(width: Space.s3),
               Expanded(
@@ -936,13 +961,16 @@ class _TradieJobNotFoundBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Space.s7, vertical: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s7,
+        vertical: Space.s9,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.work_off_outlined,
-            size: 72,
+            size: Sizes.iconEmpty,
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: Space.s6),
@@ -962,6 +990,7 @@ class _TradieJobNotFoundBody extends StatelessWidget {
           const SizedBox(height: Space.s8),
           SizedBox(
             width: double.infinity,
+            height: Sizes.button,
             child: FilledButton(
               onPressed: onBack,
               child: const Text('Back to dashboard'),
@@ -971,6 +1000,7 @@ class _TradieJobNotFoundBody extends StatelessWidget {
             const SizedBox(height: Space.s3),
             SizedBox(
               width: double.infinity,
+              height: Sizes.button,
               child: OutlinedButton(
                 onPressed: onSupport,
                 child: const Text('Contact support'),

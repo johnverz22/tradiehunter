@@ -6,10 +6,14 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/network/external_launcher.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
+import 'package:fixo/theme/design_tokens.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/locale_viewmodel.dart';
 import 'package:fixo/views/tradie/tradie_job_detail_screen.dart';
+import 'package:fixo/views/widgets/compact_progress_bar.dart';
+import 'package:fixo/views/widgets/job_timeline.dart';
+import 'package:fixo/views/widgets/status_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -489,6 +493,104 @@ void main() {
       );
       expect(find.text('Job completed. Thank you!'), findsOneWidget);
     });
+  });
+
+  group('Task 7: StatusStrip and notices polish', () {
+    testWidgets('duplicate JobTimeline card is removed from body', (
+      tester,
+    ) async {
+      await mount(tester, _JobsFixture(_job('Booked')));
+      expect(find.byType(StatusStrip), findsOneWidget);
+      expect(find.byType(JobTimeline), findsNothing);
+    });
+
+    testWidgets('notices stack renders notices directly at top of body', (
+      tester,
+    ) async {
+      await mount(
+        tester,
+        _JobsFixture(
+          Job(
+            id: '42',
+            title: 'Fix leaking tap',
+            category: 'Plumbing',
+            suburb: 'Grafton',
+            status: 'AwaitingConfirmation',
+            stage: 2,
+            urgency: 'Emergency',
+            hourlyRate: Decimal.parse('85.50'),
+            totalAmount: Decimal.parse('171.00'),
+            hours: 2,
+          ),
+        ),
+      );
+      expect(find.text('EMERGENCY'), findsOneWidget);
+      expect(
+        find.textContaining('Waiting for the homeowner to confirm'),
+        findsOneWidget,
+      );
+      expect(find.byType(JobTimeline), findsNothing);
+    });
+
+    testWidgets(
+      'StatusStrip deduplicates status caption when matching StatusBadge',
+      (tester) async {
+        await mount(tester, _JobsFixture(_job('Booked')));
+        // "Booked" pill is in the StatusBadge
+        expect(find.text('Booked'), findsOneWidget);
+        // Caption is "Step 2 of 4" without duplicate "· Booked" suffix
+        expect(find.text('Step 2 of 4'), findsOneWidget);
+        expect(find.text('Step 2 of 4 · Booked'), findsNothing);
+      },
+    );
+
+    testWidgets('StatusStrip progress caption tap target is >= 48dp', (
+      tester,
+    ) async {
+      await mount(tester, _JobsFixture(_job('Booked')));
+      final captionFinder = find.byType(CompactProgressBar);
+      expect(captionFinder, findsOneWidget);
+      final gestureFinder = find.descendant(
+        of: captionFinder,
+        matching: find.byType(GestureDetector),
+      );
+      expect(gestureFinder, findsOneWidget);
+      expect(tester.getSize(gestureFinder).height, greaterThanOrEqualTo(48.0));
+    });
+
+    testWidgets(
+      'job code is monospace and long-press copies to clipboard with snackbar',
+      (tester) async {
+        await mount(
+          tester,
+          _JobsFixture(
+            Job(
+              id: '42',
+              title: 'Fix leaking tap',
+              category: 'Plumbing',
+              suburb: 'Grafton',
+              status: 'Booked',
+              stage: 1,
+              referenceCode: 'FIXO-2481-JB',
+              hourlyRate: Decimal.parse('85.50'),
+              totalAmount: Decimal.parse('171.00'),
+              hours: 2,
+            ),
+          ),
+        );
+        final jobCode = find.byKey(const Key('status_strip_job_code'));
+        expect(jobCode, findsOneWidget);
+        final textWidget = tester.widget<Text>(
+          find.descendant(of: jobCode, matching: find.byType(Text)),
+        );
+        expect(textWidget.style?.fontFamily, DesignTokens.fontMono);
+        expect(textWidget.style?.fontSize, DesignTokens.fontSizeMono);
+
+        await tester.longPress(jobCode);
+        await tester.pumpAndSettle();
+        expect(find.text('Job code copied: FIXO-2481-JB'), findsOneWidget);
+      },
+    );
   });
 
   group('responsive and themes', () {
