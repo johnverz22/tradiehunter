@@ -44,7 +44,7 @@ public class AdminService : IAdminService
         _emailSender = emailSender;
         _tokenService = tokenService;
         _blob = blob;
-        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "fixo-credentials";
+        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
         _locale = locale;
         _pushNotifications = pushNotifications;
         _audit = audit;

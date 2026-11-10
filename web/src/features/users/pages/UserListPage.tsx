@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, ChevronDown, ChevronUp, CheckCircle, XCircle, } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, CheckCircle, XCircle } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { FilterBar } from '../../../components/FilterBar';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { Pagination } from '../../../components/Pagination';
 import { useUserList, useVerifyUser, useDeactivateUser } from '../hooks/useUsers';
+import type { AdminUserListItem } from '../../../services/adminApi';
 
 const PAGE_SIZE = 20;
 
 type SortKey = 'fullName' | 'email' | 'role' | 'createdAt';
 
 export const UserListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [flaggedOnly, setFlaggedOnly] = useState(false);
@@ -24,21 +29,26 @@ export const UserListPage: React.FC = () => {
     name: string;
   } | null>(null);
 
-  const { data, isLoading } = useUserList({ search, role, flaggedOnly, page, pageSize: PAGE_SIZE, sortBy, sortDesc });
+  const { data, isLoading } = useUserList({
+    search,
+    role,
+    flaggedOnly,
+    page,
+    pageSize: PAGE_SIZE,
+    sortBy,
+    sortDesc,
+  });
   const verifyMutation = useVerifyUser();
   const deactivateMutation = useDeactivateUser();
 
-  const toggleSort = (key: SortKey) => {
-    if (sortBy === key) setSortDesc((d) => !d);
-    else { setSortBy(key); setSortDesc(false); }
+  const toggleSort = (key: string) => {
+    const k = key as SortKey;
+    if (sortBy === k) setSortDesc((d) => !d);
+    else {
+      setSortBy(k);
+      setSortDesc(false);
+    }
   };
-
-  const SortIcon = ({ col }: { col: SortKey }) =>
-    sortBy === col
-      ? sortDesc
-        ? <ChevronDown size={13} className="inline ml-1" />
-        : <ChevronUp size={13} className="inline ml-1" />
-      : null;
 
   const handleConfirm = async () => {
     if (!confirmAction) return;
@@ -47,25 +57,118 @@ export const UserListPage: React.FC = () => {
     setConfirmAction(null);
   };
 
+  const activeFiltersCount = (role ? 1 : 0) + (flaggedOnly ? 1 : 0);
+
+  const columns: ColumnDef<AdminUserListItem>[] = [
+    {
+      key: 'fullName',
+      header: 'Name',
+      priority: 'primary',
+      sortable: true,
+      cell: (user) => (
+        <Link to={`/users/${user.id}`} className="cell-link flex items-center gap-2">
+          {user.fullName || '—'}
+        </Link>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      priority: 'detail',
+      sortable: true,
+      cell: (user) => <span className="mono cell-muted">{user.email}</span>,
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      priority: 'secondary',
+      sortable: true,
+      cell: (user) => <StatusBadge status={user.role} />,
+    },
+    {
+      key: 'createdAt',
+      header: 'Joined',
+      priority: 'detail',
+      sortable: true,
+      cell: (user) => (
+        <span className="cell-muted">
+          {new Date(user.createdAtUtc).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      priority: 'secondary',
+      cell: (user) => (
+        <StatusBadge status={user.isActive ? 'Active' : 'Inactive'} />
+      ),
+    },
+    {
+      key: 'verified',
+      header: 'Verified',
+      priority: 'secondary',
+      cell: (user) =>
+        user.isVerified ? (
+          <span className="pill pill-green">
+            <CheckCircle size={12} className="inline -mt-0.5" /> Verified
+          </span>
+        ) : (
+          <span className="pill pill-amber">
+            <XCircle size={12} className="inline -mt-0.5" /> Unverified
+          </span>
+        ),
+    },
+  ];
+
+  const rowActions = (user: AdminUserListItem): RowAction[] => {
+    const actions: RowAction[] = [];
+    if (!user.isVerified && user.role === 'Tradie') {
+      actions.push({
+        label: 'Verify',
+        onClick: () => setConfirmAction({ type: 'verify', id: user.id, name: user.fullName }),
+        variant: 'ghost',
+        primary: true,
+      });
+    }
+    if (user.isActive) {
+      actions.push({
+        label: 'Deactivate',
+        onClick: () => setConfirmAction({ type: 'deactivate', id: user.id, name: user.fullName }),
+        variant: 'danger',
+      });
+    }
+    return actions;
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Users</h1>
-        {data && (
-          <div className="flex flex-wrap gap-4 mt-3">
-            <div className="stat-pill">
-              <strong>{data.totalCount.toLocaleString()}</strong> {role || 'All roles'}
-            </div>
-            <div className="stat-pill">
-              <strong>{data.items.length}</strong> on this page
-            </div>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Users"
+        meta={
+          data && (
+            <>
+              <div className="stat-pill">
+                <strong>{data.totalCount.toLocaleString()}</strong> {role || 'All roles'}
+              </div>
+              <div className="stat-pill">
+                <strong>{data.items.length}</strong> on this page
+              </div>
+            </>
+          )
+        }
+      />
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
+      <FilterBar
+        activeFiltersCount={activeFiltersCount}
+        onClear={() => {
+          setRole('');
+          setFlaggedOnly(false);
+          setPage(1);
+        }}
+      >
         <div className="relative flex-1 min-w-48">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]" />
           <input
@@ -73,14 +176,20 @@ export const UserListPage: React.FC = () => {
             className="field field-search"
             placeholder="Search name or email…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <span className="select-wrap">
           <select
             className="select-field"
             value={role}
-            onChange={(e) => { setRole(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setRole(e.target.value);
+              setPage(1);
+            }}
             aria-label="Filter by role"
           >
             <option value="">All roles</option>
@@ -94,123 +203,40 @@ export const UserListPage: React.FC = () => {
           <input
             type="checkbox"
             checked={flaggedOnly}
-            onChange={(e) => { setFlaggedOnly(e.target.checked); setPage(1); }}
+            onChange={(e) => {
+              setFlaggedOnly(e.target.checked);
+              setPage(1);
+            }}
             className="rounded border-gray-300 text-[var(--brand-500)] focus:ring-[var(--brand-500)]"
           />
           Flagged Accounts Only
         </label>
-      </div>
+      </FilterBar>
 
       {/* Table */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                {(
-                  [
-                    ['fullName', 'Name'],
-                    ['email', 'Email'],
-                    ['role', 'Role'],
-                    ['createdAt', 'Joined'],
-                  ] as [SortKey, string][]
-                ).map(([key, label]) => (
-                  <th
-                    key={key}
-                    onClick={() => toggleSort(key)}
-                    className="th th-sortable"
-                  >
-                    {label}
-                    <SortIcon col={key} />
-                  </th>
-                ))}
-                <th className="th">Status</th>
-                <th className="th">Verified</th>
-                <th className="th text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">Loading…</td>
-                </tr>
-              ) : data?.items.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">No users found.</td>
-                </tr>
-              ) : (
-                data?.items.map((user) => (
-                  <tr key={user.id}>
-                    <td className="td">
-                      <Link to={`/users/${user.id}`} className="cell-link flex items-center gap-2">
-                        {user.fullName || '—'}
-                      </Link>
-                    </td>
-                    <td className="td mono cell-muted">{user.email}</td>
-                    <td className="td"><StatusBadge status={user.role} /></td>
-                    <td className="td cell-muted">
-                      {new Date(user.createdAtUtc).toLocaleDateString()}
-                    </td>
-                    <td className="td">
-                      <StatusBadge status={user.isActive ? 'Active' : 'Inactive'} />
-                    </td>
-                    <td className="td">
-                      {user.isVerified ? (
-                        <span className="pill pill-green">
-                          <CheckCircle size={12} className="inline -mt-0.5" /> Verified
-                        </span>
-                      ) : (
-                        <span className="pill pill-amber">
-                          <XCircle size={12} className="inline -mt-0.5" /> Unverified
-                        </span>
-                      )}
-                    </td>
-                    <td className="td">
-                      <div className="flex items-center justify-end gap-2">
-                        {!user.isVerified && user.role === 'Tradie' && (
-                          <button
-                            className="btn btn-ghost !py-1 !px-2.5 !text-xs"
-                            onClick={() =>
-                              setConfirmAction({ type: 'verify', id: user.id, name: user.fullName })
-                            }
-                          >
-                            Verify
-                          </button>
-                        )}
-                        {user.isActive && (
-                          <button
-                            className="btn btn-danger !py-1 !px-2.5 !text-xs"
-                            onClick={() =>
-                              setConfirmAction({
-                                type: 'deactivate',
-                                id: user.id,
-                                name: user.fullName,
-                              })
-                            }
-                          >
-                            Deactivate
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="users"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(u) => u.id}
+        onRowClick={(u) => navigate(`/users/${u.id}`)}
+        isLoading={isLoading}
+        sortState={{ key: sortBy, desc: sortDesc }}
+        onSort={toggleSort}
+        rowActions={rowActions}
+        empty="No users found."
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="users"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
 
       {/* Confirm modal */}
       <ConfirmModal

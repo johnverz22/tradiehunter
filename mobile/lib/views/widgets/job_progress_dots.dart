@@ -15,22 +15,19 @@ class JobProgressDots extends StatelessWidget {
       'Completed' => 4,
       _ => 1,
     };
-    final stepLabel = switch (status) {
-      'Requested' || 'AwaitingPayment' || 'PaymentReview' => 'Requested',
-      'Booked' => 'Booked',
-      'InProgress' => 'In progress',
-      'AwaitingConfirmation' => 'Awaiting confirmation',
-      'Disputed' => 'Disputed',
-      'Completed' => 'Completed',
-      'Cancelled' => 'Cancelled',
-      'Expired' => 'Expired',
-      _ => 'Step $step of 4',
-    };
     final terminal = const {
       'Disputed',
       'Cancelled',
       'Expired',
     }.contains(status);
+    final stepLabel = terminal
+        ? switch (status) {
+            'Disputed' => 'Disputed',
+            'Cancelled' => 'Cancelled',
+            'Expired' => 'Expired',
+            _ => 'Step $step of 4',
+          }
+        : 'Step $step of 4';
     return Semantics(
       label: '$status, step $step of 4',
       child: ExcludeSemantics(

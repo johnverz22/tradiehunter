@@ -25,8 +25,8 @@ export const BarChart: React.FC<BarChartProps> = ({
       )}
       <div className="flex flex-col gap-2">
         {entries.map(([key, value]) => (
-          <div key={key} className="flex items-center gap-3 text-sm">
-            <span className="w-24 shrink-0 text-xs text-[var(--ink-soft)] truncate">{key}</span>
+          <div key={key} className="flex items-center gap-2 sm:gap-3 text-sm">
+            <span className="w-20 sm:w-24 shrink-0 text-xs text-[var(--ink-soft)] truncate">{key}</span>
             <div className="flex-1 h-5 bg-[var(--paper-line)] rounded overflow-hidden">
               <div
                 className="h-full rounded transition-all duration-300"

@@ -1,4 +1,4 @@
-# Fixo API — .NET 10 Development Dockerfile
+# TradieHunter API — .NET 10 Development Dockerfile
 # Used by docker-compose.yml for local dev with hot reload.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev

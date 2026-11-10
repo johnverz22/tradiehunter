@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, CheckCircle, AlertTriangle, XCircle, Clock, FileText, Image as ImageIcon } from 'lucide-react';
+import {
+  ArrowLeft,
+  MessageSquare,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  FileText,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { useDisputeDetail, useResolveDispute } from '../hooks/useDisputes';
@@ -30,10 +39,14 @@ export const DisputeDetailPage: React.FC = () => {
     navigate('/disputes');
   };
 
-  const actionConfig: Record<DisputeAction, { label: string; description: string; destructive: boolean }> = {
+  const actionConfig: Record<
+    DisputeAction,
+    { label: string; description: string; destructive: boolean }
+  > = {
     FullRefund: {
       label: 'Full Refund',
-      description: 'Resolve dispute and issue a full refund to the homeowner. This will also cancel the job.',
+      description:
+        'Resolve dispute and issue a full refund to the homeowner. This will also cancel the job.',
       destructive: true,
     },
     PartialRefund: {
@@ -66,14 +79,16 @@ export const DisputeDetailPage: React.FC = () => {
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--ink)]">{dispute.jobTitle}</h1>
+          <h1 className="text-[22px] sm:text-[24px] font-bold text-[var(--ink)] mb-1">
+            {dispute.jobTitle}
+          </h1>
           <p className="text-sm text-[var(--ink-soft)]">
             Flagged {new Date(dispute.flaggedAtUtc).toLocaleString()}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <StatusBadge status={dispute.status} />
           <StatusBadge status={dispute.disputeStatus} />
         </div>
@@ -122,16 +137,23 @@ export const DisputeDetailPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {dispute.evidence.map((ev) => (
-              <div key={ev.id} className="border border-[var(--border)] rounded p-3">
+              <div key={ev.id} className="border border-[var(--paper-line)] rounded p-3">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-semibold text-[var(--ink)]">{ev.type}</span>
                   <span className="text-xs text-[var(--ink-soft)]">
                     {new Date(ev.createdAtUtc).toLocaleString()}
                   </span>
                 </div>
-                {ev.type === 'Text' && <p className="text-sm text-[var(--ink-soft)] whitespace-pre-wrap">{ev.textContent}</p>}
+                {ev.type === 'Text' && (
+                  <p className="text-sm text-[var(--ink-soft)] whitespace-pre-wrap">{ev.textContent}</p>
+                )}
                 {(ev.type === 'Photo' || ev.type === 'Document') && (
-                  <a href={ev.downloadUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[var(--brand-500)] hover:underline">
+                  <a
+                    href={ev.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-[var(--brand-500)] hover:underline"
+                  >
                     <ImageIcon size={14} /> View attached file
                   </a>
                 )}
@@ -153,11 +175,18 @@ export const DisputeDetailPage: React.FC = () => {
         ) : (
           <div className="mt-4 space-y-2">
             {dispute.timeLogs.map((log) => (
-              <div key={log.id} className="flex justify-between items-center border-b border-[var(--border)] last:border-0 pb-2">
+              <div
+                key={log.id}
+                className="flex justify-between items-center border-b border-[var(--paper-line)] last:border-0 pb-2"
+              >
                 <div>
-                  <p className="text-sm text-[var(--ink)]">Check In: {new Date(log.checkInAtUtc).toLocaleString()}</p>
+                  <p className="text-sm text-[var(--ink)]">
+                    Check In: {new Date(log.checkInAtUtc).toLocaleString()}
+                  </p>
                   {log.checkOutAtUtc && (
-                    <p className="text-sm text-[var(--ink)]">Check Out: {new Date(log.checkOutAtUtc).toLocaleString()}</p>
+                    <p className="text-sm text-[var(--ink)]">
+                      Check Out: {new Date(log.checkOutAtUtc).toLocaleString()}
+                    </p>
                   )}
                 </div>
               </div>
@@ -205,7 +234,7 @@ export const DisputeDetailPage: React.FC = () => {
             rows={3}
             className="field field-multiline w-full mb-4 resize-none"
           />
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
             <ActionButton
               label="Full Refund"
               icon={<XCircle size={14} />}
@@ -270,7 +299,7 @@ const PartyCard: React.FC<{
   <div className="card !p-4">
     <p className="text-xs text-[var(--ink-soft)] mb-1">{title}</p>
     <p className="text-sm font-semibold text-[var(--ink)]">{name}</p>
-    <div className="flex items-center gap-2 mt-2">
+    <div className="flex items-center gap-2 mt-2 flex-wrap">
       <StatusBadge status={role} />
       {isVerified && <StatusBadge status="Verified" />}
     </div>
@@ -298,7 +327,10 @@ const ActionButton: React.FC<{
     danger: 'pill-red',
   };
   return (
-    <button onClick={onClick} className={`pill ${styles[variant]} !px-4 !py-2 !text-sm`}>
+    <button
+      onClick={onClick}
+      className={`pill ${styles[variant]} !px-4 !py-2.5 !text-sm flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer`}
+    >
       {icon}
       {label}
     </button>

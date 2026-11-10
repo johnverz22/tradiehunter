@@ -130,8 +130,8 @@ void main() {
 
         await _scrollTo(tester, find.text('Copy the payment reference'));
         expect(find.text('Copy the payment reference'), findsOneWidget);
-        await _scrollTo(tester, find.textContaining('Transfer 171.00'));
-        expect(find.textContaining('Transfer 171.00 NZD'), findsOneWidget);
+        await _scrollTo(tester, find.textContaining(r'Transfer $171.00'));
+        expect(find.text(r'Transfer $171.00'), findsOneWidget);
         await _scrollTo(tester, find.text('Upload your bank receipt'));
         expect(find.text('Upload your bank receipt'), findsOneWidget);
 
@@ -139,9 +139,10 @@ void main() {
         // payment — no invented fee lines.
         await _scrollTo(tester, find.text('Labour'));
         expect(find.text('Labour'), findsOneWidget);
-        expect(find.text('3 hours × 57.00 NZD/h'), findsOneWidget);
+        expect(find.text(r'3 h × $57.00/h'), findsOneWidget);
         expect(find.text('Job total'), findsOneWidget);
-        expect(find.text('171.00 NZD'), findsWidgets);
+        expect(find.text(r'$171.00'), findsWidgets);
+        expect(find.textContaining('NZD'), findsNothing);
 
         // Factual review copy; no escrow/protection/SLA claims.
         expect(find.textContaining('our team can review'), findsWidgets);

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../views/main_layout.dart';
@@ -25,6 +26,7 @@ import '../views/profile/public_profile_screen.dart';
 import '../views/payment/payment_screen.dart';
 import '../views/payment/payment_status_screen.dart';
 import '../views/jobs/dispute_screen.dart';
+import '../feedback/notice_gallery.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
 /// Tabbed screens live inside the [MainLayout] shell; flow screens
@@ -39,6 +41,13 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   routes: [
+    // Debug-only notice gallery — stripped from release builds.
+    if (kDebugMode)
+      GoRoute(
+        path: '/debug/notice-gallery',
+        builder: (context, state) =>
+            maybeNoticeGallery() ?? const SizedBox.shrink(),
+      ),
     // 01-splash
     GoRoute(
       path: '/',

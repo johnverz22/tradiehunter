@@ -266,8 +266,10 @@ void main() {
           routerConfig: router,
           theme: dark ? FixoTheme.dark() : FixoTheme.light(),
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(scale)),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(scale),
+              disableAnimations: true,
+            ),
             child: child!,
           ),
         ),
@@ -595,10 +597,20 @@ void main() {
       tester,
     ) async {
       await mountList(tester, JobsFixture(listJobs()), ProfileFixture());
+      await tester.scrollUntilVisible(
+        find.text('Awaiting payment'),
+        100,
+        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+      );
       await tester.tap(find.text('Awaiting payment'));
       await tester.pumpAndSettle();
       expect(find.text('Job AwaitingPayment'), findsOneWidget);
       expect(find.text('Job Booked'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Done'),
+        100,
+        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+      );
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
       expect(find.text('Job Completed'), findsOneWidget);
@@ -609,14 +621,27 @@ void main() {
       tester,
     ) async {
       await mountList(tester, JobsFixture(listJobs()), ProfileFixture());
+      await tester.scrollUntilVisible(
+        find.text('All'),
+        100,
+        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+      );
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
       // Newest-first: the Tomorrow day-group header tops the list.
       expect(find.text('Tomorrow'), findsOneWidget);
       expect(find.text('Job Requested'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Job Completed'), 600);
+      await tester.scrollUntilVisible(
+        find.text('Job Completed'),
+        600,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Job Completed'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Job Cancelled'), 600);
+      await tester.scrollUntilVisible(
+        find.text('Job Cancelled'),
+        600,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Job Cancelled'), findsOneWidget);
     });
 
@@ -627,6 +652,11 @@ void main() {
         tester,
         JobsFixture([jobFixture('Requested'), jobFixture('AwaitingPayment')]),
         ProfileFixture(),
+      );
+      await tester.scrollUntilVisible(
+        find.text('All'),
+        100,
+        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
       );
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();

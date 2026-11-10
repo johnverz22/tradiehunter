@@ -21,6 +21,7 @@ import '../widgets/job_info_grid.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// Homeowner-side job detail screen (P5-07).
@@ -135,11 +136,7 @@ class _HomeownerJobDetailScreenState
           .applyStatusUpdate(widget.jobId, 'Completed');
       await _load();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not confirm completion. Please try again.'),
-        ),
-      );
+      FixoNotice.error(context, 'Could not confirm completion. Please try again.');
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -239,14 +236,7 @@ class _HomeownerJobDetailScreenState
         if (mounted) {
           setState(() => _hasReview = true);
           // P10-19: Blind review confirmation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Your review has been submitted. It will be visible once the other party also reviews, or after 7 days.',
-              ),
-              duration: Duration(seconds: 5),
-            ),
-          );
+          FixoNotice.success(context, 'Your review has been submitted.');
         }
       },
     );
@@ -295,15 +285,10 @@ class _HomeownerJobDetailScreenState
           .applyStatusUpdate(widget.jobId, 'Cancelled');
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Job cancelled.')));
+        FixoNotice.success(context, NoticeCopy.jobCancelled);
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not cancel the job. Please try again.'),
-        ),
-      );
+      FixoNotice.error(context, NoticeCopy.cancelFailed);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -379,15 +364,11 @@ class _HomeownerJobDetailScreenState
       ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs();
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No-show reported successfully.')),
-        );
+        FixoNotice.success(context, NoticeCopy.noShowReported);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not report no-show.')),
-        );
+        FixoNotice.error(context, NoticeCopy.noShowFailed);
       }
     }
     if (mounted) setState(() => _busy = false);

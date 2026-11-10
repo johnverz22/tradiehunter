@@ -24,3 +24,15 @@ String currencySymbolOf(Map<String, dynamic>? locale) =>
     (locale?['currencySymbol'] as String?)?.trim().isNotEmpty == true
         ? locale!['currencySymbol'] as String
         : '\$';
+
+/// Human region label, e.g. "New Zealand (NZD)". Never "$ NZD". The country
+/// name is shown only when the backend supplies a known country code;
+/// otherwise just the currency code is honest.
+String regionLabel(Map<String, dynamic>? config) {
+  final locale = (config?['locale'] as Map?)?.cast<String, dynamic>() ?? config;
+  final code = (locale?['defaultCurrency'] as String?)?.trim();
+  final currency = code == null || code.isEmpty ? 'NZD' : code;
+  const countries = {'NZ': 'New Zealand', 'AU': 'Australia'};
+  final country = countries[(locale?['legalEntityCountry'] as String?)?.toUpperCase()];
+  return country == null ? currency : '$country ($currency)';
+}

@@ -20,7 +20,7 @@ public class ProfileService : IProfileService
     {
         _context = context;
         _blob = blob;
-        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "fixo-credentials";
+        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
     }
 
     public async Task<ProfileDto?> GetProfileAsync(string userId, bool isPublicView)

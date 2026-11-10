@@ -2,7 +2,9 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, CheckCircle } from 'lucide-react';
+import { Save } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
 import { useSettings, useUpdateSettings } from '../hooks/useSettings';
 import type { AdminSettings } from '../../../services/adminApi';
 
@@ -51,22 +53,17 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Settings</h1>
-        <p className="text-sm text-[var(--ink-soft)]">Platform-wide locale and feature configuration.</p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Platform-wide locale and feature configuration."
+      />
 
       {updateMutation.isSuccess && (
-        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle size={14} />
-          Settings saved successfully.
-        </div>
+        <Banner variant="success">Settings saved successfully.</Banner>
       )}
 
       {updateMutation.isError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          Failed to save settings. Please try again.
-        </div>
+        <Banner variant="error">Failed to save settings. Please try again.</Banner>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -74,7 +71,7 @@ export const SettingsPage: React.FC = () => {
         <section className="card space-y-4">
           <h2 className="card-title">Locale &amp; Region</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               label="Currency code"
               placeholder="NZD"
@@ -118,7 +115,7 @@ export const SettingsPage: React.FC = () => {
         </section>
 
         {/* Feature flags */}
-        <section className="card space-y-3">
+        <section className="card space-y-2">
           <h2 className="card-title">Feature Flags</h2>
           <ToggleField
             label="Chat"
@@ -137,12 +134,15 @@ export const SettingsPage: React.FC = () => {
           />
         </section>
 
-        {/* Save */}
-        <div className="flex justify-end">
+        {/* Save button - sticky footer on mobile, standard flex on desktop */}
+        <div
+          className="sticky bottom-0 sm:static bg-[var(--paper)] sm:bg-transparent py-3 sm:py-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-[var(--paper-line)] flex justify-end z-10"
+          style={{ paddingBottom: 'max(var(--safe-bottom), 12px)' }}
+        >
           <button
             type="submit"
             disabled={!isDirty || updateMutation.isPending}
-            className="btn btn-primary"
+            className="btn btn-primary w-full sm:w-auto justify-center min-h-[44px]"
           >
             <Save size={14} />
             {updateMutation.isPending ? 'Saving…' : 'Save Settings'}
@@ -184,7 +184,7 @@ interface ToggleFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const ToggleField = React.forwardRef<HTMLInputElement, ToggleFieldProps>(
   ({ label, description, ...props }, ref) => (
-    <label className="flex items-center justify-between gap-4 cursor-pointer">
+    <label className="flex items-center justify-between gap-4 cursor-pointer py-2 px-1 rounded hover:bg-[var(--paper)] transition-colors min-h-[44px]">
       <div>
         <p className="text-sm font-medium text-[var(--ink)]">{label}</p>
         <p className="text-xs text-[var(--ink-soft)]">{description}</p>
@@ -192,7 +192,7 @@ const ToggleField = React.forwardRef<HTMLInputElement, ToggleFieldProps>(
       <input
         ref={ref}
         type="checkbox"
-        className="w-4 h-4 accent-[var(--brand-500)] cursor-pointer"
+        className="w-5 h-5 accent-[var(--brand-500)] cursor-pointer shrink-0"
         {...props}
       />
     </label>

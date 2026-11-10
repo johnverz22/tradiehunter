@@ -18,6 +18,7 @@ import 'package:fixo/router/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/auth_helper.dart';
 import 'helpers/test_config.dart';
@@ -26,6 +27,11 @@ const _persona = String.fromEnvironment(
   'FIXO_PERSONA',
   defaultValue: 'homeowner',
 );
+
+/// Forced app theme for the run: `light` or `dark`. Without it the app
+/// follows the simulator's appearance, so a "light" folder can silently
+/// contain dark captures.
+const _theme = String.fromEnvironment('SHOT_THEME', defaultValue: 'light');
 
 /// A `Requested` job owned by the homeowner — the matching screen
 /// dispatches POST /jobs/:id/match itself on load.
@@ -60,10 +66,26 @@ Future<void> _shot(WidgetTester tester, String name,
   await Future<void>.delayed(_shotHold);
 }
 
+/// Fails the run if the rendered theme is not the forced one, so a wrong-theme
+/// folder can never be produced again.
+void _expectForcedTheme(WidgetTester tester) {
+  final scaffold = find.byType(Scaffold);
+  if (scaffold.evaluate().isEmpty) return;
+  final brightness = Theme.of(tester.element(scaffold.first)).brightness;
+  expect(
+    brightness,
+    _theme == 'dark' ? Brightness.dark : Brightness.light,
+    reason: 'SHOT_THEME=$_theme but the app rendered $brightness',
+  );
+}
+
 Future<void> _go(WidgetTester tester, String location, String name,
     {Object? extra, Duration settle = const Duration(seconds: 5)}) async {
   appRouter.go(location, extra: extra);
-  await _shot(tester, name, settle: settle);
+  await pumpFor(tester, settle);
+  _expectForcedTheme(tester);
+  print('__SHOT__ $name');
+  await Future<void>.delayed(_shotHold);
 }
 
 void main() {
@@ -72,6 +94,10 @@ void main() {
   testWidgets(
     'capture all $_persona screens',
     (tester) async {
+      // ThemeMode index: 0 system, 1 light, 2 dark (read by ThemeModeNotifier).
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('theme_mode', _theme == 'dark' ? 2 : 1);
       app.main();
       // Splash shows during the ~2s boot delay — catch it early.
       if (_persona == 'homeowner') {

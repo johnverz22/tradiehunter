@@ -30,9 +30,9 @@ public class AdminSeedService : IHostedService
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        var email = config["AdminSeed:Email"] ?? "admin@fixo.nz";
-        var password = config["AdminSeed:Password"] ?? "Admin1!Fixo";
-        var firstName = config["AdminSeed:FirstName"] ?? "Fixo";
+        var email = config["AdminSeed:Email"] ?? "admin@tradiehunter.nz";
+        var password = config["AdminSeed:Password"] ?? "Admin1!TH";
+        var firstName = config["AdminSeed:FirstName"] ?? "TradieHunter";
         var lastName = config["AdminSeed:LastName"] ?? "Admin";
 
         var existing = await userManager.FindByEmailAsync(email);

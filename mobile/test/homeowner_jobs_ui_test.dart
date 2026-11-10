@@ -189,7 +189,8 @@ void main() {
       );
       expect(find.text('Sarah'), findsOneWidget);
       expect(find.byKey(const Key('homeowner_hero')), findsOneWidget);
-      expect(find.text('Booked'), findsNWidgets(2));
+      expect(find.text('Booked'), findsOneWidget);
+      expect(find.text('Step 2 of 4'), findsOneWidget);
       expect(find.text('Open chat'), findsOneWidget);
       expect(find.text('Needs your attention'), findsOneWidget);
       expect(find.text('Customer title AwaitingPayment'), findsOneWidget);
@@ -366,6 +367,7 @@ void main() {
     tester,
   ) async {
     await mount(tester, JobsFixture([fixture('Completed')]), role: 1);
+    await tester.ensureVisible(find.text('All'));
     await tester.tap(find.text('All'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(ModernJobCard));

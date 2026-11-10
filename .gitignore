@@ -33,3 +33,6 @@ backend/appsettings.Development.json
 # Playwright artifacts
 web/**/test-results/
 web/**/playwright-report/
+scripts/earnings-tests/bin/
+scripts/earnings-tests/obj/
+docs/runs/*/screenshots/

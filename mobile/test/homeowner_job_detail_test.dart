@@ -426,12 +426,23 @@ void main() {
       expect(find.textContaining('10% platform fee'), findsOneWidget);
     });
 
+    Future<void> openCancel(WidgetTester tester) async {
+      final cancelTooltip = find.byTooltip('Cancel job');
+      if (cancelTooltip.evaluate().isNotEmpty) {
+        await tester.tap(cancelTooltip);
+      } else {
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Cancel job'));
+      }
+      await tester.pumpAndSettle();
+    }
+
     testWidgets(
       'cancel sheet repeats the status-specific warning before confirming',
       (tester) async {
         await mount(tester, _JobsFixture(_job('Booked', tradieId: 't-1')));
-        await tester.tap(find.byTooltip('Cancel job'));
-        await tester.pumpAndSettle();
+        await openCancel(tester);
         // Warning is visible even though the page policy section is collapsed.
         expect(find.textContaining('10% platform fee'), findsOneWidget);
         expect(find.text('Confirm Cancellation'), findsOneWidget);
@@ -442,8 +453,7 @@ void main() {
       tester,
     ) async {
       await mount(tester, _JobsFixture(_job('InProgress', tradieId: 't-1')));
-      await tester.tap(find.byTooltip('Cancel job'));
-      await tester.pumpAndSettle();
+      await openCancel(tester);
       expect(find.textContaining('hours already worked'), findsOneWidget);
     });
   });

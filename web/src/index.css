@@ -107,3 +107,40 @@ hr {
   border-top: 1px solid var(--paper-line);
   margin: var(--space-6) 0;
 }
+
+/* ── Shell tokens ───────────────────────────────────── */
+:root {
+  --topbar-height: 56px;
+  --sidebar-width: 240px;
+  --rail-width: 64px;
+  --drawer-width: min(85vw, 320px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ── Bottom sheet animation ─────────────────────────── */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+.motion-safe\:animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-slide-up { animation: none; }
+}
+
+.motion-safe\:animate-slide-in-left {
+  animation: slide-in-left 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-slide-in-left { animation: none; }
+}

@@ -173,10 +173,10 @@ void main() {
       jobsFixture: jobs,
     );
     expect(find.text('Message'), findsOneWidget);
-    expect(find.text('Request for a job'), findsOneWidget);
+    expect(find.text('Request this tradie'), findsOneWidget);
     expect(find.text('Not taking jobs'), findsOneWidget);
 
-    await tester.tap(find.text('Request for a job'));
+    await tester.tap(find.text('Request this tradie'));
     await tester.pumpAndSettle();
     expect(jobs.requestedJobId, 'open-1');
     expect(jobs.requestedTradieId, 'target');
@@ -194,7 +194,7 @@ void main() {
       convs: const [],
       jobs: [job('closed', 'Completed', 'viewer', 'target')],
     );
-    expect(find.text('Request for a job'), findsNothing);
+    expect(find.text('Request this tradie'), findsNothing);
     expect(find.text('Message'), findsNothing);
   });
 
@@ -210,7 +210,7 @@ void main() {
       jobs: const [],
     );
     expect(find.text('Message'), findsOneWidget);
-    expect(find.text('Request for a job'), findsNothing);
+    expect(find.text('Request this tradie'), findsNothing);
     // Homeowner profiles never render the tradie-only Verified stat.
     expect(find.text('Verified'), findsNothing);
     expect(find.text('Available for jobs'), findsNothing);
@@ -249,7 +249,7 @@ void main() {
     );
     expect(find.text('Edit Profile'), findsOneWidget);
     expect(find.text('Message'), findsNothing);
-    expect(find.text('Request for a job'), findsNothing);
+    expect(find.text('Request this tradie'), findsNothing);
     expect(find.byIcon(Icons.more_vert), findsNothing);
     expect(tester.takeException(), isNull);
   });

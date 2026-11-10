@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/payment.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/payment_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
@@ -151,8 +151,7 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
               'The receipt was unclear — please upload a clearer photo or screenshot.')
         : "We're checking your receipt. This usually takes under a business day — we'll let you know.";
 
-    final amountStr = NumberFormat.currency(symbol: r'$', decimalDigits: 2)
-        .format(double.tryParse(payment.amount.toString()) ?? 0);
+    final amountStr = formatMoney(payment.amount);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(Space.s6, Space.s7, Space.s6, Space.s6),
@@ -216,9 +215,7 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
             ),
           ),
         ],
-        if (isRejected &&
-            payment.reUploadCount != null &&
-            payment.reUploadCount! > 0) ...[
+        if (isRejected && payment.reUploadCount > 0) ...[
           const SizedBox(height: Space.s4),
           FixoCard(
             padding: const EdgeInsets.all(14),
@@ -369,13 +366,17 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
             color: DesignTokens.inkSoft(isDark),
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: mono ? DesignTokens.fontMono : DesignTokens.fontBody,
-            fontSize: DesignTokens.fontSizeSm,
-            fontWeight: FW.semibold,
-            color: isDark ? DesignTokens.inkDark : DesignTokens.inkLight,
+        const SizedBox(width: Space.s2),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontFamily: mono ? DesignTokens.fontMono : DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeSm,
+              fontWeight: FW.semibold,
+              color: isDark ? DesignTokens.inkDark : DesignTokens.inkLight,
+            ),
           ),
         ),
       ],

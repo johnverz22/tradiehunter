@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace FixoApi.Services;
 
 /// <summary>
-/// Payment provider seam (P4-02). Fixo has no gateway at this phase — the only
+/// Payment provider seam (P4-02). TradieHunter has no gateway at this phase — the only
 /// implementation is <see cref="ManualReceiptProvider"/>, where the "provider" is
 /// a human at the admin queue — but the interface is the extension point a real
 /// PSP (Stripe, BNZ, Windcave) drops in later without touching

@@ -19,8 +19,8 @@
 | **Homeowner UI** | **Task 4** | Chat `sentByMe` User ID Resolution & Tokens | `mobile/lib/viewmodels/chat_viewmodel.dart`, `mobile/lib/views/chat/chat_screen.dart`, `mobile/lib/views/widgets/chat_widgets.dart` | **Completed** ✅ | `82d44ae` |
 | **Homeowner UI** | **Task 5** | Job Detail Progress Banner & On-Dark Badge | `mobile/lib/widgets/fixo_cards.dart`, `mobile/lib/views/widgets/status_strip.dart`, `mobile/lib/views/homeowner/homeowner_job_detail_screen.dart` | **Completed** ✅ | `bc2540e` |
 | **Tradie UI** | **Task 6** | Tradie Request Detail Screen | `mobile/lib/views/tradie/request_detail_screen.dart` | **Completed** ✅ | `02662b6` |
-| **Tradie UI** | **Task 7** | Tradie Active Job Screen | `mobile/lib/views/tradie/tradie_job_detail_screen.dart` | **Next Up** ⏳ | Pending |
-| **Notice System** | **Task 8** | FixoNotice Feedback System (48 SnackBar replacements) | `mobile/lib/feedback/*`, call sites | Pending ⏳ | Pending |
+| **Tradie UI** | **Task 7** | Tradie Active Job Screen | `mobile/lib/views/tradie/tradie_job_detail_screen.dart` | **Completed** ✅ | `02662b6` |
+| **Notice System** | **Task 8** | FixoNotice Feedback System (48 SnackBar replacements) | `mobile/lib/feedback/*`, call sites | **Completed** ✅ | Pending |
 
 ---
 
@@ -84,20 +84,40 @@
 
 ---
 
-## 3. Pending Tasks
+### ✅ Task 8: FixoNotice Feedback System
+- **Target Files:**
+  - `mobile/lib/feedback/fixo_notice.dart` (public façade + `FixoNoticeHost` component)
+  - `mobile/lib/feedback/fixo_notice_controller.dart` (Riverpod `StateNotifier`)
+  - `mobile/lib/feedback/notice_copy.dart` (centralised copy strings)
+  - `mobile/lib/feedback/notice_gallery.dart` (debug-only gallery route `/debug/notice-gallery`)
+  - `mobile/lib/theme/design_tokens.dart` (notice dimensions & auto-dismiss durations)
+  - `mobile/test/fixo_notice_test.dart` (unit tests + static lint check for zero SnackBar usages)
+  - 14 call-site files migrated across mobile app
+- **Implemented:**
+  1. **8-A:** Created `docs/design/feedback-guidelines.md` classification table covering tones (info, success, warning, error, push), auto-dismiss durations, placement, sentence casing, and rules.
+  2. **8-B:** Added notice tokens to `design_tokens.dart`: `Sizes.noticeIconSize = 20.0`, `Sizes.noticeCloseSize = 20.0`, `Sizes.noticeMinH = 52.0`, `Sizes.noticeHPad = 16.0`, `Sizes.noticeVPad = 10.0`, `Sizes.noticeBorderW = 1.0`, and durations `FixoDurations.noticeInfo`, `noticeSuccess`, `noticeWarning`, `noticeError`, `noticePush`, `noticeAnimate`.
+  3. **8-C:** Built `FixoNoticeController` (`StateNotifier<FixoNoticeState?>`) and `fixoNoticeProvider`.
+  4. **8-D:** Built `FixoNoticeHost` widget attached above root router builder with smooth slide & fade animation, plus zero-overhead fallback overlay support for isolated widget test trees.
+  5. **8-E:** Built `FixoNotice` public static API (`info`, `success`, `warning`, `error` with optional `onRetry`, `push` with optional `onView`) and `NoticeCopy` string dictionary.
+  6. **8-F:** Added debug gallery route `/debug/notice-gallery` registered only in `kDebugMode`.
+  7. **8-G:** Migrated all 48 SnackBar call sites across all views and interceptors (preserved clipboard copy feedback via `FixoNotice.info`).
+  8. **8-H:** Static lint check in `fixo_notice_test.dart` asserting 0 occurrences of `ScaffoldMessenger.of`, `showSnackBar`, or `SnackBar(` across `lib/`.
+  9. **8-I:** Full mobile test suite passes with 696/696 tests passing and 0 `flutter analyze` errors.
 
-### ⏳ Task 8: FixoNotice Feedback System (48 SnackBar replacements)
-- **Sub-tasks:**
-  - **8-A:** Write `docs/design/feedback-guidelines.md` classification table.
-  - **8-B:** Add notice tokens to `design_tokens.dart`.
-  - **8-C:** Build `FixoNoticeController` (Riverpod `StateNotifier`).
-  - **8-D:** Build `FixoNoticeHost` widget (Overlay above Navigator).
-  - **8-E:** `FixoNotice` public static API + `NoticeCopy` strings class.
-  - **8-F:** Debug gallery route (`kDebugMode` only).
-  - **8-G:** Migrate all 48 call sites across 8 file groups.
-    - *Exception:* `chat_screen.dart:191` clipboard copy → `FixoNotice.info(NoticeCopy.copied)` (NOT deleted).
-  - **8-H:** Remove legacy SnackBar usages, add lint/static test.
-  - **8-I:** Full test suite verification & goldens.
+---
+
+## 3. Sprint Summary & Next Steps
+
+All scheduled sprint tasks (Tasks 0 through 8) are now **100% complete**:
+- ✅ Task 0: Type Scale & Design Tokens
+- ✅ Task 1: Homeowner Dashboard
+- ✅ Task 2: Matching Screen
+- ✅ Task 3: Match Result Screen
+- ✅ Task 4: Chat `sentByMe` GUID Resolution & Tokens
+- ✅ Task 5: Job Detail Progress Banner & On-Dark Badge
+- ✅ Task 6: Tradie Request Detail Screen
+- ✅ Task 7: Tradie Active Job Screen
+- ✅ Task 8: FixoNotice Feedback System (complete SnackBar deprecation)
 
 ---
 

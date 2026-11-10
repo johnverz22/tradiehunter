@@ -8,7 +8,7 @@ using NetTopologySuite.Geometries;
 namespace FixoApi.Services;
 
 /// <summary>
-/// Startup service that seeds two demo users — homeowner@fixo.nz and tradie@fixo.nz —
+/// Startup service that seeds two demo users — homeowner@tradiehunter.nz and tradie@tradiehunter.nz —
 /// with a rich set of jobs, chat messages, reviews, and status-history rows so every
 /// screen in the Flutter app and React admin panel has data to show.
 ///
@@ -51,9 +51,9 @@ public class DemoSeedService : IHostedService
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var db          = scope.ServiceProvider.GetRequiredService<FixoDbContext>();
 
-        var homeownerEmail = cfg["DemoSeed:HomeownerEmail"] ?? "homeowner@fixo.nz";
-        var tradieEmail    = cfg["DemoSeed:TradieEmail"]    ?? "tradie@fixo.nz";
-        var password       = cfg["DemoSeed:Password"]        ?? "Demo1!Fixo";
+        var homeownerEmail = cfg["DemoSeed:HomeownerEmail"] ?? "homeowner@tradiehunter.nz";
+        var tradieEmail    = cfg["DemoSeed:TradieEmail"]    ?? "tradie@tradiehunter.nz";
+        var password       = cfg["DemoSeed:Password"]        ?? "Demo1!TH";
 
         // Guard: skip if the homeowner already exists.
         if (await userManager.FindByEmailAsync(homeownerEmail) is not null)

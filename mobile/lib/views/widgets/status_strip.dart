@@ -5,6 +5,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/fixo_cards.dart';
 import 'compact_progress_bar.dart';
 import 'job_status_presentation.dart';
+import '../../feedback/fixo_notice.dart';
 
 /// v1.6 status-strip — the navy gradient band that sits immediately below the
 /// app bar on job detail screens (H12, T22).
@@ -128,13 +129,7 @@ class _StatusStripState extends State<StatusStrip>
                             Clipboard.setData(
                               ClipboardData(text: widget.referenceCode!),
                             );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Job code copied: ${widget.referenceCode}',
-                                ),
-                              ),
-                            );
+                            FixoNotice.info(context, 'Job code copied: ${widget.referenceCode}');
                           },
                           child: Text(
                             widget.referenceCode!,

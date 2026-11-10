@@ -157,6 +157,14 @@ abstract class Sizes {
   static const double handleW              = 40.0;  // bottom sheet drag handle width
   static const double handleH              = 4.0;   // bottom sheet drag handle height
   static const double avatarRadius         = 24.0;  // standard contact avatar radius (48dp diameter)
+
+  // FixoNotice (in-app toast/notice system)
+  static const double noticeIconSize       = 20.0;  // leading semantic icon inside notice pill
+  static const double noticeCloseSize      = 20.0;  // × close icon
+  static const double noticeMinH           = 52.0;  // minimum height; satisfies tapMin on close button
+  static const double noticeHPad          = 16.0;  // horizontal inner padding
+  static const double noticeVPad          = 10.0;  // vertical inner padding
+  static const double noticeBorderW       = 1.0;   // outline border width
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────
@@ -201,6 +209,15 @@ abstract class FixoDurations {
   static const Duration sheetDelayLong = Duration(milliseconds: 1000); // schedule sheet
   static const Duration splashRingLate = Duration(milliseconds: 1200);
   static const Duration splash = Duration(milliseconds: 2800);
+
+  // FixoNotice auto-dismiss durations
+  static const Duration noticeInfo    = Duration(seconds: 3);
+  static const Duration noticeSuccess = Duration(seconds: 3);
+  static const Duration noticeWarning = Duration(seconds: 4);
+  static const Duration noticeError   = Duration(seconds: 5);
+  static const Duration noticePush    = Duration(seconds: 5);
+  /// Enter / exit slide + fade animation for FixoNotice banners.
+  static const Duration noticeAnimate = Duration(milliseconds: 260);
 }
 
 // ── Letter spacing (tracking) ───────────────────────────────────────────────

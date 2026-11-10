@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, MessageSquare, Image as ImageIcon } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
+import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
 import { useJobDetail } from '../hooks/useJobs';
 
 /** The mockup's four-step progress flow. */
@@ -52,16 +53,18 @@ export const JobDetailPage: React.FC = () => {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="text-[13px] text-[var(--ink)] opacity-60">
-        <Link to="/jobs" className="inline-flex items-center gap-1.5">
+        <Link to="/jobs" className="inline-flex items-center gap-1.5 hover:underline">
           <ArrowLeft size={13} /> Jobs
         </Link>{' '}
         / <span className="mono">{formatJobId(job.id)}</span>
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold text-[var(--ink)] mb-1">{job.title}</h1>
+          <h1 className="text-[22px] sm:text-[24px] font-bold text-[var(--ink)] mb-1">
+            {job.title}
+          </h1>
           <p className="mono text-[13px] text-[var(--ink)] opacity-60">
             {formatJobId(job.id)} • {job.category} • {job.address ?? 'No address'}
           </p>
@@ -70,19 +73,21 @@ export const JobDetailPage: React.FC = () => {
       </div>
 
       {/* Status stepper */}
-      <div className="stepper">
-        {STEPS.map((label, i) => {
-          const done = i < currentStep || isComplete;
-          const active = i === currentStep && !isComplete;
-          const state = isCancelled && active ? 'cancelled' : done ? 'done' : active ? 'active' : '';
-          return (
-            <div key={label} className={`step ${state}`}>
-              <div className="step-line" />
-              <div className="step-dot" />
-              <div className="step-label">{isCancelled && active ? 'Cancelled' : label}</div>
-            </div>
-          );
-        })}
+      <div className="stepper overflow-x-auto">
+        <div className="flex items-center min-w-[320px] w-full">
+          {STEPS.map((label, i) => {
+            const done = i < currentStep || isComplete;
+            const active = i === currentStep && !isComplete;
+            const state = isCancelled && active ? 'cancelled' : done ? 'done' : active ? 'active' : '';
+            return (
+              <div key={label} className={`step ${state}`}>
+                <div className="step-line" />
+                <div className="step-dot" />
+                <div className="step-label">{isCancelled && active ? 'Cancelled' : label}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Details */}
@@ -97,43 +102,27 @@ export const JobDetailPage: React.FC = () => {
               </p>
             )}
 
-            <div className="detail-row">
-              <span className="detail-label">Urgency</span>
-              <span
-                className="detail-value"
-                style={{ color: job.urgency === 'Urgent' ? 'var(--red-ink)' : undefined }}
+            <DescriptionList>
+              <InfoRow
+                label="Urgency"
+                valueClassName={job.urgency === 'Urgent' ? 'text-[var(--red-ink)]' : undefined}
               >
                 {job.urgency}
-              </span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Category</span>
-              <span className="detail-value">{job.category}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Schedule</span>
-              <span className="detail-value">{job.scheduleStatus}</span>
-            </div>
-            {job.scheduledDateUtc && (
-              <div className="detail-row">
-                <span className="detail-label">Scheduled</span>
-                <span className="detail-value">
+              </InfoRow>
+              <InfoRow label="Category">{job.category}</InfoRow>
+              <InfoRow label="Schedule">{job.scheduleStatus}</InfoRow>
+              {job.scheduledDateUtc && (
+                <InfoRow label="Scheduled">
                   {dateTimeFormat.format(new Date(job.scheduledDateUtc))}
-                </span>
-              </div>
-            )}
-            <div className="detail-row">
-              <span className="detail-label">Posted</span>
-              <span className="detail-value">
+                </InfoRow>
+              )}
+              <InfoRow label="Posted">
                 {dateTimeFormat.format(new Date(job.createdAtUtc))}
-              </span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Last updated</span>
-              <span className="detail-value">
+              </InfoRow>
+              <InfoRow label="Last updated">
                 {dateTimeFormat.format(new Date(job.updatedAtUtc))}
-              </span>
-            </div>
+              </InfoRow>
+            </DescriptionList>
           </div>
 
           {/* Photos */}
@@ -171,31 +160,27 @@ export const JobDetailPage: React.FC = () => {
         <div className="space-y-6">
           <div className="card">
             <h3 className="card-title">Homeowner</h3>
-            <div className="detail-row">
-              <span className="detail-label">Name</span>
-              <Link to={`/users/${job.homeownerId}`} className="detail-value cell-link">
-                {job.homeownerName}
-              </Link>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">User ID</span>
-              <span className="detail-value mono">{job.homeownerId}</span>
-            </div>
+            <DescriptionList>
+              <InfoRow label="Name">
+                <Link to={`/users/${job.homeownerId}`} className="cell-link">
+                  {job.homeownerName}
+                </Link>
+              </InfoRow>
+              <InfoRow label="User ID" valueClassName="mono">{job.homeownerId}</InfoRow>
+            </DescriptionList>
           </div>
 
           {job.matchedTradieId && (
             <div className="card">
               <h3 className="card-title">Tradie</h3>
-              <div className="detail-row">
-                <span className="detail-label">Name</span>
-                <Link to={`/users/${job.matchedTradieId}`} className="detail-value cell-link">
-                  {job.tradeName ?? job.matchedTradieId}
-                </Link>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Status</span>
-                <span className="detail-value">{job.status}</span>
-              </div>
+              <DescriptionList>
+                <InfoRow label="Name">
+                  <Link to={`/users/${job.matchedTradieId}`} className="cell-link">
+                    {job.tradeName ?? job.matchedTradieId}
+                  </Link>
+                </InfoRow>
+                <InfoRow label="Status">{job.status}</InfoRow>
+              </DescriptionList>
             </div>
           )}
         </div>

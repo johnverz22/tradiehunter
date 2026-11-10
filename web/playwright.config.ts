@@ -29,6 +29,36 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
+    {
+      name: 'tablet',
+      use: {
+        ...devices['iPad Pro 11'],
+        defaultBrowserType: 'chromium',
+        storageState: './e2e/.auth/staff.json',
+      },
+      dependencies: ['setup'],
+      testMatch: /responsive\.spec\.ts/,
+    },
+    {
+      name: 'tablet-landscape',
+      use: {
+        ...devices['iPad Pro 11 landscape'],
+        defaultBrowserType: 'chromium',
+        storageState: './e2e/.auth/staff.json',
+      },
+      dependencies: ['setup'],
+      testMatch: /responsive\.spec\.ts/,
+    },
+    {
+      name: 'phone',
+      use: {
+        ...devices['Pixel 7'],
+        defaultBrowserType: 'chromium',
+        storageState: './e2e/.auth/staff.json',
+      },
+      dependencies: ['setup'],
+      testMatch: /responsive\.spec\.ts/,
+    },
   ],
 
   // Start vite dev server automatically before tests.

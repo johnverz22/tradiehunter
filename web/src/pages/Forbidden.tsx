@@ -3,8 +3,14 @@ import { Link } from 'react-router-dom';
 import { ShieldOff } from 'lucide-react';
 
 const Forbidden: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[var(--paper)]">
-    <div className="text-center max-w-sm px-6">
+  <div
+    className="min-h-dvh flex items-center justify-center bg-[var(--paper)] px-4 py-8"
+    style={{
+      paddingTop: 'max(var(--safe-top), 2rem)',
+      paddingBottom: 'max(var(--safe-bottom), 2rem)',
+    }}
+  >
+    <div className="text-center max-w-sm px-4 sm:px-6">
       <ShieldOff
         size={56}
         className="mx-auto mb-6 text-[var(--red)]"

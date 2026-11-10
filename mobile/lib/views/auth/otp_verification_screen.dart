@@ -11,6 +11,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../widgets/otp_code_field.dart';
 import '../widgets/auth_controls.dart';
 import '../widgets/fixo_feedback.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// P1-08: email OTP entry. Reached from signup (registration always leaves
@@ -113,9 +114,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (sent) {
       // A fresh code invalidates the previous one server-side.
       _codeController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('New code sent to ${widget.email}')),
-      );
+      FixoNotice.info(context, NoticeCopy.codeSent(widget.email));
     }
   }
 
@@ -130,7 +129,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       key: const Key('otp_screen'),
       body: SafeArea(
         child: AuthScrollView(
-          padding: const EdgeInsets.fromLTRB(Space.s6, 48, Space.s6, Space.s6),
+          padding: const EdgeInsets.fromLTRB(Space.s6, Space.s9, Space.s6, Space.s6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -140,6 +139,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 'Check your email',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FW.bold,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: Space.s2),
@@ -161,7 +161,19 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: Space.s7),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  key: const Key('change_email_button'),
+                  onPressed: () => context.go('/auth'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                  ),
+                  child: const Text('Use a different email'),
+                ),
+              ),
+              const SizedBox(height: Space.s4),
               if (authState.error != null)
                 Semantics(
                   liveRegion: true,
@@ -207,10 +219,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       key: const Key('resend_button'),
                       onPressed: canResend ? _resend : null,
                       style: TextButton.styleFrom(
-                        minimumSize: const Size(64, 48),
+                        minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
                         foregroundColor: theme.colorScheme.primary,
-                        disabledForegroundColor:
-                            theme.colorScheme.onSurfaceVariant,
+                        disabledForegroundColor: isDark
+                            ? DesignTokens.inkSoftDark
+                            : DesignTokens.inkSoftLight,
                       ),
                       child: Text(
                         _resendSecondsLeft == 0
@@ -224,18 +237,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: Space.s7),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  const Text('Wrong address?'),
-                  TextButton(
-                    onPressed: () => context.go('/auth'),
-                    child: const Text('Use a different account'),
-                  ),
-                ],
               ),
             ],
           ),

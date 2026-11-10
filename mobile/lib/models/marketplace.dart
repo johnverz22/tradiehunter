@@ -298,6 +298,11 @@ class TradieMatch {
   final bool hasInsurance;
   final String distance;
   final double distanceKm;
+
+  /// A distance is only worth showing when the server actually computed one;
+  /// "0.0 km away" means unknown, not "next door".
+  bool get hasDistance => distance.trim().isNotEmpty && distanceKm > 0;
+
   final double? rating;
   final int? reviewCount;
   final String? bio;

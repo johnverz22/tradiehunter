@@ -58,12 +58,30 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
             padding: const EdgeInsets.fromLTRB(
               Space.s6, Space.s2, Space.s6, Space.s4,
             ),
-            child: FixoPrimaryButton(
-              label: 'Continue',
-              isLoading: authState.isLoading,
-              onPressed: _selectedRole == null
-                  ? null
-                  : () => pickRole(_selectedRole!),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_selectedRole == null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Space.s2),
+                    child: Text(
+                      "Choose how you'll use TradieHunter",
+                      key: const Key('role_helper'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: th.textSoft,
+                      ),
+                    ),
+                  ),
+                FixoPrimaryButton(
+                  label: 'Continue',
+                  isLoading: authState.isLoading,
+                  onPressed: _selectedRole == null
+                      ? null
+                      : () => pickRole(_selectedRole!),
+                ),
+              ],
             ),
           ),
         ),
@@ -86,13 +104,6 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                       color: th.text,
                       fontWeight: FW.bold,
                       height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: Space.s2), // 8
-                  Text(
-                    'You can switch later in settings.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: th.textSoft,
                     ),
                   ),
 

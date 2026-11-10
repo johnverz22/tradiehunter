@@ -10,7 +10,7 @@ test.describe('Admin Auth', () => {
   test('login page renders email and password fields', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByLabel('Email Address')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
 
@@ -23,7 +23,7 @@ test.describe('Admin Auth', () => {
   test('wrong credentials shows error message', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Email Address').fill('staff@fixo.test');
-    await page.getByLabel('Password').fill('WrongPassword!');
+    await page.getByLabel('Password', { exact: true }).fill('WrongPassword!');
     await page.getByRole('button', { name: 'Sign In' }).click();
     await expect(page.getByRole('alert')).toBeVisible({ timeout: 8_000 });
   });

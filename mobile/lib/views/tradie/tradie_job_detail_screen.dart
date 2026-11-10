@@ -22,6 +22,7 @@ import '../widgets/job_info_grid.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// Tradie-side job detail screen for Booked / InProgress / AwaitingConfirmation
@@ -146,11 +147,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           app: app,
         );
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Couldn\'t open a maps app on this device.'),
-        ),
-      );
+      FixoNotice.warning(context, "Couldn't open a maps app on this device.");
     }
   }
 
@@ -159,11 +156,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         .read(externalLauncherProvider)
         .callPhone(phoneNumber);
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Couldn\'t open the phone app on this device.'),
-        ),
-      );
+      FixoNotice.warning(context, "Couldn't open the phone app on this device.");
     }
   }
 
@@ -178,9 +171,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           .applyStatusUpdate(widget.jobId, 'InProgress');
       await _load();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-in failed. Please try again.')),
-      );
+      FixoNotice.error(context, NoticeCopy.checkInFailed);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -196,9 +187,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           .applyStatusUpdate(widget.jobId, 'AwaitingConfirmation');
       await _load();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Check-out failed. Please try again.')),
-      );
+      FixoNotice.error(context, NoticeCopy.checkOutFailed);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -225,14 +214,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         );
         if (mounted) {
           setState(() => _hasReview = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Your review has been submitted. It will be visible once the other party also reviews, or after 7 days.',
-              ),
-              duration: Duration(seconds: 5),
-            ),
-          );
+          FixoNotice.success(context, 'Your review has been submitted.');
         }
       },
     );
@@ -267,20 +249,10 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           .applyStatusUpdate(widget.jobId, 'Cancelled');
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Job cancelled. We\'ll find the homeowner a new tradie.',
-            ),
-          ),
-        );
+        FixoNotice.success(context, NoticeCopy.jobCancelled);
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not cancel the job. Please try again.'),
-        ),
-      );
+      FixoNotice.error(context, NoticeCopy.cancelFailed);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -325,15 +297,11 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
       ref.read(jobsViewModelProvider.notifier).loadTradieJobs();
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No-show reported successfully.')),
-        );
+        FixoNotice.success(context, NoticeCopy.noShowReported);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not report no-show.')),
-        );
+        FixoNotice.error(context, NoticeCopy.noShowFailed);
       }
     }
     if (mounted) setState(() => _busy = false);

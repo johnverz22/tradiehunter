@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, ExternalLink, ShieldCheck, XCircle } from 'lucide-react';
+import { ExternalLink, ShieldCheck } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { useCredentialQueue, useReviewCredential } from '../hooks/useCredentials';
@@ -115,160 +118,140 @@ export const CredentialQueue: React.FC = () => {
 
   const busyId = reviewMutation.isPending ? reviewMutation.variables?.id : undefined;
 
+  const columns: ColumnDef<PendingCredential>[] = [
+    {
+      key: 'tradie',
+      header: 'Tradie',
+      priority: 'primary',
+      cell: (credential) => (
+        <div>
+          <Link to={`/users/${credential.tradieUserId}`} className="cell-link">
+            {credential.tradieName}
+          </Link>
+          <span className="block text-xs cell-muted">{credential.tradieEmail}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'trade',
+      header: 'Trade',
+      priority: 'secondary',
+      cell: (credential) => (
+        <div>
+          <span>{credential.tradeType ?? '—'}</span>
+          {credential.businessName && (
+            <span className="block text-xs cell-muted">{credential.businessName}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Credential',
+      priority: 'secondary',
+      cell: (credential) => (
+        <span className="pill pill-brand">{credential.type}</span>
+      ),
+    },
+    {
+      key: 'document',
+      header: 'Document',
+      priority: 'secondary',
+      cell: (credential) => (
+        <a
+          href={credential.downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="action-link inline-flex items-center gap-1.5"
+        >
+          <ExternalLink size={12} aria-hidden="true" />
+          <span className="truncate max-w-[200px]">
+            {credential.originalFileName || 'View document'}
+          </span>
+        </a>
+      ),
+    },
+  ];
+
+  const rowActions = (credential: PendingCredential): RowAction[] => [
+    {
+      label: 'Approve',
+      onClick: () => openAction('approve', credential),
+      variant: 'primary',
+      disabled: busyId === credential.id,
+      primary: true,
+    },
+    {
+      label: 'Reject',
+      onClick: () => openAction('reject', credential),
+      variant: 'danger',
+      disabled: busyId === credential.id,
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Credential Verification</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          Review tradie licences, insurance and certifications. Approving a credential verifies the
-          tradie and makes them eligible for job matching.
-        </p>
-        {data && (
-          <div className="flex flex-wrap gap-4 mt-3">
-            <div className="stat-pill">
-              <ShieldCheck size={13} aria-hidden="true" />
-              <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
-            </div>
-            <div className="stat-pill">
-              <strong>{data.items.length}</strong> on this page
-            </div>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Credential Verification"
+        description="Review tradie licences, insurance and certifications. Approving a credential verifies the tradie and makes them eligible for job matching."
+        meta={
+          data && (
+            <>
+              <div className="stat-pill">
+                <ShieldCheck size={13} aria-hidden="true" />
+                <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
+              </div>
+              <div className="stat-pill">
+                <strong>{data.items.length}</strong> on this page
+              </div>
+            </>
+          )
+        }
+      />
 
       {successMessage && (
-        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle size={14} aria-hidden="true" />
-          {successMessage}
-        </div>
+        <Banner variant="success">{successMessage}</Banner>
       )}
 
       {actionError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          {actionError}
-        </div>
+        <Banner variant="error">{actionError}</Banner>
       )}
 
       {isError && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          <span>Could not load the credential queue: {describeReviewError(queryError)}</span>
-          <button className="btn btn-ghost !py-1 !px-2.5 !text-xs" onClick={() => refetch()}>
-            Retry
-          </button>
-        </div>
+        <Banner
+          variant="error"
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        >
+          Could not load the credential queue: {describeReviewError(queryError)}
+        </Banner>
       )}
 
       {/* Queue table */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Tradie</th>
-                <th className="th">Trade</th>
-                <th className="th">Credential</th>
-                <th className="th">Document</th>
-                <th className="th" />
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="td text-center cell-muted">
-                    Loading…
-                  </td>
-                </tr>
-              ) : data && data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="td text-center cell-muted">
-                    {data.totalCount > 0 && page > 1 ? (
-                      <>
-                        No credentials left on this page.{' '}
-                        <button
-                          className="action-link"
-                          onClick={() => setPage(Math.max(1, data.totalPages))}
-                        >
-                          Go to page {Math.max(1, data.totalPages)}
-                        </button>
-                      </>
-                    ) : (
-                      'No credentials awaiting review.'
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                data?.items.map((credential) => (
-                  <tr key={credential.id}>
-                    <td className="td">
-                      <Link to={`/users/${credential.tradieUserId}`} className="cell-link">
-                        {credential.tradieName}
-                      </Link>
-                      <span className="block text-xs cell-muted">{credential.tradieEmail}</span>
-                    </td>
-                    <td className="td">
-                      {credential.tradeType ?? '—'}
-                      {credential.businessName && (
-                        <span className="block text-xs cell-muted">{credential.businessName}</span>
-                      )}
-                    </td>
-                    <td className="td">
-                      <span className="pill pill-brand">{credential.type}</span>
-                    </td>
-                    <td className="td">
-                      <a
-                        href={credential.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="action-link inline-flex items-center gap-1.5"
-                      >
-                        <ExternalLink size={12} aria-hidden="true" />
-                        {credential.originalFileName}
-                      </a>
-                    </td>
-                    <td className="td">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          className="btn btn-primary !py-1 !px-2.5 !text-xs"
-                          disabled={busyId === credential.id}
-                          onClick={() => openAction('approve', credential)}
-                        >
-                          <CheckCircle size={12} aria-hidden="true" />
-                          Approve
-                        </button>
-                        <button
-                          className="btn btn-danger !py-1 !px-2.5 !text-xs"
-                          disabled={busyId === credential.id}
-                          onClick={() => openAction('reject', credential)}
-                        >
-                          <XCircle size={12} aria-hidden="true" />
-                          Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="credentials"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(c) => c.id}
+        isLoading={isLoading}
+        rowActions={rowActions}
+        empty="No credentials awaiting review."
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="credentials"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
 
       <p className="text-xs text-[var(--ink-soft)]">
         Document links are private-bucket URLs that expire 15 minutes after the queue was loaded.
       </p>
-
 
       {/* Approve / reject confirmation */}
       {pendingAction && (
@@ -319,5 +302,3 @@ export const CredentialQueue: React.FC = () => {
     </div>
   );
 };
-
-

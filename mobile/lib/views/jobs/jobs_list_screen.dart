@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/marketplace.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../tradie/tradie_dashboard_view.dart' show isScheduledOnOrBeforeToday;
@@ -312,8 +313,8 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
               Padding(
                 padding: const EdgeInsets.all(Space.s4),
                 child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: Space.s2,
+                  runSpacing: Space.s2,
                   children: [
                     for (final filter in _JobFilter.values)
                       ChoiceChip(
@@ -333,13 +334,16 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                 ),
               ),
             if (isTradie)
-              Padding(
-                padding: const EdgeInsets.all(Space.s4),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+              SingleChildScrollView(
+                key: const Key('tradie_filter_row'),
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.s4,
+                  vertical: Space.s2,
+                ),
+                child: Row(
                   children: [
-                    for (final filter in _TradieJobFilter.values)
+                    for (final filter in _TradieJobFilter.values) ...[
                       ChoiceChip(
                         label: Text(switch (filter) {
                           _TradieJobFilter.today => 'Today',
@@ -350,12 +354,13 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                           _TradieJobFilter.all => 'All',
                         }),
                         selected: _tradieFilter == filter,
+                        showCheckmark: true,
                         onSelected: (_) =>
                             setState(() => _tradieFilter = filter),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.padded,
-                        padding: const EdgeInsets.symmetric(horizontal: Space.s3, vertical: Space.s3),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
                       ),
+                      const SizedBox(width: Space.s2),
+                    ],
                   ],
                 ),
               ),
@@ -465,7 +470,7 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
       status: presentation.label,
       statusKind: presentation.kind,
       priceLabel: job.totalAmount != null
-          ? '\$${job.totalAmount!.toStringAsFixed(2)}'
+          ? formatMoney(job.totalAmount!)
           : null,
       scheduleLabel: scheduled != null
           ? DateFormat.jm().format(scheduled)

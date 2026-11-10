@@ -15,9 +15,9 @@ public class PaymentOptions
 
     /// <summary>
     /// Template for the job-specific transfer reference. <c>{JobId}</c> is
-    /// substituted with the job's identifier, e.g. <c>FIXO-{JobId}</c> → <c>FIXO-42</c>.
+    /// substituted with the job's identifier, e.g. <c>TH-{JobId}</c> → <c>TH-42</c>.
     /// </summary>
-    public string ReferenceFormat { get; set; } = "THUNTER-{JobId}";
+    public string ReferenceFormat { get; set; } = "TH-{JobId}";
 
     /// <summary>
     /// Hours the homeowner has to pay before the job expires and the tradie is
@@ -32,7 +32,7 @@ public class PaymentOptions
     /// credentials so access to one class of document can be revoked
     /// independently of the other.
     /// </summary>
-    public string PaymentsContainer { get; set; } = "fixo-payments";
+    public string PaymentsContainer { get; set; } = "th-payments";
 
     /// <summary>Render <paramref name="jobId"/> into <see cref="ReferenceFormat"/>.</summary>
     public string BuildReference(int jobId) =>

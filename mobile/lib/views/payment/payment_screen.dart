@@ -14,6 +14,7 @@ import '../../widgets/fixo_cards.dart';
 import '../widgets/fixo_feedback.dart';
 import '../widgets/fixo_rows.dart';
 import '../widgets/sticky_action_bar.dart';
+import '../../feedback/fixo_notice.dart';
 
 /// Homeowner payment screen (P4-07).
 ///
@@ -62,9 +63,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   void _toast(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    FixoNotice.errorDynamic(context, message);
   }
 
   Future<void> _copy(String value, String label) async {

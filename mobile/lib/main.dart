@@ -6,8 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
+import 'feedback/fixo_notice.dart';
 import 'router/app_router.dart';
-import 'theme/design_tokens.dart';
 import 'theme/fixo_theme.dart';
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
@@ -137,27 +137,11 @@ class _FixoAppState extends ConsumerState<FixoApp> {
     final notification = message.notification;
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (notification?.title != null)
-              Text(
-                notification!.title!,
-                style: const TextStyle(fontWeight: FW.bold),
-              ),
-            if (notification?.body != null)
-              Text(notification!.body!),
-          ],
-        ),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'View',
-          onPressed: () => _routeFromMessage(message),
-        ),
-      ),
+    FixoNotice.push(
+      context,
+      title: notification?.title ?? 'Fixo',
+      body: notification?.body ?? '',
+      onView: () => _routeFromMessage(message),
     );
   }
 
@@ -194,6 +178,8 @@ class _FixoAppState extends ConsumerState<FixoApp> {
       themeMode: themeMode,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) =>
+          FixoNoticeHost(child: child ?? const SizedBox()),
     );
   }
 }

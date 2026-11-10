@@ -14,6 +14,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
 import '../../widgets/fixo_states.dart';
 import '../widgets/fixo_feedback.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// Four-section tradie onboarding wizard (P1-09, D7).
@@ -165,8 +166,7 @@ class _TradieOnboardingWizardState
   }
 
   void _snack(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      FixoNotice.errorDynamic(context, message);
 
   Future<CredentialKind?> _askCredentialKind(String fileName) {
     return showModalBottomSheet<CredentialKind>(

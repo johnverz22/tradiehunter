@@ -72,7 +72,21 @@ void main() {
         } else {
           expect(find.text('Account number'), findsNothing);
         }
-        expect(find.byKey(const Key('upload_receipt_button')), findsOneWidget);
+        final upload = find.byKey(const Key('upload_receipt_button'));
+        final refresh = find.byKey(const Key('refresh_payment_button'));
+        if (kind == 'legal') {
+          expect(upload, findsOneWidget);
+          expect(refresh, findsNothing);
+          expect(find.byKey(const Key('copy_all_button')), findsOneWidget);
+          expect(find.textContaining(r'$'), findsWidgets);
+          expect(find.textContaining('NZD'), findsNothing);
+        } else {
+          expect(upload, findsNothing);
+          expect(refresh, findsOneWidget);
+          expect(find.byKey(const Key('upload_disabled_hint')), findsOneWidget);
+          expect(find.byKey(const Key('copy_all_button')), findsNothing);
+        }
+        expect(find.text('View payment status'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       });

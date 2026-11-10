@@ -4,7 +4,10 @@
   "route": "/dashboard",
   "prefetch": [
     {
-      "key": ["admin", "stats"],
+      "key": [
+        "admin",
+        "stats"
+      ],
       "url": "/admin/stats",
       "body": {
         "totalUsers": 128,
@@ -24,7 +27,10 @@
       }
     },
     {
-      "key": ["admin", "metrics"],
+      "key": [
+        "admin",
+        "metrics"
+      ],
       "url": "/admin/metrics",
       "body": {
         "last7Days": {
@@ -56,7 +62,14 @@
       }
     },
     {
-      "key": ["admin", "jobs", { "page": 1, "pageSize": 5 }],
+      "key": [
+        "admin",
+        "jobs",
+        {
+          "page": 1,
+          "pageSize": 5
+        }
+      ],
       "url": "/admin/jobs",
       "body": {
         "items": [
@@ -78,7 +91,14 @@
       }
     },
     {
-      "key": ["admin", "disputes", { "page": 1, "pageSize": 5 }],
+      "key": [
+        "admin",
+        "disputes",
+        {
+          "page": 1,
+          "pageSize": 5
+        }
+      ],
       "url": "/admin/disputes",
       "body": {
         "items": [
@@ -100,7 +120,15 @@
       }
     },
     {
-      "key": ["admin", "users", { "role": "Tradie", "page": 1, "pageSize": 20 }],
+      "key": [
+        "admin",
+        "users",
+        {
+          "role": "Tradie",
+          "page": 1,
+          "pageSize": 20
+        }
+      ],
       "url": "/admin/users",
       "body": {
         "items": [
@@ -120,18 +148,88 @@
         "pageSize": 20,
         "totalPages": 1
       }
+    },
+    {
+      "key": [
+        "admin",
+        "credentials",
+        "pending",
+        {
+          "page": 1,
+          "pageSize": 1
+        }
+      ],
+      "url": "/admin/credentials/pending",
+      "body": {
+        "items": [],
+        "totalCount": 6,
+        "page": 1,
+        "pageSize": 1,
+        "totalPages": 6
+      }
     }
   ],
   "expect": [
-    { "label": "page heading", "needle": "Dashboard" },
-    { "label": "admin badge", "needle": "Admin" },
-    { "label": "total users stat", "needle": "Total Users" },
-    { "label": "total users count", "needle": "128" },
-    { "label": "active jobs stat", "needle": "Active Jobs" },
-    { "label": "marketplace health section", "needle": "Marketplace Health · last 30 days" },
-    { "label": "activation rate metric", "needle": "88.5%" },
-    { "label": "tradie response rate", "needle": "94.2%" },
-    { "label": "recent job title", "needle": "Fix heat pump compressor" },
-    { "label": "recent dispute flag reason", "needle": "Work incomplete" }
+    {
+      "label": "page heading",
+      "needle": "Dashboard"
+    },
+    {
+      "label": "admin badge",
+      "needle": "Admin"
+    },
+    {
+      "label": "total users stat",
+      "needle": "Total Users"
+    },
+    {
+      "label": "total users count",
+      "needle": "128"
+    },
+    {
+      "label": "active jobs stat",
+      "needle": "Active Jobs"
+    },
+    {
+      "label": "marketplace health section",
+      "needle": "Marketplace Health · last 30 days"
+    },
+    {
+      "label": "activation rate metric",
+      "needle": "88.5%"
+    },
+    {
+      "label": "tradie response rate",
+      "needle": "94.2%"
+    },
+    {
+      "label": "recent job title",
+      "needle": "Fix heat pump compressor"
+    },
+    {
+      "label": "recent dispute flag reason",
+      "needle": "Work incomplete"
+    },
+    {
+      "label": "pending verifications uses credentials queue count (6)",
+      "needle": "Pending Verifications"
+    },
+    {
+      "label": "credentials card links to queue",
+      "needle": "href=\"/credentials\""
+    },
+    {
+      "label": "no US-format date",
+      "needle": "/2026",
+      "present": false
+    },
+    {
+      "label": "NZ date format",
+      "needle": "25 Oct 2026"
+    },
+    {
+      "label": "payment verification hours formatted",
+      "needle": "0.5h"
+    }
   ]
 }

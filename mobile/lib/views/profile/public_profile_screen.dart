@@ -13,6 +13,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../../widgets/rating_sheet.dart';
 import '../../widgets/fixo_states.dart';
 import '../../widgets/fixo_cards.dart';
+import '../../feedback/fixo_notice.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
@@ -593,20 +594,20 @@ class _ContextualActionsState extends State<_ContextualActions> {
           .read(jobsRepositoryProvider)
           .requestTradie(job.id, widget.profileId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ok
-                ? 'Request sent — you’ll be notified when they respond.'
-                : 'This job is no longer open for requests.',
-          ),
-        ),
-      );
+      if (ok) {
+        FixoNotice.success(
+          context,
+          'Request sent — you’ll be notified when they respond.',
+        );
+      } else {
+        FixoNotice.warning(
+          context,
+          'This job is no longer open for requests.',
+        );
+      }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not send the request. Try again.')),
-      );
+      FixoNotice.error(context, NoticeCopy.requestFailed);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -670,10 +671,9 @@ Future<void> _showReviewEntry(
     jobs = await ref.read(jobsRepositoryProvider).getMyJobs();
   } catch (_) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not check completed jobs. Try again.'),
-        ),
+      FixoNotice.error(
+        context,
+        'Could not check completed jobs. Try again.',
       );
     }
     return;
@@ -688,9 +688,7 @@ Future<void> _showReviewEntry(
       .toList();
   if (!context.mounted) return;
   if (completed.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reviews unlock after a completed job.')),
-    );
+    FixoNotice.info(context, NoticeCopy.reviewsLocked);
     return;
   }
   final job = completed.first;
@@ -742,17 +740,13 @@ Future<void> _reportUser(
         .read(profileRepositoryProvider)
         .reportUser(profileId, reason: reason);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Thanks — our team will review this report.'),
-      ),
-    );
+    FixoNotice.success(context, NoticeCopy.reportSent);
   } catch (e) {
     if (!context.mounted) return;
     final msg = e is DioException
         ? friendlyDioError(e, tag: 'PublicProfile.report')
         : e.toString();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    FixoNotice.errorDynamic(context, msg);
   }
 }
 
@@ -783,14 +777,13 @@ Future<void> _blockUser(
   try {
     await ref.read(profileRepositoryProvider).blockUser(profileId);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('User blocked.')));
+    FixoNotice.info(context, NoticeCopy.userBlocked);
   } catch (e) {
     if (!context.mounted) return;
     final msg = e is DioException
         ? friendlyDioError(e, tag: 'PublicProfile.block')
         : e.toString();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    FixoNotice.errorDynamic(context, msg);
   }
 }
 

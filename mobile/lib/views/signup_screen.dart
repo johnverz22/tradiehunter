@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/design_tokens.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/locale_viewmodel.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/fixo_buttons.dart';
 import 'widgets/auth_controls.dart';
 import 'widgets/fixo_feedback.dart';
-
 
 /// S06: wordmark → "Create your account" → role toggle → fields → CTA.
 /// Register API takes firstName/lastName separately; the "Full name" field
@@ -23,9 +24,9 @@ class SignupScreen extends ConsumerStatefulWidget {
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _emailController    = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  int  _selectedRole    = 0; // 0=Homeowner, 1=Tradie
+  int _selectedRole = 0; // 0=Homeowner, 1=Tradie
   bool _obscurePassword = true;
 
   @override
@@ -104,7 +105,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
-    final th        = Theme.of(context).extension<THColors>()!;
+    final th = Theme.of(context).extension<THColors>()!;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -118,7 +119,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              Space.s6, Space.s2, Space.s6, Space.s4,
+              Space.s6,
+              Space.s2,
+              Space.s6,
+              Space.s4,
             ),
             child: Center(
               heightFactor: 1,
@@ -138,7 +142,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       body: SafeArea(
         child: AuthScrollView(
           padding: const EdgeInsets.fromLTRB(
-            Space.s6, Space.s8, Space.s6, Space.s8,
+            Space.s6,
+            Space.s8,
+            Space.s6,
+            Space.s8,
           ),
           child: Form(
             key: _formKey,
@@ -148,7 +155,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 // ── Wordmark ───────────────────────────────────────────────
                 const FixoWordmark(fontSize: DesignTokens.fontSizeDisplay),
                 const SizedBox(height: Space.s7), // 32
-
                 // ── Heading ────────────────────────────────────────────────
                 Text(
                   'Create your account',
@@ -163,14 +169,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   style: textTheme.bodyMedium?.copyWith(color: th.textSoft),
                 ),
                 const SizedBox(height: Space.s4), // 16
-
                 // ── Role toggle ────────────────────────────────────────────
                 _RoleToggle(
                   selectedRole: _selectedRole,
                   onRoleChanged: (r) => setState(() => _selectedRole = r),
                 ),
                 const SizedBox(height: Space.s6), // 24
-
                 // ── Error banner ───────────────────────────────────────────
                 if (authState.error != null)
                   Semantics(
@@ -211,7 +215,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     hintText: 'e.g. kiaora@example.co.nz',
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please enter your email';
+                    if (v == null || v.isEmpty)
+                      return 'Please enter your email';
                     if (!v.contains('@')) return 'Please enter a valid email';
                     return null;
                   },
@@ -225,6 +230,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.newPassword],
+                  onChanged: (_) => setState(() {}),
                   onFieldSubmitted: (_) => _signup(),
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -237,9 +243,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
                       ),
-                      onPressed: () => setState(
-                        () => _obscurePassword = !_obscurePassword,
-                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (v) {
@@ -261,24 +266,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: Space.s2),
+                PasswordRules(password: _passwordController.text),
                 const SizedBox(height: Space.s4), // 16
-
                 // ── Terms line ─────────────────────────────────────────────
-                Text(
-                  'By continuing you agree to our Terms and Privacy Policy.',
+                _TermsLine(
                   style: textTheme.bodySmall?.copyWith(color: th.textSoft),
+                  linkColor: th.brand,
                 ),
 
                 const SizedBox(height: Space.s6), // 24
-
                 // ── Google divider + button ────────────────────────────────
                 Row(
                   children: [
                     const Expanded(child: Divider()),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Space.s4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.s4),
                       child: Text(
                         'or',
                         style: textTheme.bodySmall?.copyWith(
@@ -296,7 +299,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
 
                 const SizedBox(height: Space.s7), // 32
-
                 // ── Footer ─────────────────────────────────────────────────
                 Wrap(
                   alignment: WrapAlignment.center,
@@ -321,6 +323,59 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 }
 
+// ── Terms ─────────────────────────────────────────────────────────────────────
+//
+// Links are only tappable when the backend supplies the URL
+// (GET /api/config/locale); otherwise it is plain text — no invented
+// destination.
+
+class _TermsLine extends ConsumerWidget {
+  final TextStyle? style;
+  final Color linkColor;
+  const _TermsLine({required this.style, required this.linkColor});
+
+  static String? _url(Map<String, dynamic>? config, String key) {
+    final value = (config?['locale'] as Map?)?[key] ?? config?[key];
+    return value is String && value.trim().isNotEmpty ? value : null;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(localeConfigProvider).valueOrNull;
+    final terms = _url(config, 'termsOfServiceUrl');
+    final privacy = _url(config, 'privacyPolicyUrl');
+
+    Widget link(String label, String? url) => url == null
+        ? Text(label, style: style)
+        : TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: linkColor,
+              textStyle: style?.copyWith(
+                decoration: TextDecoration.underline,
+                fontWeight: FW.semibold,
+              ),
+            ),
+            onPressed: () =>
+                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+            child: Text(label),
+          );
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text('By continuing you agree to our ', style: style),
+        link('Terms', terms),
+        Text(' and ', style: style),
+        link('Privacy Policy', privacy),
+        Text('.', style: style),
+      ],
+    );
+  }
+}
+
 // ── Role toggle ───────────────────────────────────────────────────────────────
 //
 // 2-column segmented picker. Selected tab: brand border (navy/blue300) +
@@ -330,18 +385,15 @@ class _RoleToggle extends StatelessWidget {
   final int selectedRole;
   final ValueChanged<int> onRoleChanged;
 
-  const _RoleToggle({
-    required this.selectedRole,
-    required this.onRoleChanged,
-  });
+  const _RoleToggle({required this.selectedRole, required this.onRoleChanged});
 
   @override
   Widget build(BuildContext context) {
-    final th     = Theme.of(context).extension<THColors>()!;
+    final th = Theme.of(context).extension<THColors>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 80,
+      constraints: const BoxConstraints(minHeight: Sizes.segmentMin),
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: Alpha.overlay)
@@ -349,27 +401,30 @@ class _RoleToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(Radii.card),
       ),
       padding: const EdgeInsets.all(Space.s1),
-      child: Row(
-        children: [
-          Expanded(
-            child: _RoleTab(
-              key: const Key('role_homeowner'),
-              label: 'Homeowner',
-              icon: Icons.home_rounded,
-              selected: selectedRole == 0,
-              onTap: () => onRoleChanged(0),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _RoleTab(
+                key: const Key('role_homeowner'),
+                label: 'Homeowner',
+                icon: Icons.home_rounded,
+                selected: selectedRole == 0,
+                onTap: () => onRoleChanged(0),
+              ),
             ),
-          ),
-          Expanded(
-            child: _RoleTab(
-              key: const Key('role_tradie'),
-              label: 'Tradie',
-              icon: Icons.handyman_rounded,
-              selected: selectedRole == 1,
-              onTap: () => onRoleChanged(1),
+            Expanded(
+              child: _RoleTab(
+                key: const Key('role_tradie'),
+                label: 'Tradie',
+                icon: Icons.handyman_rounded,
+                selected: selectedRole == 1,
+                onTap: () => onRoleChanged(1),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -391,40 +446,47 @@ class _RoleTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final th     = Theme.of(context).extension<THColors>()!;
+    final th = Theme.of(context).extension<THColors>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: FixoDurations.fast,
-        decoration: BoxDecoration(
-          color: selected ? th.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(Radii.card - 2),
-          border: selected
-              ? Border.all(color: th.brand, width: 2)
-              : null,
-          boxShadow: selected ? DesignTokens.cardShadow(isDark) : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: selected ? th.brand : th.textSoft,
-            ),
-            const SizedBox(height: Space.s1),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: DesignTokens.fontBody,
-                fontSize: DesignTokens.fontSizeSecondary,
-                fontWeight: selected ? FW.bold : FW.medium,
-                color: selected ? th.text : th.textSoft,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: FixoDurations.fast,
+          padding: const EdgeInsets.symmetric(vertical: Space.s3),
+          decoration: BoxDecoration(
+            color: selected ? th.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(Radii.card - 2),
+            border: selected ? Border.all(color: th.brand, width: 2) : null,
+            boxShadow: selected ? DesignTokens.cardShadow(isDark) : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: Sizes.iconMd,
+                color: selected ? th.brand : th.textSoft,
               ),
-            ),
-          ],
+              const SizedBox(height: Space.s1),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: DesignTokens.fontBody,
+                  fontSize: DesignTokens.fontSizeSecondary,
+                  fontWeight: selected ? FW.bold : FW.medium,
+                  color: selected ? th.text : th.textSoft,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -448,4 +510,3 @@ class _GoogleG extends StatelessWidget {
     );
   }
 }
-

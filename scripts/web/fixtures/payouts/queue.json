@@ -3,7 +3,15 @@
   "route": "/payouts",
   "prefetch": [
     {
-      "key": ["admin", "payouts", "pending", { "page": 1, "pageSize": 20 }],
+      "key": [
+        "admin",
+        "payouts",
+        "pending",
+        {
+          "page": 1,
+          "pageSize": 20
+        }
+      ],
       "url": "/admin/payouts/pending",
       "body": {
         "items": [
@@ -96,27 +104,103 @@
     }
   ],
   "expect": [
-    { "label": "tradie name", "needle": "James Wilson" },
-    { "label": "job reference is shown in mono", "needle": "JOB-00214" },
-    { "label": "tradie links to the user detail page", "needle": "href=\"/users/u-james\"" },
-    { "label": "job links to the job detail page", "needle": "href=\"/jobs/214\"" },
-    { "label": "gross amount", "needle": "$1,200.00" },
-    { "label": "commission is deducted", "needle": "−$150.00" },
-    { "label": "commission percentage is shown", "needle": "12.5%" },
-    { "label": "net amount is bolded", "needle": "font-semibold\">$1,050.00" },
-    { "label": "bank account is masked to last four", "needle": "····4831" },
-    { "label": "account name shown under the number", "needle": "J Wilson" },
-    { "label": "Pending status badge", "needle": ">Pending</span>" },
-    { "label": "Scheduled status badge", "needle": ">Scheduled</span>" },
-    { "label": "payout without bank details is flagged", "needle": ">No details</span>" },
-    { "label": "missing-details banner is shown", "needle": "have no bank account on file" },
-    { "label": "missing-details banner explains the batch skip", "needle": "skipped by the weekly batch until the tradie supplies details" },
-    { "label": "awaiting-payout count", "needle": ">4</strong> awaiting payout" },
-    { "label": "net total across the page", "needle": "$2,861.69" },
-    { "label": "Process action per row", "needle": ">Process</button>" },
-    { "label": "link to the batch views", "needle": "href=\"/payouts/batches\"" },
-    { "label": "masking caveat is shown", "needle": "Only the last four digits of each account are shown." },
-    { "label": "process modal stays closed", "needle": "Bank transfer reference", "present": false },
-    { "label": "empty state is not shown", "needle": "No payouts awaiting payout.", "present": false }
+    {
+      "label": "tradie name",
+      "needle": "James Wilson"
+    },
+    {
+      "label": "job reference is shown in mono",
+      "needle": "JOB-00214"
+    },
+    {
+      "label": "tradie links to the user detail page",
+      "needle": "href=\"/users/u-james\""
+    },
+    {
+      "label": "job links to the job detail page",
+      "needle": "href=\"/jobs/214\""
+    },
+    {
+      "label": "gross amount",
+      "needle": "$1,200.00"
+    },
+    {
+      "label": "commission is deducted",
+      "needle": "−$150.00"
+    },
+    {
+      "label": "commission percentage is shown",
+      "needle": "12.5%"
+    },
+    {
+      "label": "net amount is bolded",
+      "needle": "font-semibold\">$1,050.00"
+    },
+    {
+      "label": "bank account is masked to last four",
+      "needle": "····4831"
+    },
+    {
+      "label": "account name shown under the number",
+      "needle": "J Wilson"
+    },
+    {
+      "label": "Pending status badge",
+      "needle": ">Pending</span>"
+    },
+    {
+      "label": "Scheduled status badge",
+      "needle": ">Scheduled</span>"
+    },
+    {
+      "label": "payout without bank details is flagged",
+      "needle": ">No details</span>"
+    },
+    {
+      "label": "missing-details banner is shown",
+      "needle": "have no bank account on file"
+    },
+    {
+      "label": "missing-details banner explains the batch skip",
+      "needle": "skipped by the weekly batch until the tradie supplies details"
+    },
+    {
+      "label": "awaiting-payout count",
+      "needle": ">4</strong> awaiting payout"
+    },
+    {
+      "label": "net total across the page",
+      "needle": "$2,861.69"
+    },
+    {
+      "label": "Process action per row",
+      "needle": ">Process</button>"
+    },
+    {
+      "label": "link to the batch views",
+      "needle": "href=\"/payouts/batches\""
+    },
+    {
+      "label": "masking caveat is shown",
+      "needle": "Only the last four digits of each account are shown."
+    },
+    {
+      "label": "process modal stays closed",
+      "needle": "Bank transfer reference",
+      "present": false
+    },
+    {
+      "label": "empty state is not shown",
+      "needle": "No payouts awaiting payout.",
+      "present": false
+    },
+    {
+      "label": "Process disabled when bank details missing",
+      "needle": "Cannot process: the tradie has not supplied bank details yet."
+    },
+    {
+      "label": "missing-details filter offered",
+      "needle": "Show missing bank details only"
+    }
   ]
 }

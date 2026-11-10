@@ -18,6 +18,8 @@ export const AdminLogin: React.FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const navigate = useNavigate();
   const appName = useAppName();
 
@@ -68,12 +70,18 @@ export const AdminLogin: React.FC = () => {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-4 py-12">
-      <div className="max-w-md w-full p-8 card-pop">
-        <div className="text-center mb-8">
-          <BrandWordmark className="block text-[32px] font-bold text-brand-900" />
+    <div
+      className="min-h-dvh flex items-center justify-center bg-paper px-4 py-8 sm:py-12"
+      style={{
+        paddingTop: 'max(var(--safe-top), 2rem)',
+        paddingBottom: 'max(var(--safe-bottom), 2rem)',
+      }}
+    >
+      <div className="max-w-md w-full p-6 sm:p-8 card-pop">
+        <div className="text-center mb-6 sm:mb-8">
+          <BrandWordmark className="block text-[28px] sm:text-[32px] font-bold text-brand-900" />
           <p className="text-ink-soft mt-2 text-sm">{appName} Admin Portal</p>
-          <h1 className="text-[24px] font-bold text-ink mt-6 mb-0">Sign in</h1>
+          <h1 className="text-[22px] sm:text-[24px] font-bold text-ink mt-6 mb-0">Sign in</h1>
         </div>
 
         {error && (
@@ -93,6 +101,7 @@ export const AdminLogin: React.FC = () => {
             <input
               id="email"
               type="email"
+              autoFocus
               autoComplete="email"
               aria-invalid={errors.email ? 'true' : 'false'}
               {...register('email', { required: 'Email is required' })}
@@ -108,15 +117,34 @@ export const AdminLogin: React.FC = () => {
             <label htmlFor="password" className="block text-sm font-medium text-ink mb-1.5">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={errors.password ? 'true' : 'false'}
-              {...register('password', { required: 'Password is required' })}
-              className="field"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                aria-invalid={errors.password ? 'true' : 'false'}
+                aria-describedby={capsLock ? 'caps-lock-hint' : undefined}
+                {...register('password', { required: 'Password is required' })}
+                onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
+                onBlur={() => setCapsLock(false)}
+                className="field pr-16"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                aria-controls="password"
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-[var(--brand-500)] hover:underline"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {capsLock && (
+              <span id="caps-lock-hint" className="text-[var(--amber-ink)] text-xs mt-1 block" role="status">
+                Caps Lock is on.
+              </span>
+            )}
             {errors.password && (
               <span className="text-[var(--red)] text-xs mt-1 block" role="alert">{errors.password.message}</span>
             )}

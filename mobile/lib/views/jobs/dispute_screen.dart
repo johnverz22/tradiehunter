@@ -11,6 +11,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/fixo_feedback.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// Dispute form (P7-01).
@@ -176,9 +177,7 @@ class DisputeScreen extends ConsumerWidget {
           onPressed: () async {
             final success = await notifier.submitDispute(jobId);
             if (success && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Dispute submitted for review')),
-              );
+              FixoNotice.success(context, 'Dispute submitted for review.');
               if (context.canPop()) {
                 context.pop();
               } else {
@@ -206,9 +205,7 @@ class DisputeScreen extends ConsumerWidget {
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open photos. Try again.')),
-        );
+        FixoNotice.error(context, 'Could not open photos. Try again.');
       }
     }
   }

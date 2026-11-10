@@ -56,14 +56,14 @@ public class AzureBlobStorageService : IBlobStorageService
             new Uri($"{serviceUrl.TrimEnd('/')}/{accountName}"),
             new StorageSharedKeyCredential(accountName, accountKey));
 
-        _photosContainer = config["AzureBlob:PhotosContainer"] ?? "fixo-photos";
-        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "fixo-credentials";
+        _photosContainer = config["AzureBlob:PhotosContainer"] ?? "th-photos";
+        _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
         // P8-03: private buckets for sensitive docs. PaymentsContainer also lives
         // under PaymentInstructions (PaymentOptions) — either key wins.
         _paymentsContainer = config["AzureBlob:PaymentsContainer"]
             ?? config["PaymentInstructions:PaymentsContainer"]
-            ?? "fixo-payments";
-        _disputesContainer = config["AzureBlob:DisputesContainer"] ?? "fixo-disputes";
+            ?? "th-payments";
+        _disputesContainer = config["AzureBlob:DisputesContainer"] ?? "th-disputes";
         // Host clients use to reach blobs (e.g. http://localhost:10000 for
         // local dev). The signature covers resource + permissions, not the
         // host, so rewriting it keeps the SAS valid.

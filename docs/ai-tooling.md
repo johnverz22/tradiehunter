@@ -244,6 +244,7 @@ arguments beyond a fixture and run with nothing but python3, node and the docker
 |---|---|---|
 | `scripts/web/render-probe.py` | A React page's **rendered HTML** against a JSON fixture | `web/node_modules`, node |
 | `scripts/e2e-credentials.py` | The credential-review API end to end, including DB state | `docker compose up` (api + db) |
+| `scripts/e2e-demo.py` | Recordable three-POV walkthrough (admin browser + homeowner/tradie simulators) | `docker compose up`, 2 booted iOS sims, web deps + Playwright Chromium |
 | `scripts/p3-smoke.sh` | Offer/accept/decline/timeout flows (curl + psql) | `docker compose up` |
 
 ### `scripts/web/render-probe.py`

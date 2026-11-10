@@ -11,6 +11,7 @@ import 'widgets/fixo_feedback.dart';
 import 'widgets/fixo_rows.dart';
 import '../widgets/fixo_buttons.dart';
 import '../widgets/fixo_cards.dart';
+import '../feedback/fixo_notice.dart';
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
   ref,
@@ -60,9 +61,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = true;
 
   void _stub(String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label is not available in this app.')),
-    );
+    FixoNotice.info(context, NoticeCopy.stubUnavailable(label));
   }
 
   @override
@@ -145,8 +144,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onTap: () => _stub('Region'),
                   ),
                   data: (locale) {
-                    final currency =
-                        '${locale?['currencySymbol'] ?? '\$'} ${locale?['defaultCurrency'] ?? 'NZD'}';
+                    final currency = regionLabel(locale);
                     final tz = locale?['defaultTimezone'] as String? ?? '';
                     final unit = locale?['distanceUnit'] as String? ?? 'km';
                     final subtitle = tz.isNotEmpty
@@ -253,6 +251,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
+          const SizedBox(height: Space.navClearance),
         ],
       ),
     );
@@ -315,11 +314,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ?.copyWith(fontWeight: FW.semibold),
               ),
               const SizedBox(height: Space.s3),
-              FixoSummaryRow(
-                label: 'Currency',
-                value:
-                    '${locale?['currencySymbol'] ?? '\$'} (${locale?['defaultCurrency'] ?? 'NZD'})',
-              ),
+              FixoSummaryRow(label: 'Region', value: regionLabel(locale)),
               FixoSummaryRow(label: 'Phone code', value: '${locale?['phoneCountryCode'] ?? '+64'}'),
               FixoSummaryRow(label: 'Timezone', value: '${locale?['defaultTimezone'] ?? 'Pacific/Auckland'}'),
               FixoSummaryRow(label: 'Distance', value: '${locale?['distanceUnit'] ?? 'km'}'),

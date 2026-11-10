@@ -47,6 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
+    final colors = Theme.of(context).extension<THColors>()!;
     return Scaffold(
       body: AbstractOnboardingBackground(
         seed: _currentPage,
@@ -64,8 +65,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     TextButton(
                       onPressed: () => context.go('/auth'),
                       style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.onSurface
-                            .withValues(alpha: Alpha.iconOnGradientStrong),
+                        foregroundColor: colors.text,
+                        minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                        textStyle: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FW.semibold),
                       ),
                       child: const Text('Skip'),
                     ),
@@ -106,42 +109,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               filterQuality: FilterQuality.medium,
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: Space.s6),
                           Text(
                             slide.title,
                             style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FW.bold),
+                                ?.copyWith(
+                                  fontWeight: FW.bold,
+                                  color: colors.text,
+                                ),
                           ),
                           const SizedBox(height: Space.s3),
                           Text(
                             slide.body,
                             style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: Alpha.textOnGradientStrong),
-                                ),
+                                ?.copyWith(color: colors.textSoft),
                           ),
                           const SizedBox(height: Space.s6),
                           // Animated pill indicator
                           Semantics(
                             label:
-                                'Slide ${_currentPage + 1} of ${_slides.length}',
+                                'Step ${_currentPage + 1} of ${_slides.length}',
                             child: ExcludeSemantics(
                               child: Row(
                                 children: List.generate(
                                   _slides.length,
                                   (i) => AnimatedContainer(
                                     duration: FixoDurations.onboardingDot,
-                                    height: 8,
-                                    width: i == _currentPage ? 26 : 8,
+                                    height: Sizes.dot,
+                                    width: i == _currentPage
+                                        ? Sizes.dotActive
+                                        : Sizes.dot,
                                     margin: const EdgeInsets.only(right: Space.s2),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(Radii.pill),
                                       color: i == _currentPage
                                           ? DesignTokens.amber
-                                          : DesignTokens.brand300.withValues(
-                                              alpha: 0.5,
-                                            ),
+                                          : colors.track,
                                     ),
                                   ),
                                 ),
@@ -155,10 +158,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, 16 + bottom),
+                padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s4 + bottom),
                 child: FixoPrimaryButton(
                   label: _currentPage == _slides.length - 1
-                      ? 'Get Started'
+                      ? 'Get started'
                       : 'Next',
                   onPressed: () {
                     if (_currentPage == _slides.length - 1) {

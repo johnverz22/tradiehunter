@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Layers, Wallet } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { BatchStatusBadge } from '../components/PayoutStatusBadge';
 import { money, periodLabel } from '../format';
 import { usePayoutBatches } from '../hooks/usePayouts';
+import type { PayoutBatchSummary } from '../../../services/adminApi';
 
 const PAGE_SIZE = 20;
 
@@ -29,6 +33,7 @@ function describeBatchesError(error: unknown): string {
 }
 
 export const PayoutBatches: React.FC = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error: queryError, refetch } = usePayoutBatches({
@@ -36,119 +41,138 @@ export const PayoutBatches: React.FC = () => {
     pageSize: PAGE_SIZE,
   });
 
+  const columns: ColumnDef<PayoutBatchSummary>[] = [
+    {
+      key: 'period',
+      header: 'Period',
+      priority: 'primary',
+      cell: (batch) => (
+        <div>
+          <Link to={`/payouts/batches/${batch.id}`} className="cell-link">
+            {periodLabel(batch.periodStartUtc, batch.periodEndUtc)}
+          </Link>
+          <span className="block text-xs cell-muted font-mono">{batch.id}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'payouts',
+      header: 'Payouts',
+      priority: 'secondary',
+      cell: (batch) => batch.payoutCount,
+    },
+    {
+      key: 'progress',
+      header: 'Progress',
+      priority: 'detail',
+      cell: (batch) => (
+        <div>
+          <span className="font-mono">
+            {batch.processedCount}/{batch.payoutCount}
+          </span>{' '}
+          processed
+          {batch.payoutCount > 0 && (
+            <span className="block text-xs cell-muted">
+              {Math.round((batch.processedCount / batch.payoutCount) * 100)}%
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'total',
+      header: 'Total (net)',
+      priority: 'detail',
+      cell: (batch) => <span className="font-mono">{money(batch.totalAmount)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      priority: 'secondary',
+      cell: (batch) => <BatchStatusBadge status={batch.status} />,
+    },
+    {
+      key: 'completed',
+      header: 'Completed',
+      priority: 'detail',
+      cell: (batch) => (
+        <span className="cell-muted">
+          {batch.completedAtUtc
+            ? new Date(batch.completedAtUtc).toLocaleDateString('en-NZ', {
+                dateStyle: 'medium',
+              })
+            : '—'}
+        </span>
+      ),
+    },
+  ];
+
+  const rowActions = (batch: PayoutBatchSummary): RowAction[] => [
+    {
+      label: 'View batch',
+      onClick: () => navigate(`/payouts/batches/${batch.id}`),
+      variant: 'ghost',
+      primary: true,
+    },
+  ];
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Payout Batches</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          Weekly batches created by the scheduled payout job. Open a batch to work through its
-          individual tradie payouts.
-        </p>
-        <div className="flex flex-wrap gap-4 mt-3">
-          <Link to="/payouts" className="stat-pill action-link">
-            <Wallet size={13} aria-hidden="true" />
+      <PageHeader
+        title="Payout Batches"
+        description="Weekly batches created by the scheduled payout job. Open a batch to work through its individual tradie payouts."
+        actions={
+          <Link to="/payouts" className="btn btn-ghost shrink-0">
+            <Wallet size={14} aria-hidden="true" />
             Payout queue
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {isError && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          <span>Could not load payout batches: {describeBatchesError(queryError)}</span>
-          <button className="btn btn-ghost !py-1 !px-2.5 !text-xs" onClick={() => refetch()}>
-            Retry
-          </button>
-        </div>
+        <Banner
+          variant="error"
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        >
+          Could not load payout batches: {describeBatchesError(queryError)}
+        </Banner>
       )}
 
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Period</th>
-                <th className="th">Payouts</th>
-                <th className="th">Progress</th>
-                <th className="th">Total (net)</th>
-                <th className="th">Status</th>
-                <th className="th">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="td text-center cell-muted">
-                    Loading…
-                  </td>
-                </tr>
-              ) : data && data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="td text-center cell-muted">
-                    {data.totalCount > 0 && page > 1 ? (
-                      <>
-                        No batches left on this page.{' '}
-                        <button
-                          className="action-link"
-                          onClick={() => setPage(Math.max(1, data.totalPages))}
-                        >
-                          Go to page {Math.max(1, data.totalPages)}
-                        </button>
-                      </>
-                    ) : (
-                      'No payout batches yet. The weekly job creates one when there are payouts due.'
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                data?.items.map((batch) => (
-                  <tr key={batch.id}>
-                    <td className="td">
-                      <Link to={`/payouts/batches/${batch.id}`} className="cell-link">
-                        {periodLabel(batch.periodStartUtc, batch.periodEndUtc)}
-                      </Link>
-                      <span className="block text-xs cell-muted font-mono">{batch.id}</span>
-                    </td>
-                    <td className="td">{batch.payoutCount}</td>
-                    <td className="td">
-                      <span className="font-mono">
-                        {batch.processedCount}/{batch.payoutCount}
-                      </span>{' '}
-                      processed
-                      {batch.payoutCount > 0 && (
-                        <span className="block text-xs cell-muted">
-                          {Math.round((batch.processedCount / batch.payoutCount) * 100)}%
-                        </span>
-                      )}
-                    </td>
-                    <td className="td font-mono">{money(batch.totalAmount)}</td>
-                    <td className="td">
-                      <BatchStatusBadge status={batch.status} />
-                    </td>
-                    <td className="td cell-muted">
-                      {batch.completedAtUtc
-                        ? new Date(batch.completedAtUtc).toLocaleDateString('en-NZ', {
-                            dateStyle: 'medium',
-                          })
-                        : '—'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="batches"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(b) => b.id}
+        onRowClick={(b) => navigate(`/payouts/batches/${b.id}`)}
+        isLoading={isLoading}
+        rowActions={rowActions}
+        empty={
+          data && data.totalCount > 0 && page > 1 ? (
+            <>
+              No batches left on this page.{' '}
+              <button
+                className="action-link"
+                onClick={() => setPage(Math.max(1, data.totalPages))}
+              >
+                Go to page {Math.max(1, data.totalPages)}
+              </button>
+            </>
+          ) : (
+            'No payout batches yet. The weekly job creates one when there are payouts due.'
+          )
+        }
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="batches"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
 
       <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
         <Layers size={12} aria-hidden="true" />

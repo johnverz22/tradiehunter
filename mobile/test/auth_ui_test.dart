@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:fixo/repositories/auth_repository.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/auth_viewmodel.dart';
+import 'package:fixo/viewmodels/locale_viewmodel.dart';
 import 'package:fixo/views/auth/otp_verification_screen.dart';
 import 'package:fixo/views/auth/role_select_screen.dart';
 import 'package:fixo/views/login_screen.dart';
@@ -83,7 +84,10 @@ void main() {
   }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authViewModelProvider.overrideWith((ref) => auth)],
+        overrides: [
+          authViewModelProvider.overrideWith((ref) => auth),
+          localeConfigProvider.overrideWith((ref) async => null),
+        ],
         child: MaterialApp(
           theme: dark ? FixoTheme.dark() : FixoTheme.light(),
           builder: (context, child) => MediaQuery(
@@ -161,7 +165,10 @@ void main() {
       addTearDown(router.dispose);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authViewModelProvider.overrideWith((ref) => auth)],
+          overrides: [
+          authViewModelProvider.overrideWith((ref) => auth),
+          localeConfigProvider.overrideWith((ref) async => null),
+        ],
           child: MaterialApp.router(
             routerConfig: router,
             theme: dark ? FixoTheme.dark() : FixoTheme.light(),
@@ -186,8 +193,7 @@ void main() {
       router.go('/signup');
       await tester.pumpAndSettle();
       for (final entry in {
-        'first_name_field': 'Test',
-        'last_name_field': 'Person',
+        'full_name_field': 'Test Person',
         'signup_email_field': 'new@example.co.nz',
         'signup_password_field': 'StrongPass1!',
       }.entries) {
@@ -225,14 +231,14 @@ void main() {
   ) async {
     await mount(tester, const OnboardingScreen(), TestAuth());
     for (var page = 1; page <= 3; page++) {
-      expect(find.bySemanticsLabel('Slide $page of 3'), findsWidgets);
+      expect(find.bySemanticsLabel('Step $page of 3'), findsWidgets);
       if (page < 3) {
         await tester.tap(find.text('Next'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
       }
     }
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -252,7 +258,8 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('signup_button')));
     await tester.pump();
-    expect(find.text('Required'), findsNWidgets(2));
+    expect(find.text('Required'), findsOneWidget);
+    expect(find.text('Please enter your email'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -307,7 +314,10 @@ void main() {
       addTearDown(router.dispose);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authViewModelProvider.overrideWith((ref) => auth)],
+          overrides: [
+          authViewModelProvider.overrideWith((ref) => auth),
+          localeConfigProvider.overrideWith((ref) async => null),
+        ],
           child: MaterialApp.router(
             routerConfig: router,
             theme: FixoTheme.light(),
@@ -330,6 +340,34 @@ void main() {
       );
     });
   }
+
+  testWidgets('role select explains the disabled Continue, no false promise', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      const RoleSelectScreen(userId: 'user', registrationToken: 'one-time'),
+      TestAuth(),
+    );
+    expect(find.byKey(const Key('role_helper')), findsOneWidget);
+    expect(find.textContaining('switch later'), findsNothing);
+    await tester.tap(find.text('Homeowner'));
+    await tester.pump();
+    expect(find.byKey(const Key('role_helper')), findsNothing);
+  });
+
+  testWidgets('OTP offers a change-email path under the address', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      const OtpVerificationScreen(email: 'test@example.co.nz'),
+      TestAuth(),
+    );
+    expect(find.byKey(const Key('change_email_button')), findsOneWidget);
+    expect(find.text('Use a different email'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('password rules update as the user types', (tester) async {
     await mount(tester, const SignupScreen(), TestAuth());

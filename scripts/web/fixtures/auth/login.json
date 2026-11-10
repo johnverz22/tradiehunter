@@ -1,0 +1,47 @@
+{
+  "_comment": "Admin login: show/hide password toggle, autofocus, caps-lock hint wiring.",
+  "route": "/login",
+  "prefetch": [
+    {
+      "key": [
+        "config",
+        "app"
+      ],
+      "url": "/config/locale",
+      "body": {
+        "brand": {
+          "appName": "TradieHunter",
+          "supportEmail": "support@tradiehunter.co.nz",
+          "supportHoursDisplay": "8am – 6pm NZT, Mon–Fri"
+        }
+      }
+    }
+  ],
+  "expect": [
+    {
+      "label": "email field is autofocused",
+      "needle": "autofocus"
+    },
+    {
+      "label": "password is masked by default",
+      "needle": "type=\"password\""
+    },
+    {
+      "label": "show toggle present and not pressed",
+      "needle": "aria-pressed=\"false\""
+    },
+    {
+      "label": "toggle controls the password field",
+      "needle": "aria-controls=\"password\""
+    },
+    {
+      "label": "toggle label is Show",
+      "needle": ">Show</button>"
+    },
+    {
+      "label": "caps lock hint hidden until needed",
+      "needle": "Caps Lock is on.",
+      "present": false
+    }
+  ]
+}

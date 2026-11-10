@@ -8,7 +8,7 @@ namespace FixoApi.Models;
 /// <summary>
 /// A manual bank-transfer payment against a job (P4-01).
 ///
-/// Fixo has no payment gateway at this phase, so the homeowner transfers funds
+/// TradieHunter has no payment gateway at this phase, so the homeowner transfers funds
 /// out of band and uploads the receipt; staff confirm it from the admin queue
 /// (<c>AdminController</c> → <c>GET /api/admin/payments/pending</c>). Exactly one
 /// <see cref="Payment"/> exists per job, and it is reused across re-uploads —

@@ -1,5 +1,6 @@
-import React, { useId, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { AlertTriangle, Paperclip, X } from 'lucide-react';
+import { Modal } from '../../../components/Modal';
 import type { RefundSummary } from '../../../services/adminApi';
 
 interface ProcessRefundModalProps {
@@ -26,7 +27,6 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  const titleId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [finalAmount, setFinalAmount] = useState(String(refund.finalAmount));
@@ -35,13 +35,6 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
   const [transferRef, setTransferRef] = useState('');
   const [proof, setProof] = useState<File | undefined>();
   const [fileError, setFileError] = useState<string | null>(null);
-
-  // Close on Escape
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
@@ -58,8 +51,11 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
   const penaltyNum = parseFloat(penalty) || 0;
   const hoursWorkedNum = parseFloat(hoursWorked) || 0;
   const canSubmit =
-    finalAmountNum >= 0 && penaltyNum >= 0 && hoursWorkedNum >= 0 &&
-    transferRef.trim().length > 0 && !isSubmitting;
+    finalAmountNum >= 0 &&
+    penaltyNum >= 0 &&
+    hoursWorkedNum >= 0 &&
+    transferRef.trim().length > 0 &&
+    !isSubmitting;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -73,46 +69,52 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      onClick={onCancel}
-    >
-      <div
-        className="card-pop p-6 w-full max-w-xl overflow-y-auto max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="text-[var(--amber)] shrink-0 mt-0.5" aria-hidden="true" />
-            <div>
-              <h2 id={titleId} className="text-base font-semibold text-[var(--ink)]">
-                Process Refund
-              </h2>
-              <p className="text-sm text-[var(--ink-soft)] mt-0.5">
-                Job #{refund.jobId} — {refund.jobTitle}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onCancel}
-            className="p-1.5 rounded text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--paper-raised)] transition-colors shrink-0"
-            aria-label="Close"
-          >
-            <X size={16} />
+    <Modal
+      open
+      onClose={onCancel}
+      size="lg"
+      title={`Process Refund — Job #${refund.jobId}`}
+      footer={
+        <div className="flex justify-end gap-3">
+          <button onClick={onCancel} className="btn btn-ghost" disabled={isSubmitting}>
+            Cancel
           </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="btn btn-primary"
+          >
+            {isSubmitting ? 'Processing…' : 'Process refund'}
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle
+            size={20}
+            className="text-[var(--amber)] shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="text-sm font-semibold text-[var(--ink)]">
+              {refund.jobTitle}
+            </p>
+            <p className="text-xs text-[var(--ink-soft)]">
+              Review amounts and provide the bank transfer reference.
+            </p>
+          </div>
         </div>
 
         {/* Summary row */}
-        <dl className="rounded-lg border border-[var(--paper-line)] divide-y divide-[var(--paper-line)] mb-5">
+        <dl className="rounded-lg border border-[var(--paper-line)] divide-y divide-[var(--paper-line)]">
           <div className="flex items-baseline justify-between gap-3 px-3 py-2">
             <dt className="text-xs text-[var(--ink-soft)]">Homeowner</dt>
             <dd className="text-sm text-[var(--ink)] text-right">
               {refund.homeownerName}
-              <span className="block text-xs text-[var(--ink-soft)]">{refund.homeownerEmail}</span>
+              <span className="block text-xs text-[var(--ink-soft)]">
+                {refund.homeownerEmail}
+              </span>
             </dd>
           </div>
           <div className="flex items-baseline justify-between gap-3 px-3 py-2">
@@ -138,7 +140,7 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
         </dl>
 
         {/* Editable fields */}
-        <div className="space-y-4 mb-5">
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="rf-final">
@@ -216,12 +218,15 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
               id="rf-proof-file"
             />
             {proof ? (
-              <div className="flex items-center gap-2 rounded-lg border border-[var(--paper-line)] bg-[var(--paper-raised)] px-3 py-2">
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--paper-line)] bg-[var(--paper)] px-3 py-2">
                 <Paperclip size={13} className="text-[var(--ink-soft)] shrink-0" aria-hidden="true" />
                 <span className="text-sm text-[var(--ink)] truncate flex-1">{proof.name}</span>
                 <button
                   type="button"
-                  onClick={() => { setProof(undefined); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  onClick={() => {
+                    setProof(undefined);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
                   className="p-1 rounded text-[var(--ink-soft)] hover:text-[var(--red)] transition-colors shrink-0"
                   aria-label="Remove file"
                 >
@@ -242,21 +247,7 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
             )}
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-[var(--paper-line)]">
-          <button onClick={onCancel} className="btn btn-ghost" disabled={isSubmitting}>
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="btn btn-primary"
-          >
-            {isSubmitting ? 'Processing…' : 'Process refund'}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };

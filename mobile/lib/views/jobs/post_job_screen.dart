@@ -14,6 +14,7 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
 import '../../widgets/fixo_states.dart';
+import '../../feedback/fixo_notice.dart';
 
 /// Post a job screen: category/service picker, address resolution,
 /// description, photo upload, date picker, urgency segmented control,
@@ -381,14 +382,7 @@ class PostJobScreen extends ConsumerWidget {
     final fileSize = await File(file.path).length();
     if (fileSize > maxBytes) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Photo exceeds 10 MB. Please choose a smaller image.',
-            ),
-            duration: Duration(seconds: 4),
-          ),
-        );
+        FixoNotice.warning(context, 'Photo exceeds 10 MB. Please choose a smaller image.');
       }
       return;
     }

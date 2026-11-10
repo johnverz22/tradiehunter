@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { AlertTriangle, CheckCircle, Receipt, Wallet, XCircle } from 'lucide-react';
+import { CheckCircle, Receipt, Wallet } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { usePaymentQueue, usePaymentReview } from '../hooks/usePayments';
 import { PaymentReviewModal, type PaymentActionKind } from '../components/PaymentReviewModal';
@@ -186,174 +189,195 @@ export const PaymentQueue: React.FC = () => {
   const items = data ? oldestFirst(data.items) : [];
   const urgentCount = items.filter((p) => waitBand(waitingMinutes(p)) === 'urgent').length;
 
+  const columns: ColumnDef<PendingPayment>[] = [
+    {
+      key: 'job',
+      header: 'Job',
+      priority: 'primary',
+      cell: (payment) => (
+        <div>
+          <Link to={`/jobs/${payment.jobId}`} className="cell-link">
+            {payment.jobTitle}
+          </Link>
+          {payment.reUploadCount > 0 && (
+            <span className="block text-xs text-[var(--amber-dark)]">
+              {payment.reUploadCount} send-back{payment.reUploadCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'homeowner',
+      header: 'Homeowner',
+      priority: 'detail',
+      cell: (payment) => (
+        <div>
+          {payment.homeownerName}
+          <span className="block text-xs cell-muted">{payment.homeownerEmail}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      priority: 'secondary',
+      cell: (payment) => (
+        <span className="font-mono">{money(payment.amount, payment.currency)}</span>
+      ),
+    },
+    {
+      key: 'reference',
+      header: 'Reference',
+      priority: 'detail',
+      cell: (payment) => (
+        <span className="font-mono">{payment.reference}</span>
+      ),
+    },
+    {
+      key: 'submitted',
+      header: 'Submitted',
+      priority: 'detail',
+      cell: (payment) => (
+        <span className="cell-muted">{submittedAgo(payment.submittedAtUtc)}</span>
+      ),
+    },
+    {
+      key: 'waiting',
+      header: 'Waiting',
+      priority: 'secondary',
+      cell: (payment) => {
+        const wait = waitingCell(payment);
+        return (
+          <span title={`${wait.minutes} minutes waiting`}>
+            {wait.label}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const rowActions = (payment: PendingPayment): RowAction[] => [
+    {
+      label: 'Verify',
+      onClick: () => openAction('verify', payment),
+      variant: 'primary',
+      disabled: busy,
+      primary: true,
+    },
+    {
+      label: 'Reject',
+      onClick: () => openAction('reject', payment),
+      variant: 'danger',
+      disabled: busy,
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Payment Queue</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          Manual bank transfers uploaded by homeowners. Check the amount and reference against the bank
-          statement, then verify to book the tradie or reject to ask for a corrected receipt.
-        </p>
-        {data && (
-          <div className="flex flex-wrap gap-4 mt-3">
-            <div className="stat-pill">
-              <Wallet size={13} aria-hidden="true" />
-              <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
-            </div>
-            <div className="stat-pill">
-              <strong>{money(
-                items.reduce((sum, p) => sum + p.amount, 0),
-                items[0]?.currency ?? 'NZD',
-              )}</strong>{' '}
-              on this page
-            </div>
-            {urgentCount > 0 && (
-              <div className="stat-pill" style={{ color: 'var(--red)' }}>
-                <strong>{urgentCount}</strong> waiting over {URGENT_MINUTES}m
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Payment Queue"
+        description="Manual bank transfers uploaded by homeowners. Check the amount and reference against the bank statement, then verify to book the tradie or reject to ask for a corrected receipt."
+        meta={
+          data && (
+            <>
+              {data.totalCount > 0 && (
+                <div className="stat-pill">
+                  <Wallet size={13} aria-hidden="true" />
+                  <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
+                </div>
+              )}
+              {items.length > 0 && (
+                <div className="stat-pill">
+                  <strong>{money(
+                    items.reduce((sum, p) => sum + p.amount, 0),
+                    items[0]?.currency ?? 'NZD',
+                  )}</strong>{' '}
+                  on this page
+                </div>
+              )}
+              {urgentCount > 0 && (
+                <div className="stat-pill" style={{ color: 'var(--red)' }}>
+                  <strong>{urgentCount}</strong> waiting over {URGENT_MINUTES}m
+                </div>
+              )}
+            </>
+          )
+        }
+      />
 
       {urgentCount > 0 && (
-        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-sm text-[var(--amber-dark)]">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <span>
-            {urgentCount} payment{urgentCount === 1 ? '' : 's'} on this page{' '}
-            {urgentCount === 1 ? 'has' : 'have'} been waiting over {URGENT_MINUTES} minutes — a
-            tradie can't be booked until {urgentCount === 1 ? 'it is' : 'they are'} checked.
-          </span>
-        </div>
+        <Banner variant="warn">
+          {urgentCount} payment{urgentCount === 1 ? '' : 's'} on this page{' '}
+          {urgentCount === 1 ? 'has' : 'have'} been waiting over {URGENT_MINUTES} minutes — a
+          tradie can't be booked until {urgentCount === 1 ? 'it is' : 'they are'} checked.
+        </Banner>
       )}
 
       {successMessage && (
-        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle size={14} aria-hidden="true" />
-          {successMessage}
-        </div>
+        <Banner variant="success">{successMessage}</Banner>
       )}
 
       {actionError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          {actionError}
-        </div>
+        <Banner variant="error">{actionError}</Banner>
       )}
 
       {isError && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          <span>Could not load the payment queue: {describeReviewError(queryError)}</span>
-          <button className="btn btn-ghost !py-1 !px-2.5 !text-xs" onClick={() => refetch()}>
-            Retry
-          </button>
-        </div>
+        <Banner
+          variant="error"
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        >
+          Could not load the payment queue: {describeReviewError(queryError)}
+        </Banner>
       )}
 
       {/* Queue table */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Job</th>
-                <th className="th">Homeowner</th>
-                <th className="th">Amount</th>
-                <th className="th">Reference</th>
-                <th className="th">Submitted</th>
-                <th className="th">Waiting</th>
-                <th className="th" />
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">
-                    Loading…
-                  </td>
-                </tr>
-              ) : data && data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">
-                    {data.totalCount > 0 && page > 1 ? (
-                      <>
-                        No payments left on this page.{' '}
-                        <button
-                          className="action-link"
-                          onClick={() => setPage(Math.max(1, data.totalPages))}
-                        >
-                          Go to page {Math.max(1, data.totalPages)}
-                        </button>
-                      </>
-                    ) : (
-                      'No payments awaiting review.'
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                items.map((payment) => {
-                  const wait = waitingCell(payment);
-                  return (
-                  <tr key={payment.id} className={wait.bandClass}>
-                    <td className="td">
-                      <Link to={`/jobs/${payment.jobId}`} className="cell-link">
-                        {payment.jobTitle}
-                      </Link>
-                      {payment.reUploadCount > 0 && (
-                        <span className="block text-xs text-[var(--amber-dark)]">
-                          {payment.reUploadCount} send-back{payment.reUploadCount === 1 ? '' : 's'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="td">
-                      {payment.homeownerName}
-                      <span className="block text-xs cell-muted">{payment.homeownerEmail}</span>
-                    </td>
-                    <td className="td font-mono">{money(payment.amount, payment.currency)}</td>
-                    <td className="td font-mono">{payment.reference}</td>
-                    <td className="td cell-muted">{submittedAgo(payment.submittedAtUtc)}</td>
-                    <td className="td" title={`${wait.minutes} minutes waiting`}>
-                      {wait.label}
-                    </td>
-                    <td className="td">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          className="btn btn-primary !py-1 !px-2.5 !text-xs"
-                          disabled={busy}
-                          onClick={() => openAction('verify', payment)}
-                        >
-                          <CheckCircle size={12} aria-hidden="true" />
-                          Verify
-                        </button>
-                        <button
-                          className="btn btn-danger !py-1 !px-2.5 !text-xs"
-                          disabled={busy}
-                          onClick={() => openAction('reject', payment)}
-                        >
-                          <XCircle size={12} aria-hidden="true" />
-                          Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="payments"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={items}
+        getRowKey={(p) => p.id}
+        getRowClassName={(p) => waitingCell(p).bandClass}
+        isLoading={isLoading}
+        rowActions={rowActions}
+        empty={
+          data && data.totalCount > 0 && page > 1 ? (
+            <>
+              No payments left on this page.{' '}
+              <button
+                className="action-link"
+                onClick={() => setPage(Math.max(1, data.totalPages))}
+              >
+                Go to page {Math.max(1, data.totalPages)}
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-8">
+              <CheckCircle size={28} aria-hidden="true" className="text-[var(--green)]" />
+              <span className="font-medium text-[var(--ink)]">
+                No payments awaiting review.
+              </span>
+              <span className="text-xs">
+                Check the{' '}
+                <Link to="/payouts" className="action-link">payout queue</Link> or{' '}
+                <Link to="/refunds" className="action-link">refund queue</Link>.
+              </span>
+            </div>
+          )
+        }
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="payments"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
 
       <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
         <Receipt size={12} aria-hidden="true" />

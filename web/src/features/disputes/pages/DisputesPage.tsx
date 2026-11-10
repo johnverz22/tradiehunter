@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { PageHeader } from '../../../components/PageHeader';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { Pagination } from '../../../components/Pagination';
 import { useDisputeList } from '../hooks/useDisputes';
+import type { AdminDisputeListItem } from '../../../services/adminApi';
 
 const PAGE_SIZE = 20;
 
@@ -11,6 +14,7 @@ const DISPUTE_STATUSES = ['All', 'Open', 'Resolved', 'Escalated'];
 const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
 
 export const DisputesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [disputeStatus, setDisputeStatus] = useState('Open');
   const [page, setPage] = useState(1);
 
@@ -20,31 +24,111 @@ export const DisputesPage: React.FC = () => {
     pageSize: PAGE_SIZE,
   });
 
+  const columns: ColumnDef<AdminDisputeListItem>[] = [
+    {
+      key: 'jobId',
+      header: 'Job ID',
+      priority: 'detail',
+      cell: (d) => (
+        <span className="mono">
+          <Link to={`/disputes/${d.jobId}`} className="cell-link">
+            {formatJobId(d.jobId)}
+          </Link>
+        </span>
+      ),
+    },
+    {
+      key: 'job',
+      header: 'Job',
+      priority: 'primary',
+      cell: (d) => (
+        <div>
+          <span className="block max-w-xs truncate font-medium text-[var(--ink)]">
+            {d.jobTitle}
+          </span>
+          {d.flagReason && (
+            <span className="block max-w-xs truncate text-xs cell-muted">
+              {d.flagReason}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'homeowner',
+      header: 'Homeowner',
+      priority: 'detail',
+      cell: (d) => <span className="cell-muted">{d.homeownerName}</span>,
+    },
+    {
+      key: 'tradie',
+      header: 'Tradie',
+      priority: 'detail',
+      cell: (d) => <span className="cell-muted">{d.tradieName ?? '—'}</span>,
+    },
+    {
+      key: 'jobStatus',
+      header: 'Job Status',
+      priority: 'detail',
+      cell: (d) => <StatusBadge status={d.status} />,
+    },
+    {
+      key: 'disputeStatus',
+      header: 'Dispute',
+      priority: 'secondary',
+      cell: (d) => <StatusBadge status={d.disputeStatus} />,
+    },
+    {
+      key: 'flagged',
+      header: 'Flagged',
+      priority: 'secondary',
+      cell: (d) => (
+        <span className="cell-muted">
+          {new Date(d.flaggedAtUtc).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ];
+
+  const rowActions = (d: AdminDisputeListItem): RowAction[] => [
+    {
+      label: 'Review',
+      to: `/disputes/${d.jobId}`,
+      variant: 'ghost',
+      primary: true,
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Disputes</h1>
-        {data && (
-          <div className="flex flex-wrap gap-4 mt-3">
-            <div className="stat-pill">
-              <strong>{data.totalCount.toLocaleString()}</strong> {disputeStatus.toLowerCase()}
-            </div>
-            <div className="stat-pill">
-              <strong>{data.items.length}</strong> on this page
-            </div>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Disputes"
+        meta={
+          data && (
+            <>
+              <div className="stat-pill">
+                <strong>{data.totalCount.toLocaleString()}</strong> {disputeStatus.toLowerCase()}
+              </div>
+              <div className="stat-pill">
+                <strong>{data.items.length}</strong> on this page
+              </div>
+            </>
+          )
+        }
+      />
 
-      {/* Status filter tabs */}
-      <div className="flex gap-1 border-b border-[var(--paper-line)]">
+      {/* Status filter tabs - scrollable segmented control on mobile */}
+      <div className="flex gap-1 border-b border-[var(--paper-line)] overflow-x-auto whitespace-nowrap">
         {DISPUTE_STATUSES.map((s) => (
           <button
             key={s}
-            onClick={() => { setDisputeStatus(s); setPage(1); }}
+            onClick={() => {
+              setDisputeStatus(s);
+              setPage(1);
+            }}
             className={[
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors min-h-[44px] shrink-0',
               disputeStatus === s
                 ? 'border-[var(--brand-500)] text-[var(--brand-700)]'
                 : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]',
@@ -56,78 +140,27 @@ export const DisputesPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Job ID</th>
-                <th className="th">Job</th>
-                <th className="th">Homeowner</th>
-                <th className="th">Tradie</th>
-                <th className="th">Job Status</th>
-                <th className="th">Dispute</th>
-                <th className="th">Flagged</th>
-                <th className="th" />
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="td text-center cell-muted">Loading…</td>
-                </tr>
-              ) : data?.items.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="td text-center cell-muted">
-                    No disputes {disputeStatus !== 'All' ? `with status "${disputeStatus}"` : ''}.
-                  </td>
-                </tr>
-              ) : (
-                data?.items.map((d) => (
-                  <tr key={d.jobId}>
-                    <td className="td mono">
-                      <Link to={`/disputes/${d.jobId}`} className="cell-link">
-                        {formatJobId(d.jobId)}
-                      </Link>
-                    </td>
-                    <td className="td">
-                      <span className="block max-w-xs truncate">{d.jobTitle}</span>
-                      {d.flagReason && (
-                        <span className="block max-w-xs truncate text-xs cell-muted">
-                          {d.flagReason}
-                        </span>
-                      )}
-                    </td>
-                    <td className="td cell-muted">{d.homeownerName}</td>
-                    <td className="td cell-muted">{d.tradieName ?? '—'}</td>
-                    <td className="td"><StatusBadge status={d.status} /></td>
-                    <td className="td"><StatusBadge status={d.disputeStatus} /></td>
-                    <td className="td cell-muted">
-                      {new Date(d.flaggedAtUtc).toLocaleDateString()}
-                    </td>
-                    <td className="td text-right">
-                      <Link to={`/disputes/${d.jobId}`} className="action-link">
-                        Review
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="disputes"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(d) => d.jobId}
+        onRowClick={(d) => navigate(`/disputes/${d.jobId}`)}
+        isLoading={isLoading}
+        rowActions={rowActions}
+        empty={`No disputes ${disputeStatus !== 'All' ? `with status "${disputeStatus}"` : ''}.`}
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="disputes"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
     </div>
   );
 };

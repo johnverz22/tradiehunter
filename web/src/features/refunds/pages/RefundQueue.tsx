@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
+import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { useRefundQueue, useProcessRefund } from '../hooks/useRefunds';
 import { ProcessRefundModal } from '../components/ProcessRefundModal';
@@ -92,145 +95,159 @@ export const RefundQueue: React.FC = () => {
     }
   };
 
+  const columns: ColumnDef<RefundSummary>[] = [
+    {
+      key: 'job',
+      header: 'Job',
+      priority: 'primary',
+      cell: (refund) => (
+        <div>
+          <Link to={`/jobs/${refund.jobId}`} className="cell-link">
+            {refund.jobTitle}
+          </Link>
+          <span className="block text-xs cell-muted">Job #{refund.jobId}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'homeowner',
+      header: 'Homeowner',
+      priority: 'detail',
+      cell: (refund) => (
+        <div>
+          {refund.homeownerName}
+          <span className="block text-xs cell-muted">{refund.homeownerEmail}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'suggested',
+      header: 'Suggested',
+      priority: 'secondary',
+      cell: (refund) => (
+        <span className="font-mono">{money(refund.suggestedAmount)}</span>
+      ),
+    },
+    {
+      key: 'penalty',
+      header: 'Penalty',
+      priority: 'detail',
+      cell: (refund) => (
+        <span className="font-mono text-[var(--amber-dark)]">
+          {refund.penalty > 0 ? money(refund.penalty) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'reason',
+      header: 'Reason',
+      priority: 'detail',
+      cell: (refund) => (
+        <span className="text-xs cell-muted">
+          {refund.cancelReasonCode
+            ? refund.cancelReasonCode.replace(/_/g, ' ')
+            : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      priority: 'secondary',
+      cell: (refund) => (
+        <span className="cell-muted">{createdAgo(refund.createdAtUtc)}</span>
+      ),
+    },
+  ];
+
+  const rowActions = (refund: RefundSummary): RowAction[] => [
+    {
+      label: 'Process',
+      onClick: () => openModal(refund),
+      variant: 'primary',
+      disabled: isPending,
+      primary: true,
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-[var(--ink)]">Refund Queue</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          Jobs cancelled after payment is collected. Review the suggested amounts, adjust if needed,
-          record your bank transfer reference, and optionally attach proof.
-        </p>
-        {data && (
-          <div className="flex flex-wrap gap-4 mt-3">
-            <div className="stat-pill">
-              <RotateCcw size={13} aria-hidden="true" />
-              <strong>{data.totalCount.toLocaleString()}</strong> pending refunds
-            </div>
-            {data.items.length > 0 && (
+      <PageHeader
+        title="Refund Queue"
+        description="Jobs cancelled after payment is collected. Review the suggested amounts, adjust if needed, record your bank transfer reference, and optionally attach proof."
+        meta={
+          data && (
+            <>
               <div className="stat-pill">
-                <strong>
-                  {money(data.items.reduce((sum, r) => sum + r.suggestedAmount, 0))}
-                </strong>{' '}
-                suggested on this page
+                <RotateCcw size={13} aria-hidden="true" />
+                <strong>{data.totalCount.toLocaleString()}</strong> pending refunds
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              {data.items.length > 0 && (
+                <div className="stat-pill">
+                  <strong>
+                    {money(data.items.reduce((sum, r) => sum + r.suggestedAmount, 0))}
+                  </strong>{' '}
+                  suggested on this page
+                </div>
+              )}
+            </>
+          )
+        }
+      />
 
       {successMessage && (
-        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle size={14} aria-hidden="true" />
-          {successMessage}
-        </div>
+        <Banner variant="success">{successMessage}</Banner>
       )}
 
       {actionError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          {actionError}
-        </div>
+        <Banner variant="error">{actionError}</Banner>
       )}
 
       {isError && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]">
-          <span>Could not load the refund queue: {describeError(queryError)}</span>
-          <button className="btn btn-ghost !py-1 !px-2.5 !text-xs" onClick={() => refetch()}>
-            Retry
-          </button>
-        </div>
+        <Banner
+          variant="error"
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        >
+          Could not load the refund queue: {describeError(queryError)}
+        </Banner>
       )}
 
       {/* Queue table */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Job</th>
-                <th className="th">Homeowner</th>
-                <th className="th">Suggested</th>
-                <th className="th">Penalty</th>
-                <th className="th">Reason</th>
-                <th className="th">Created</th>
-                <th className="th" />
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">
-                    Loading…
-                  </td>
-                </tr>
-              ) : data && data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="td text-center cell-muted">
-                    {data.totalCount > 0 && page > 1 ? (
-                      <>
-                        No refunds on this page.{' '}
-                        <button
-                          className="action-link"
-                          onClick={() => setPage(Math.max(1, data.totalPages))}
-                        >
-                          Go to page {Math.max(1, data.totalPages)}
-                        </button>
-                      </>
-                    ) : (
-                      'No pending refunds — all caught up.'
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                data?.items.map((refund) => (
-                  <tr key={refund.id}>
-                    <td className="td">
-                      <Link to={`/jobs/${refund.jobId}`} className="cell-link">
-                        {refund.jobTitle}
-                      </Link>
-                      <span className="block text-xs cell-muted">Job #{refund.jobId}</span>
-                    </td>
-                    <td className="td">
-                      {refund.homeownerName}
-                      <span className="block text-xs cell-muted">{refund.homeownerEmail}</span>
-                    </td>
-                    <td className="td font-mono">{money(refund.suggestedAmount)}</td>
-                    <td className="td font-mono text-[var(--amber-dark)]">
-                      {refund.penalty > 0 ? money(refund.penalty) : '—'}
-                    </td>
-                    <td className="td text-xs cell-muted">
-                      {refund.cancelReasonCode
-                        ? refund.cancelReasonCode.replace(/_/g, ' ')
-                        : '—'}
-                    </td>
-                    <td className="td cell-muted">{createdAgo(refund.createdAtUtc)}</td>
-                    <td className="td">
-                      <button
-                        className="btn btn-primary !py-1 !px-2.5 !text-xs"
-                        onClick={() => openModal(refund)}
-                        disabled={isPending}
-                      >
-                        Process
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {data && (
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            pageSize={data.pageSize}
-            totalCount={data.totalCount}
-            itemLabel="refunds"
-            onPageChange={setPage}
-          />
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data?.items}
+        getRowKey={(r) => r.id}
+        isLoading={isLoading}
+        rowActions={rowActions}
+        empty={
+          data && data.totalCount > 0 && page > 1 ? (
+            <>
+              No refunds on this page.{' '}
+              <button
+                className="action-link"
+                onClick={() => setPage(Math.max(1, data.totalPages))}
+              >
+                Go to page {Math.max(1, data.totalPages)}
+              </button>
+            </>
+          ) : (
+            'No pending refunds — all caught up.'
+          )
+        }
+        pagination={
+          data ? (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              pageSize={data.pageSize}
+              totalCount={data.totalCount}
+              itemLabel="refunds"
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      />
 
       {/* Processing modal */}
       {selectedRefund && (

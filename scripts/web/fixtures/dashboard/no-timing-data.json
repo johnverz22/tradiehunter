@@ -1,0 +1,181 @@
+{
+  "_comment": "Admin dashboard overview: high-level counters, 30-day marketplace metrics, recent jobs, disputes, and unverified tradies.",
+  "page": "features/dashboard/pages/DashboardPage",
+  "route": "/dashboard",
+  "prefetch": [
+    {
+      "key": [
+        "admin",
+        "stats"
+      ],
+      "url": "/admin/stats",
+      "body": {
+        "totalUsers": 128,
+        "activeJobs": 14,
+        "pendingDisputes": 2,
+        "todaySignups": 5,
+        "jobsByStatus": {
+          "Requested": 3,
+          "Booked": 4,
+          "InProgress": 5,
+          "Completed": 20
+        },
+        "signupsOverTime": {
+          "2026-10-25": 2,
+          "2026-10-26": 3
+        }
+      }
+    },
+    {
+      "key": [
+        "admin",
+        "metrics"
+      ],
+      "url": "/admin/metrics",
+      "body": {
+        "last7Days": {
+          "activationRatePct": 85.0,
+          "avgMatchToConfirmationHours": 1.5,
+          "tradieResponseRatePct": 92.0,
+          "reviewCompletionRatePct": 78.0,
+          "totalJobs": 10,
+          "totalSignups": 8
+        },
+        "last30Days": {
+          "activationRatePct": 88.5,
+          "avgMatchToConfirmationHours": 2.1,
+          "tradieResponseRatePct": 94.2,
+          "reviewCompletionRatePct": 82.0,
+          "totalJobs": 45,
+          "totalSignups": 32
+        },
+        "allTime": {
+          "activationRatePct": 87.0,
+          "avgMatchToConfirmationHours": 2.0,
+          "tradieResponseRatePct": 93.0,
+          "reviewCompletionRatePct": 80.0,
+          "totalJobs": 150,
+          "totalSignups": 110
+        }
+      }
+    },
+    {
+      "key": [
+        "admin",
+        "jobs",
+        {
+          "page": 1,
+          "pageSize": 5
+        }
+      ],
+      "url": "/admin/jobs",
+      "body": {
+        "items": [
+          {
+            "id": 101,
+            "title": "Fix heat pump compressor",
+            "category": "Electrical",
+            "status": "InProgress",
+            "homeownerName": "Dave Clark",
+            "tradeName": "Electrician",
+            "createdAtUtc": "2026-10-25T10:00:00Z",
+            "updatedAtUtc": "2026-10-25T11:00:00Z"
+          }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "pageSize": 5,
+        "totalPages": 1
+      }
+    },
+    {
+      "key": [
+        "admin",
+        "disputes",
+        {
+          "page": 1,
+          "pageSize": 5
+        }
+      ],
+      "url": "/admin/disputes",
+      "body": {
+        "items": [
+          {
+            "jobId": 88,
+            "jobTitle": "Bathroom tile grout",
+            "homeownerName": "Alice Smith",
+            "tradieName": "Bob Builder",
+            "status": "Disputed",
+            "disputeStatus": "Open",
+            "flagReason": "Work incomplete",
+            "flaggedAtUtc": "2026-10-26T08:00:00Z"
+          }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "pageSize": 5,
+        "totalPages": 1
+      }
+    },
+    {
+      "key": [
+        "admin",
+        "users",
+        {
+          "role": "Tradie",
+          "page": 1,
+          "pageSize": 20
+        }
+      ],
+      "url": "/admin/users",
+      "body": {
+        "items": [
+          {
+            "id": "t-1",
+            "fullName": "Bob Builder",
+            "email": "bob@builder.nz",
+            "role": "Tradie",
+            "isActive": true,
+            "isVerified": false,
+            "createdAtUtc": "2026-10-20T10:00:00Z",
+            "jobCount": 8
+          }
+        ],
+        "totalCount": 1,
+        "page": 1,
+        "pageSize": 20,
+        "totalPages": 1
+      }
+    },
+    {
+      "key": [
+        "admin",
+        "credentials",
+        "pending",
+        {
+          "page": 1,
+          "pageSize": 1
+        }
+      ],
+      "url": "/admin/credentials/pending",
+      "body": {
+        "items": [],
+        "totalCount": 6,
+        "page": 1,
+        "pageSize": 1,
+        "totalPages": 6
+      }
+    }
+  ],
+  "expect": [
+    {
+      "label": "no fabricated 0.0h",
+      "needle": "0.0h",
+      "present": false
+    },
+    {
+      "label": "missing metric shows dash with tooltip",
+      "needle": "No data in this period yet"
+    }
+  ]
+}

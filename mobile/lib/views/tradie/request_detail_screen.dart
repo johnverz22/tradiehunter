@@ -16,6 +16,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/sticky_action_bar.dart';
+import '../../feedback/fixo_notice.dart';
 
 /// Tradie request detail screen (T21): price + live offer countdown above
 /// the details, address fallback (exact address is masked until Booked, P5-01),
@@ -204,13 +205,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
         setState(() => _busy = false);
         await _reloadOffer();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Could not respond to this offer — it may have expired.',
-              ),
-            ),
-          );
+          FixoNotice.error(context, 'Could not respond to this offer — it may have expired.');
         }
       case OfferResponseOutcome.alreadyInFlight:
         setState(() => _busy = false);

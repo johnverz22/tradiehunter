@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, CheckCircle, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
+import { PageHeader } from '../../../components/PageHeader';
+import { Banner } from '../../../components/Banner';
+import { DataTable, type ColumnDef } from '../../../components/DataTable';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { BatchStatusBadge, PayoutStatusBadge } from '../components/PayoutStatusBadge';
 import { createdAgo, money, periodLabel } from '../format';
 import { useCompletePayoutBatch, usePayoutBatch } from '../hooks/usePayouts';
+import type { PayoutQueueItem } from '../../../services/adminApi';
 
 function describeBatchError(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -59,18 +63,14 @@ export const PayoutBatchDetail: React.FC = () => {
   if (isError || !data) {
     return (
       <div className="space-y-5">
-        <div
-          className="flex flex-wrap items-center justify-between gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]"
-          role="alert"
+        <Banner
+          variant="error"
+          action={{ label: 'Retry', onClick: () => refetch() }}
         >
-          <span>Could not load this batch: {describeBatchError(queryError)}</span>
-          <button className="btn btn-ghost !py-1 !px-2.5 !text-xs" onClick={() => refetch()}>
-            Retry
-          </button>
-        </div>
+          Could not load this batch: {describeBatchError(queryError)}
+        </Banner>
         <Link to="/payouts/batches" className="action-link inline-flex items-center gap-1.5">
-          <ArrowLeft size={13} aria-hidden="true" />
-          Back to payout batches
+          ← Back to payout batches
         </Link>
       </div>
     );
@@ -78,135 +78,151 @@ export const PayoutBatchDetail: React.FC = () => {
 
   const unprocessed = data.payouts.filter((p) => p.status !== 'Processed').length;
 
+  const columns: ColumnDef<PayoutQueueItem>[] = [
+    {
+      key: 'tradie',
+      header: 'Tradie',
+      priority: 'primary',
+      cell: (payout) => (
+        <Link to={`/users/${payout.tradieId}`} className="cell-link font-medium">
+          {payout.tradieName}
+        </Link>
+      ),
+    },
+    {
+      key: 'job',
+      header: 'Job',
+      priority: 'detail',
+      cell: (payout) => (
+        <div>
+          <Link to={`/jobs/${payout.jobId}`} className="cell-link">
+            {payout.jobTitle}
+          </Link>
+          {payout.jobReferenceCode && (
+            <span className="block text-xs cell-muted font-mono">
+              {payout.jobReferenceCode}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'gross',
+      header: 'Gross',
+      priority: 'detail',
+      cell: (payout) => <span className="font-mono">{money(payout.grossAmount)}</span>,
+    },
+    {
+      key: 'fee',
+      header: 'Fee',
+      priority: 'detail',
+      cell: (payout) => (
+        <span className="font-mono cell-muted">−{money(payout.commissionAmount)}</span>
+      ),
+    },
+    {
+      key: 'net',
+      header: 'Net',
+      priority: 'secondary',
+      cell: (payout) => (
+        <span className="font-mono font-semibold">{money(payout.netAmount)}</span>
+      ),
+    },
+    {
+      key: 'bank',
+      header: 'Bank',
+      priority: 'detail',
+      cell: (payout) => (
+        <span className="font-mono">
+          {payout.hasBankDetails ? (
+            <>····{payout.bankAccountLast4 ?? '????'}</>
+          ) : (
+            <span className="pill pill-red">No details</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      priority: 'secondary',
+      cell: (payout) => <PayoutStatusBadge status={payout.status} />,
+    },
+    {
+      key: 'ref',
+      header: 'Transfer ref',
+      priority: 'detail',
+      cell: (payout) => (
+        <span className="font-mono cell-muted">{payout.transferReference ?? '—'}</span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Age',
+      priority: 'detail',
+      cell: (payout) => <span className="cell-muted">{createdAgo(payout.createdAtUtc)}</span>,
+    },
+  ];
+
   return (
     <div className="space-y-5">
-      <div>
-        <Link to="/payouts/batches" className="action-link inline-flex items-center gap-1.5">
-          <ArrowLeft size={13} aria-hidden="true" />
-          Payout batches
-        </Link>
-        <h1 className="text-xl font-bold text-[var(--ink)] mt-2">
-          {periodLabel(data.periodStartUtc, data.periodEndUtc)}
-        </h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          Batch <span className="font-mono">{data.id}</span>
-        </p>
+      <PageHeader
+        backLink={{ to: '/payouts/batches', label: 'Payout batches' }}
+        title={periodLabel(data.periodStartUtc, data.periodEndUtc)}
+        description={`Batch ${data.id}`}
+        meta={
+          <>
+            <div className="stat-pill">
+              <Layers size={13} aria-hidden="true" />
+              <strong>
+                {data.processedCount}/{data.payoutCount}
+              </strong>{' '}
+              processed
+            </div>
+            <div className="stat-pill">
+              <strong>{money(data.totalAmount)}</strong> net total
+            </div>
+            <div className="stat-pill">
+              <BatchStatusBadge status={data.status} />
+            </div>
+          </>
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Link to="/payouts" className="btn btn-ghost flex-1 sm:flex-none justify-center">
+              Process from queue
+            </Link>
+            <button
+              className="btn btn-primary flex-1 sm:flex-none justify-center"
+              disabled={unprocessed > 0 || data.status === 'Completed' || completeBatch.isPending}
+              onClick={() => setConfirming(true)}
+            >
+              {data.status === 'Completed' ? 'Batch complete' : 'Mark Batch Complete'}
+            </button>
+          </div>
+        }
+      />
 
-        <div className="flex flex-wrap gap-4 mt-3">
-          <div className="stat-pill">
-            <Layers size={13} aria-hidden="true" />
-            <strong>
-              {data.processedCount}/{data.payoutCount}
-            </strong>{' '}
-            processed
-          </div>
-          <div className="stat-pill">
-            <strong>{money(data.totalAmount)}</strong> net total
-          </div>
-          <div className="stat-pill">
-            <BatchStatusBadge status={data.status} />
-          </div>
-        </div>
-      </div>
+      {unprocessed > 0 && (
+        <p className="text-xs text-[var(--ink-soft)]">
+          {unprocessed} payout{unprocessed === 1 ? '' : 's'} still to process.
+        </p>
+      )}
 
       {successMessage && (
-        <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle size={14} aria-hidden="true" />
-          {successMessage}
-        </div>
+        <Banner variant="success">{successMessage}</Banner>
       )}
 
       {actionError && (
-        <div
-          className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-[var(--red)]"
-          role="alert"
-        >
-          {actionError}
-        </div>
+        <Banner variant="error">{actionError}</Banner>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Link to="/payouts" className="btn btn-ghost">
-          Process from the queue
-        </Link>
-        <button
-          className="btn btn-primary"
-          // The backend refuses while any payout is outstanding, so don't offer it.
-          disabled={unprocessed > 0 || data.status === 'Completed' || completeBatch.isPending}
-          onClick={() => setConfirming(true)}
-        >
-          {data.status === 'Completed' ? 'Batch complete' : 'Mark Batch Complete'}
-        </button>
-        {unprocessed > 0 && (
-          <span className="text-xs text-[var(--ink-soft)]">
-            {unprocessed} payout{unprocessed === 1 ? '' : 's'} still to process.
-          </span>
-        )}
-      </div>
-
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="th">Tradie</th>
-                <th className="th">Job</th>
-                <th className="th">Gross</th>
-                <th className="th">Fee</th>
-                <th className="th">Net</th>
-                <th className="th">Bank</th>
-                <th className="th">Status</th>
-                <th className="th">Transfer ref</th>
-                <th className="th">Age</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.payouts.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="td text-center cell-muted">
-                    This batch has no payouts.
-                  </td>
-                </tr>
-              ) : (
-                data.payouts.map((payout) => (
-                  <tr key={payout.id}>
-                    <td className="td">
-                      <Link to={`/users/${payout.tradieId}`} className="cell-link">
-                        {payout.tradieName}
-                      </Link>
-                    </td>
-                    <td className="td">
-                      <Link to={`/jobs/${payout.jobId}`} className="cell-link">
-                        {payout.jobTitle}
-                      </Link>
-                      {payout.jobReferenceCode && (
-                        <span className="block text-xs cell-muted font-mono">
-                          {payout.jobReferenceCode}
-                        </span>
-                      )}
-                    </td>
-                    <td className="td font-mono">{money(payout.grossAmount)}</td>
-                    <td className="td font-mono cell-muted">−{money(payout.commissionAmount)}</td>
-                    <td className="td font-mono font-semibold">{money(payout.netAmount)}</td>
-                    <td className="td font-mono">
-                      {payout.hasBankDetails ? (
-                        <>····{payout.bankAccountLast4 ?? '????'}</>
-                      ) : (
-                        <span className="pill pill-red">No details</span>
-                      )}
-                    </td>
-                    <td className="td">
-                      <PayoutStatusBadge status={payout.status} />
-                    </td>
-                    <td className="td font-mono cell-muted">{payout.transferReference ?? '—'}</td>
-                    <td className="td cell-muted">{createdAgo(payout.createdAtUtc)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={data.payouts}
+        getRowKey={(p) => p.id}
+        empty="This batch has no payouts."
+      />
 
       {confirming && (
         <ConfirmModal

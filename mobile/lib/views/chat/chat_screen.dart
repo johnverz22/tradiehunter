@@ -13,6 +13,7 @@ import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_states.dart';
 import '../widgets/chat_widgets.dart';
 import '../../widgets/schedule_sheet.dart';
+import '../../feedback/fixo_notice.dart';
 
 /// Job-scoped chat thread (V15-16).
 ///
@@ -141,9 +142,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (phone == null || phone.isEmpty) return;
     final ok = await ref.read(externalLauncherProvider).callPhone(phone);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No app available to make the call.')),
-      );
+      FixoNotice.warning(context, NoticeCopy.noCallApp);
     }
   }
 
@@ -157,9 +156,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final otherId = job?.matchedTradieId;
     if (otherId == null || otherId.isEmpty) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No other user on this job yet.')),
-      );
+      FixoNotice.info(context, NoticeCopy.noOtherUser);
       return;
     }
     final repo = ref.read(profileRepositoryProvider);
@@ -187,8 +184,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (confirm != true) return;
         await repo.blockUser(otherId);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('User blocked.')));
+        FixoNotice.info(context, NoticeCopy.userBlocked);
       } else {
         final reasonCtrl = TextEditingController();
         final reason = await showDialog<String>(
@@ -217,18 +213,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (reason == null) return;
         await repo.reportUser(otherId, reason: reason);
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thanks — our team will review this report.'),
-          ),
-        );
+        FixoNotice.success(context, NoticeCopy.reportSent);
       }
     } catch (e) {
       if (!context.mounted) return;
       final msg = e is DioException
           ? friendlyDioError(e, tag: 'ChatScreen.safety')
           : e.toString();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      FixoNotice.errorDynamic(context, msg);
     }
   }
 
@@ -474,13 +466,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     hintText: participant.isNotEmpty
                         ? 'Message $participant…'
                         : null,
-                    onAttach: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Photo attachments are not available in chat.',
-                        ),
-                      ),
-                    ),
+                    onAttach: () => FixoNotice.info(context, NoticeCopy.photoUnavailable),
                   ),
           ),
         ),

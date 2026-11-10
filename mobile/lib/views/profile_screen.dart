@@ -7,6 +7,7 @@ import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/fixo_buttons.dart';
 import '../widgets/fixo_cards.dart';
 import '../widgets/fixo_states.dart';
+import '../feedback/fixo_notice.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -87,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final msg = e is ProfileApiException
           ? e.message
           : 'Could not update availability.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      FixoNotice.error(context, msg);
     } finally {
       if (mounted) setState(() => _availabilitySaving = false);
     }
@@ -130,9 +131,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {
           _isEditing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
+        FixoNotice.success(context, NoticeCopy.profileUpdated);
       }
     }
   }

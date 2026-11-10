@@ -25,7 +25,7 @@ public class DisputeService : IDisputeService
     {
         _context = context;
         _blobStorage = blobStorage;
-        _disputesContainer = config["AzureBlob:DisputesContainer"] ?? "fixo-disputes";
+        _disputesContainer = config["AzureBlob:DisputesContainer"] ?? "th-disputes";
     }
 
     public async Task<DisputeDto> OpenDisputeAsync(int jobId, string userId, CreateDisputeRequest request)

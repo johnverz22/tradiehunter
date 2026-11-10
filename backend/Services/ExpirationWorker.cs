@@ -108,7 +108,7 @@ public class ExpirationWorker : BackgroundService
                         ["type"] = CriticalNotificationTypes.JobExpired,
                     },
                     critical: true,
-                    emailSubject: "Your Fixo job request expired",
+                    emailSubject: "Your TradieHunter job request expired",
                     emailBody: $"Your job \"{job.Title}\" received no tradie response within the request window and was closed. Post it again from the app any time.",
                     ct);
 

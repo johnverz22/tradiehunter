@@ -13,7 +13,7 @@ PERSONA=$1; THEME=$2; UDID=$3; shift 3
 OUT=${SHOTS_OUT_ROOT:-/Users/john/Develop/tradies/docs/runs/v1.5/screenshots}/$THEME
 mkdir -p "$OUT/shared" "$OUT/$PERSONA"
 
-DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true)
+DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true --dart-define "SHOT_THEME=$THEME")
 for kv in "$@"; do DEFINES+=(--dart-define "$kv"); done
 
 cd "$(dirname "$0")/../mobile"

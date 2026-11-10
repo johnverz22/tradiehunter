@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';
@@ -16,9 +17,11 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/fixo_states.dart';
 import '../widgets/modern_job_card.dart';
 import '../widgets/job_status_presentation.dart';
+import '../widgets/compact_progress_bar.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/fixo_feedback.dart';
 import '../widgets/fixo_progress_bar.dart';
+import '../../feedback/fixo_notice.dart';
 
 
 /// Statuses that count as booked work for the tradie — the job is theirs to
@@ -65,6 +68,9 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
   /// Job ids showing a busy accept/decline control. The shared
   /// [OfferResponder] owns the actual one-command-per-job dispatch guard.
   final Set<String> _responding = {};
+
+  /// Availability toggle state: null = idle, true = loading, false = error.
+  bool _availabilityLoading = false;
 
   @override
   void initState() {
@@ -122,8 +128,10 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
     _matchSub = hub.onNewJobMatch.listen((event) {
       if (mounted) {
         _refreshJobsAndOffers();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('New Job Request: ${event.title}')),
+        FixoNotice.push(
+          context,
+          title: NoticeCopy.newJobRequest(event.title),
+          body: event.title,
         );
       }
     });
@@ -133,12 +141,9 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
       switch (event.eventType) {
         case OfferEventType.created:
           _refreshJobsAndOffers();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'New Job Offer: ${event.jobTitle ?? "New Request"}',
-              ),
-            ),
+          FixoNotice.info(
+            context,
+            'New Job Offer: ${event.jobTitle ?? "New Request"}',
           );
         case OfferEventType.expired ||
             OfferEventType.declined ||
@@ -188,19 +193,75 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
       case OfferResponseOutcome.success:
         _refreshJobsAndOffers();
       case OfferResponseOutcome.rejected:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              accept
-                  ? 'Could not accept this offer — it may have expired.'
-                  : 'Could not decline this offer.',
-            ),
-          ),
+        FixoNotice.error(
+          context,
+          accept
+              ? 'Could not accept this offer — it may have expired.'
+              : 'Could not decline this offer.',
         );
         _refreshJobsAndOffers();
       case OfferResponseOutcome.alreadyInFlight:
         break;
     }
+  }
+
+  /// Toggle tradie availability — optimistic update, confirm with the API.
+  ///
+  /// Going Offline while active work exists shows a confirm sheet first.
+  /// Going Online needs no confirm.
+  Future<void> _handleAvailabilityToggle(
+    bool currentlyOnline,
+    List<Job> todayJobs,
+  ) async {
+    if (_availabilityLoading) return;
+
+    // Going offline with active work → confirm sheet.
+    if (currentlyOnline) {
+      final hasActive = todayJobs.any(
+        (j) => _bookedWorkStatuses.contains(j.status),
+      );
+      if (hasActive) {
+        final confirmed = await _showGoOfflineConfirm();
+        if (!confirmed || !mounted) return;
+      }
+    }
+
+    setState(() => _availabilityLoading = true);
+    try {
+      final notifier = ref.read(profileViewModelProvider.notifier);
+      // Clear any previous error before attempting the toggle.
+      final errorBefore = ref.read(profileViewModelProvider).error;
+      await notifier.updateAvailability(!currentlyOnline);
+      if (!mounted) return;
+      // The ViewModel swallows exceptions into state.error — surface them here.
+      final errorAfter = ref.read(profileViewModelProvider).error;
+      if (errorAfter != null && errorAfter != errorBefore) {
+        throw Exception(errorAfter);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      FixoNotice.error(
+        context,
+        NoticeCopy.statusUpdateFailed,
+        onRetry: () => _handleAvailabilityToggle(currentlyOnline, todayJobs),
+      );
+    } finally {
+      if (mounted) setState(() => _availabilityLoading = false);
+    }
+  }
+
+  Future<bool> _showGoOfflineConfirm() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(Radii.sheet),
+        ),
+      ),
+      builder: (_) => const _GoOfflineSheet(),
+    );
+    return result ?? false;
   }
 
   @override
@@ -230,6 +291,20 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
               isScheduledOnOrBeforeToday(j, now),
         )
         .toList();
+
+    // Sort today: action-required statuses first, then by schedule time.
+    final sortedToday = [...todayJobs]..sort((a, b) {
+        final aReq = JobStatusPresentation.forStatus(a.status).tradieActionRequired;
+        final bReq = JobStatusPresentation.forStatus(b.status).tradieActionRequired;
+        if (aReq != bReq) return aReq ? -1 : 1;
+        final aTime = a.scheduledStartUtc;
+        final bTime = b.scheduledStartUtc;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return aTime.compareTo(bTime);
+      });
+
     final upcomingJobs = jobsState.jobs
         .where(
           (j) =>
@@ -272,18 +347,21 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
               _TradieHero(
                 earningsState: earningsState,
                 profileState: profileState,
-                todayCount: todayJobs.length,
+                todayCount: sortedToday.length,
                 isOnline: isAvailable,
-                onToggleOnline: (v) => ref
-                    .read(profileViewModelProvider.notifier)
-                    .updateAvailability(v),
+                availabilityLoading: _availabilityLoading,
+                onToggleOnline: () =>
+                    _handleAvailabilityToggle(isAvailable, todayJobs),
                 onEarningsRetry: () =>
                     ref.read(tradieEarningsProvider.notifier).load(),
               ),
               if (!isAvailable)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s2_5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Space.s4,
+                    vertical: Space.s2_5,
+                  ),
                   color: DesignTokens.amber.withValues(alpha: Alpha.tintAccent),
                   child: Row(
                     children: [
@@ -317,17 +395,24 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                         onRefresh: _refreshAll,
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(Space.s5, Space.s4, Space.s5, Space.navClearance),
+                          padding: const EdgeInsets.fromLTRB(
+                            Space.s5,
+                            Space.s4,
+                            Space.s5,
+                            Space.navClearance,
+                          ),
                           children: [
                             if (showVerificationBanner) ...[
                               FixoInfoBanner(
                                 icon: Icons.pending_actions_rounded,
                                 tone: FixoTone.accent,
                                 title: 'Not verified yet',
-                                message: 'Upload a licence or insurance so an admin can approve you. '
+                                message:
+                                    'Upload a licence or insurance so an admin can approve you. '
                                     'Unverified tradies are never matched to jobs.',
                                 action: InkWell(
-                                  onTap: () => context.push('/tradie/onboarding'),
+                                  onTap: () =>
+                                      context.push('/tradie/onboarding'),
                                   child: Text(
                                     'Review my setup',
                                     style: TextStyle(
@@ -341,7 +426,10 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                               ),
                               const SizedBox(height: Space.s5),
                             ],
-                            FixoSectionLabel(label: 'New leads', count: leads.length),
+                            FixoSectionLabel(
+                              label: 'New leads',
+                              count: leads.length,
+                            ),
                             const SizedBox(height: Space.s2_5),
                             _LeadsSection(
                               leads: leads,
@@ -356,12 +444,19 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                                   context.push('/tradie/requests/${job.id}'),
                             ),
                             const SizedBox(height: Space.s6),
-                            FixoSectionLabel(label: 'Today', count: todayJobs.length),
+                            // Today section label — neutral count badge per spec.
+                            _TodaySectionLabel(count: sortedToday.length),
                             const SizedBox(height: Space.s2_5),
                             _TodaySection(
-                              jobs: todayJobs,
+                              jobs: sortedToday,
+                              isOnline: isAvailable,
                               onJobTap: (id) =>
                                   context.push('/tradie/jobs/$id'),
+                              onGoOnline: () =>
+                                  _handleAvailabilityToggle(
+                                    isAvailable,
+                                    todayJobs,
+                                  ),
                             ),
                             if (upcomingJobs.isNotEmpty) ...[
                               const SizedBox(height: Space.s4),
@@ -403,22 +498,163 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
   }
 }
 
-// ── Section label ─────────────────────────────────────────────────────────────
+// ── Go offline confirm sheet ──────────────────────────────────────────────────
 
-/// Uppercase muted section header matching the homeowner dashboard pattern.
+/// Shown when the tradie tries to go offline while active jobs are in flight.
+class _GoOfflineSheet extends StatelessWidget {
+  const _GoOfflineSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Space.s5,
+          Space.s5,
+          Space.s5,
+          Space.s4,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Go offline?',
+              style: TextStyle(
+                fontFamily: DesignTokens.fontDisplay,
+                fontSize: DesignTokens.fontSizeH2,
+                fontWeight: FW.bold,
+                color: DesignTokens.foreground(isDark),
+              ),
+            ),
+            const SizedBox(height: Space.s2),
+            Text(
+              'You have active or booked jobs. Going offline means no new leads, '
+              'but your current jobs are unaffected.',
+              style: TextStyle(
+                fontSize: DesignTokens.fontSizeBody,
+                color: DesignTokens.inkSoft(isDark),
+              ),
+            ),
+            const SizedBox(height: Space.s5),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: Sizes.buttonSecondary,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: DesignTokens.borderControl(isDark),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(Radii.control),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Space.s3),
+                Expanded(
+                  child: SizedBox(
+                    height: Sizes.buttonSecondary,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: DesignTokens.brand900,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(Radii.control),
+                        ),
+                      ),
+                      child: const Text('Go offline'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Today section label ───────────────────────────────────────────────────────
+
+/// "Today" group header with a neutral count badge — smaller than the amber
+/// leads badge to reduce visual weight. Baseline-aligned.
+class _TodaySectionLabel extends StatelessWidget {
+  final int count;
+
+  const _TodaySectionLabel({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final th = Theme.of(context).extension<THColors>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          'Today',
+          style: TextStyle(
+            fontSize: DesignTokens.fontSizeCaption,
+            fontWeight: FW.semibold,
+            letterSpacing: Tracking.wide,
+            color: th.textSoft,
+          ),
+        ),
+        if (count > 0) ...[
+          const SizedBox(width: Space.s1_5),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.s1_5,
+              vertical: Space.s0_5,
+            ),
+            decoration: BoxDecoration(
+              color: DesignTokens.inkSoft(isDark)
+                  .withValues(alpha: Alpha.tintStandard),
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: DesignTokens.fontSizeTiny,
+                fontWeight: FW.semibold,
+                color: th.textSoft,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 // ── Tradie earnings hero header ────────────────────────────────────────────────
 
-/// Always-dark brand gradient header with earnings hero, decorative sparkline,
-/// two sub-tiles (pending + rating / jobs) and an embedded online/offline
-/// toggle. The gradient is always dark so status bar icons are always white —
-/// the caller wraps this in AnnotatedRegion.light.
+/// Always-dark brand gradient header.
+///
+/// Layout changes from the previous version:
+/// - Status pill button moved to the TOP ROW, right-aligned alongside the
+///   "Net this week" label. The sparkline sits behind the net figure at
+///   reduced opacity so it does not collide with the button.
+/// - Sub-tiles row: exactly TWO tiles (Pending + Rating), equal width via
+///   [Expanded] flex. Heights match via [IntrinsicHeight]. The Online tile
+///   has been removed.
 class _TradieHero extends StatelessWidget {
   final TradieEarningsState earningsState;
   final ProfileState profileState;
   final int todayCount;
   final bool isOnline;
-  final ValueChanged<bool> onToggleOnline;
+  final bool availabilityLoading;
+  final VoidCallback onToggleOnline;
   final VoidCallback onEarningsRetry;
 
   const _TradieHero({
@@ -426,6 +662,7 @@ class _TradieHero extends StatelessWidget {
     required this.profileState,
     required this.todayCount,
     required this.isOnline,
+    required this.availabilityLoading,
     required this.onToggleOnline,
     required this.onEarningsRetry,
   });
@@ -445,12 +682,12 @@ class _TradieHero extends StatelessWidget {
       earnedValue = 'Not available';
     } else {
       earnedValue = summary?.earnedNet != null
-          ? '\$${summary!.earnedNet!.toStringAsFixed(2)}'
+          ? formatMoney(summary!.earnedNet!)
           : '—';
     }
 
     final String? pendingValue = summary?.pendingNet != null
-        ? '\$${summary!.pendingNet!.toStringAsFixed(2)}'
+        ? formatMoney(summary!.pendingNet!)
         : null;
 
     final bool hasError = earningsState.error != null && summary == null;
@@ -458,6 +695,11 @@ class _TradieHero extends StatelessWidget {
     final num? averageRatingNum =
         profileState.profile?['averageRating'] as num?;
     final int? reviewCount = profileState.profile?['reviewCount'] as int?;
+    final bool hasRating =
+        reviewCount != null &&
+        reviewCount > 0 &&
+        averageRatingNum != null &&
+        averageRatingNum > 0;
 
     return Container(
       decoration: const BoxDecoration(
@@ -469,13 +711,13 @@ class _TradieHero extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Decorative concentric rings — top right
+          // Decorative concentric rings — top right, behind status button.
           Positioned(
             right: -48,
             top: -32,
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.10,
+                opacity: Alpha.tintLight,
                 child: CustomPaint(
                   size: const Size(220, 220),
                   painter: _RingsPainter(),
@@ -487,190 +729,135 @@ class _TradieHero extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(
               Space.s5,
-              topPad + 14,
+              topPad + Space.s4,
               Space.s5,
               Space.s5,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top row: earnings label + notification bell
+                // ── Top row: "Net this week" label + status pill ──────────
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Net this week',
-                            style: TextStyle(
-                              fontSize: DesignTokens.fontSizeCaption,
-                              color: Colors.white.withValues(alpha: Alpha.iconOnGradient),
-                              letterSpacing: Tracking.wide,
-                            ),
-                          ),
-                          const SizedBox(height: Space.s1),
-                          GestureDetector(
-                            onTap: hasError ? onEarningsRetry : null,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      earnedValue,
-                                      style: TextStyle(
-                                        fontFamily: TypeTokens.fontDisplay,
-                                        fontSize: (hasError || isNotAvailable)
-                                            ? 18
-                                            : 38,
-                                        fontWeight: FW.bold,
-                                        color: Colors.white,
-                                        letterSpacing: Tracking.tight *
-                                            ((hasError || isNotAvailable)
-                                                ? 18
-                                                : 38),
-                                        height: 1.1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                if (hasError) ...[
-                                  const SizedBox(width: Space.s2),
-                                  Icon(
-                                    Icons.refresh_rounded,
-                                    size: 18,
-                                    color: Colors.white.withValues(alpha: Alpha.iconOnGradientStrong),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
+                    Flexible(
+                      child: Text(
+                        'Net this week',
+                        style: TextStyle(
+                          fontSize: DesignTokens.fontSizeCaption,
+                          color: Colors.white
+                              .withValues(alpha: Alpha.iconOnGradient),
+                          letterSpacing: Tracking.wide,
+                        ),
                       ),
                     ),
-                    // Sparkline — decorative amber line chart
-                    const SizedBox(width: Space.s3),
-                    SizedBox(
-                      width: 72,
-                      height: 44,
-                      child: CustomPaint(
-                        painter: _SparklinePainter(DesignTokens.amber),
+                    const SizedBox(width: Space.s2),
+                    _AvailabilityPillButton(
+                      key: const Key('availability_button'),
+                      isOnline: isOnline,
+                      isLoading: availabilityLoading,
+                      onPressed: onToggleOnline,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Space.s1),
+                // ── Net figure with sparkline behind it ────────────────
+                Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    // Sparkline — decorative, behind the net figure.
+                    Positioned(
+                      right: 0,
+                      child: Opacity(
+                        opacity: Alpha.iconOnGradientSoft,
+                        child: SizedBox(
+                          width: 80,
+                          height: 44,
+                          child: CustomPaint(
+                            painter: _SparklinePainter(DesignTokens.amber),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Net earnings figure.
+                    GestureDetector(
+                      onTap: hasError ? onEarningsRetry : null,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                earnedValue,
+                                style: TextStyle(
+                                  fontFamily: TypeTokens.fontDisplay,
+                                  fontSize: (hasError || isNotAvailable)
+                                      ? DesignTokens.fontSizeH2
+                                      : DesignTokens.fontSizeAmountLg,
+                                  fontWeight: FW.bold,
+                                  color: Colors.white,
+                                  letterSpacing: Tracking.tight *
+                                      ((hasError || isNotAvailable)
+                                          ? DesignTokens.fontSizeH2
+                                          : DesignTokens.fontSizeAmountLg),
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (hasError) ...[
+                            const SizedBox(width: Space.s2),
+                            Icon(
+                              Icons.refresh_rounded,
+                              size: Sizes.iconSm,
+                              color: Colors.white.withValues(
+                                  alpha: Alpha.iconOnGradientStrong),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: Space.s4),
-                // Sub-tiles row
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Space.s2,
-                          vertical: Space.s3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: Alpha.tintStandard),
-                          borderRadius: BorderRadius.circular(Radii.tile),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: Alpha.tintAccent),
-                          ),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            pendingValue != null
-                                ? 'Pending $pendingValue'
-                                : 'Pending —',
-                            style: const TextStyle(
-                              fontFamily: TypeTokens.fontDisplay,
-                              fontSize: DesignTokens.fontSizeSecondary,
-                              fontWeight: FW.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                // ── Two equal-width stat tiles ─────────────────────────
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _HeroStatTile(
+                          key: const Key('stat_tile_pending'),
+                          label: 'Pending',
+                          valueText: pendingValue != null
+                              ? 'Pending $pendingValue'
+                              : 'Pending —',
+                          // Reserve caption height even when absent so tiles
+                          // stay the same height as the rating tile.
+                          captionText: null,
+                          reserveCaptionSpace: true,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: Space.s2),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Space.s2,
-                          vertical: Space.s3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: Alpha.tintStandard),
-                          borderRadius: BorderRadius.circular(Radii.tile),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: Alpha.tintAccent),
-                          ),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (reviewCount != null &&
-                                  reviewCount > 0 &&
-                                  averageRatingNum != null &&
-                                  averageRatingNum > 0) ...[
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.star_rounded,
-                                      size: 14,
-                                      color: DesignTokens.amber,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      averageRatingNum.toStringAsFixed(1),
-                                      style: const TextStyle(
-                                        fontFamily: TypeTokens.fontDisplay,
-                                        fontSize: DesignTokens.fontSizeSm,
-                                        fontWeight: FW.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: Space.s0_5),
-                                Text(
-                                  '$reviewCount ${reviewCount == 1 ? 'review' : 'reviews'}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white.withValues(alpha: Alpha.textOnGradient),
-                                  ),
-                                ),
-                              ] else ...[
-                                const Text(
-                                  'No reviews yet',
-                                  style: TextStyle(
-                                    fontSize: DesignTokens.fontSizeTiny,
-                                    fontWeight: FW.semibold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                      const SizedBox(width: Space.s2),
+                      Expanded(
+                        child: _HeroStatTile(
+                          key: const Key('stat_tile_rating'),
+                          label: 'Rating',
+                          valueText: hasRating
+                              ? averageRatingNum.toStringAsFixed(1)
+                              : 'No reviews yet',
+                          valueIcon: hasRating ? Icons.star_rounded : null,
+                          captionText: hasRating
+                              ? '$reviewCount ${reviewCount == 1 ? 'review' : 'reviews'}'
+                              : null,
+                          reserveCaptionSpace: true,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: Space.s2),
-                    // Online/offline toggle — embedded as third tile
-                    _OnlineSwitch(
-                      online: isOnline,
-                      onToggle: onToggleOnline,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -681,117 +868,276 @@ class _TradieHero extends StatelessWidget {
   }
 }
 
+// ── Hero stat tile ────────────────────────────────────────────────────────────
 
-/// Online/offline toggle styled as a hero tile — matches the sub-tile height,
-/// shows a coloured dot + label + compact switch track.
-/// Min tap target is 48×48 (Sizes.tapMin) per the accessibility contract.
-class _OnlineSwitch extends StatelessWidget {
-  final bool online;
-  final ValueChanged<bool> onToggle;
+/// A single semi-transparent tile inside the hero gradient.
+///
+/// [reserveCaptionSpace] ensures both tiles are the same height whether or
+/// not one has a [captionText] — achieved by rendering an invisible Text
+/// placeholder at the same size.
+class _HeroStatTile extends StatelessWidget {
+  final String label;
+  final String valueText;
+  final IconData? valueIcon;
+  final String? captionText;
+  final bool reserveCaptionSpace;
 
-  const _OnlineSwitch({required this.online, required this.onToggle});
+  const _HeroStatTile({
+    super.key,
+    required this.label,
+    required this.valueText,
+    this.valueIcon,
+    this.captionText,
+    this.reserveCaptionSpace = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const onColor = DesignTokens.green;
-    const offColor = DesignTokens.inkSoftLight;
-
-    final dotColor = online ? onColor : offColor;
-    final label = online ? 'Online' : 'Offline';
-
-    return Semantics(
-      button: true,
-      toggled: online,
-      label: online ? 'Go offline' : 'Go online',
-      child: GestureDetector(
-        onTap: () => onToggle(!online),
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: Sizes.tapMin, minHeight: Sizes.tapMin),
-          padding: const EdgeInsets.symmetric(
-            horizontal: Space.s3,
-            vertical: Space.s3,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: Alpha.tintStandard),
-            borderRadius: BorderRadius.circular(Radii.tile),
-            border: Border.all(
-              color: online
-                  ? onColor.withValues(alpha: Alpha.outlineDark)
-                  : Colors.white.withValues(alpha: Alpha.tintAccent),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s3,
+        vertical: Space.s3,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: Alpha.tintStandard),
+        borderRadius: BorderRadius.circular(Radii.tile),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: Alpha.tintAccent),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Label
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeTiny,
+              fontWeight: FW.medium,
+              color: Colors.white.withValues(alpha: Alpha.textOnGradient),
+              letterSpacing: Tracking.wide,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: Space.s1),
+          // Value row (icon + text)
+          Row(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedContainer(
-                    duration: FixoDurations.toggle,
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: dotColor,
-                      boxShadow: online
-                          ? [
-                              BoxShadow(
-                                color: onColor.withValues(alpha: Alpha.divider),
-                                blurRadius: 4,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: DesignTokens.fontSizeTiny,
+              if (valueIcon != null) ...[
+                Icon(valueIcon, size: 14, color: DesignTokens.amber),
+                const SizedBox(width: Space.s1),
+              ],
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    valueText,
+                    style: TextStyle(
+                      fontFamily: TypeTokens.fontDisplay,
+                      fontSize: DesignTokens.fontSizeSm,
+                      fontWeight: FW.bold,
                       color: Colors.white,
-                      fontWeight: FW.semibold,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Space.s1_5),
-              // Compact switch track
-              AnimatedContainer(
-                duration: FixoDurations.toggle,
-                width: Sizes.switchW * 0.75,   // 39px — compact for the tile
-                height: Sizes.switchH * 0.75,  // 24px
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                  color: online
-                      ? onColor.withValues(alpha: Alpha.scrim)
-                      : Colors.white.withValues(alpha: Alpha.border),
-                ),
-                alignment:
-                    online ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: Alpha.border),
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
                   ),
                 ),
               ),
             ],
           ),
-        ),
+          // Caption or reserved-space placeholder.
+          if (captionText != null || reserveCaptionSpace) ...[
+            const SizedBox(height: Space.s0_5),
+            Opacity(
+              opacity: captionText != null ? 1.0 : 0.0,
+              child: Text(
+                captionText ?? '–',
+                style: TextStyle(
+                  fontSize: DesignTokens.fontSizeTiny,
+                  color: Colors.white.withValues(alpha: Alpha.textOnGradient),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
+  }
+}
+
+// ── Availability pill button ──────────────────────────────────────────────────
+
+/// Pill status button for the hero top row.
+///
+/// States:
+/// - Online: green-tinted filled dot + "Online" label, dot pulses (respects
+///   reduce-motion).
+/// - Offline: neutral outlined dot + "Offline" label, no pulse.
+/// - Loading: spinner replaces the dot, button disabled, label unchanged.
+///
+/// Meets WCAG 4.5:1 contrast for label text on the dark gradient in both
+/// themes. Min tap area 48×48dp via [ConstrainedBox] padding.
+class _AvailabilityPillButton extends StatefulWidget {
+  final bool isOnline;
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _AvailabilityPillButton({
+    super.key,
+    required this.isOnline,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  @override
+  State<_AvailabilityPillButton> createState() =>
+      _AvailabilityPillButtonState();
+}
+
+class _AvailabilityPillButtonState extends State<_AvailabilityPillButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: FixoDurations.pulse,
+    );
+    _pulseAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+    // _updatePulse reads MediaQuery — must not be called here.
+    // Called in didChangeDependencies instead.
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updatePulse();
+  }
+
+  @override
+  void didUpdateWidget(_AvailabilityPillButton old) {
+    super.didUpdateWidget(old);
+    if (old.isOnline != widget.isOnline ||
+        old.isLoading != widget.isLoading) {
+      _updatePulse();
+    }
+  }
+
+  void _updatePulse() {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (widget.isOnline && !widget.isLoading && !reduceMotion) {
+      _pulseCtrl.repeat(reverse: true);
+    } else {
+      _pulseCtrl.stop();
+      _pulseCtrl.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Always-white text on the dark gradient — confirmed ≥ 4.5:1 on brand900.
+    const labelColor = Colors.white;
+    final dotColor =
+        widget.isOnline ? DesignTokens.green : Colors.white;
+    final borderColor = widget.isOnline
+        ? DesignTokens.green.withValues(alpha: Alpha.outlineDark)
+        : Colors.white.withValues(alpha: Alpha.border);
+    final bgColor = widget.isOnline
+        ? DesignTokens.green.withValues(alpha: Alpha.tintStandard)
+        : Colors.white.withValues(alpha: Alpha.subtle);
+
+    final label = widget.isOnline ? 'Online' : 'Offline';
+
+    return Semantics(
+      button: true,
+      toggled: widget.isOnline,
+      label: 'Availability',
+      value: label,
+      hint: widget.isOnline ? 'Double tap to go offline' : 'Double tap to go online',
+      child: GestureDetector(
+        onTap: widget.isLoading ? null : widget.onPressed,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          // Pad hit area to Sizes.tapMin without expanding layout width.
+          padding: const EdgeInsets.symmetric(vertical: Space.s1),
+          child: Container(
+            height: Sizes.statusButton,
+            constraints: const BoxConstraints(minWidth: Sizes.tapMin),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.s3,
+            ),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(Radii.pill),
+              border: Border.all(color: borderColor),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                  // Dot / spinner
+                  SizedBox(
+                    width: Sizes.heroDot,
+                    height: Sizes.heroDot,
+                    child: widget.isLoading
+                        ? CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white
+                                .withValues(alpha: Alpha.iconOnGradientStrong),
+                          )
+                        : AnimatedBuilder(
+                            animation: _pulseAnim,
+                            builder: (_, _) => Opacity(
+                              opacity: _pulseAnim.value,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dotColor,
+                                  boxShadow: widget.isOnline
+                                      ? [
+                                          BoxShadow(
+                                            color: DesignTokens.green
+                                                .withValues(alpha: Alpha.divider),
+                                            blurRadius: Space.s1,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: Space.s2),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: TypeTokens.fontBody,
+                      fontSize: DesignTokens.fontSizeSecondary,
+                      fontWeight: FW.semibold,
+                      color: labelColor,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
   }
 }
 
@@ -858,7 +1204,6 @@ class _SparklinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_SparklinePainter old) => old.color != color;
 }
-
 
 
 // ── New leads ─────────────────────────────────────────────────────────────────
@@ -1019,7 +1364,7 @@ class _LeadCardState extends State<_LeadCard> {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           widget.job.totalAmount != null
-                              ? '\$${widget.job.totalAmount!.toStringAsFixed(2)}'
+                              ? formatMoney(widget.job.totalAmount!)
                               : '—',
                           style: TextStyle(
                             fontSize: DesignTokens.fontSizeH1,
@@ -1033,7 +1378,13 @@ class _LeadCardState extends State<_LeadCard> {
                   if (widget.job.urgency == 'Urgent' ||
                       widget.job.urgency == 'Emergency') ...[
                     const SizedBox(width: Space.s2),
-                    FixoPillChip(label: widget.job.urgency!, color: DesignTokens.amber, textColor: DesignTokens.inkAccent(isDark), showDot: true, uppercase: true),
+                    FixoPillChip(
+                      label: widget.job.urgency!,
+                      color: DesignTokens.amber,
+                      textColor: DesignTokens.inkAccent(isDark),
+                      showDot: true,
+                      uppercase: true,
+                    ),
                   ],
                 ],
               ),
@@ -1094,11 +1445,13 @@ class _LeadCardState extends State<_LeadCard> {
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 56,
+                      height: Sizes.button,
                       child: OutlinedButton(
                         onPressed: _offerLive ? widget.onDecline : null,
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: Space.s1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s1,
+                          ),
                           foregroundColor:
                               DesignTokens.foregroundBrand(isDark),
                           side: BorderSide(
@@ -1106,9 +1459,8 @@ class _LeadCardState extends State<_LeadCard> {
                             width: DesignTokens.borderWidthFor(isDark),
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              DesignTokens.radiusControl,
-                            ),
+                            borderRadius:
+                                BorderRadius.circular(Radii.control),
                           ),
                           textStyle: const TextStyle(
                             fontSize: DesignTokens.fontSizeSecondary,
@@ -1126,17 +1478,18 @@ class _LeadCardState extends State<_LeadCard> {
                   Expanded(
                     flex: 2,
                     child: SizedBox(
-                      height: 56,
+                      height: Sizes.button,
                       child: FilledButton(
                         onPressed: _offerLive ? widget.onAccept : null,
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: Space.s2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s2,
+                          ),
                           backgroundColor: DesignTokens.amber,
                           foregroundColor: DesignTokens.onAmber,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              DesignTokens.radiusControl,
-                            ),
+                            borderRadius:
+                                BorderRadius.circular(Radii.control),
                           ),
                           textStyle: const TextStyle(
                             fontSize: DesignTokens.fontSizeSecondary,
@@ -1145,8 +1498,8 @@ class _LeadCardState extends State<_LeadCard> {
                         ),
                         child: widget.busy
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: Sizes.iconSm,
+                                height: Sizes.iconSm,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),
@@ -1282,14 +1635,24 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
 
     // Not yet checked — shimmer-like grey bar at 0 + 'Checking…' label
     if (!widget.offerChecked) {
-      return FixoProgressBar(progress: 0.0, barColor: grey, label: 'Checking…', labelColor: grey);
+      return FixoProgressBar(
+        progress: 0.0,
+        barColor: grey,
+        label: 'Checking…',
+        labelColor: grey,
+      );
     }
 
     final offer = widget.offer;
 
     // Offer fetch returned null — expired/gone bar
     if (offer == null) {
-      return FixoProgressBar(progress: 1.0, barColor: grey, label: 'Expired', labelColor: grey);
+      return FixoProgressBar(
+        progress: 1.0,
+        barColor: grey,
+        label: 'Expired',
+        labelColor: grey,
+      );
     }
 
     // Live offer — compute progress fraction using offeredAtUtc as the start.
@@ -1304,45 +1667,390 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
     final labelColor =
         live ? DesignTokens.inkAccent(isDark) : grey;
 
-    return FixoProgressBar(progress: progress, barColor: live ? DesignTokens.amber : grey, label: live ? OfferCountdown.formatClock(_remaining) : 'Expired', labelColor: labelColor);
+    return FixoProgressBar(
+      progress: progress,
+      barColor: live ? DesignTokens.amber : grey,
+      label: live ? OfferCountdown.formatClock(_remaining) : 'Expired',
+      labelColor: labelColor,
+    );
   }
-
 }
 
 
-// ── Today / collapsed sections ────────────────────────────────────────────────
+// ── Today section ─────────────────────────────────────────────────────────────
 
 class _TodaySection extends StatelessWidget {
   final List<Job> jobs;
+  final bool isOnline;
   final ValueChanged<String> onJobTap;
+  final VoidCallback onGoOnline;
 
-  const _TodaySection({required this.jobs, required this.onJobTap});
+  const _TodaySection({
+    required this.jobs,
+    required this.isOnline,
+    required this.onJobTap,
+    required this.onGoOnline,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (jobs.isEmpty) {
+      return _TodayEmptyState(isOnline: isOnline, onGoOnline: onGoOnline);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (jobs.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Space.s2),
-            child: Text(
-              'Nothing scheduled today.',
-              style: TextStyle(
-                fontSize: DesignTokens.fontSizeSm,
-                color: DesignTokens.inkSoft(isDark),
-              ),
-            ),
-          ),
         for (final job in jobs) ...[
-          _scheduledJobCard(job, onJobTap),
+          _TodayJobCard(job: job, onTap: () => onJobTap(job.id)),
           const SizedBox(height: Space.s2_5),
         ],
       ],
     );
   }
 }
+
+// ── Today empty state ─────────────────────────────────────────────────────────
+
+/// Compact card that adapts to online/offline state.
+///
+/// Online: "You're online. New leads will appear here."
+/// Offline: "No new leads right now. Online tradies get offers first."
+///          + a "Go online" prompt button.
+class _TodayEmptyState extends StatelessWidget {
+  final bool isOnline;
+  final VoidCallback onGoOnline;
+
+  const _TodayEmptyState({
+    required this.isOnline,
+    required this.onGoOnline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final th = Theme.of(context).extension<THColors>()!;
+
+    return Container(
+      padding: const EdgeInsets.all(Space.s4),
+      decoration: BoxDecoration(
+        color: DesignTokens.surfaceCard(isDark),
+        borderRadius: BorderRadius.circular(Radii.tile),
+        border: Border.all(color: DesignTokens.paperLine(isDark)),
+        boxShadow: DesignTokens.cardShadow(isDark),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: Space.s9,
+            height: Space.s9,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: (isOnline ? DesignTokens.green : DesignTokens.inkSoft(isDark))
+                  .withValues(alpha: Alpha.tintStandard),
+            ),
+            child: Icon(
+              isOnline ? Icons.check_circle_outline_rounded : Icons.wifi_off_rounded,
+              size: Sizes.iconMd,
+              color: isOnline ? DesignTokens.inkSuccess(isDark) : DesignTokens.inkSoft(isDark),
+            ),
+          ),
+          const SizedBox(width: Space.s3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOnline
+                      ? "You're online"
+                      : 'Nothing scheduled today',
+                  style: TextStyle(
+                    fontFamily: DesignTokens.fontDisplay,
+                    fontSize: DesignTokens.fontSizeBody,
+                    fontWeight: FW.semibold,
+                    color: th.text,
+                  ),
+                ),
+                const SizedBox(height: Space.s1),
+                Text(
+                  isOnline
+                      ? 'New leads will appear here as they come in.'
+                      : 'No new leads right now. Online tradies get offers first.',
+                  style: TextStyle(
+                    fontSize: DesignTokens.fontSizeSecondary,
+                    color: th.textSoft,
+                  ),
+                ),
+                if (!isOnline) ...[
+                  const SizedBox(height: Space.s3),
+                  Semantics(
+                    button: true,
+                    label: 'Go online to receive new leads',
+                    child: InkWell(
+                      onTap: onGoOnline,
+                      borderRadius: BorderRadius.circular(Radii.control),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.s3,
+                          vertical: Space.s2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: DesignTokens.green
+                              .withValues(alpha: Alpha.tintStandard),
+                          borderRadius: BorderRadius.circular(Radii.control),
+                          border: Border.all(
+                            color: DesignTokens.green
+                                .withValues(alpha: Alpha.borderMid),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.wifi_rounded,
+                              size: 14,
+                              color: DesignTokens.inkSuccess(isDark),
+                            ),
+                            const SizedBox(width: Space.s1_5),
+                            Text(
+                              'Go online',
+                              style: TextStyle(
+                                fontSize: DesignTokens.fontSizeSecondary,
+                                fontWeight: FW.semibold,
+                                color: DesignTokens.inkSuccess(isDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Today job card ────────────────────────────────────────────────────────────
+
+/// Redesigned tradie Today card per v1.7 spec.
+///
+/// Layout:
+/// 1. Row 1: job title (left, max 2 lines, bold) + StatusChip (trailing,
+///    aligned to first line baseline via [CrossAxisAlignment.start]).
+/// 2. Row 2: trade · suburb muted line.
+/// 3. Row 3: price (left, strong, tabular) | schedule (right, 2 lines if
+///    needed: day above, time below).
+/// 4. Row 4: segmented progress bar — "Step X of 4" caption only.
+/// 5. Action row: amber primary CTA only when [tradieActionRequired],
+///    otherwise a trailing chevron on the card's right edge.
+///
+/// The whole card is tappable ([InkWell] wrapping). When a CTA is shown it
+/// navigates identically to tapping the card.
+class _TodayJobCard extends StatelessWidget {
+  final Job job;
+  final VoidCallback onTap;
+
+  const _TodayJobCard({required this.job, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final th = Theme.of(context).extension<THColors>()!;
+    final presentation = JobStatusPresentation.forStatus(job.status);
+    final scheduled = job.scheduledStartUtc?.toLocal();
+
+    // Price string — tabular numerals.
+    final priceText = job.totalAmount != null
+        ? formatMoney(job.totalAmount!)
+        : null;
+
+    // Schedule — split into date and time when available.
+    final dateLabel = scheduled != null
+        ? DateFormat('EEE d MMM').format(scheduled)
+        : null;
+    final timeLabel = scheduled != null
+        ? DateFormat.jm().format(scheduled)
+        : null;
+
+    // Meta line: trade · suburb (never repeat trade twice).
+    final metaParts = <String>[];
+    if (job.category.isNotEmpty) metaParts.add(job.category);
+    if (job.suburb.isNotEmpty) metaParts.add(job.suburb);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: Container(
+          padding: const EdgeInsets.all(Space.s4),
+          decoration: BoxDecoration(
+            color: DesignTokens.surfaceCard(isDark),
+            borderRadius: BorderRadius.circular(Radii.card),
+            border: Border.all(color: DesignTokens.paperLine(isDark)),
+            boxShadow: DesignTokens.cardShadow(isDark),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Row 1: title + status chip ────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      job.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: DesignTokens.fontDisplay,
+                        fontSize: DesignTokens.fontSizeH3,
+                        fontWeight: FW.bold,
+                        height: 1.3,
+                        color: th.text,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Space.s2),
+                  // Chip aligned to first line — CrossAxisAlignment.start
+                  // handles this since the chip is fixed-height (Sizes.statusChip).
+                  StatusChip(
+                    label: presentation.label,
+                    tone: presentation.chipTone,
+                    icon: presentation.chipIcon,
+                  ),
+                ],
+              ),
+
+              // ── Row 2: trade · suburb ─────────────────────────────────
+              if (metaParts.isNotEmpty) ...[
+                const SizedBox(height: Space.s1),
+                Text(
+                  metaParts.join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: DesignTokens.fontSizeSecondary,
+                    color: th.textSoft,
+                  ),
+                ),
+              ],
+
+              // ── Row 3: price | schedule ───────────────────────────────
+              if (priceText != null || dateLabel != null) ...[
+                const SizedBox(height: Space.s3),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (priceText != null)
+                      Expanded(
+                        child: Text(
+                          priceText,
+                          style: TextStyle(
+                            fontFamily: DesignTokens.fontDisplay,
+                            fontSize: DesignTokens.fontSizeAmount,
+                            fontWeight: FW.bold,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color: th.text,
+                          ),
+                        ),
+                      ),
+                    if (priceText != null && dateLabel != null)
+                      const SizedBox(width: Space.s2),
+                    if (dateLabel != null)
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              dateLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: DesignTokens.fontSizeSecondary,
+                                fontWeight: FW.medium,
+                                color: th.textSoft,
+                              ),
+                            ),
+                            if (timeLabel != null)
+                              Text(
+                                timeLabel,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: DesignTokens.fontSizeSecondary,
+                                  fontWeight: FW.semibold,
+                                  color: th.text,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+
+              // ── Row 4: progress bar ───────────────────────────────────
+              if (presentation.progressStage != null) ...[
+                const SizedBox(height: Space.s3),
+                CompactProgressBar(
+                  completedSteps: presentation.progressStage! + 1,
+                  totalSteps: 4,
+                  label: presentation.progressLabel,
+                  // No sublabel — status is communicated by the chip above.
+                ),
+              ],
+
+              // ── Row 5: CTA or chevron ─────────────────────────────────
+              const SizedBox(height: Space.s3),
+              if (presentation.tradieActionRequired)
+                SizedBox(
+                  width: double.infinity,
+                  height: Sizes.tapMin,
+                  child: Semantics(
+                    button: true,
+                    label: presentation.tradieAction,
+                    child: FilledButton(
+                      key: const Key('today_card_cta'),
+                      onPressed: onTap,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: DesignTokens.amber,
+                        foregroundColor: DesignTokens.onAmber,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(Radii.control),
+                        ),
+                        textStyle: TextStyle(
+                          fontFamily: DesignTokens.fontBody,
+                          fontSize: DesignTokens.fontSizeBody,
+                          fontWeight: FW.semibold,
+                        ),
+                      ),
+                      child: Text(presentation.tradieAction),
+                    ),
+                  ),
+                )
+              else
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: Sizes.iconMd,
+                    color: th.textSoft,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Collapsed sections ────────────────────────────────────────────────────────
 
 class _CollapsedJobSection extends StatelessWidget {
   final String title;
@@ -1368,7 +2076,12 @@ class _CollapsedJobSection extends StatelessWidget {
         child: ExpansionTile(
           initiallyExpanded: initiallyExpanded,
           tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
-          childrenPadding: const EdgeInsets.fromLTRB(Space.s4, 0, Space.s4, Space.s3),
+          childrenPadding: const EdgeInsets.fromLTRB(
+            Space.s4,
+            0,
+            Space.s4,
+            Space.s3,
+          ),
           title: Text(
             '$title (${jobs.length})',
             style: TextStyle(
@@ -1404,7 +2117,7 @@ Widget _scheduledJobCard(Job job, ValueChanged<String> onJobTap) {
     status: presentation.label,
     statusKind: presentation.kind,
     priceLabel: job.totalAmount != null
-        ? '\$${job.totalAmount!.toStringAsFixed(2)}'
+        ? formatMoney(job.totalAmount!)
         : null,
     scheduleLabel: timeLabel,
     actionLabel: presentation.tradieAction,

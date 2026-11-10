@@ -6,6 +6,7 @@ import '../../repositories/chat_reviews_repository.dart';
 import '../../theme/design_tokens.dart';
 import '../views/widgets/fixo_feedback.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
+import '../feedback/fixo_notice.dart';
 
 /// Scheduling bottom sheet (M4-08).
 /// Shows current schedule status and allows proposal/confirmation.
@@ -107,9 +108,7 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
         if (mounted) Navigator.of(context).pop();
       } else {
         setState(() => _isSending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save schedule. Try again.')),
-        );
+        FixoNotice.error(context, 'Could not save schedule. Try again.');
       }
     }
   }

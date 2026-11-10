@@ -101,9 +101,9 @@ builder.Services.AddAuthentication(options =>
     // Over plain http (local dev / Playwright e2e) browsers refuse to store a
     // `Secure` + `__Host-` prefixed cookie at all, so in Development we fall
     // back to a plain name and SameAsRequest. Production keeps the hardened
-    // cookie. If you rename, update the QA docs that mention __Host-fixo-admin.
+    // cookie. If you rename, update the QA docs that mention __Host-th-admin.
     var isDev = builder.Environment.IsDevelopment();
-    options.Cookie.Name        = isDev ? "fixo-admin" : "__Host-fixo-admin";
+    options.Cookie.Name        = isDev ? "th-admin" : "__Host-th-admin";
     options.Cookie.HttpOnly    = true;
     options.Cookie.SecurePolicy = isDev ? CookieSecurePolicy.SameAsRequest
                                         : CookieSecurePolicy.Always;
@@ -229,7 +229,7 @@ if (redis != null)
     {
         config.UseRedisStorage(redis, new RedisStorageOptions
         {
-            Prefix = "fixo:hangfire:",
+            Prefix = "th:hangfire:",
         });
     });
     builder.Services.AddHangfireServer();
@@ -298,7 +298,7 @@ builder.Services.AddHostedService<AdminSeedService>();
 // P8-05: expires Requested jobs left untouched past the threshold.
 builder.Services.AddHostedService<ExpirationWorker>();
 
-// Demo seed — creates homeowner@fixo.nz + tradie@fixo.nz with rich dummy data for UI demos.
+// Demo seed — creates homeowner@tradiehunter.nz + tradie@tradiehunter.nz with rich dummy data for UI demos.
 // Controlled by DemoSeed:Enabled in appsettings.json (auto-enabled in Development).
 builder.Services.AddHostedService<DemoSeedService>();
 

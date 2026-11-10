@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/design_tokens.dart';
+import '../feedback/fixo_notice.dart';
 
 /// Bottom-sheet rating form from mockup 13-rating-modal.
 /// Triggered on SignalR `job-status=Complete` or via demo entry point.
@@ -74,9 +75,7 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
     } catch (_) {
       if (mounted) {
         setState(() => _sending = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to submit review. Try again.')),
-        );
+        FixoNotice.error(context, 'Failed to submit review. Try again.');
       }
     }
   }

@@ -8,6 +8,7 @@ import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/fixo_buttons.dart';
 import 'widgets/auth_controls.dart';
 import 'widgets/fixo_feedback.dart';
+import '../feedback/fixo_notice.dart';
 
 
 /// Mockup 03-login: wordmark + "Welcome back", labeled 48h inputs,
@@ -87,23 +88,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // No POST /api/auth/forgot-password exists on the backend (AuthController
   // has register/login/refresh/google only) — coming-soon placeholder.
   void _forgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password reset is not available in this app.'),
-      ),
-    );
+    FixoNotice.info(context, NoticeCopy.stubUnavailable('Password reset'));
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
     final theme = Theme.of(context);
+    final colors = theme.extension<THColors>()!;
 
     return Scaffold(
       key: const Key('login_screen'),
       body: SafeArea(
         child: AuthScrollView(
-          padding: const EdgeInsets.fromLTRB(Space.s6, 48, Space.s6, Space.s6),
+          padding: const EdgeInsets.fromLTRB(Space.s6, Space.s9, Space.s6, Space.s6),
           child: Form(
             key: _formKey,
             child: Column(
@@ -111,13 +109,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const FixoWordmark(fontSize: DesignTokens.fontSizeDisplay),
                 const SizedBox(height: Space.s7),
-                Text(
-                  'Welcome back',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FW.bold,
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Welcome back',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FW.bold,
+                      color: colors.text,
+                    ),
                   ),
                 ),
-                const SizedBox(height: Space.s7),
+                const SizedBox(height: Space.s1),
+                Text(
+                  'Sign in to manage your jobs.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colors.textSoft,
+                  ),
+                ),
+                const SizedBox(height: Space.s6),
                 if (authState.error != null)
                   Semantics(
                     liveRegion: true,
@@ -132,6 +141,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     hintText: 'e.g. kiaora@example.co.nz',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -156,6 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onFieldSubmitted: (_) => _login(),
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
                     suffixIcon: IconButton(
                       tooltip: _obscurePassword
                           ? 'Show password'
@@ -181,6 +192,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _forgotPassword,
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                    ),
                     child: const Text('Forgot password?'),
                   ),
                 ),
@@ -201,9 +215,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Text(
                           'or',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.5,
-                            ),
+                            color: colors.textSoft,
                           ),
                         ),
                       ),
@@ -223,6 +235,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const Text("Don't have an account?"),
                     TextButton(
                       onPressed: () => context.go('/signup'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                      ),
                       child: const Text('Create account'),
                     ),
                   ],

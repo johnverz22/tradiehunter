@@ -87,7 +87,7 @@ class ApiHelper {
       final req = await client
           .getUrl(Uri.parse('$kApiBaseUrl/api/jobs/$jobId/offers/pending'));
       req.headers.set('Authorization', 'Bearer $token');
-      final resp = await req.close();
+      final resp = await req.close().timeout(const Duration(seconds: 15));
       if (resp.statusCode == 204) return null;
       final raw = await resp.transform(utf8.decoder).join();
       return jsonDecode(raw) as Map<String, dynamic>;
@@ -112,6 +112,14 @@ class ApiHelper {
 
   static Future<void> confirmCompletion(int jobId, String homeownerToken) =>
       _post('/jobs/$jobId/confirm', const {}, token: homeownerToken);
+
+  /// Sends a chat message on [jobId] as whoever owns [token].
+  static Future<void> sendMessage(int jobId, String token, String content) =>
+      _post('/jobs/$jobId/messages', {'content': content}, token: token);
+
+  /// Full job payload for [jobId] as seen by [token]'s owner.
+  static Future<Map<String, dynamic>> getJob(int jobId, String token) =>
+      _get('/jobs/$jobId', token: token);
 
   // ── Payments ───────────────────────────────────────────────────────────────
 
@@ -161,8 +169,11 @@ class ApiHelper {
     try {
       final req = await client.getUrl(Uri.parse('$kApiBaseUrl/api$path'));
       if (token != null) req.headers.set('Authorization', 'Bearer $token');
-      final resp = await req.close();
-      final raw = await resp.transform(utf8.decoder).join();
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
       _throwIfError(resp.statusCode, raw, 'GET $path');
       return raw.isNotEmpty
           ? jsonDecode(raw) as Map<String, dynamic>
@@ -183,8 +194,11 @@ class ApiHelper {
       req.headers.contentType = ContentType.json;
       if (token != null) req.headers.set('Authorization', 'Bearer $token');
       req.write(jsonEncode(payload));
-      final resp = await req.close();
-      final raw = await resp.transform(utf8.decoder).join();
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
       _throwIfError(resp.statusCode, raw, 'POST $path');
       return raw.isNotEmpty
           ? jsonDecode(raw) as Map<String, dynamic>
@@ -215,8 +229,11 @@ class ApiHelper {
         ...bytes,
         ...utf8.encode('\r\n--$boundary--\r\n'),
       ]);
-      final resp = await req.close();
-      final raw = await resp.transform(utf8.decoder).join();
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
       _throwIfError(resp.statusCode, raw, 'POST $path (multipart)');
       return raw.isNotEmpty
           ? jsonDecode(raw) as Map<String, dynamic>

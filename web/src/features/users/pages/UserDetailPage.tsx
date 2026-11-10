@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { MoreHorizontal } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
-import { useUserDetail, useVerifyUser, useDeactivateUser, useWarnUser, useSuspendUser, useResolveUserFlags } from '../hooks/useUsers';
+import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
+import { DataTable, type ColumnDef } from '../../../components/DataTable';
+import { Banner } from '../../../components/Banner';
+import { useBreakpoint } from '../../../hooks/useBreakpoint';
+import {
+  useUserDetail,
+  useVerifyUser,
+  useDeactivateUser,
+  useWarnUser,
+  useSuspendUser,
+  useResolveUserFlags,
+} from '../hooks/useUsers';
+import type { AccountFlag, AdminJobSummary } from '../../../services/adminApi';
 
 function describeUserError(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -28,6 +41,7 @@ function describeUserError(error: unknown): string {
 export const UserDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isPhone } = useBreakpoint();
   const { data: user, isLoading, isError, error, refetch } = useUserDetail(id ?? '');
   const verifyMutation = useVerifyUser();
   const deactivateMutation = useDeactivateUser();
@@ -35,7 +49,9 @@ export const UserDetailPage: React.FC = () => {
   const suspendMutation = useSuspendUser();
   const resolveFlagsMutation = useResolveUserFlags();
 
-  const [confirmModal, setConfirmModal] = useState<'verify' | 'deactivate' | 'warn' | 'suspend' | 'resolveFlags' | null>(null);
+  const [confirmModal, setConfirmModal] = useState<
+    'verify' | 'deactivate' | 'warn' | 'suspend' | 'resolveFlags' | null
+  >(null);
   const [actionReason, setActionReason] = useState('');
 
   if (!id) {
@@ -61,22 +77,13 @@ export const UserDetailPage: React.FC = () => {
         >
           ← Back to Users
         </Link>
-        <div
-          role="alert"
-          className="bg-red-50 border border-red-200 rounded p-4 text-sm text-[var(--red)]"
-        >
-          <p className="font-semibold mb-1">User not found.</p>
-          <p>{describeUserError(error)}</p>
-          <p className="mt-2 text-xs opacity-80" style={{ fontFamily: 'var(--font-mono)' }}>
-            ID: {id}
-          </p>
-        </div>
-        <button
-          onClick={() => refetch()}
-          className="btn btn-ghost"
-        >
-          Retry
-        </button>
+        <Banner variant="error" action={{ label: 'Retry', onClick: () => refetch() }}>
+          <div>
+            <p className="font-semibold mb-1">User not found.</p>
+            <p>{describeUserError(error)}</p>
+            <p className="mt-2 text-xs opacity-80 mono">ID: {id}</p>
+          </div>
+        </Banner>
       </div>
     );
   }
@@ -86,14 +93,11 @@ export const UserDetailPage: React.FC = () => {
     else if (confirmModal === 'deactivate') {
       await deactivateMutation.mutateAsync(user.id);
       navigate('/users');
-    }
-    else if (confirmModal === 'warn') {
+    } else if (confirmModal === 'warn') {
       await warnMutation.mutateAsync({ id: user.id, reason: actionReason });
-    }
-    else if (confirmModal === 'suspend') {
+    } else if (confirmModal === 'suspend') {
       await suspendMutation.mutateAsync({ id: user.id, reason: actionReason });
-    }
-    else if (confirmModal === 'resolveFlags') {
+    } else if (confirmModal === 'resolveFlags') {
       await resolveFlagsMutation.mutateAsync(user.id);
     }
     setConfirmModal(null);
@@ -107,8 +111,118 @@ export const UserDetailPage: React.FC = () => {
     .toUpperCase()
     .slice(0, 2);
 
+  const flagColumns: ColumnDef<AccountFlag>[] = [
+    {
+      key: 'type',
+      header: 'Type',
+      priority: 'primary',
+      cell: (f) => <span className="font-medium">{f.type}</span>,
+    },
+    {
+      key: 'counter',
+      header: 'Counter',
+      priority: 'secondary',
+      cell: (f) => f.counter,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      priority: 'secondary',
+      cell: (f) => (
+        <StatusBadge
+          status={f.resolved ? 'Resolved' : f.thresholdHit ? 'ThresholdHit' : 'Open'}
+        />
+      ),
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      priority: 'detail',
+      cell: (f) => new Date(f.createdAtUtc).toLocaleDateString(),
+    },
+  ];
+
+  const recentJobColumns: ColumnDef<AdminJobSummary>[] = [
+    {
+      key: 'id',
+      header: 'Job ID',
+      priority: 'secondary',
+      cell: (j) => <span className="mono">JOB-{String(j.id).padStart(5, '0')}</span>,
+    },
+    {
+      key: 'title',
+      header: 'Description',
+      priority: 'primary',
+      cell: (j) => j.title,
+    },
+    {
+      key: 'homeowner',
+      header: 'Homeowner',
+      priority: 'detail',
+      cell: (j) => j.homeownerName,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      priority: 'secondary',
+      cell: (j) => <StatusBadge status={j.status} />,
+    },
+    {
+      key: 'date',
+      header: 'Date',
+      priority: 'detail',
+      cell: (j) => new Date(j.createdAtUtc).toLocaleDateString(),
+    },
+  ];
+
+  const actionButtons = (
+    <>
+      {!user.isVerified && user.role === 'Tradie' && (
+        <button
+          onClick={() => setConfirmModal('verify')}
+          className="btn"
+          style={{ background: 'var(--green)', color: '#fff' }}
+        >
+          Verify NZBN
+        </button>
+      )}
+      {user.flags?.some((f) => !f.resolved) && (
+        <button
+          onClick={() => setConfirmModal('resolveFlags')}
+          className="btn btn-ghost"
+        >
+          Resolve Flags
+        </button>
+      )}
+      {user.isActive && (
+        <>
+          <button
+            onClick={() => setConfirmModal('warn')}
+            className="btn btn-ghost"
+            style={{ color: 'var(--amber)' }}
+          >
+            Warn
+          </button>
+          <button
+            onClick={() => setConfirmModal('suspend')}
+            className="btn btn-ghost"
+            style={{ color: 'var(--red)' }}
+          >
+            Suspend
+          </button>
+          <button
+            onClick={() => setConfirmModal('deactivate')}
+            className="btn btn-danger"
+          >
+            Deactivate
+          </button>
+        </>
+      )}
+    </>
+  );
+
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${isPhone ? 'pb-24' : ''}`}>
       <div className="text-[13px] text-[var(--ink)] opacity-60">
         <Link to="/users" className="text-[var(--brand-500)] hover:underline">
           Users
@@ -116,7 +230,7 @@ export const UserDetailPage: React.FC = () => {
         / {user.fullName}
       </div>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex items-center gap-5">
           <div
             className="w-16 h-16 rounded-full bg-[var(--brand-500)] flex items-center justify-center text-white font-semibold text-2xl shrink-0"
@@ -131,237 +245,243 @@ export const UserDetailPage: React.FC = () => {
             >
               {user.fullName || 'Unknown User'}
             </h1>
-            <div className="text-sm text-[var(--ink)] opacity-70">
-              {user.tradeType || user.role} •{' '}
+            <div className="text-sm text-[var(--ink)] opacity-70 flex items-center gap-2 flex-wrap">
+              <span>{user.tradeType || user.role}</span>
+              <span>•</span>
               <StatusBadge status={user.isVerified ? 'Verified' : 'Unverified'} />
             </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-3 shrink-0">
-          {!user.isVerified && user.role === 'Tradie' && (
-            <button
-              onClick={() => setConfirmModal('verify')}
-              className="btn" style={{ background: 'var(--green)', color: '#fff' }}
-            >
-              Verify NZBN
-            </button>
-          )}
-          {user.isActive && (
-            <button
-              onClick={() => setConfirmModal('deactivate')}
-              className="btn btn-danger"
-            >
-              Deactivate
-            </button>
-          )}
-          {user.flags?.some(f => !f.resolved) && (
-            <button
-              onClick={() => setConfirmModal('resolveFlags')}
-              className="btn"
-            >
-              Resolve Flags
-            </button>
-          )}
-          {user.isActive && (
-            <>
-              <button onClick={() => setConfirmModal('warn')} className="btn btn-ghost" style={{ color: 'var(--amber)' }}>Warn</button>
-              <button onClick={() => setConfirmModal('suspend')} className="btn btn-ghost" style={{ color: 'var(--red)' }}>Suspend</button>
-            </>
-          )}
-        </div>
 
+        {/* Desktop / tablet actions in header */}
+        {!isPhone && (
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            {actionButtons}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card">
           <h3 className="card-title">Account Details</h3>
-          <div className="space-y-0">
-            <div className="detail-row">
-              <span className="detail-label">User ID</span>
-              <span className="detail-value mono">{user.id}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Email</span>
-              <span className="detail-value">{user.email}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Joined</span>
-              <span className="detail-value">
-                {new Date(user.createdAtUtc).toLocaleDateString('en-NZ', {
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
-              <span
-                className="detail-value"
-                style={{ color: user.isActive ? 'var(--green-ink)' : 'var(--red-ink)' }}
-              >
-                {user.isActive ? 'Active' : 'Inactive'}
-              </span>
-            </div>
+          <DescriptionList>
+            <InfoRow label="User ID" valueClassName="mono">{user.id}</InfoRow>
+            <InfoRow label="Email">{user.email}</InfoRow>
+            <InfoRow label="Joined">
+              {new Date(user.createdAtUtc).toLocaleDateString('en-NZ', {
+                month: 'short',
+                year: 'numeric',
+              })}
+            </InfoRow>
+            <InfoRow
+              label="Status"
+              valueClassName={user.isActive ? 'text-[var(--green-ink)]' : 'text-[var(--red-ink)]'}
+            >
+              {user.isActive ? 'Active' : 'Inactive'}
+            </InfoRow>
             {user.businessName && (
-              <div className="detail-row">
-                <span className="detail-label">Business</span>
-                <span className="detail-value">{user.businessName}</span>
-              </div>
+              <InfoRow label="Business">{user.businessName}</InfoRow>
             )}
-          </div>
+          </DescriptionList>
         </div>
 
         <div className="card">
           <h3 className="card-title">Performance</h3>
-          <div className="space-y-0">
-            <div className="detail-row">
-              <span className="detail-label">Rating</span>
-              <span className="detail-value">
-                ★ {user.averageRating.toFixed(1)} ({user.reviewCount} reviews)
-              </span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Jobs Completed</span>
-              <span className="detail-value">{user.jobCount}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Role</span>
-              <span className="detail-value">{user.role}</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Disputes</span>
-              <span className="detail-value">0</span>
-            </div>
-          </div>
+          <DescriptionList>
+            <InfoRow label="Rating">
+              {user.reviewCount > 0
+                ? `★ ${user.averageRating.toFixed(1)} (${user.reviewCount} ${user.reviewCount === 1 ? 'review' : 'reviews'})`
+                : 'No reviews yet'}
+            </InfoRow>
+            <InfoRow label="Jobs Completed">{user.jobCount}</InfoRow>
+            <InfoRow label="Role">{user.role}</InfoRow>
+            <InfoRow label="Disputes">0</InfoRow>
+          </DescriptionList>
         </div>
       </div>
 
-      
       {user.flags && user.flags.length > 0 && (
-        <div>
-          <h2 className="text-[18px] font-semibold text-[var(--ink)] mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+        <div className="space-y-4">
+          <h2
+            className="text-[18px] font-semibold text-[var(--ink)]"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
             Account Flags
           </h2>
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th className="th">Type</th>
-                  <th className="th">Counter</th>
-                  <th className="th">Status</th>
-                  <th className="th">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {user.flags.map((flag) => (
-                  <tr key={flag.id}>
-                    <td className="td font-medium">{flag.type}</td>
-                    <td className="td">{flag.counter}</td>
-                    <td className="td">
-                      <StatusBadge status={flag.resolved ? 'Resolved' : flag.thresholdHit ? 'ThresholdHit' : 'Open'} />
-                    </td>
-                    <td className="td">{new Date(flag.createdAtUtc).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={flagColumns}
+            rows={user.flags}
+            getRowKey={(f) => f.id}
+          />
         </div>
       )}
 
-      {user.recentJobs.length > 0 && (
-        <div>
+      {user.recentJobs && user.recentJobs.length > 0 && (
+        <div className="space-y-4">
           <h2
-            className="text-[18px] font-semibold text-[var(--ink)] mb-4"
+            className="text-[18px] font-semibold text-[var(--ink)]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Recent Jobs
           </h2>
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th className="th">
-                    Job ID
-                  </th>
-                  <th className="th">
-                    Description
-                  </th>
-                  <th className="th">
-                    Homeowner
-                  </th>
-                  <th className="th">
-                    Status
-                  </th>
-                  <th className="th">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {user.recentJobs.map((job) => (
-                  <tr key={job.id} >
-                    <td
-                      className="td"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}
-                    >
-                      JOB-{String(job.id).padStart(5, '0')}
-                    </td>
-                    <td className="td">{job.title}</td>
-                    <td className="td">{job.homeownerName}</td>
-                    <td className="td">
-                      <StatusBadge status={job.status} />
-                    </td>
-                    <td className="td">
-                      {new Date(job.createdAtUtc).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={recentJobColumns}
+            rows={user.recentJobs}
+            getRowKey={(j) => j.id}
+          />
         </div>
       )}
 
-      
-      
+      {/* Phone sticky bottom action bar */}
+      {isPhone && (
+        <div
+          className="fixed bottom-0 inset-x-0 bg-[var(--surface)] border-t border-[var(--paper-line)] p-4 flex items-center gap-2 z-20 shadow-lg"
+          style={{ paddingBottom: 'max(var(--safe-bottom), 16px)' }}
+        >
+          {/* Primary / main action */}
+          {!user.isVerified && user.role === 'Tradie' ? (
+            <button
+              onClick={() => setConfirmModal('verify')}
+              className="btn flex-1 justify-center min-h-[44px]"
+              style={{ background: 'var(--green)', color: '#fff' }}
+            >
+              Verify NZBN
+            </button>
+          ) : user.flags?.some((f) => !f.resolved) ? (
+            <button
+              onClick={() => setConfirmModal('resolveFlags')}
+              className="btn btn-primary flex-1 justify-center min-h-[44px]"
+            >
+              Resolve Flags
+            </button>
+          ) : user.isActive ? (
+            <button
+              onClick={() => setConfirmModal('warn')}
+              className="btn btn-primary flex-1 justify-center min-h-[44px]"
+            >
+              Warn User
+            </button>
+          ) : null}
+
+          {/* More menu for destructive / secondary operations */}
+          <details className="relative">
+            <summary
+              className="btn btn-ghost !p-2 min-h-[44px] min-w-[44px] flex items-center justify-center list-none cursor-pointer"
+              aria-label="More actions"
+            >
+              <MoreHorizontal size={20} aria-hidden="true" />
+            </summary>
+            <div className="absolute bottom-full right-0 mb-2 w-48 surface shadow-[var(--shadow-pop)] rounded p-2 z-30">
+              {user.flags?.some((f) => !f.resolved) && (
+                <button
+                  onClick={() => {
+                    setConfirmModal('resolveFlags');
+                    (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--paper)] rounded min-h-[44px]"
+                >
+                  Resolve Flags
+                </button>
+              )}
+              {user.isActive && (
+                <>
+                  <button
+                    onClick={() => {
+                      setConfirmModal('warn');
+                      (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-[var(--amber-ink)] hover:bg-[var(--paper)] rounded min-h-[44px]"
+                  >
+                    Warn
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmModal('suspend');
+                      (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-[var(--red)] hover:bg-[var(--paper)] rounded min-h-[44px]"
+                  >
+                    Suspend
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmModal('deactivate');
+                      (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-[var(--red)] hover:bg-red-50 dark:hover:bg-red-900/20 rounded min-h-[44px]"
+                  >
+                    Deactivate
+                  </button>
+                </>
+              )}
+            </div>
+          </details>
+        </div>
+      )}
+
+      {/* Confirm modal */}
       <ConfirmModal
         open={confirmModal !== null}
         title={
-          confirmModal === 'verify' ? `Verify ${user.fullName}?` :
-          confirmModal === 'deactivate' ? `Deactivate ${user.fullName}?` :
-          confirmModal === 'warn' ? `Warn ${user.fullName}?` :
-          confirmModal === 'suspend' ? `Suspend ${user.fullName}?` :
-          confirmModal === 'resolveFlags' ? `Resolve flags for ${user.fullName}?` : ''
+          confirmModal === 'verify'
+            ? `Verify ${user.fullName}?`
+            : confirmModal === 'deactivate'
+              ? `Deactivate ${user.fullName}?`
+              : confirmModal === 'warn'
+                ? `Warn ${user.fullName}?`
+                : confirmModal === 'suspend'
+                  ? `Suspend ${user.fullName}?`
+                  : confirmModal === 'resolveFlags'
+                    ? `Resolve flags for ${user.fullName}?`
+                    : ''
         }
         message={
-          confirmModal === 'verify' ? 'This will mark the tradie as verified and make them eligible for job matches.' :
-          confirmModal === 'deactivate' ? 'This will disable login for this user. You will be redirected to the user list.' :
-          confirmModal === 'resolveFlags' ? 'This will mark all open flags as resolved for this user.' :
-          (confirmModal === 'warn' || confirmModal === 'suspend') ? 'Please provide a reason for this action. It will be recorded.' : ''
+          confirmModal === 'verify'
+            ? 'This will mark the tradie as verified and make them eligible for job matches.'
+            : confirmModal === 'deactivate'
+              ? 'This will disable login for this user. You will be redirected to the user list.'
+              : confirmModal === 'resolveFlags'
+                ? 'This will mark all open flags as resolved for this user.'
+                : confirmModal === 'warn' || confirmModal === 'suspend'
+                  ? 'Please provide a reason for this action. It will be recorded.'
+                  : ''
         }
         confirmLabel={
-          confirmModal === 'verify' ? 'Verify' : 
-          confirmModal === 'deactivate' ? 'Deactivate' :
-          confirmModal === 'warn' ? 'Send Warning' :
-          confirmModal === 'suspend' ? 'Suspend Account' :
-          confirmModal === 'resolveFlags' ? 'Resolve Flags' : ''
+          confirmModal === 'verify'
+            ? 'Verify'
+            : confirmModal === 'deactivate'
+              ? 'Deactivate'
+              : confirmModal === 'warn'
+                ? 'Send Warning'
+                : confirmModal === 'suspend'
+                  ? 'Suspend Account'
+                  : confirmModal === 'resolveFlags'
+                    ? 'Resolve Flags'
+                    : ''
         }
         destructive={['deactivate', 'warn', 'suspend'].includes(confirmModal || '')}
-        confirmDisabled={(confirmModal === 'warn' || confirmModal === 'suspend') && actionReason.trim().length === 0}
+        confirmDisabled={
+          (confirmModal === 'warn' || confirmModal === 'suspend') &&
+          actionReason.trim().length === 0
+        }
         onConfirm={handleAction}
-        onCancel={() => { setConfirmModal(null); setActionReason(''); }}
+        onCancel={() => {
+          setConfirmModal(null);
+          setActionReason('');
+        }}
       >
         {(confirmModal === 'warn' || confirmModal === 'suspend') && (
           <div className="mt-4">
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1">Reason (required)</label>
-            <textarea 
-              className="field field-multiline w-full resize-none" 
-              rows={3} 
-              value={actionReason} 
-              onChange={e => setActionReason(e.target.value)}
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1">
+              Reason (required)
+            </label>
+            <textarea
+              className="field field-multiline w-full resize-none"
+              rows={3}
+              value={actionReason}
+              onChange={(e) => setActionReason(e.target.value)}
               placeholder="Enter reason..."
+              autoFocus
             />
           </div>
         )}

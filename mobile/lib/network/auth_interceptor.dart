@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import '../feedback/fixo_notice.dart';
 
 class AuthInterceptor extends Interceptor {
   final Dio dio;
@@ -131,13 +132,11 @@ class AuthInterceptor extends Interceptor {
     await storage.delete(key: 'jwt_token');
     await storage.delete(key: 'refresh_token');
     if (message != null) {
-      // Use a post-frame callback so we don't call showSnackBar during a build.
+      // Use a post-frame callback so we don't trigger notice display during a build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final context = router.routerDelegate.navigatorKey.currentContext;
         if (context != null && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+          FixoNotice.error(context, message);
         }
       });
     }
