@@ -98,6 +98,9 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   for (final route in ['/home', '/jobs', '/messages', '/profile']) {
     appRouter.go(route);
     await Demo.beat(tester);
+    // Scroll to reveal below-fold content, then scroll back so the top of the
+    // screen is visible for the next beat.
+    await Demo.scrollScreen(tester);
   }
 
   // 3. Post a job.
@@ -125,6 +128,8 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.step(_ho, 'Homeowner: pays by bank transfer — payment instructions');
   appRouter.go('/jobs/$jobId/payment');
   await Demo.beat(tester, 2);
+  // Scroll down to show payment reference details, then scroll back up.
+  await Demo.scrollScreen(tester, pixels: 350);
   final homeowner = await ApiHelper.homeownerToken;
   await Demo.note(_ho,
       'receipt uploaded via API (native photo picker cannot be driven)');
@@ -133,6 +138,8 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.step(_ho, 'Homeowner: receipt submitted — awaiting admin verification');
   appRouter.go('/jobs/$jobId/payment/status');
   await Demo.beat(tester, 2);
+  // Scroll to reveal the full payment-status card and any action buttons.
+  await Demo.scrollScreen(tester, pixels: 300);
   await Demo.signal('receipt_uploaded');
   await Demo.waitSignal(tester, 'payment_verified');
 
@@ -140,12 +147,16 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.step(_ho, 'Homeowner: payment verified — job detail and progress banner');
   appRouter.go('/jobs/$jobId/detail');
   await Demo.beat(tester, 2);
+  // Scroll to show the progress timeline nodes and job description.
+  await Demo.scrollScreen(tester, pixels: 450);
   await Demo.waitSignal(tester, 'checked_out');
 
   // 6. Work done: chat reply, confirm completion (triggers FixoNotice.success), review.
   await Demo.step(_ho, 'Homeowner: tradie checked out — reviews chat');
   appRouter.go('/chat/$jobId');
   await Demo.beat(tester, 2);
+  // Scroll up to reveal the full chat history (messages load from the bottom).
+  await Demo.scrollScreen(tester, pixels: 350, scrollBack: false);
   await Demo.step(_ho, 'Homeowner: confirms job completion');
   appRouter.go('/jobs/$jobId/detail');
   await Demo.beat(tester);
@@ -274,6 +285,8 @@ Future<void> _tradieTour(WidgetTester tester) async {
   for (final route in ['/tradie', '/jobs', '/messages', '/profile', '/tradie/onboarding']) {
     appRouter.go(route);
     await Demo.beat(tester);
+    // Scroll each shell tab to reveal below-fold content.
+    await Demo.scrollScreen(tester);
   }
   appRouter.go('/tradie');
   await Demo.beat(tester);
@@ -288,21 +301,17 @@ Future<void> _tradieTour(WidgetTester tester) async {
     offer = await ApiHelper.getPendingOffer(jobId, tradie);
     return offer != null;
   }, timeout: const Duration(seconds: 120));
-  // Dashboard first — shows the incoming offer notification card.
+  // Dashboard first — shows the incoming offer notification card; scroll to
+  // reveal any below-fold offer cards.
   appRouter.go('/tradie');
   await Demo.beat(tester, 2);
+  await Demo.scrollScreen(tester, pixels: 300);
   // Request detail — OfferCountdown (>2 min = brand, ≤2 min = amber, ≤30s = danger),
   // display price, photo gallery, sticky Accept/Decline bar.
   appRouter.go('/tradie/requests/$jobId');
   await Demo.beat(tester, 3);
   // Scroll to show the address card and photo gallery before accepting.
-  final scrollable = find.byType(Scrollable);
-  if (scrollable.evaluate().isNotEmpty) {
-    await tester.drag(scrollable.first, const Offset(0, -400));
-    await Demo.beat(tester, 1.5);
-    await tester.drag(scrollable.first, const Offset(0, 400));
-    await Demo.beat(tester);
-  }
+  await Demo.scrollScreen(tester, pixels: 400, multiplierBeforeBack: 1.5);
   await Demo.step(_tr, 'Tradie: accepts the job');
   await Demo.tapText(tester, 'Accept Job');
   var accepted = await Demo.until(tester,
@@ -323,6 +332,8 @@ Future<void> _tradieTour(WidgetTester tester) async {
   await Demo.step(_tr, 'Tradie: payment verified — active job and status timeline');
   appRouter.go('/tradie/jobs/$jobId');
   await Demo.beat(tester, 2);
+  // Scroll to reveal the job description and check-in button below the fold.
+  await Demo.scrollScreen(tester, pixels: 350);
   // Tap the status strip to expand/collapse the timeline if available.
   final statusStrip = find.byKey(const Key('status_strip_toggle'));
   if (statusStrip.evaluate().isNotEmpty) {
@@ -349,6 +360,8 @@ Future<void> _tradieTour(WidgetTester tester) async {
   await ApiHelper.sendMessage(jobId, await ApiHelper.homeownerToken,
       'Hi! The tap is under the sink — spare key is with the neighbour.');
   await Demo.beat(tester, 2);
+  // Scroll up to reveal the full chat history (messages load from the bottom).
+  await Demo.scrollScreen(tester, pixels: 300, scrollBack: false);
   final composer = find.byType(TextField);
   if (composer.evaluate().isNotEmpty) {
     await Demo.type(tester, composer.last, 'Thanks, on it now!');
@@ -366,6 +379,8 @@ Future<void> _tradieTour(WidgetTester tester) async {
   await Demo.step(_tr, 'Tradie: checks out — work complete, awaiting homeowner confirmation');
   appRouter.go('/tradie/jobs/$jobId');
   await Demo.beat(tester);
+  // Scroll to reveal the check-out button at the bottom of the screen.
+  await Demo.scrollScreen(tester, pixels: 350, scrollBack: false);
   if (!await Demo.tapKey(tester, 'check_out_button')) {
     await Demo.note(_tr, 'checked out via API (button not found)');
     await ApiHelper.checkOut(jobId, tradie);
@@ -383,6 +398,8 @@ Future<void> _tradieTour(WidgetTester tester) async {
   await Demo.step(_tr, 'Tradie: job completed — rates the homeowner');
   appRouter.go('/tradie/jobs/$jobId');
   await Demo.beat(tester, 2);
+  // Scroll to show the completed job summary and ratings prompt.
+  await Demo.scrollScreen(tester, pixels: 350);
   if (await Demo.tapKey(tester, 'rate_homeowner_button')) {
     final stars = find.byIcon(Icons.star);
     if (stars.evaluate().length >= 5) {

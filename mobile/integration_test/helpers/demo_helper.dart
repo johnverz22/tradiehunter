@@ -148,4 +148,29 @@ class Demo {
     }
     return false;
   }
+
+  /// Scrolls the primary [Scrollable] on screen to reveal content below the
+  /// fold, then optionally scrolls back to the top.
+  ///
+  /// [pixels] is the total distance dragged in a single pass (negative = up).
+  /// [scrollBack] when true re-scrolls to the original position after a beat.
+  /// Uses the [Scrollable] closest to the top of the widget tree so it works
+  /// with both [ListView] and [SingleChildScrollView] based screens.
+  static Future<void> scrollScreen(
+    WidgetTester tester, {
+    double pixels = 400,
+    bool scrollBack = true,
+    double? multiplierBeforeBack,
+  }) async {
+    final scrollable = find.byType(Scrollable);
+    if (scrollable.evaluate().isEmpty) return;
+    await tester.drag(scrollable.first, Offset(0, -pixels));
+    await tester.pump(const Duration(milliseconds: 400));
+    await beat(tester, multiplierBeforeBack ?? 1.0);
+    if (scrollBack) {
+      await tester.drag(scrollable.first, Offset(0, pixels));
+      await tester.pump(const Duration(milliseconds: 400));
+      await beat(tester, 0.5);
+    }
+  }
 }
