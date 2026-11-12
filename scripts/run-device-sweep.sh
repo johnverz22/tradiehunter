@@ -7,7 +7,7 @@
 #   e.g. ./scripts/run-device-sweep.sh homeowner light <udid> "iPhone 17 Pro"
 set -u
 PERSONA=$1; THEME=$2; UDID=$3; SIMNAME=$4; shift 4
-OUT=/Users/john/Develop/tradies/docs/runs/v1.5/screenshots/$THEME
+OUT=/Users/john/Develop/tradies/docs/runs/v1.6/screenshots/$THEME
 mkdir -p "$OUT/$PERSONA"
 
 DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true)

@@ -10,7 +10,7 @@
 #     SHOT_INPROGRESS_JOB=133 SHOT_OFFER_JOB=134
 set -u
 PERSONA=$1; THEME=$2; UDID=$3; shift 3
-OUT=${SHOTS_OUT_ROOT:-/Users/john/Develop/tradies/docs/runs/v1.5/screenshots}/$THEME
+OUT=${SHOTS_OUT_ROOT:-/Users/john/Develop/tradies/docs/runs/v1.6/screenshots}/$THEME
 mkdir -p "$OUT/shared" "$OUT/$PERSONA"
 
 DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true --dart-define "SHOT_THEME=$THEME")

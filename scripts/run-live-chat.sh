@@ -10,7 +10,7 @@
 # tradie-verified matched and homeowner-a as owner.
 set -u
 UDID=$1; JOB=$2; THEME=${3:-light}
-OUT=/Users/john/Develop/tradies/docs/runs/v1.5/screenshots/$THEME
+OUT=/Users/john/Develop/tradies/docs/runs/v1.6/screenshots/$THEME
 mkdir -p "$OUT/tradie"
 
 API=http://localhost:5000/api
