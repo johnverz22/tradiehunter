@@ -137,10 +137,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               to={to}
               className={({ isActive }) =>
                 [
-                  'flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all min-h-[44px]',
+                  'flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors min-h-[44px]',
                   isActive
-                    ? 'bg-white/15 border-l-[3px] border-[var(--amber)] opacity-100'
-                    : 'opacity-70 hover:opacity-100 hover:bg-white/10 border-l-[3px] border-transparent',
+                    ? 'bg-white/15 text-white border-l-[3px] border-[var(--amber)]'
+                    : 'text-white/90 hover:text-white hover:bg-white/10 border-l-[3px] border-transparent',
                 ].join(' ')
               }
             >

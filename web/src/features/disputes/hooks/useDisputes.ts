@@ -32,6 +32,8 @@ export const useResolveDispute = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
       qc.invalidateQueries({ queryKey: ['admin', 'stats'] });
+      // Refresh any open job detail pages so their stepper reflects the new status.
+      qc.invalidateQueries({ queryKey: ['admin', 'jobs'] });
     },
   });
 };

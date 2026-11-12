@@ -38,7 +38,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         >
           {adminName}
         </span>
-        <span className={`block text-[11px] ${isDark ? 'text-white/60' : 'text-[var(--ink-soft)]'}`}>
+        <span className={`block text-[11px] ${isDark ? 'text-white/75' : 'text-[var(--ink-soft)]'}`}>
           Administrator
         </span>
       </span>
@@ -48,7 +48,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         aria-label="Logout"
         className={`p-2 rounded transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center ${
           isDark
-            ? 'text-white/70 hover:text-white hover:bg-white/10'
+            ? 'text-white/85 hover:text-white hover:bg-white/10'
             : 'text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--paper)]'
         }`}
       >

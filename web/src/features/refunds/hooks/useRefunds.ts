@@ -36,6 +36,8 @@ export const useProcessRefund = () => {
           : page,
       );
       qc.invalidateQueries({ queryKey: QUEUE_KEY });
+      // Refresh any open job detail pages so their stepper reflects the payment status.
+      qc.invalidateQueries({ queryKey: ['admin', 'jobs'] });
     },
   });
 };

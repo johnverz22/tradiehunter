@@ -237,11 +237,23 @@ class FixoTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        labelStyle: textTheme.labelMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
+        labelStyle: textTheme.labelMedium?.copyWith(
+          color: colorScheme.onSurface,
         ),
-        selectedColor: DesignTokens.amber.withValues(alpha: Alpha.tintAccent),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: Colors.white,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.pill),
+        ),
+        side: BorderSide(
+          color: DesignTokens.borderCard(isDark),
+          width: DesignTokens.borderWidthFor(isDark),
+        ),
+        selectedColor: isDark ? DesignTokens.brand700 : DesignTokens.brand900,
+        backgroundColor: colorScheme.surface,
+        checkmarkColor: Colors.white,
+        disabledColor: DesignTokens.surfaceDisabled(isDark),
       ),
       inputDecorationTheme: InputDecorationTheme(
         constraints: const BoxConstraints(minHeight: DesignTokens.heightInput),

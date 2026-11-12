@@ -21,6 +21,10 @@
 | **Tradie UI** | **Task 6** | Tradie Request Detail Screen | `mobile/lib/views/tradie/request_detail_screen.dart` | **Completed** ✅ | `02662b6` |
 | **Tradie UI** | **Task 7** | Tradie Active Job Screen | `mobile/lib/views/tradie/tradie_job_detail_screen.dart` | **Completed** ✅ | `02662b6` |
 | **Notice System** | **Task 8** | FixoNotice Feedback System (48 SnackBar replacements) | `mobile/lib/feedback/*`, call sites | **Completed** ✅ | Pending |
+| **Tradie UI** | **Task A** | Tradie Home Hero & Sliding Availability Switch | `mobile/lib/views/tradie/tradie_dashboard_view.dart`, `mobile/lib/views/widgets/sliding_availability_switch.dart` | **Completed** ✅ | Pending |
+| **Tradie UI** | **Task B** | Shared Job Card for Home and Jobs (`TradieJobCard`) | `mobile/lib/views/widgets/tradie_job_card.dart`, `mobile/lib/views/tradie/tradie_dashboard_view.dart`, `mobile/lib/views/jobs/jobs_list_screen.dart` | **Completed** ✅ | Pending |
+| **Global UI** | **Task C** | Filter Pill Contrast & Consistency (`FixoFilterPill`) | `mobile/lib/views/widgets/fixo_filter_pill.dart`, `mobile/lib/views/widgets/fixo_filter_bar.dart`, `mobile/lib/theme/fixo_theme.dart` | **Completed** ✅ | Pending |
+| **Web Admin** | **Task D** | Web Admin Job Progress Stepper | `web/src/utils/jobProgress.ts`, `web/src/components/JobProgressStepper.tsx`, `web/src/features/jobs/hooks/useJobs.ts`, `web/src/features/jobs/pages/JobDetailPage.tsx`, `web/src/theme/components.css`, `web/e2e/job-progress.spec.ts` | **Completed** ✅ | Pending |
 
 ---
 
@@ -106,9 +110,107 @@
 
 ---
 
+### ✅ Task A: Tradie Home Hero & Sliding Availability Switch
+- **Target Files:** `mobile/lib/views/tradie/tradie_dashboard_view.dart`, `mobile/lib/views/widgets/sliding_availability_switch.dart`, `mobile/lib/theme/design_tokens.dart`
+- **Tokens Added:** `Sizes.availabilityTrackW = 112.0`, `Sizes.availabilityTrackH = 44.0`, `Sizes.availabilityThumb = 36.0`, `Sizes.availabilityThumbPad = 4.0`, `Sizes.availabilityGlowSpread = 2.0`, `Sizes.availabilityGlowBlur = 8.0`, `FixoDurations.availabilitySwitch = 280ms`, `FixoDurations.switchShake = 300ms`.
+- **Implemented:**
+  1. Rebuilt hero structure (`_TradieHero`) with clean vertical rhythm:
+     - Net block: caption "Net this week", large net figure, decorative background sparkline.
+     - Two stat tiles (Pending, Rating) side-by-side with identical equal-width & equal-height layout, shared money formatting, and truthful review counts / zero-state captions.
+     - Full-width translucent availability strip at the bottom with title, subtitle, and sliding switch.
+  2. Implemented `SlidingAvailabilitySwitch` (112×44dp pill track with sliding thumb):
+     - Online: green track, thumb right with check/signal icon, soft glow ring.
+     - Offline: neutral track, thumb left with power/signal-off icon.
+     - Drag past 50% commits toggle; tap toggles immediately; light haptic on commit.
+     - Optimistic loading spinner inside thumb; shake rollback animation on API error.
+     - Offline confirm sheet preserved when active jobs/leads exist; cancels rollback cleanly.
+     - Accessible semantics with `isButton`, `isToggled`, value, and double-tap hint.
+  3. Verified with `mobile/test/sliding_availability_switch_test.dart` (9/9 passed) and `mobile/test/tradie_dashboard_redesign_test.dart` (38/38 passed).
+
+---
+
+### ✅ Task B: Shared Job Card for Home and Jobs (`TradieJobCard`)
+- **Target Files:** `mobile/lib/views/widgets/tradie_job_card.dart`, `mobile/lib/views/tradie/tradie_dashboard_view.dart`, `mobile/lib/views/jobs/jobs_list_screen.dart`
+- **Implemented:**
+  1. Promoted `_TodayJobCard` into a single shared widget `TradieJobCard` used across Tradie Home (Today, scheduled/expansion sections) and Jobs screen (Today, Upcoming, Awaiting payment, Done, All).
+  2. Card anatomy:
+     - Title (max 2 lines) with trailing `StatusChip` from `job_status_presentation.dart`.
+     - Single muted line for trade and suburb (`${job.category} · ${job.suburb}`).
+     - Monospace job code reference.
+     - Price on left, schedule right-aligned ("Wed 4 Nov" over "3:45 PM", relative Today/Tomorrow).
+     - `CompactProgressBar` segmented step indicator with "Step X of 4" caption.
+     - Single primary action CTA only when tradie must act now (Accept, Check in, Check out, Mark complete); otherwise subtle chevron. Full card tappable.
+     - Overdue warning styling (amber border and warning badge) for booked jobs past their scheduled time.
+  3. Replaced all tradie usages of `ModernJobCard`.
+     > [!NOTE]
+     > `ModernJobCard` remains used only by homeowner views (`mobile/lib/views/widgets/homeowner_job_summary.dart` and `mobile/lib/views/homeowner/homeowner_dashboard_view.dart`) pending homeowner job card unification.
+  4. Verified with `mobile/test/tradie_job_card_test.dart` (40/40 passed) covering all statuses, light/dark themes, 1.0× and 1.3× text scale.
+
+---
+
+### ✅ Task C: Filter Pill Contrast & Consistency (`FixoFilterPill`)
+- **Target Files:** `mobile/lib/views/widgets/fixo_filter_pill.dart`, `mobile/lib/views/widgets/fixo_filter_bar.dart`, `mobile/lib/theme/fixo_theme.dart`, `mobile/lib/views/jobs/jobs_list_screen.dart`, `mobile/lib/views/jobs/post_job_screen.dart`
+- **Tokens Added:** `Sizes.filterPillMinH = 48.0`, `Sizes.filterPillH = 38.0`.
+- **Implemented:**
+  1. Created `FixoFilterPill`:
+     - Selected: solid navy (`brand900`) fill in light, raised brand tone (`brand700`) in dark, white text, white checkmark icon. No peach/amber.
+     - Unselected: surface fill, hairline border token, ink text.
+     - Guaranteed ≥ 48dp tap target.
+  2. Created `FixoFilterBar`:
+     - Single horizontally scrollable row for both tradie and homeowner filter lists (replacing multi-line Wrap).
+     - Fading edge shader hints at scroll bounds.
+     - Auto-scrolls selected pill into view on change.
+  3. Fixed global `chipTheme` in `mobile/lib/theme/fixo_theme.dart` as a system-wide safety net:
+     - Sets `selectedColor`, `secondaryLabelStyle`, `checkmarkColor`, `side`, and disabled colors from design tokens.
+  4. Migrated all 3 `ChoiceChip` call sites: `jobs_list_screen.dart` (homeowner & tradie) and `post_job_screen.dart` (urgency grid).
+  5. Verified with `mobile/test/filter_pill_contrast_test.dart` (11/11 passed) asserting WCAG contrast ratio ≥ 4.5:1 across light and dark for selected, unselected, and disabled states.
+
+---
+
+### ✅ Task D: Web Admin Job Progress Stepper
+- **Target Files:** `web/src/utils/jobProgress.ts`, `web/src/components/JobProgressStepper.tsx`, `web/src/features/jobs/hooks/useJobs.ts`, `web/src/features/jobs/pages/JobDetailPage.tsx`, `web/src/theme/components.css`, `web/e2e/job-progress.spec.ts`
+- **Root Causes Fixed:**
+  1. `STEP_INDEX` mapped non-existent statuses (`Draft`, `Matching`, `Matched`, `Confirmed`, `Complete`). `Booked`, `AwaitingConfirmation`, and `Completed` all fell to step 0.
+  2. `isComplete` compared to `'Complete'` (never matched the actual `'Completed'` value).
+  3. Cancelled/Expired/Disputed always showed step 0 instead of the last reached step.
+  4. No polling — stepper was stale while the page was open.
+  5. Labels differed from mobile (`Matched`, `Confirmed`, `Complete` vs. `Booked`, `In progress`, `Done`).
+  6. `step-line` was drawn on every step including the last, causing overflow.
+- **Implemented:**
+  1. **`web/src/utils/jobProgress.ts`**: `getJobProgress(status, statusHistory)` utility:
+     - Maps Requested/AwaitingPayment/PaymentReview → step 1 (index 0), Booked → step 2, InProgress/AwaitingConfirmation → step 3, Completed → step 4.
+     - Step labels match mobile: Requested, Booked, In progress, Done.
+     - Sublabels under the active step: "Awaiting payment", "Payment review", "Awaiting confirmation".
+     - Terminal statuses derive reached step from `statusHistory` last non-terminal `toStatus`; falls back to step 1 if history is empty.
+     - Unknown statuses fall back to step 1 with a `console.warn` in dev mode.
+     - Returns `{ steps, currentIndex, state, label, sublabel, summary }`.
+  2. **`web/src/components/JobProgressStepper.tsx`**: Extracted reusable stepper component:
+     - ARIA semantics: `role="list"`, `role="listitem"`, `aria-current="step"`, `sr-only` summary.
+     - Sublabel shown under active dot.
+     - Accepts `updatedCaption` slot for "Updated X ago" + refresh button.
+     - Responsive: `overflow-x-auto` down to 320px.
+  3. **`web/src/features/jobs/hooks/useJobs.ts`**: Live query:
+     - `refetchInterval: 15_000` for non-terminal jobs; `false` for Completed/Cancelled/Expired/Disputed.
+     - `refetchOnWindowFocus: true`, `refetchIntervalInBackground: false`.
+  4. **`web/src/features/disputes/hooks/useDisputes.ts`** / **`useRefunds.ts`**: Invalidate `['admin', 'jobs']` on dispute resolve and refund process so the detail stepper refreshes immediately.
+  5. **`web/src/features/jobs/pages/JobDetailPage.tsx`**: Replaced inline broken stepper with `<JobProgressStepper />`, added "Updated X ago" caption with spinning refresh button.
+  6. **`web/src/theme/components.css`**: Stepper CSS rewritten:
+     - Connector for step i fills when step i+1 is reached (`.step-line--filled`).
+     - Last step (Done) has no connector (`display: none` on `:last-child .step-line`).
+     - Terminal states: `.step-dot--cancelled` (red), `.step-dot--expired` (amber), `.step-dot--disputed` (red/amber).
+     - 200ms `transition` on all state changes; `prefers-reduced-motion: reduce` disables transitions.
+  7. **`web/e2e/job-progress.spec.ts`**: Playwright tests:
+     - 4-step label rendering; active step for Booked, InProgress, AwaitingConfirmation, Completed, Cancelled.
+     - ARIA `role="list"` and `aria-current="step"` present; sr-only summary text matches "Step N of 4".
+     - Refresh button visible, enabled, and triggers a network request.
+     - Last step (Done) connector overflow check.
+  8. **Build:** `npm run build` exits 0; `npm run lint` exits 0 (1 pre-existing warning in `App.tsx`, unrelated).
+
+---
+
 ## 3. Sprint Summary & Next Steps
 
-All scheduled sprint tasks (Tasks 0 through 8) are now **100% complete**:
+All sprint tasks (Tasks 0–8, A–D) are now **100% complete**:
 - ✅ Task 0: Type Scale & Design Tokens
 - ✅ Task 1: Homeowner Dashboard
 - ✅ Task 2: Matching Screen
@@ -118,6 +220,17 @@ All scheduled sprint tasks (Tasks 0 through 8) are now **100% complete**:
 - ✅ Task 6: Tradie Request Detail Screen
 - ✅ Task 7: Tradie Active Job Screen
 - ✅ Task 8: FixoNotice Feedback System (complete SnackBar deprecation)
+- ✅ Task A: Tradie Home Hero & Sliding Availability Switch
+- ✅ Task B: Shared Job Card (`TradieJobCard`) for Home and Jobs
+- ✅ Task C: Filter Pill Contrast & Consistency (`FixoFilterPill`)
+- ✅ Task D: Web Admin Job Progress Stepper (correct mapping, live polling, CSS fix)
+
+### Remaining Homeowner Card TODO
+`ModernJobCard` is still used in homeowner views only:
+- `mobile/lib/views/widgets/homeowner_job_summary.dart`
+- `mobile/lib/views/homeowner/homeowner_dashboard_view.dart`
+
+A future sprint should unify these into a shared `HomeownerJobCard` and remove `ModernJobCard`.
 
 ---
 

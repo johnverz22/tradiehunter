@@ -10,6 +10,7 @@ import '../../theme/design_tokens.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/address_viewmodel.dart';
 import '../widgets/sticky_action_bar.dart';
+import '../widgets/fixo_filter_pill.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
@@ -529,7 +530,7 @@ class _UrgencySegmentedControl extends StatelessWidget {
                 margin: const EdgeInsets.all(Space.s0_5),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? DesignTokens.amber.withValues(alpha: Alpha.border) : DesignTokens.amber)
+                      ? (isDark ? DesignTokens.brand700 : DesignTokens.brand900)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusControl - 2),
                 ),
@@ -541,7 +542,7 @@ class _UrgencySegmentedControl extends StatelessWidget {
                     fontSize: DesignTokens.fontSizeSecondary,
                     fontWeight: isSelected ? FW.bold : FW.medium,
                     color: isSelected
-                        ? (isDark ? DesignTokens.amber : DesignTokens.onAmber)
+                        ? Colors.white
                         : (isDark ? DesignTokens.inkDark : DesignTokens.inkLight),
                   ),
                 ),
@@ -555,22 +556,14 @@ class _UrgencySegmentedControl extends StatelessWidget {
 
   Widget _buildGrid(BuildContext context, bool isDark) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: Space.s2,
+      runSpacing: Space.s2,
       children: _urgencies.map((u) {
         final isSelected = u == selected;
-        return ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
-          child: ChoiceChip(
-            label: Text(
-              u,
-              style: TextStyle(
-                fontWeight: isSelected ? FW.bold : FW.medium,
-              ),
-            ),
-            selected: isSelected,
-            onSelected: (_) => onSelected(u),
-          ),
+        return FixoFilterPill(
+          label: u,
+          selected: isSelected,
+          onSelected: (_) => onSelected(u),
         );
       }).toList(),
     );

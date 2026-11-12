@@ -165,6 +165,28 @@ abstract class Sizes {
   static const double noticeHPad          = 16.0;  // horizontal inner padding
   static const double noticeVPad          = 10.0;  // vertical inner padding
   static const double noticeBorderW       = 1.0;   // outline border width
+
+  // Availability sliding switch tokens
+  static const double availabilityTrackW   = 112.0; // track width
+  static const double availabilityTrackH   = 44.0;  // track height
+  static const double availabilityThumb    = 36.0;  // thumb diameter
+  static const double availabilityThumbPad = 4.0;   // inset padding for thumb
+  static const double availabilityGlowSpread = 2.0; // glow ring spread
+  static const double availabilityGlowBlur = 8.0;   // glow ring blur
+
+  // Filter pill tokens
+  static const double filterPillMinH       = 48.0;  // min tap target height
+  static const double filterPillH          = 38.0;  // visible pill container height
+
+  // Hero net-row layout tokens
+  /// Minimum rendered width for the net earnings figure in the hero row.
+  /// When the figure column would render narrower than this, the switch
+  /// falls back to compact mode.
+  static const double heroMinFigureWidth   = 120.0;
+
+  // Compact availability switch (narrow-screen / large-text fallback)
+  /// Track width for the compact variant — thumb + icon only, no label.
+  static const double availabilityTrackWCompact = 64.0;
 }
 
 // ── Typography ──────────────────────────────────────────────────────────────
@@ -218,6 +240,12 @@ abstract class FixoDurations {
   static const Duration noticePush    = Duration(seconds: 5);
   /// Enter / exit slide + fade animation for FixoNotice banners.
   static const Duration noticeAnimate = Duration(milliseconds: 260);
+
+  /// Sliding availability switch transition (280ms, emphasized curve).
+  static const Duration availabilitySwitch = Duration(milliseconds: 280);
+
+  /// Shake animation duration for switch error rollback.
+  static const Duration switchShake = Duration(milliseconds: 300);
 }
 
 // ── Letter spacing (tracking) ───────────────────────────────────────────────

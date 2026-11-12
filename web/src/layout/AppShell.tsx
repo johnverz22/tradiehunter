@@ -2,7 +2,7 @@
  * AppShell — responsive application shell.
  *
  * Desktop (>=1024px):
- *   Fixed 240px SidebarNav, main p-8 + max-w-6xl, theme toggle in sidebar footer.
+ *   Fixed 240px SidebarNav, main p-8 + max-w-6xl, theme toggle top-right of content.
  * Tablet (640-1023px):
  *   64px icon rail SidebarNav, TopBar (56px), main p-6.
  * Phone (<640px):
@@ -10,6 +10,7 @@
  */
 import React, { useState } from 'react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { SidebarNav, type NavItem } from './SidebarNav';
 import { TopBar } from './TopBar';
 import { MobileDrawer } from './MobileDrawer';
@@ -48,8 +49,6 @@ export const AppShell: React.FC<AppShellProps> = ({
       <SidebarNav
         navItems={navItems}
         adminName={adminName}
-        theme={theme}
-        onToggleTheme={onToggleTheme}
         onLogout={onLogout}
       />
 
@@ -89,6 +88,11 @@ export const AppShell: React.FC<AppShellProps> = ({
           style={isPhone ? { paddingBottom: 'max(var(--safe-bottom), 16px)' } : undefined}
         >
           <div className="max-w-6xl mx-auto w-full">
+            {isDesktop && (
+              <div className="flex justify-end mb-4">
+                <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+              </div>
+            )}
             {children}
           </div>
         </main>

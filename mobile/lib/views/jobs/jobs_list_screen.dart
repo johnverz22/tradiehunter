@@ -5,18 +5,17 @@ import 'package:intl/intl.dart';
 
 import '../../models/marketplace.dart';
 import '../../theme/design_tokens.dart';
-import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../tradie/tradie_dashboard_view.dart' show isScheduledOnOrBeforeToday;
 import '../tradie/tradie_job_detail_screen.dart';
 import '../tradie/request_detail_screen.dart';
 import '../homeowner/homeowner_job_detail_screen.dart';
-import '../widgets/job_status_presentation.dart';
 import '../../widgets/fixo_states.dart';
 import '../../widgets/fixo_buttons.dart';
-import '../widgets/modern_job_card.dart';
 import '../widgets/homeowner_job_summary.dart';
+import '../widgets/tradie_job_card.dart';
+import '../widgets/fixo_filter_bar.dart';
 
 enum _JobFilter { active, completed, all }
 
@@ -64,6 +63,7 @@ List<TradieDayGroup> tradieDayGroups(
   String labelFor(DateTime day) {
     if (day == today) return 'Today';
     if (day == today.add(const Duration(days: 1))) return 'Tomorrow';
+    if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
     return DateFormat('EEEE d MMM').format(day);
   }
 
@@ -310,59 +310,29 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
         child: Column(
           children: [
             if (!isTradie)
-              Padding(
-                padding: const EdgeInsets.all(Space.s4),
-                child: Wrap(
-                  spacing: Space.s2,
-                  runSpacing: Space.s2,
-                  children: [
-                    for (final filter in _JobFilter.values)
-                      ChoiceChip(
-                        label: Text(switch (filter) {
-                          _JobFilter.active => 'Active',
-                          _JobFilter.completed => 'Completed',
-                          _JobFilter.all => 'All',
-                        }),
-                        selected: _filter == filter,
-                        onSelected: (_) =>
-                            setState(() => _filter = filter),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.padded,
-                        padding: const EdgeInsets.symmetric(horizontal: Space.s3, vertical: Space.s3),
-                      ),
-                  ],
-                ),
+              FixoFilterBar<_JobFilter>(
+                items: _JobFilter.values,
+                selectedItem: _filter,
+                labelBuilder: (filter) => switch (filter) {
+                  _JobFilter.active => 'Active',
+                  _JobFilter.completed => 'Completed',
+                  _JobFilter.all => 'All',
+                },
+                onSelected: (filter) => setState(() => _filter = filter),
               ),
             if (isTradie)
-              SingleChildScrollView(
-                key: const Key('tradie_filter_row'),
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Space.s4,
-                  vertical: Space.s2,
-                ),
-                child: Row(
-                  children: [
-                    for (final filter in _TradieJobFilter.values) ...[
-                      ChoiceChip(
-                        label: Text(switch (filter) {
-                          _TradieJobFilter.today => 'Today',
-                          _TradieJobFilter.upcoming => 'Upcoming',
-                          _TradieJobFilter.awaitingPayment =>
-                            'Awaiting payment',
-                          _TradieJobFilter.done => 'Done',
-                          _TradieJobFilter.all => 'All',
-                        }),
-                        selected: _tradieFilter == filter,
-                        showCheckmark: true,
-                        onSelected: (_) =>
-                            setState(() => _tradieFilter = filter),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                      ),
-                      const SizedBox(width: Space.s2),
-                    ],
-                  ],
-                ),
+              FixoFilterBar<_TradieJobFilter>(
+                listKey: const Key('tradie_filter_row'),
+                items: _TradieJobFilter.values,
+                selectedItem: _tradieFilter,
+                labelBuilder: (filter) => switch (filter) {
+                  _TradieJobFilter.today => 'Today',
+                  _TradieJobFilter.upcoming => 'Upcoming',
+                  _TradieJobFilter.awaitingPayment => 'Awaiting payment',
+                  _TradieJobFilter.done => 'Done',
+                  _TradieJobFilter.all => 'All',
+                },
+                onSelected: (filter) => setState(() => _tradieFilter = filter),
               ),
             if (state.isLoading) const LinearProgressIndicator(),
             if (state.error != null) JobsRefreshNotice(onRetry: retry),
@@ -460,23 +430,8 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
   }
 
   Widget _tradieJobCard(Job job, {required bool isWide}) {
-    final presentation = JobStatusPresentation.forStatus(job.status);
-    final scheduled = job.scheduledStartUtc?.toLocal();
-    return ModernJobCard(
-      title: job.title,
-      category: job.category,
-      suburb: job.suburb,
-      reference: '${job.id} · ${job.category}',
-      status: presentation.label,
-      statusKind: presentation.kind,
-      priceLabel: job.totalAmount != null
-          ? formatMoney(job.totalAmount!)
-          : null,
-      scheduleLabel: scheduled != null
-          ? DateFormat.jm().format(scheduled)
-          : null,
-      actionLabel: presentation.tradieAction,
-      progressStatus: job.status,
+    return TradieJobCard(
+      job: job,
       onTap: () => _openTradieJob(context, job, isWide: isWide),
     );
   }

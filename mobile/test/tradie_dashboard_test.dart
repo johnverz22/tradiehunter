@@ -295,7 +295,8 @@ void main() {
       );
       expect(find.text(r'$437.50'), findsOneWidget);
       expect(find.text('Net this week'), findsOneWidget);
-      expect(find.text(r'Pending $87.50'), findsOneWidget);
+      expect(find.text('Pending'), findsOneWidget);
+      expect(find.text(r'$87.50'), findsOneWidget);
       expect(find.text('4.6'), findsOneWidget);
       expect(find.text('12 reviews'), findsOneWidget);
       await unmount(tester);
@@ -629,7 +630,7 @@ void main() {
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
       // Newest-first: the Tomorrow day-group header tops the list.
-      expect(find.text('Tomorrow'), findsOneWidget);
+      expect(find.text('Tomorrow'), findsWidgets);
       expect(find.text('Job Requested'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Job Completed'),

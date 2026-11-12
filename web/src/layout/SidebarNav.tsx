@@ -1,12 +1,13 @@
 /**
  * SidebarNav — desktop (240px fixed) + tablet icon rail (64px collapsed).
  * Renders nav items from the navItems array passed as a prop.
- * On desktop, also shows the theme toggle and user menu in the footer.
+ * On desktop, also shows the user menu in the footer. The theme switcher
+ * lives in the content area, never in the sidebar.
  */
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { Moon, Sun } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { UserMenu } from './UserMenu';
 
@@ -19,16 +20,12 @@ export interface NavItem {
 interface SidebarNavProps {
   navItems: NavItem[];
   adminName: string;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
   onLogout: () => void;
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({
   navItems,
   adminName,
-  theme,
-  onToggleTheme,
   onLogout,
 }) => (
   <aside
@@ -42,12 +39,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     aria-label="Admin navigation"
   >
     {/* Brand */}
-    <div className="px-4 lg:px-6 pt-6 pb-8 overflow-hidden">
-      {/* Desktop: full wordmark; tablet: just icon letter */}
+    <div className="px-2 lg:px-6 pt-6 pb-8 overflow-hidden">
+      {/* Desktop: full wordmark; tablet: amber monogram */}
       <BrandWordmark className="font-bold text-[22px] text-white hidden lg:block" />
-      {/* Tablet icon placeholder */}
       <div className="lg:hidden flex justify-center">
-        <span className="text-white font-bold text-xl" aria-hidden="true">F</span>
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--amber)] text-[13px] font-bold tracking-tight text-[var(--brand-900)]"
+          aria-hidden="true"
+        >
+          TH
+        </span>
       </div>
     </div>
 
@@ -57,41 +58,47 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <NavLink
           key={to}
           to={to}
-          title={label}
+          aria-label={label}
           className={({ isActive }) =>
             [
-              'flex items-center gap-3 py-3 text-sm font-medium transition-all',
+              'group relative flex items-center gap-3 py-3 text-sm font-medium transition-colors',
               // Desktop: left padding; tablet: justify center, no label
               'px-4 lg:px-6 justify-center lg:justify-start',
               isActive
-                ? 'bg-white/15 border-l-[3px] border-[var(--amber)] opacity-100'
-                : 'opacity-70 hover:opacity-100 hover:bg-white/10 border-l-[3px] border-transparent',
+                ? 'bg-white/15 text-white border-l-[3px] border-[var(--amber)]'
+                : 'text-white/90 hover:text-white hover:bg-white/10 border-l-[3px] border-transparent',
             ].join(' ')
           }
         >
           <Icon size={18} aria-hidden="true" className="shrink-0" />
           <span className="hidden lg:inline">{label}</span>
+
+          {/* Tablet flyout label — high-contrast, readable alternative to the browser tooltip */}
+          <span
+            aria-hidden="true"
+            className="lg:hidden pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded bg-[var(--brand-900)] px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-[var(--shadow-pop)] ring-1 ring-white/25 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          >
+            {label}
+          </span>
         </NavLink>
       ))}
     </nav>
 
-    {/* Footer — theme toggle + user menu (desktop only) */}
-    <div className="border-t border-white/10 p-4">
-      {/* Theme toggle — desktop inline, tablet icon only */}
-      <div className="flex justify-center lg:justify-end mb-3">
-        <button
-          onClick={onToggleTheme}
-          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          className="p-2 rounded-full border border-white/20 bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-        >
-          {theme === 'light' ? <Moon size={16} aria-hidden="true" /> : <Sun size={16} aria-hidden="true" />}
-        </button>
-      </div>
-
-      {/* User menu — desktop only */}
+    {/* Footer — desktop user menu, tablet logout at the rail edge */}
+    <div className="border-t border-white/10 p-2 lg:p-4">
       <div className="hidden lg:block">
         <UserMenu adminName={adminName} onLogout={onLogout} variant="dark" />
+      </div>
+      <div className="lg:hidden flex justify-center">
+        <button
+          type="button"
+          onClick={onLogout}
+          title="Logout"
+          aria-label="Logout"
+          className="p-2 rounded text-white/85 hover:text-white hover:bg-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+        >
+          <LogOut size={18} aria-hidden="true" />
+        </button>
       </div>
     </div>
   </aside>

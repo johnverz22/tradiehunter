@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsService;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,12 +17,12 @@ import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/fixo_states.dart';
-import '../widgets/modern_job_card.dart';
 import '../widgets/job_status_presentation.dart';
-import '../widgets/compact_progress_bar.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/fixo_feedback.dart';
 import '../widgets/fixo_progress_bar.dart';
+import '../widgets/sliding_availability_switch.dart';
+import '../widgets/tradie_job_card.dart';
 import '../../feedback/fixo_notice.dart';
 
 
@@ -31,9 +33,30 @@ const _bookedWorkStatuses = {'Booked', 'InProgress', 'AwaitingConfirmation'};
 /// Matched but not yet confirmed — the homeowner's payment is still in flight.
 const _awaitingPaymentStatuses = {'AwaitingPayment', 'PaymentReview'};
 
-/// True when [job]'s scheduled start falls on or before the end of the local
-/// day containing [now]. Jobs with no schedule are treated as due now so a
-/// booked job never falls between the Today/Upcoming buckets.
+/// True when [job]'s scheduled start is strictly today (local date == today).
+/// Overdue jobs (past scheduled date) are separated into their own group.
+bool _isScheduledToday(Job job, DateTime now) {
+  final scheduled = job.scheduledStartUtc;
+  if (scheduled == null) return true; // no schedule → show in today
+  final local = scheduled.toLocal();
+  return local.year == now.year &&
+      local.month == now.month &&
+      local.day == now.day;
+}
+
+/// True when [job] is overdue: Booked/InProgress/AwaitingConfirmation with a
+/// scheduled start strictly before the start of today.
+bool _isOverdue(Job job, DateTime now) {
+  final scheduled = job.scheduledStartUtc;
+  if (scheduled == null) return false;
+  final startOfToday = DateTime(now.year, now.month, now.day);
+  return scheduled.toLocal().isBefore(startOfToday);
+}
+
+/// Public backwards-compat helper used by [jobs_list_screen.dart].
+/// Returns true when the job is scheduled on or before the end of today
+/// (i.e. today + overdue). Overdue jobs are intentionally included for the
+/// Jobs-screen "Today" filter, which shows everything due today or earlier.
 bool isScheduledOnOrBeforeToday(Job job, DateTime now) {
   final scheduled = job.scheduledStartUtc;
   if (scheduled == null) return true;
@@ -69,8 +92,9 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
   /// [OfferResponder] owns the actual one-command-per-job dispatch guard.
   final Set<String> _responding = {};
 
-  /// Availability toggle state: null = idle, true = loading, false = error.
+  /// Availability toggle state: loading and error.
   bool _availabilityLoading = false;
+  bool _availabilityError = false;
 
   @override
   void initState() {
@@ -215,18 +239,23 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
   ) async {
     if (_availabilityLoading) return;
 
-    // Going offline with active work → confirm sheet.
+    // Going offline with active work or leads → confirm sheet.
     if (currentlyOnline) {
-      final hasActive = todayJobs.any(
-        (j) => _bookedWorkStatuses.contains(j.status),
+      final allJobs = ref.read(jobsViewModelProvider).jobs;
+      final hasActiveOrLeads = allJobs.any(
+        (j) =>
+            j.status == 'Requested' || _bookedWorkStatuses.contains(j.status),
       );
-      if (hasActive) {
+      if (hasActiveOrLeads) {
         final confirmed = await _showGoOfflineConfirm();
         if (!confirmed || !mounted) return;
       }
     }
 
-    setState(() => _availabilityLoading = true);
+    setState(() {
+      _availabilityLoading = true;
+      _availabilityError = false;
+    });
     try {
       final notifier = ref.read(profileViewModelProvider.notifier);
       // Clear any previous error before attempting the toggle.
@@ -240,6 +269,7 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
       }
     } catch (_) {
       if (!mounted) return;
+      setState(() => _availabilityError = true);
       FixoNotice.error(
         context,
         NoticeCopy.statusUpdateFailed,
@@ -276,26 +306,48 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
 
   @override
   Widget build(BuildContext context) {
-    final jobsState = ref.watch(jobsViewModelProvider);
+    final jobsState    = ref.watch(jobsViewModelProvider);
     final profileState = ref.watch(profileViewModelProvider);
     final earningsState = ref.watch(tradieEarningsProvider);
-    final theme = Theme.of(context);
+    final theme  = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final now = DateTime.now();
+    final now    = DateTime.now();
 
     final leads = jobsState.jobs.where((j) => j.status == 'Requested').toList();
+
+    // Overdue: booked jobs whose schedule is strictly before today.
+    final overdueJobs = jobsState.jobs
+        .where(
+          (j) =>
+              _bookedWorkStatuses.contains(j.status) && _isOverdue(j, now),
+        )
+        .toList()
+      ..sort((a, b) {
+        // Sort oldest first so the most-urgent overdue job is at the top.
+        final aT = a.scheduledStartUtc;
+        final bT = b.scheduledStartUtc;
+        if (aT == null && bT == null) return 0;
+        if (aT == null) return 1;
+        if (bT == null) return -1;
+        return aT.compareTo(bT);
+      });
+
+    // Today: booked jobs scheduled exactly for today (not overdue).
     final todayJobs = jobsState.jobs
         .where(
           (j) =>
               _bookedWorkStatuses.contains(j.status) &&
-              isScheduledOnOrBeforeToday(j, now),
+              _isScheduledToday(j, now) &&
+              !_isOverdue(j, now),
         )
         .toList();
 
     // Sort today: action-required statuses first, then by schedule time.
     final sortedToday = [...todayJobs]..sort((a, b) {
-        final aReq = JobStatusPresentation.forStatus(a.status).tradieActionRequired;
-        final bReq = JobStatusPresentation.forStatus(b.status).tradieActionRequired;
+        final aReq =
+            JobStatusPresentation.forStatus(a.status).tradieActionRequired;
+        final bReq =
+            JobStatusPresentation.forStatus(b.status).tradieActionRequired;
         if (aReq != bReq) return aReq ? -1 : 1;
         final aTime = a.scheduledStartUtc;
         final bTime = b.scheduledStartUtc;
@@ -309,7 +361,8 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
         .where(
           (j) =>
               _bookedWorkStatuses.contains(j.status) &&
-              !isScheduledOnOrBeforeToday(j, now),
+              !_isScheduledToday(j, now) &&
+              !_isOverdue(j, now),
         )
         .toList();
     final awaitingPayment = jobsState.jobs
@@ -323,8 +376,6 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
 
     // P1-09: only tradies an admin has approved a credential for can be
     // matched, so an unverified tradie needs to see why jobs aren't coming.
-    // Gated on !isLoading so the banner doesn't flash before the profile
-    // arrives.
     final isVerified = profileState.profile?['isVerified'] as bool?;
     final showVerificationBanner =
         !profileState.isLoading && isVerified != true;
@@ -350,6 +401,7 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                 todayCount: sortedToday.length,
                 isOnline: isAvailable,
                 availabilityLoading: _availabilityLoading,
+                availabilityError: _availabilityError,
                 onToggleOnline: () =>
                     _handleAvailabilityToggle(isAvailable, todayJobs),
                 onEarningsRetry: () =>
@@ -365,9 +417,9 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                   color: DesignTokens.amber.withValues(alpha: Alpha.tintAccent),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.pause_circle_outline,
-                        size: 18,
+                        size: Sizes.iconSm,
                         color: DesignTokens.amber,
                       ),
                       const SizedBox(width: Space.s2),
@@ -426,15 +478,17 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                               ),
                               const SizedBox(height: Space.s5),
                             ],
-                            FixoSectionLabel(
-                              label: 'New leads',
-                              count: leads.length,
-                            ),
-                            const SizedBox(height: Space.s2_5),
+                            // ── New leads section ─────────────────────────
+                            // Hidden entirely when empty and loaded with no
+                            // error. Skeleton shown on first load. Animated
+                            // in/out as leads arrive or are resolved.
                             _LeadsSection(
                               leads: leads,
                               pendingOffers: _pendingOffers,
                               offersLoaded: _offersLoaded,
+                              hasError: jobsState.error != null,
+                              isFirstLoad:
+                                  jobsState.isLoading && jobsState.jobs.isEmpty,
                               responding: _responding,
                               onAccept: (job) =>
                                   _respondToLead(job, accept: true),
@@ -442,9 +496,25 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                                   _respondToLead(job, accept: false),
                               onOpen: (job) =>
                                   context.push('/tradie/requests/${job.id}'),
+                              onRetry: _refreshAll,
                             ),
-                            const SizedBox(height: Space.s6),
-                            // Today section label — neutral count badge per spec.
+                            // ── Overdue group ─────────────────────────────
+                            if (overdueJobs.isNotEmpty) ...[
+                              const SizedBox(height: Space.s4),
+                              _OverdueSectionLabel(count: overdueJobs.length),
+                              const SizedBox(height: Space.s2_5),
+                              for (final job in overdueJobs) ...[
+                                TradieJobCard(
+                                  job: job,
+                                  onTap: () =>
+                                      context.push('/tradie/jobs/${job.id}'),
+                                  isOverdueOverride: true,
+                                ),
+                                const SizedBox(height: Space.s2_5),
+                              ],
+                            ],
+                            // ── Today section ─────────────────────────────
+                            const SizedBox(height: Space.s4),
                             _TodaySectionLabel(count: sortedToday.length),
                             const SizedBox(height: Space.s2_5),
                             _TodaySection(
@@ -500,7 +570,6 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
 
 // ── Go offline confirm sheet ──────────────────────────────────────────────────
 
-/// Shown when the tradie tries to go offline while active jobs are in flight.
 class _GoOfflineSheet extends StatelessWidget {
   const _GoOfflineSheet();
 
@@ -583,18 +652,15 @@ class _GoOfflineSheet extends StatelessWidget {
   }
 }
 
-// ── Today section label ───────────────────────────────────────────────────────
+// ── Section labels ────────────────────────────────────────────────────────────
 
-/// "Today" group header with a neutral count badge — smaller than the amber
-/// leads badge to reduce visual weight. Baseline-aligned.
 class _TodaySectionLabel extends StatelessWidget {
   final int count;
-
   const _TodaySectionLabel({required this.count});
 
   @override
   Widget build(BuildContext context) {
-    final th = Theme.of(context).extension<THColors>()!;
+    final th     = Theme.of(context).extension<THColors>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -637,23 +703,80 @@ class _TodaySectionLabel extends StatelessWidget {
   }
 }
 
-// ── Tradie earnings hero header ────────────────────────────────────────────────
+/// "Overdue" group header — warning tone, count badge.
+class _OverdueSectionLabel extends StatelessWidget {
+  final int count;
+  const _OverdueSectionLabel({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Icon(
+          Icons.warning_amber_rounded,
+          size: Sizes.iconXs,
+          color: DesignTokens.inkAccent(isDark),
+        ),
+        const SizedBox(width: Space.s1),
+        Text(
+          'Overdue',
+          style: TextStyle(
+            fontSize: DesignTokens.fontSizeCaption,
+            fontWeight: FW.semibold,
+            letterSpacing: Tracking.wide,
+            color: DesignTokens.inkAccent(isDark),
+          ),
+        ),
+        const SizedBox(width: Space.s1_5),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.s1_5,
+            vertical: Space.s0_5,
+          ),
+          decoration: BoxDecoration(
+            color: DesignTokens.amber.withValues(alpha: Alpha.tintAccent),
+            borderRadius: BorderRadius.circular(Radii.pill),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+              fontSize: DesignTokens.fontSizeTiny,
+              fontWeight: FW.semibold,
+              color: DesignTokens.inkAccent(isDark),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Tradie earnings hero header ───────────────────────────────────────────────
 
 /// Always-dark brand gradient header.
 ///
-/// Layout changes from the previous version:
-/// - Status pill button moved to the TOP ROW, right-aligned alongside the
-///   "Net this week" label. The sparkline sits behind the net figure at
-///   reduced opacity so it does not collide with the button.
-/// - Sub-tiles row: exactly TWO tiles (Pending + Rating), equal width via
-///   [Expanded] flex. Heights match via [IntrinsicHeight]. The Online tile
-///   has been removed.
+/// Layout (v1.7 corrected):
+/// 1. Net row: Expanded figure column (caption + FittedBox amount) | switch.
+///    The glass strip and status text ("Available for jobs / Offline") are
+///    removed. The switch track shows "Online"/"Offline" itself.
+///    Compact switch fallback when the figure column would be < heroMinFigureWidth.
+/// 2. 1px hairline above stats columns.
+/// 3. Two equal-width stat columns (Pending | Rating) directly on the gradient
+///    — no fill, no border, 1px vertical hairline between columns.
+///
+/// The _SparklinePainter has been removed: it drew six hardcoded points
+/// unrelated to real earnings data.
 class _TradieHero extends StatelessWidget {
   final TradieEarningsState earningsState;
   final ProfileState profileState;
   final int todayCount;
   final bool isOnline;
   final bool availabilityLoading;
+  final bool availabilityError;
   final VoidCallback onToggleOnline;
   final VoidCallback onEarningsRetry;
 
@@ -663,6 +786,7 @@ class _TradieHero extends StatelessWidget {
     required this.todayCount,
     required this.isOnline,
     required this.availabilityLoading,
+    this.availabilityError = false,
     required this.onToggleOnline,
     required this.onEarningsRetry,
   });
@@ -673,7 +797,8 @@ class _TradieHero extends StatelessWidget {
     final summary = earningsState.summary;
 
     final String earnedValue;
-    final bool isNotAvailable = summary != null && summary.earnedNet == null;
+    final bool isNotAvailable =
+        summary != null && summary.earnedNet == null;
     if (earningsState.error != null && summary == null) {
       earnedValue = 'Unavailable — tap to retry';
     } else if (earningsState.isLoading && summary == null) {
@@ -694,7 +819,8 @@ class _TradieHero extends StatelessWidget {
 
     final num? averageRatingNum =
         profileState.profile?['averageRating'] as num?;
-    final int? reviewCount = profileState.profile?['reviewCount'] as int?;
+    final int? reviewCount =
+        profileState.profile?['reviewCount'] as int?;
     final bool hasRating =
         reviewCount != null &&
         reviewCount > 0 &&
@@ -711,7 +837,7 @@ class _TradieHero extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Decorative concentric rings — top right, behind status button.
+          // Decorative concentric rings — top right, behind everything.
           Positioned(
             right: -48,
             top: -32,
@@ -731,119 +857,143 @@ class _TradieHero extends StatelessWidget {
               Space.s5,
               topPad + Space.s4,
               Space.s5,
-              Space.s5,
+              Space.s5, // tightened from s4
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top row: "Net this week" label + status pill ──────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Net this week',
-                        style: TextStyle(
-                          fontSize: DesignTokens.fontSizeCaption,
-                          color: Colors.white
-                              .withValues(alpha: Alpha.iconOnGradient),
-                          letterSpacing: Tracking.wide,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Space.s2),
-                    _AvailabilityPillButton(
-                      key: const Key('availability_button'),
-                      isOnline: isOnline,
-                      isLoading: availabilityLoading,
-                      onPressed: onToggleOnline,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Space.s1),
-                // ── Net figure with sparkline behind it ────────────────
-                Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    // Sparkline — decorative, behind the net figure.
-                    Positioned(
-                      right: 0,
-                      child: Opacity(
-                        opacity: Alpha.iconOnGradientSoft,
-                        child: SizedBox(
-                          width: 80,
-                          height: 44,
-                          child: CustomPaint(
-                            painter: _SparklinePainter(DesignTokens.amber),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Net earnings figure.
-                    GestureDetector(
-                      onTap: hasError ? onEarningsRetry : null,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                earnedValue,
+                // ── Net row: figure left, switch right ─────────────────
+                // LayoutBuilder detects if the figure column is too narrow
+                // and switches to compact mode.
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Available width minus the full-width switch and minimum gap.
+                    final switchW = Sizes.availabilityTrackW;
+                    final gap = Space.s4;
+                    final figureAvail =
+                        constraints.maxWidth - switchW - gap;
+                    final useCompact =
+                        figureAvail < Sizes.heroMinFigureWidth;
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Figure column: caption + amount.
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Net this week',
                                 style: TextStyle(
-                                  fontFamily: TypeTokens.fontDisplay,
-                                  fontSize: (hasError || isNotAvailable)
-                                      ? DesignTokens.fontSizeH2
-                                      : DesignTokens.fontSizeAmountLg,
-                                  fontWeight: FW.bold,
-                                  color: Colors.white,
-                                  letterSpacing: Tracking.tight *
-                                      ((hasError || isNotAvailable)
-                                          ? DesignTokens.fontSizeH2
-                                          : DesignTokens.fontSizeAmountLg),
-                                  height: 1.1,
+                                  fontSize: DesignTokens.fontSizeCaption,
+                                  color: Colors.white.withValues(
+                                      alpha: Alpha.iconOnGradient),
+                                  letterSpacing: Tracking.wide,
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: Space.s1),
+                              GestureDetector(
+                                onTap: hasError ? onEarningsRetry : null,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          earnedValue,
+                                          style: TextStyle(
+                                            fontFamily:
+                                                TypeTokens.fontDisplay,
+                                            fontSize: (hasError ||
+                                                    isNotAvailable)
+                                                ? DesignTokens.fontSizeH2
+                                                : DesignTokens
+                                                    .fontSizeAmountLg,
+                                            fontWeight: FW.bold,
+                                            color: Colors.white,
+                                            letterSpacing:
+                                                Tracking.tight *
+                                                    ((hasError ||
+                                                            isNotAvailable)
+                                                        ? DesignTokens
+                                                            .fontSizeH2
+                                                        : DesignTokens
+                                                            .fontSizeAmountLg),
+                                            height: 1.1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (hasError) ...[
+                                      const SizedBox(width: Space.s2),
+                                      Icon(
+                                        Icons.refresh_rounded,
+                                        size: Sizes.iconSm,
+                                        color: Colors.white.withValues(
+                                          alpha: Alpha.iconOnGradientStrong,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          if (hasError) ...[
-                            const SizedBox(width: Space.s2),
-                            Icon(
-                              Icons.refresh_rounded,
-                              size: Sizes.iconSm,
-                              color: Colors.white.withValues(
-                                  alpha: Alpha.iconOnGradientStrong),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                        SizedBox(
+                          width: useCompact
+                              ? Space.s2
+                              : Space.s4,
+                        ),
+                        // Availability switch — vertically centred on the
+                        // figure (not the caption), never overlapping it.
+                        SlidingAvailabilitySwitch(
+                          key: const Key('availability_button'),
+                          isOnline: isOnline,
+                          isLoading: availabilityLoading,
+                          hasError: availabilityError,
+                          onToggle: onToggleOnline,
+                          compact: useCompact,
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(height: Space.s4),
-                // ── Two equal-width stat tiles ─────────────────────────
+                // ── Optional hairline above stats ───────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: Space.s3),
+                  child: Container(
+                    height: Sizes.borderWidthThin,
+                    color: Colors.white.withValues(alpha: Alpha.tintStandard),
+                  ),
+                ),
+                // ── Two equal-width stat columns (no glass) ─────────────
                 IntrinsicHeight(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: _HeroStatTile(
+                        child: _HeroStatColumn(
                           key: const Key('stat_tile_pending'),
                           label: 'Pending',
-                          valueText: pendingValue != null
-                              ? 'Pending $pendingValue'
-                              : 'Pending —',
-                          // Reserve caption height even when absent so tiles
-                          // stay the same height as the rating tile.
+                          valueText: pendingValue ?? '—',
                           captionText: null,
                           reserveCaptionSpace: true,
                         ),
                       ),
-                      const SizedBox(width: Space.s2),
+                      // Vertical hairline divider between columns.
+                      Container(
+                        width: Sizes.borderWidthThin,
+                        color: Colors.white.withValues(alpha: Alpha.tintStandard),
+                      ),
                       Expanded(
-                        child: _HeroStatTile(
+                        child: _HeroStatColumn(
                           key: const Key('stat_tile_rating'),
                           label: 'Rating',
                           valueText: hasRating
@@ -868,21 +1018,19 @@ class _TradieHero extends StatelessWidget {
   }
 }
 
-// ── Hero stat tile ────────────────────────────────────────────────────────────
+// ── Hero stat column (plain — no glass) ───────────────────────────────────────
 
-/// A single semi-transparent tile inside the hero gradient.
-///
-/// [reserveCaptionSpace] ensures both tiles are the same height whether or
-/// not one has a [captionText] — achieved by rendering an invisible Text
-/// placeholder at the same size.
-class _HeroStatTile extends StatelessWidget {
+/// A single stats column rendered directly on the gradient — no fill, no border,
+/// no radius. Left-padded for the first column, right-padded for the second
+/// (handled by the outer Row's equal Expanded slots).
+class _HeroStatColumn extends StatelessWidget {
   final String label;
   final String valueText;
   final IconData? valueIcon;
   final String? captionText;
   final bool reserveCaptionSpace;
 
-  const _HeroStatTile({
+  const _HeroStatColumn({
     super.key,
     required this.label,
     required this.valueText,
@@ -893,23 +1041,13 @@ class _HeroStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Space.s3,
-        vertical: Space.s3,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: Alpha.tintStandard),
-        borderRadius: BorderRadius.circular(Radii.tile),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: Alpha.tintAccent),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Space.s3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Label
+          // Label — 70% opacity on gradient
           Text(
             label,
             style: TextStyle(
@@ -921,13 +1059,13 @@ class _HeroStatTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Space.s1),
-          // Value row (icon + text)
+          // Value row (optional icon + text, tabular numerals, same size)
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (valueIcon != null) ...[
-                Icon(valueIcon, size: 14, color: DesignTokens.amber),
+                Icon(valueIcon, size: Sizes.iconRating, color: DesignTokens.amber),
                 const SizedBox(width: Space.s1),
               ],
               Flexible(
@@ -940,6 +1078,7 @@ class _HeroStatTile extends StatelessWidget {
                       fontFamily: TypeTokens.fontDisplay,
                       fontSize: DesignTokens.fontSizeSm,
                       fontWeight: FW.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                       color: Colors.white,
                     ),
                   ),
@@ -947,7 +1086,7 @@ class _HeroStatTile extends StatelessWidget {
               ),
             ],
           ),
-          // Caption or reserved-space placeholder.
+          // Caption or reserved-height placeholder so both columns match.
           if (captionText != null || reserveCaptionSpace) ...[
             const SizedBox(height: Space.s0_5),
             Opacity(
@@ -967,180 +1106,6 @@ class _HeroStatTile extends StatelessWidget {
   }
 }
 
-// ── Availability pill button ──────────────────────────────────────────────────
-
-/// Pill status button for the hero top row.
-///
-/// States:
-/// - Online: green-tinted filled dot + "Online" label, dot pulses (respects
-///   reduce-motion).
-/// - Offline: neutral outlined dot + "Offline" label, no pulse.
-/// - Loading: spinner replaces the dot, button disabled, label unchanged.
-///
-/// Meets WCAG 4.5:1 contrast for label text on the dark gradient in both
-/// themes. Min tap area 48×48dp via [ConstrainedBox] padding.
-class _AvailabilityPillButton extends StatefulWidget {
-  final bool isOnline;
-  final bool isLoading;
-  final VoidCallback onPressed;
-
-  const _AvailabilityPillButton({
-    super.key,
-    required this.isOnline,
-    required this.isLoading,
-    required this.onPressed,
-  });
-
-  @override
-  State<_AvailabilityPillButton> createState() =>
-      _AvailabilityPillButtonState();
-}
-
-class _AvailabilityPillButtonState extends State<_AvailabilityPillButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseCtrl;
-  late Animation<double> _pulseAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: FixoDurations.pulse,
-    );
-    _pulseAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
-    // _updatePulse reads MediaQuery — must not be called here.
-    // Called in didChangeDependencies instead.
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updatePulse();
-  }
-
-  @override
-  void didUpdateWidget(_AvailabilityPillButton old) {
-    super.didUpdateWidget(old);
-    if (old.isOnline != widget.isOnline ||
-        old.isLoading != widget.isLoading) {
-      _updatePulse();
-    }
-  }
-
-  void _updatePulse() {
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (widget.isOnline && !widget.isLoading && !reduceMotion) {
-      _pulseCtrl.repeat(reverse: true);
-    } else {
-      _pulseCtrl.stop();
-      _pulseCtrl.value = 1.0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Always-white text on the dark gradient — confirmed ≥ 4.5:1 on brand900.
-    const labelColor = Colors.white;
-    final dotColor =
-        widget.isOnline ? DesignTokens.green : Colors.white;
-    final borderColor = widget.isOnline
-        ? DesignTokens.green.withValues(alpha: Alpha.outlineDark)
-        : Colors.white.withValues(alpha: Alpha.border);
-    final bgColor = widget.isOnline
-        ? DesignTokens.green.withValues(alpha: Alpha.tintStandard)
-        : Colors.white.withValues(alpha: Alpha.subtle);
-
-    final label = widget.isOnline ? 'Online' : 'Offline';
-
-    return Semantics(
-      button: true,
-      toggled: widget.isOnline,
-      label: 'Availability',
-      value: label,
-      hint: widget.isOnline ? 'Double tap to go offline' : 'Double tap to go online',
-      child: GestureDetector(
-        onTap: widget.isLoading ? null : widget.onPressed,
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          // Pad hit area to Sizes.tapMin without expanding layout width.
-          padding: const EdgeInsets.symmetric(vertical: Space.s1),
-          child: Container(
-            height: Sizes.statusButton,
-            constraints: const BoxConstraints(minWidth: Sizes.tapMin),
-            padding: const EdgeInsets.symmetric(
-              horizontal: Space.s3,
-            ),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(Radii.pill),
-              border: Border.all(color: borderColor),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                  // Dot / spinner
-                  SizedBox(
-                    width: Sizes.heroDot,
-                    height: Sizes.heroDot,
-                    child: widget.isLoading
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white
-                                .withValues(alpha: Alpha.iconOnGradientStrong),
-                          )
-                        : AnimatedBuilder(
-                            animation: _pulseAnim,
-                            builder: (_, _) => Opacity(
-                              opacity: _pulseAnim.value,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: dotColor,
-                                  boxShadow: widget.isOnline
-                                      ? [
-                                          BoxShadow(
-                                            color: DesignTokens.green
-                                                .withValues(alpha: Alpha.divider),
-                                            blurRadius: Space.s1,
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                  ),
-                  const SizedBox(width: Space.s2),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontFamily: TypeTokens.fontBody,
-                      fontSize: DesignTokens.fontSizeSecondary,
-                      fontWeight: FW.semibold,
-                      color: labelColor,
-                      height: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-  }
-}
-
 /// Decorative concentric rings for the hero background (top-right corner).
 class _RingsPainter extends CustomPainter {
   const _RingsPainter();
@@ -1150,7 +1115,7 @@ class _RingsPainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = Sizes.borderWidthThin;
     final center = Offset(size.width, 0);
     for (final r in [50.0, 90.0, 130.0, 170.0]) {
       canvas.drawCircle(center, r, paint);
@@ -1161,102 +1126,279 @@ class _RingsPainter extends CustomPainter {
   bool shouldRepaint(_RingsPainter old) => false;
 }
 
-/// Decorative sparkline — a simple curved amber line suggesting upward trend.
-class _SparklinePainter extends CustomPainter {
-  final Color color;
-  const _SparklinePainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Six relative y-points (0=top, 1=bottom) for a gentle upward-trending line.
-    const ys = [0.80, 0.55, 0.70, 0.45, 0.60, 0.25];
-    final pts = List.generate(ys.length, (i) {
-      final x = size.width * i / (ys.length - 1);
-      final y = size.height * ys[i];
-      return Offset(x, y);
-    });
-
-    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
-    for (int i = 0; i < pts.length - 1; i++) {
-      final cp1 = Offset((pts[i].dx + pts[i + 1].dx) / 2, pts[i].dy);
-      final cp2 = Offset((pts[i].dx + pts[i + 1].dx) / 2, pts[i + 1].dy);
-      path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, pts[i + 1].dx, pts[i + 1].dy);
-    }
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Dot at the last point
-    canvas.drawCircle(
-      pts.last,
-      3.5,
-      Paint()..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_SparklinePainter old) => old.color != color;
-}
-
-
 // ── New leads ─────────────────────────────────────────────────────────────────
 
-class _LeadsSection extends StatelessWidget {
+/// New-leads section with smart visibility:
+/// - [isFirstLoad]: shows one compact skeleton card while offers load.
+/// - [leads] empty + [offersLoaded] + no [hasError]: renders nothing (no label,
+///   no empty copy, no gap — first visible section below hero is "Today").
+/// - [hasError]: shows inline error row with Retry (never hidden on error).
+/// - Non-empty leads: animated in/out (AnimatedSize + fade), screen-reader
+///   announcement on new lead, light haptic.
+class _LeadsSection extends StatefulWidget {
   final List<Job> leads;
   final Map<String, JobOffer?> pendingOffers;
   final bool offersLoaded;
+  final bool hasError;
+  final bool isFirstLoad;
   final Set<String> responding;
   final ValueChanged<Job> onAccept;
   final ValueChanged<Job> onDecline;
   final ValueChanged<Job> onOpen;
+  final VoidCallback onRetry;
 
   const _LeadsSection({
     required this.leads,
     required this.pendingOffers,
     required this.offersLoaded,
+    required this.hasError,
+    required this.isFirstLoad,
     required this.responding,
     required this.onAccept,
     required this.onDecline,
     required this.onOpen,
+    required this.onRetry,
   });
+
+  @override
+  State<_LeadsSection> createState() => _LeadsSectionState();
+}
+
+class _LeadsSectionState extends State<_LeadsSection> {
+  List<String> _prevLeadIds = [];
+
+  @override
+  void didUpdateWidget(_LeadsSection old) {
+    super.didUpdateWidget(old);
+    final newIds = widget.leads.map((j) => j.id).toList();
+    // Detect genuinely new leads (not just reorder) and announce.
+    final added = newIds.where((id) => !_prevLeadIds.contains(id)).toList();
+    if (added.isNotEmpty) {
+      // Light haptic for new lead.
+      HapticFeedback.lightImpact();
+      // Accessibility live-region announcement for screen readers.
+      // ignore: deprecated_member_use
+      SemanticsService.announce(
+        added.length == 1 ? 'New lead' : '${added.length} new leads',
+        ui.TextDirection.ltr,
+      );
+    }
+    _prevLeadIds = newIds;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Error row — always visible, never hidden.
+    if (widget.hasError && !widget.isFirstLoad) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FixoSectionLabel(label: 'New leads'),
+          const SizedBox(height: Space.s2_5),
+          _LeadsErrorRow(onRetry: widget.onRetry),
+          const SizedBox(height: Space.s4),
+        ],
+      );
+    }
+
+    // First-load skeleton — one compact placeholder card.
+    if (widget.isFirstLoad) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FixoSectionLabel(label: 'New leads'),
+          const SizedBox(height: Space.s2_5),
+          const _LeadSkeletonCard(),
+          const SizedBox(height: Space.s4),
+        ],
+      );
+    }
+
+    // Empty and loaded — render nothing.
+    if (widget.leads.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Non-empty leads — animated section.
+    return AnimatedSize(
+      duration: FixoDurations.expand,
+      curve: Curves.easeInOut,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FixoSectionLabel(
+            label: 'New leads',
+            count: widget.leads.length,
+          ),
+          const SizedBox(height: Space.s2_5),
+          for (final job in widget.leads) ...[
+            _AnimatedLeadCard(
+              key: ValueKey(job.id),
+              child: _LeadCard(
+                job: job,
+                offer: widget.pendingOffers[job.id],
+                offerChecked: widget.offersLoaded ||
+                    widget.pendingOffers.containsKey(job.id),
+                busy: widget.responding.contains(job.id),
+                onAccept: () => widget.onAccept(job),
+                onDecline: () => widget.onDecline(job),
+                onOpen: () => widget.onOpen(job),
+              ),
+            ),
+            const SizedBox(height: Space.s2_5),
+          ],
+          const SizedBox(height: Space.s2),
+        ],
+      ),
+    );
+  }
+}
+
+/// Wraps a lead card with a fade-in animation on first build.
+class _AnimatedLeadCard extends StatefulWidget {
+  final Widget child;
+  const _AnimatedLeadCard({super.key, required this.child});
+
+  @override
+  State<_AnimatedLeadCard> createState() => _AnimatedLeadCardState();
+}
+
+class _AnimatedLeadCardState extends State<_AnimatedLeadCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    final reduceMotion =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
+            .disableAnimations;
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: reduceMotion ? Duration.zero : FixoDurations.expand,
+    )..forward();
+    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(position: _slide, child: widget.child),
+      );
+}
+
+/// Skeleton placeholder for the first-load state.
+class _LeadSkeletonCard extends StatelessWidget {
+  const _LeadSkeletonCard();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (leads.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Space.s2),
+    final baseColor = DesignTokens.inkSoft(isDark)
+        .withValues(alpha: Alpha.tintStandard);
+    return Container(
+      height: Sizes.expiryBarHeight + Space.s7, // ~88dp reserved height
+      decoration: BoxDecoration(
+        color: DesignTokens.surfaceCard(isDark),
+        borderRadius: BorderRadius.circular(Radii.tile),
+        border: Border.all(color: DesignTokens.paperLine(isDark)),
+      ),
+      padding: const EdgeInsets.all(Space.s4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: Space.s5,
+            width: 100,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(Radii.small),
+            ),
+          ),
+          const SizedBox(height: Space.s2),
+          Container(
+            height: Space.s4,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(Radii.small),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline error row shown when leads fetch fails.
+class _LeadsErrorRow extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _LeadsErrorRow({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s4,
+        vertical: Space.s3,
+      ),
+      decoration: BoxDecoration(
+        color: DesignTokens.red.withValues(alpha: Alpha.tintStandard),
+        borderRadius: BorderRadius.circular(Radii.tile),
+        border: Border.all(
+          color: DesignTokens.red.withValues(alpha: Alpha.borderMid),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: Sizes.iconSm,
+            color: DesignTokens.inkDanger(isDark),
+          ),
+          const SizedBox(width: Space.s2),
+          Expanded(
             child: Text(
-              'No new leads right now. Online tradies get offers first.',
+              'Could not load leads.',
               style: TextStyle(
-                fontSize: DesignTokens.fontSizeSm,
-                color: DesignTokens.inkSoft(isDark),
+                fontSize: DesignTokens.fontSizeSecondary,
+                color: DesignTokens.inkDanger(isDark),
               ),
             ),
           ),
-        for (final job in leads) ...[
-          _LeadCard(
-            job: job,
-            offer: pendingOffers[job.id],
-            offerChecked: offersLoaded || pendingOffers.containsKey(job.id),
-            busy: responding.contains(job.id),
-            onAccept: () => onAccept(job),
-            onDecline: () => onDecline(job),
-            onOpen: () => onOpen(job),
+          const SizedBox(width: Space.s2),
+          InkWell(
+            onTap: onRetry,
+            borderRadius: BorderRadius.circular(Radii.control),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.s2,
+                vertical: Space.s1,
+              ),
+              child: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: DesignTokens.fontSizeSecondary,
+                  fontWeight: FW.semibold,
+                  color: DesignTokens.inkDanger(isDark),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: Space.s2_5),
         ],
-      ],
+      ),
     );
   }
 }
@@ -1298,8 +1440,6 @@ class _LeadCardState extends State<_LeadCard> {
       !widget.offer!.remaining().isNegative &&
       !widget.busy;
 
-  /// The shared countdown hit zero — flip the actions to their disabled
-  /// state. The server's timeout job owns the authoritative timeout.
   void _onExpired() {
     if (mounted) setState(() {});
   }
@@ -1312,7 +1452,6 @@ class _LeadCardState extends State<_LeadCard> {
         ? widget.job.photoUrls.first
         : null;
 
-    // Metadata line: suburb · schedule · duration — skip empty segments.
     final metaSegments = [
       if (widget.job.suburb.isNotEmpty) widget.job.suburb,
       if (widget.job.scheduledStartUtc != null)
@@ -1333,7 +1472,10 @@ class _LeadCardState extends State<_LeadCard> {
                 : const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [DesignTokens.paperLight, DesignTokens.paperLineLight],
+                    colors: [
+                      DesignTokens.paperLight,
+                      DesignTokens.paperLineLight,
+                    ],
                   ),
             color: isDark ? DesignTokens.cardDark : null,
             borderRadius: BorderRadius.circular(Radii.tile),
@@ -1343,8 +1485,9 @@ class _LeadCardState extends State<_LeadCard> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(
-                    alpha: isDark ? Alpha.tintAccent : Alpha.subtle),
-                blurRadius: 8,
+                  alpha: isDark ? Alpha.tintAccent : Alpha.subtle,
+                ),
+                blurRadius: Space.s2,
                 offset: const Offset(0, 2),
                 spreadRadius: -2,
               ),
@@ -1353,7 +1496,7 @@ class _LeadCardState extends State<_LeadCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Row 1: Price (left) + urgency chip (right)
+              // Row 1: Price + urgency chip
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -1389,14 +1532,14 @@ class _LeadCardState extends State<_LeadCard> {
                 ],
               ),
               const SizedBox(height: Space.s2),
-              // Row 2: Countdown progress bar
+              // Row 2: Countdown bar
               _LeadCountdownBar(
                 offer: widget.offer,
                 offerChecked: widget.offerChecked,
                 onExpired: _onExpired,
               ),
               const SizedBox(height: Space.s2),
-              // Row 3: Metadata line — suburb · schedule · duration
+              // Row 3: Metadata
               if (metaSegments.isNotEmpty)
                 Text(
                   metaSegments.join(' · '),
@@ -1406,7 +1549,7 @@ class _LeadCardState extends State<_LeadCard> {
                   ),
                 ),
               if (metaSegments.isNotEmpty) const SizedBox(height: Space.s2),
-              // Row 4: Job title + photo thumbnail
+              // Row 4: Title + photo
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1430,8 +1573,8 @@ class _LeadCardState extends State<_LeadCard> {
                       borderRadius: BorderRadius.circular(Radii.small),
                       child: Image.network(
                         _resolvePhotoUrl(photoUrl),
-                        width: 56,
-                        height: 56,
+                        width: Sizes.iconHero * 0.7,
+                        height: Sizes.iconHero * 0.7,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => const SizedBox.shrink(),
                       ),
@@ -1440,7 +1583,7 @@ class _LeadCardState extends State<_LeadCard> {
                 ],
               ),
               const SizedBox(height: Space.s3),
-              // Row 5: Decline (1/3) | Accept (2/3), 56px height
+              // Row 5: Decline | Accept
               Row(
                 children: [
                   Expanded(
@@ -1497,11 +1640,11 @@ class _LeadCardState extends State<_LeadCard> {
                           ),
                         ),
                         child: widget.busy
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: Sizes.iconSm,
                                 height: Sizes.iconSm,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: Sizes.borderWidthThick,
                                 ),
                               )
                             : const FittedBox(
@@ -1527,8 +1670,7 @@ class _LeadCardState extends State<_LeadCard> {
     final local = scheduledUtc.toLocal();
     final now = DateTime.now();
     final time = DateFormat.jm().format(local);
-    final isToday =
-        local.year == now.year &&
+    final isToday = local.year == now.year &&
         local.month == now.month &&
         local.day == now.day;
     if (isToday) return 'Today $time';
@@ -1542,10 +1684,7 @@ class _LeadCardState extends State<_LeadCard> {
   }
 }
 
-/// A compact progress-bar countdown for lead cards. Ticks its own 1-second
-/// timer independently of [OfferCountdown] so the card keeps full layout
-/// control. Uses [OfferCountdown.clampedRemaining] and
-/// [OfferCountdown.formatClock] for consistent maths and formatting.
+/// Compact countdown progress bar for lead cards.
 class _LeadCountdownBar extends StatefulWidget {
   final JobOffer? offer;
   final bool offerChecked;
@@ -1633,7 +1772,6 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final grey = DesignTokens.inkSoft(isDark);
 
-    // Not yet checked — shimmer-like grey bar at 0 + 'Checking…' label
     if (!widget.offerChecked) {
       return FixoProgressBar(
         progress: 0.0,
@@ -1645,7 +1783,6 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
 
     final offer = widget.offer;
 
-    // Offer fetch returned null — expired/gone bar
     if (offer == null) {
       return FixoProgressBar(
         progress: 1.0,
@@ -1655,7 +1792,6 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
       );
     }
 
-    // Live offer — compute progress fraction using offeredAtUtc as the start.
     final expiresAt = offer.expiresAtUtc;
     final totalSeconds =
         expiresAt.difference(offer.offeredAtUtc).inSeconds;
@@ -1701,7 +1837,7 @@ class _TodaySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final job in jobs) ...[
-          _TodayJobCard(job: job, onTap: () => onJobTap(job.id)),
+          TradieJobCard(job: job, onTap: () => onJobTap(job.id)),
           const SizedBox(height: Space.s2_5),
         ],
       ],
@@ -1711,11 +1847,6 @@ class _TodaySection extends StatelessWidget {
 
 // ── Today empty state ─────────────────────────────────────────────────────────
 
-/// Compact card that adapts to online/offline state.
-///
-/// Online: "You're online. New leads will appear here."
-/// Offline: "No new leads right now. Online tradies get offers first."
-///          + a "Go online" prompt button.
 class _TodayEmptyState extends StatelessWidget {
   final bool isOnline;
   final VoidCallback onGoOnline;
@@ -1728,7 +1859,7 @@ class _TodayEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final th = Theme.of(context).extension<THColors>()!;
+    final th     = Theme.of(context).extension<THColors>()!;
 
     return Container(
       padding: const EdgeInsets.all(Space.s4),
@@ -1742,17 +1873,23 @@ class _TodayEmptyState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: Space.s9,
+            width:  Space.s9,
             height: Space.s9,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (isOnline ? DesignTokens.green : DesignTokens.inkSoft(isDark))
+              color: (isOnline
+                      ? DesignTokens.green
+                      : DesignTokens.inkSoft(isDark))
                   .withValues(alpha: Alpha.tintStandard),
             ),
             child: Icon(
-              isOnline ? Icons.check_circle_outline_rounded : Icons.wifi_off_rounded,
-              size: Sizes.iconMd,
-              color: isOnline ? DesignTokens.inkSuccess(isDark) : DesignTokens.inkSoft(isDark),
+              isOnline
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.wifi_off_rounded,
+              size:  Sizes.iconMd,
+              color: isOnline
+                  ? DesignTokens.inkSuccess(isDark)
+                  : DesignTokens.inkSoft(isDark),
             ),
           ),
           const SizedBox(width: Space.s3),
@@ -1761,9 +1898,7 @@ class _TodayEmptyState extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOnline
-                      ? "You're online"
-                      : 'Nothing scheduled today',
+                  isOnline ? "You're online" : 'Nothing scheduled today',
                   style: TextStyle(
                     fontFamily: DesignTokens.fontDisplay,
                     fontSize: DesignTokens.fontSizeBody,
@@ -1808,16 +1943,16 @@ class _TodayEmptyState extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.wifi_rounded,
-                              size: 14,
+                              size:  Sizes.iconXs,
                               color: DesignTokens.inkSuccess(isDark),
                             ),
                             const SizedBox(width: Space.s1_5),
                             Text(
                               'Go online',
                               style: TextStyle(
-                                fontSize: DesignTokens.fontSizeSecondary,
+                                fontSize:   DesignTokens.fontSizeSecondary,
                                 fontWeight: FW.semibold,
-                                color: DesignTokens.inkSuccess(isDark),
+                                color:      DesignTokens.inkSuccess(isDark),
                               ),
                             ),
                           ],
@@ -1830,221 +1965,6 @@ class _TodayEmptyState extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Today job card ────────────────────────────────────────────────────────────
-
-/// Redesigned tradie Today card per v1.7 spec.
-///
-/// Layout:
-/// 1. Row 1: job title (left, max 2 lines, bold) + StatusChip (trailing,
-///    aligned to first line baseline via [CrossAxisAlignment.start]).
-/// 2. Row 2: trade · suburb muted line.
-/// 3. Row 3: price (left, strong, tabular) | schedule (right, 2 lines if
-///    needed: day above, time below).
-/// 4. Row 4: segmented progress bar — "Step X of 4" caption only.
-/// 5. Action row: amber primary CTA only when [tradieActionRequired],
-///    otherwise a trailing chevron on the card's right edge.
-///
-/// The whole card is tappable ([InkWell] wrapping). When a CTA is shown it
-/// navigates identically to tapping the card.
-class _TodayJobCard extends StatelessWidget {
-  final Job job;
-  final VoidCallback onTap;
-
-  const _TodayJobCard({required this.job, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final th = Theme.of(context).extension<THColors>()!;
-    final presentation = JobStatusPresentation.forStatus(job.status);
-    final scheduled = job.scheduledStartUtc?.toLocal();
-
-    // Price string — tabular numerals.
-    final priceText = job.totalAmount != null
-        ? formatMoney(job.totalAmount!)
-        : null;
-
-    // Schedule — split into date and time when available.
-    final dateLabel = scheduled != null
-        ? DateFormat('EEE d MMM').format(scheduled)
-        : null;
-    final timeLabel = scheduled != null
-        ? DateFormat.jm().format(scheduled)
-        : null;
-
-    // Meta line: trade · suburb (never repeat trade twice).
-    final metaParts = <String>[];
-    if (job.category.isNotEmpty) metaParts.add(job.category);
-    if (job.suburb.isNotEmpty) metaParts.add(job.suburb);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.card),
-        child: Container(
-          padding: const EdgeInsets.all(Space.s4),
-          decoration: BoxDecoration(
-            color: DesignTokens.surfaceCard(isDark),
-            borderRadius: BorderRadius.circular(Radii.card),
-            border: Border.all(color: DesignTokens.paperLine(isDark)),
-            boxShadow: DesignTokens.cardShadow(isDark),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Row 1: title + status chip ────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      job.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: DesignTokens.fontDisplay,
-                        fontSize: DesignTokens.fontSizeH3,
-                        fontWeight: FW.bold,
-                        height: 1.3,
-                        color: th.text,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Space.s2),
-                  // Chip aligned to first line — CrossAxisAlignment.start
-                  // handles this since the chip is fixed-height (Sizes.statusChip).
-                  StatusChip(
-                    label: presentation.label,
-                    tone: presentation.chipTone,
-                    icon: presentation.chipIcon,
-                  ),
-                ],
-              ),
-
-              // ── Row 2: trade · suburb ─────────────────────────────────
-              if (metaParts.isNotEmpty) ...[
-                const SizedBox(height: Space.s1),
-                Text(
-                  metaParts.join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: DesignTokens.fontSizeSecondary,
-                    color: th.textSoft,
-                  ),
-                ),
-              ],
-
-              // ── Row 3: price | schedule ───────────────────────────────
-              if (priceText != null || dateLabel != null) ...[
-                const SizedBox(height: Space.s3),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (priceText != null)
-                      Expanded(
-                        child: Text(
-                          priceText,
-                          style: TextStyle(
-                            fontFamily: DesignTokens.fontDisplay,
-                            fontSize: DesignTokens.fontSizeAmount,
-                            fontWeight: FW.bold,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                            color: th.text,
-                          ),
-                        ),
-                      ),
-                    if (priceText != null && dateLabel != null)
-                      const SizedBox(width: Space.s2),
-                    if (dateLabel != null)
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              dateLabel,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: DesignTokens.fontSizeSecondary,
-                                fontWeight: FW.medium,
-                                color: th.textSoft,
-                              ),
-                            ),
-                            if (timeLabel != null)
-                              Text(
-                                timeLabel,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: DesignTokens.fontSizeSecondary,
-                                  fontWeight: FW.semibold,
-                                  color: th.text,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-
-              // ── Row 4: progress bar ───────────────────────────────────
-              if (presentation.progressStage != null) ...[
-                const SizedBox(height: Space.s3),
-                CompactProgressBar(
-                  completedSteps: presentation.progressStage! + 1,
-                  totalSteps: 4,
-                  label: presentation.progressLabel,
-                  // No sublabel — status is communicated by the chip above.
-                ),
-              ],
-
-              // ── Row 5: CTA or chevron ─────────────────────────────────
-              const SizedBox(height: Space.s3),
-              if (presentation.tradieActionRequired)
-                SizedBox(
-                  width: double.infinity,
-                  height: Sizes.tapMin,
-                  child: Semantics(
-                    button: true,
-                    label: presentation.tradieAction,
-                    child: FilledButton(
-                      key: const Key('today_card_cta'),
-                      onPressed: onTap,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: DesignTokens.amber,
-                        foregroundColor: DesignTokens.onAmber,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(Radii.control),
-                        ),
-                        textStyle: TextStyle(
-                          fontFamily: DesignTokens.fontBody,
-                          fontSize: DesignTokens.fontSizeBody,
-                          fontWeight: FW.semibold,
-                        ),
-                      ),
-                      child: Text(presentation.tradieAction),
-                    ),
-                  ),
-                )
-              else
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: Sizes.iconMd,
-                    color: th.textSoft,
-                  ),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -2077,10 +1997,7 @@ class _CollapsedJobSection extends StatelessWidget {
           initiallyExpanded: initiallyExpanded,
           tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
           childrenPadding: const EdgeInsets.fromLTRB(
-            Space.s4,
-            0,
-            Space.s4,
-            Space.s3,
+            Space.s4, 0, Space.s4, Space.s3,
           ),
           title: Text(
             '$title (${jobs.length})',
@@ -2095,33 +2012,14 @@ class _CollapsedJobSection extends StatelessWidget {
             for (final job in jobs)
               Padding(
                 padding: const EdgeInsets.only(bottom: Space.s2_5),
-                child: _scheduledJobCard(job, onJobTap),
+                child: TradieJobCard(
+                  job: job,
+                  onTap: () => onJobTap(job.id),
+                ),
               ),
           ],
         ),
       ),
     );
   }
-}
-
-Widget _scheduledJobCard(Job job, ValueChanged<String> onJobTap) {
-  final presentation = JobStatusPresentation.forStatus(job.status);
-  final scheduled = job.scheduledStartUtc?.toLocal();
-  final timeLabel = scheduled != null
-      ? DateFormat('EEE d MMM · ').add_jm().format(scheduled)
-      : null;
-  return ModernJobCard(
-    title: job.title,
-    category: job.category,
-    suburb: job.suburb,
-    status: presentation.label,
-    statusKind: presentation.kind,
-    priceLabel: job.totalAmount != null
-        ? formatMoney(job.totalAmount!)
-        : null,
-    scheduleLabel: timeLabel,
-    actionLabel: presentation.tradieAction,
-    progressStatus: job.status,
-    onTap: () => onJobTap(job.id),
-  );
 }

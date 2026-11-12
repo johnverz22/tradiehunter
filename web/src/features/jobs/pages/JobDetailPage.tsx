@@ -1,22 +1,12 @@
-import React from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
+import { JobProgressStepper } from '../../../components/JobProgressStepper';
 import { useJobDetail } from '../hooks/useJobs';
 
-/** The mockup's four-step progress flow. */
-const STEPS = ['Requested', 'Matched', 'Confirmed', 'Complete'] as const;
-
-const STEP_INDEX: Record<string, number> = {
-  Draft: 0,
-  Requested: 0,
-  Matching: 0,
-  Matched: 1,
-  Confirmed: 2,
-  InProgress: 2,
-  Complete: 3,
-};
+// ── Formatters ────────────────────────────────────────────────────────────────
 
 const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
 
@@ -32,21 +22,63 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-NZ', {
   minute: '2-digit',
 });
 
+/** Returns a human-readable "X ago" label from a timestamp in ms. */
+function timeAgo(ms: number): string {
+  const seconds = Math.floor((Date.now() - ms) / 1000);
+  if (seconds < 10)  return 'just now';
+  if (seconds < 60)  return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60)  return `${minutes}m ago`;
+  return `${Math.floor(minutes / 60)}h ago`;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const JobDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: job, isLoading } = useJobDetail(Number(id));
+  const {
+    data: job,
+    isLoading,
+    dataUpdatedAt,
+    refetch,
+    isFetching,
+  } = useJobDetail(Number(id));
+
+  // Tick the "Updated X ago" label every 15 s.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((n) => n + 1), 15_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleRefresh = useCallback(() => { void refetch(); }, [refetch]);
 
   if (isLoading)
     return <div className="text-[var(--ink-soft)] text-sm p-4">Loading job…</div>;
   if (!job)
     return <div className="text-[var(--red)] text-sm p-4">Job not found.</div>;
 
-  const isCancelled = job.status === 'Cancelled';
-  const isComplete = job.status === 'Complete';
-  const currentStep = STEP_INDEX[job.status] ?? 0;
-
   const history = [...job.statusHistory].sort(
     (a, b) => new Date(a.changedAtUtc).getTime() - new Date(b.changedAtUtc).getTime(),
+  );
+
+  const updatedCaption = (
+    <span className="inline-flex items-center gap-1.5">
+      {timeAgo(dataUpdatedAt)}
+      <button
+        type="button"
+        onClick={handleRefresh}
+        disabled={isFetching}
+        aria-label="Refresh job status"
+        className="inline-flex items-center justify-center rounded p-0.5 hover:opacity-80 disabled:opacity-40 transition-opacity"
+      >
+        <RefreshCw
+          size={12}
+          aria-hidden="true"
+          className={isFetching ? 'animate-spin' : ''}
+        />
+      </button>
+    </span>
   );
 
   return (
@@ -72,23 +104,12 @@ export const JobDetailPage: React.FC = () => {
         <StatusBadge status={job.status} size="lg" />
       </div>
 
-      {/* Status stepper */}
-      <div className="stepper overflow-x-auto">
-        <div className="flex items-center min-w-[320px] w-full">
-          {STEPS.map((label, i) => {
-            const done = i < currentStep || isComplete;
-            const active = i === currentStep && !isComplete;
-            const state = isCancelled && active ? 'cancelled' : done ? 'done' : active ? 'active' : '';
-            return (
-              <div key={label} className={`step ${state}`}>
-                <div className="step-line" />
-                <div className="step-dot" />
-                <div className="step-label">{isCancelled && active ? 'Cancelled' : label}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Status stepper — correct status mapping, live updates, sublabels */}
+      <JobProgressStepper
+        status={job.status}
+        statusHistory={job.statusHistory}
+        updatedCaption={updatedCaption}
+      />
 
       {/* Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -12,6 +12,7 @@ import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:fixo/views/homeowner/homeowner_dashboard_view.dart';
 import 'package:fixo/views/jobs/jobs_list_screen.dart';
 import 'package:fixo/views/widgets/modern_job_card.dart';
+import 'package:fixo/views/widgets/tradie_job_card.dart';
 import 'package:fixo/views/widgets/homeowner_job_summary.dart';
 import 'package:fixo/widgets/fixo_cards.dart';
 import 'package:flutter/material.dart';
@@ -230,7 +231,11 @@ void main() {
       expect(find.text('Customer title Disputed'), findsNothing);
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Customer title Expired'), 600);
+      await tester.scrollUntilVisible(
+        find.text('Customer title Expired'),
+        600,
+        scrollable: find.byType(Scrollable).last,
+      );
       expect(find.text('Customer title Expired'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -274,6 +279,7 @@ void main() {
           await tester.scrollUntilVisible(
             find.widgetWithText(TextButton, 'Review completion'),
             300,
+            scrollable: find.byType(Scrollable).last,
           );
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
@@ -370,7 +376,7 @@ void main() {
     await tester.ensureVisible(find.text('All'));
     await tester.tap(find.text('All'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(ModernJobCard));
+    await tester.tap(find.byType(TradieJobCard));
     await tester.pumpAndSettle();
     expect(find.text('Destination /tradie/jobs/Completed'), findsOneWidget);
   });

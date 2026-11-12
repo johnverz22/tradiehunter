@@ -396,7 +396,8 @@
   /* ── Stepper (job status) ─────────────────────────── */
   .stepper {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: var(--space-2);
     padding: var(--space-6);
     background: var(--surface);
     border-radius: var(--radius);
@@ -409,8 +410,34 @@
     flex-direction: column;
     align-items: center;
     position: relative;
+    /* Last step: no right-side connector. The connector is drawn by this step
+       toward the right, so the last child simply gets none. */
   }
 
+  /* ── Connector line ─────────────────────── */
+  .step-line {
+    position: absolute;
+    top: 8px;
+    /* Start at the step dot centre and extend rightward to the next dot. */
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: var(--brand-100);
+    z-index: 0;
+    transition: background 200ms ease;
+  }
+
+  /* Last step must not render a connector overflow. */
+  .step:last-child .step-line {
+    display: none;
+  }
+
+  /* Connector fills when the NEXT step has been reached (class applied by JS). */
+  .step-line.step-line--filled {
+    background: var(--brand-700);
+  }
+
+  /* ── Dot ────────────────────────────────── */
   .step-dot {
     width: 16px;
     height: 16px;
@@ -418,50 +445,102 @@
     background: var(--brand-100);
     border: 3px solid var(--brand-100);
     z-index: 1;
+    transition: background 200ms ease, border-color 200ms ease;
   }
 
-  .step-line {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    width: 100%;
-    height: 3px;
-    background: var(--brand-100);
-    z-index: 0;
-  }
-
-  .step.done .step-dot,
-  .step.done .step-line {
+  /* Completed past steps */
+  .step-dot.step-dot--done {
     background: var(--brand-700);
     border-color: var(--brand-700);
   }
 
-  .step.active .step-dot {
+  /* Current active step */
+  .step-dot.step-dot--active {
     background: var(--green);
     border-color: var(--green);
   }
 
-  .step.cancelled .step-dot {
+  /* Terminal: cancelled */
+  .step-dot.step-dot--cancelled {
     background: var(--red);
     border-color: var(--red);
   }
 
+  /* Terminal: expired */
+  .step-dot.step-dot--expired {
+    background: var(--amber);
+    border-color: var(--amber);
+  }
+
+  /* Terminal: disputed */
+  .step-dot.step-dot--disputed {
+    background: var(--red);
+    border-color: var(--amber);
+  }
+
+  /* ── Labels ─────────────────────────────── */
   .step-label {
     margin-top: 10px;
     font-size: 12px;
     font-weight: 600;
     color: var(--ink);
     opacity: 0.5;
+    text-align: center;
+    transition: opacity 200ms ease, color 200ms ease;
   }
 
-  .step.active .step-label {
+  .step-label.step-label--past {
+    opacity: 0.6;
+  }
+
+  .step-label.step-label--active {
     opacity: 1;
     color: var(--green-ink);
   }
 
-  .step.cancelled .step-label {
+  .step-label.step-label--done {
+    opacity: 1;
+    color: var(--green-ink);
+  }
+
+  .step-label.step-label--cancelled {
     opacity: 1;
     color: var(--red-ink);
+  }
+
+  .step-label.step-label--expired {
+    opacity: 1;
+    color: var(--amber-ink);
+  }
+
+  .step-label.step-label--disputed {
+    opacity: 1;
+    color: var(--red-ink);
+  }
+
+  /* Substatus (e.g. "Awaiting payment", "Awaiting confirmation") */
+  .step-sublabel {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.75;
+  }
+
+  /* "Updated X ago" caption row beneath the step dots */
+  .step-updated-caption {
+    font-size: 12px;
+    color: var(--ink);
+    opacity: 0.5;
+    text-align: right;
+  }
+
+  /* Respect prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .step-line,
+    .step-dot,
+    .step-label {
+      transition: none;
+    }
   }
 
   /* ── Activity timeline ────────────────────────────── */
