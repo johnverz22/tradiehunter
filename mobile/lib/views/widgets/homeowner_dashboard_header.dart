@@ -92,9 +92,10 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                   fontSize: DesignTokens.fontSizeCaption,
                                   fontWeight: FW.semibold,
                                   letterSpacing: Tracking.emphasis,
-                                  color: Colors.white.withValues(
-                                    alpha: Alpha.textOnGradient,
-                                  ),
+                                  // Amber eyebrow on the navy hero (user
+                                  // request) — reads in both themes since the
+                                  // hero band stays navy.
+                                  color: DesignTokens.amber,
                                 ),
                               ),
                               const SizedBox(height: Space.s1),

@@ -25,7 +25,6 @@ import '../widgets/sliding_availability_switch.dart';
 import '../widgets/tradie_job_card.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// Statuses that count as booked work for the tradie — the job is theirs to
 /// turn up to (or is already underway / awaiting confirmation).
 const _bookedWorkStatuses = {'Booked', 'InProgress', 'AwaitingConfirmation'};
@@ -285,9 +284,7 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
       context: context,
       useRootNavigator: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(Radii.sheet),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
       ),
       builder: (_) => const _GoOfflineSheet(),
     );
@@ -306,31 +303,32 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
 
   @override
   Widget build(BuildContext context) {
-    final jobsState    = ref.watch(jobsViewModelProvider);
+    final jobsState = ref.watch(jobsViewModelProvider);
     final profileState = ref.watch(profileViewModelProvider);
     final earningsState = ref.watch(tradieEarningsProvider);
-    final theme  = Theme.of(context);
+    final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final now    = DateTime.now();
+    final now = DateTime.now();
 
     final leads = jobsState.jobs.where((j) => j.status == 'Requested').toList();
 
     // Overdue: booked jobs whose schedule is strictly before today.
-    final overdueJobs = jobsState.jobs
-        .where(
-          (j) =>
-              _bookedWorkStatuses.contains(j.status) && _isOverdue(j, now),
-        )
-        .toList()
-      ..sort((a, b) {
-        // Sort oldest first so the most-urgent overdue job is at the top.
-        final aT = a.scheduledStartUtc;
-        final bT = b.scheduledStartUtc;
-        if (aT == null && bT == null) return 0;
-        if (aT == null) return 1;
-        if (bT == null) return -1;
-        return aT.compareTo(bT);
-      });
+    final overdueJobs =
+        jobsState.jobs
+            .where(
+              (j) =>
+                  _bookedWorkStatuses.contains(j.status) && _isOverdue(j, now),
+            )
+            .toList()
+          ..sort((a, b) {
+            // Sort oldest first so the most-urgent overdue job is at the top.
+            final aT = a.scheduledStartUtc;
+            final bT = b.scheduledStartUtc;
+            if (aT == null && bT == null) return 0;
+            if (aT == null) return 1;
+            if (bT == null) return -1;
+            return aT.compareTo(bT);
+          });
 
     // Today: booked jobs scheduled exactly for today (not overdue).
     final todayJobs = jobsState.jobs
@@ -343,11 +341,12 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
         .toList();
 
     // Sort today: action-required statuses first, then by schedule time.
-    final sortedToday = [...todayJobs]..sort((a, b) {
-        final aReq =
-            JobStatusPresentation.forStatus(a.status).tradieActionRequired;
-        final bReq =
-            JobStatusPresentation.forStatus(b.status).tradieActionRequired;
+    final sortedToday = [...todayJobs]
+      ..sort((a, b) {
+        final aReq = JobStatusPresentation.forStatus(a.status)
+            .tradieActionRequired;
+        final bReq = JobStatusPresentation.forStatus(b.status)
+            .tradieActionRequired;
         if (aReq != bReq) return aReq ? -1 : 1;
         final aTime = a.scheduledStartUtc;
         final bTime = b.scheduledStartUtc;
@@ -522,11 +521,10 @@ class _TradieDashboardViewState extends ConsumerState<TradieDashboardView>
                               isOnline: isAvailable,
                               onJobTap: (id) =>
                                   context.push('/tradie/jobs/$id'),
-                              onGoOnline: () =>
-                                  _handleAvailabilityToggle(
-                                    isAvailable,
-                                    todayJobs,
-                                  ),
+                              onGoOnline: () => _handleAvailabilityToggle(
+                                isAvailable,
+                                todayJobs,
+                              ),
                             ),
                             if (upcomingJobs.isNotEmpty) ...[
                               const SizedBox(height: Space.s4),
@@ -660,7 +658,7 @@ class _TodaySectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final th     = Theme.of(context).extension<THColors>()!;
+    final th = Theme.of(context).extension<THColors>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -797,8 +795,7 @@ class _TradieHero extends StatelessWidget {
     final summary = earningsState.summary;
 
     final String earnedValue;
-    final bool isNotAvailable =
-        summary != null && summary.earnedNet == null;
+    final bool isNotAvailable = summary != null && summary.earnedNet == null;
     if (earningsState.error != null && summary == null) {
       earnedValue = 'Unavailable — tap to retry';
     } else if (earningsState.isLoading && summary == null) {
@@ -819,20 +816,29 @@ class _TradieHero extends StatelessWidget {
 
     final num? averageRatingNum =
         profileState.profile?['averageRating'] as num?;
-    final int? reviewCount =
-        profileState.profile?['reviewCount'] as int?;
+    final int? reviewCount = profileState.profile?['reviewCount'] as int?;
     final bool hasRating =
         reviewCount != null &&
         reviewCount > 0 &&
         averageRatingNum != null &&
         averageRatingNum > 0;
 
+    // Rounded-corner navy container — copied from the homeowner hero
+    // (homeowner_dashboard_header.dart) so both dashboards share the same
+    // rounded-bottom brand band, dark-aware gradient included.
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [DesignTokens.brand900, DesignTokens.brand700],
+          colors: dark
+              ? [THColors.light.brand, DesignTokens.brand700]
+              : [THColors.light.brand, DesignTokens.brand500],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(Radii.hero),
         ),
       ),
       child: Stack(
@@ -870,10 +876,8 @@ class _TradieHero extends StatelessWidget {
                     // Available width minus the full-width switch and minimum gap.
                     final switchW = Sizes.availabilityTrackW;
                     final gap = Space.s4;
-                    final figureAvail =
-                        constraints.maxWidth - switchW - gap;
-                    final useCompact =
-                        figureAvail < Sizes.heroMinFigureWidth;
+                    final figureAvail = constraints.maxWidth - switchW - gap;
+                    final useCompact = figureAvail < Sizes.heroMinFigureWidth;
 
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -889,7 +893,8 @@ class _TradieHero extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: DesignTokens.fontSizeCaption,
                                   color: Colors.white.withValues(
-                                      alpha: Alpha.iconOnGradient),
+                                    alpha: Alpha.iconOnGradient,
+                                  ),
                                   letterSpacing: Tracking.wide,
                                 ),
                               ),
@@ -898,8 +903,7 @@ class _TradieHero extends StatelessWidget {
                                 onTap: hasError ? onEarningsRetry : null,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Flexible(
                                       child: FittedBox(
@@ -908,23 +912,19 @@ class _TradieHero extends StatelessWidget {
                                         child: Text(
                                           earnedValue,
                                           style: TextStyle(
-                                            fontFamily:
-                                                TypeTokens.fontDisplay,
-                                            fontSize: (hasError ||
-                                                    isNotAvailable)
+                                            fontFamily: TypeTokens.fontDisplay,
+                                            fontSize:
+                                                (hasError || isNotAvailable)
                                                 ? DesignTokens.fontSizeH2
-                                                : DesignTokens
-                                                    .fontSizeAmountLg,
+                                                : DesignTokens.fontSizeAmountLg,
                                             fontWeight: FW.bold,
                                             color: Colors.white,
                                             letterSpacing:
                                                 Tracking.tight *
-                                                    ((hasError ||
-                                                            isNotAvailable)
-                                                        ? DesignTokens
-                                                            .fontSizeH2
-                                                        : DesignTokens
-                                                            .fontSizeAmountLg),
+                                                ((hasError || isNotAvailable)
+                                                    ? DesignTokens.fontSizeH2
+                                                    : DesignTokens
+                                                          .fontSizeAmountLg),
                                             height: 1.1,
                                           ),
                                         ),
@@ -946,11 +946,7 @@ class _TradieHero extends StatelessWidget {
                             ],
                           ),
                         ),
-                        SizedBox(
-                          width: useCompact
-                              ? Space.s2
-                              : Space.s4,
-                        ),
+                        SizedBox(width: useCompact ? Space.s2 : Space.s4),
                         // Availability switch — vertically centred on the
                         // figure (not the caption), never overlapping it.
                         SlidingAvailabilitySwitch(
@@ -990,7 +986,9 @@ class _TradieHero extends StatelessWidget {
                       // Vertical hairline divider between columns.
                       Container(
                         width: Sizes.borderWidthThin,
-                        color: Colors.white.withValues(alpha: Alpha.tintStandard),
+                        color: Colors.white.withValues(
+                          alpha: Alpha.tintStandard,
+                        ),
                       ),
                       Expanded(
                         child: _HeroStatColumn(
@@ -1065,7 +1063,11 @@ class _HeroStatColumn extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (valueIcon != null) ...[
-                Icon(valueIcon, size: Sizes.iconRating, color: DesignTokens.amber),
+                Icon(
+                  valueIcon,
+                  size: Sizes.iconRating,
+                  color: DesignTokens.amber,
+                ),
                 const SizedBox(width: Space.s1),
               ],
               Flexible(
@@ -1226,10 +1228,7 @@ class _LeadsSectionState extends State<_LeadsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FixoSectionLabel(
-            label: 'New leads',
-            count: widget.leads.length,
-          ),
+          FixoSectionLabel(label: 'New leads', count: widget.leads.length),
           const SizedBox(height: Space.s2_5),
           for (final job in widget.leads) ...[
             _AnimatedLeadCard(
@@ -1237,7 +1236,8 @@ class _LeadsSectionState extends State<_LeadsSection> {
               child: _LeadCard(
                 job: job,
                 offer: widget.pendingOffers[job.id],
-                offerChecked: widget.offersLoaded ||
+                offerChecked:
+                    widget.offersLoaded ||
                     widget.pendingOffers.containsKey(job.id),
                 busy: widget.responding.contains(job.id),
                 onAccept: () => widget.onAccept(job),
@@ -1272,14 +1272,16 @@ class _AnimatedLeadCardState extends State<_AnimatedLeadCard>
   @override
   void initState() {
     super.initState();
-    final reduceMotion =
-        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
-            .disableAnimations;
+    final reduceMotion = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     _ctrl = AnimationController(
       vsync: this,
       duration: reduceMotion ? Duration.zero : FixoDurations.expand,
     )..forward();
-    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _slide = Tween<Offset>(
       begin: const Offset(0, -0.08),
       end: Offset.zero,
@@ -1294,9 +1296,9 @@ class _AnimatedLeadCardState extends State<_AnimatedLeadCard>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(position: _slide, child: widget.child),
-      );
+    opacity: _fade,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 /// Skeleton placeholder for the first-load state.
@@ -1479,9 +1481,7 @@ class _LeadCardState extends State<_LeadCard> {
                   ),
             color: isDark ? DesignTokens.cardDark : null,
             borderRadius: BorderRadius.circular(Radii.tile),
-            border: Border.all(
-              color: DesignTokens.paperLine(isDark),
-            ),
+            border: Border.all(color: DesignTokens.paperLine(isDark)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(
@@ -1595,15 +1595,13 @@ class _LeadCardState extends State<_LeadCard> {
                           padding: const EdgeInsets.symmetric(
                             horizontal: Space.s1,
                           ),
-                          foregroundColor:
-                              DesignTokens.foregroundBrand(isDark),
+                          foregroundColor: DesignTokens.foregroundBrand(isDark),
                           side: BorderSide(
                             color: DesignTokens.borderControl(isDark),
                             width: DesignTokens.borderWidthFor(isDark),
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(Radii.control),
+                            borderRadius: BorderRadius.circular(Radii.control),
                           ),
                           textStyle: const TextStyle(
                             fontSize: DesignTokens.fontSizeSecondary,
@@ -1631,8 +1629,7 @@ class _LeadCardState extends State<_LeadCard> {
                           backgroundColor: DesignTokens.amber,
                           foregroundColor: DesignTokens.onAmber,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(Radii.control),
+                            borderRadius: BorderRadius.circular(Radii.control),
                           ),
                           textStyle: const TextStyle(
                             fontSize: DesignTokens.fontSizeSecondary,
@@ -1670,7 +1667,8 @@ class _LeadCardState extends State<_LeadCard> {
     final local = scheduledUtc.toLocal();
     final now = DateTime.now();
     final time = DateFormat.jm().format(local);
-    final isToday = local.year == now.year &&
+    final isToday =
+        local.year == now.year &&
         local.month == now.month &&
         local.day == now.day;
     if (isToday) return 'Today $time';
@@ -1793,15 +1791,13 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
     }
 
     final expiresAt = offer.expiresAtUtc;
-    final totalSeconds =
-        expiresAt.difference(offer.offeredAtUtc).inSeconds;
+    final totalSeconds = expiresAt.difference(offer.offeredAtUtc).inSeconds;
     final progress = totalSeconds > 0
         ? (_remaining.inSeconds / totalSeconds).clamp(0.0, 1.0)
         : 0.0;
 
     final live = _remaining > Duration.zero;
-    final labelColor =
-        live ? DesignTokens.inkAccent(isDark) : grey;
+    final labelColor = live ? DesignTokens.inkAccent(isDark) : grey;
 
     return FixoProgressBar(
       progress: progress,
@@ -1811,7 +1807,6 @@ class _LeadCountdownBarState extends State<_LeadCountdownBar> {
     );
   }
 }
-
 
 // ── Today section ─────────────────────────────────────────────────────────────
 
@@ -1851,15 +1846,12 @@ class _TodayEmptyState extends StatelessWidget {
   final bool isOnline;
   final VoidCallback onGoOnline;
 
-  const _TodayEmptyState({
-    required this.isOnline,
-    required this.onGoOnline,
-  });
+  const _TodayEmptyState({required this.isOnline, required this.onGoOnline});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final th     = Theme.of(context).extension<THColors>()!;
+    final th = Theme.of(context).extension<THColors>()!;
 
     return Container(
       padding: const EdgeInsets.all(Space.s4),
@@ -1873,20 +1865,19 @@ class _TodayEmptyState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width:  Space.s9,
+            width: Space.s9,
             height: Space.s9,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (isOnline
-                      ? DesignTokens.green
-                      : DesignTokens.inkSoft(isDark))
-                  .withValues(alpha: Alpha.tintStandard),
+              color:
+                  (isOnline ? DesignTokens.green : DesignTokens.inkSoft(isDark))
+                      .withValues(alpha: Alpha.tintStandard),
             ),
             child: Icon(
               isOnline
                   ? Icons.check_circle_outline_rounded
                   : Icons.wifi_off_rounded,
-              size:  Sizes.iconMd,
+              size: Sizes.iconMd,
               color: isOnline
                   ? DesignTokens.inkSuccess(isDark)
                   : DesignTokens.inkSoft(isDark),
@@ -1908,9 +1899,7 @@ class _TodayEmptyState extends StatelessWidget {
                 ),
                 const SizedBox(height: Space.s1),
                 Text(
-                  isOnline
-                      ? 'New leads will appear here as they come in.'
-                      : 'No new leads right now. Online tradies get offers first.',
+                  isOnline ? 'New leads will appear here as they come in.' : 'No new leads right now. Online tradies get offers first.',
                   style: TextStyle(
                     fontSize: DesignTokens.fontSizeSecondary,
                     color: th.textSoft,
@@ -1930,12 +1919,14 @@ class _TodayEmptyState extends StatelessWidget {
                           vertical: Space.s2,
                         ),
                         decoration: BoxDecoration(
-                          color: DesignTokens.green
-                              .withValues(alpha: Alpha.tintStandard),
+                          color: DesignTokens.green.withValues(
+                            alpha: Alpha.tintStandard,
+                          ),
                           borderRadius: BorderRadius.circular(Radii.control),
                           border: Border.all(
-                            color: DesignTokens.green
-                                .withValues(alpha: Alpha.borderMid),
+                            color: DesignTokens.green.withValues(
+                              alpha: Alpha.borderMid,
+                            ),
                           ),
                         ),
                         child: Row(
@@ -1943,16 +1934,16 @@ class _TodayEmptyState extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.wifi_rounded,
-                              size:  Sizes.iconXs,
+                              size: Sizes.iconXs,
                               color: DesignTokens.inkSuccess(isDark),
                             ),
                             const SizedBox(width: Space.s1_5),
                             Text(
                               'Go online',
                               style: TextStyle(
-                                fontSize:   DesignTokens.fontSizeSecondary,
+                                fontSize: DesignTokens.fontSizeSecondary,
                                 fontWeight: FW.semibold,
-                                color:      DesignTokens.inkSuccess(isDark),
+                                color: DesignTokens.inkSuccess(isDark),
                               ),
                             ),
                           ],
@@ -1997,7 +1988,10 @@ class _CollapsedJobSection extends StatelessWidget {
           initiallyExpanded: initiallyExpanded,
           tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
           childrenPadding: const EdgeInsets.fromLTRB(
-            Space.s4, 0, Space.s4, Space.s3,
+            Space.s4,
+            0,
+            Space.s4,
+            Space.s3,
           ),
           title: Text(
             '$title (${jobs.length})',
@@ -2012,10 +2006,7 @@ class _CollapsedJobSection extends StatelessWidget {
             for (final job in jobs)
               Padding(
                 padding: const EdgeInsets.only(bottom: Space.s2_5),
-                child: TradieJobCard(
-                  job: job,
-                  onTap: () => onJobTap(job.id),
-                ),
+                child: TradieJobCard(job: job, onTap: () => onJobTap(job.id)),
               ),
           ],
         ),
