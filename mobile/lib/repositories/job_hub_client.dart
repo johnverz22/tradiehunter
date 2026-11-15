@@ -55,8 +55,9 @@ class JobHubClient {
   /// Connects to the SignalR hub. Call once per session.
   Future<void> connect({required String baseUrl}) async {
     if (_connection != null &&
-        _connection!.state == HubConnectionState.Connected)
+        _connection!.state == HubConnectionState.Connected) {
       return;
+    }
 
     final token = await _storage.read(key: 'jwt_token');
 

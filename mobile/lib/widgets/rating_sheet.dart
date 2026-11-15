@@ -88,10 +88,17 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
     final atLimit = charCount >= _maxChars;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(Space.s7, Space.s4, Space.s7, MediaQuery.of(context).viewInsets.bottom + 32),
+      padding: EdgeInsets.fromLTRB(
+        Space.s7,
+        Space.s4,
+        Space.s7,
+        MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
       decoration: BoxDecoration(
         color: DesignTokens.surfaceCard(isDark),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.tile)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(Radii.tile),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -144,7 +151,10 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
             const SizedBox(height: Space.s5),
             const Text(
               'How was the service?',
-              style: TextStyle(fontSize: DesignTokens.fontSizeBody, fontWeight: FW.semibold),
+              style: TextStyle(
+                fontSize: DesignTokens.fontSizeBody,
+                fontWeight: FW.semibold,
+              ),
             ),
             const SizedBox(height: Space.s2),
 
@@ -154,6 +164,7 @@ class _RatingSheetState extends ConsumerState<RatingSheet> {
               children: List.generate(5, (i) {
                 final filled = i < _rating;
                 return IconButton(
+                  tooltip: 'Rate ${i + 1} star${i == 0 ? '' : 's'}',
                   onPressed: () => setState(() => _rating = i + 1),
                   icon: Icon(
                     Icons.star,

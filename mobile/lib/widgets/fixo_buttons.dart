@@ -76,8 +76,14 @@ class FixoAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (canPop) const FixoBackButton() else const SizedBox(width: Space.s3),
-              if (leading != null) ...[leading!, const SizedBox(width: Space.s2_5)],
+              if (canPop)
+                const FixoBackButton()
+              else
+                const SizedBox(width: Space.s3),
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: Space.s2_5),
+              ],
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -343,9 +349,7 @@ class FixoAppBarAction extends StatelessWidget {
               height: DesignTokens.targetMinimum,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: DesignTokens.paperLine(isDark),
-                ),
+                border: Border.all(color: DesignTokens.paperLine(isDark)),
               ),
               child: Icon(icon, size: 18, color: iconColor),
             ),
@@ -381,7 +385,10 @@ class FixoPrimaryButton extends StatelessWidget {
           backgroundColor: DesignTokens.amber,
           foregroundColor: DesignTokens.onAmber,
           minimumSize: const Size(48, DesignTokens.heightPrimary),
-          padding: const EdgeInsets.symmetric(horizontal: Space.gutter, vertical: Space.s4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.gutter,
+            vertical: Space.s4,
+          ),
           disabledBackgroundColor: DesignTokens.surfaceDisabled(
             Theme.of(context).brightness == Brightness.dark,
           ),
@@ -427,7 +434,10 @@ class FixoGhostButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(48, DesignTokens.heightSecondary),
-          padding: const EdgeInsets.symmetric(horizontal: Space.gutter, vertical: 14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.gutter,
+            vertical: 14,
+          ),
           foregroundColor: DesignTokens.foregroundBrand(isDark),
           side: BorderSide(
             color: DesignTokens.borderControl(isDark),
@@ -488,10 +498,7 @@ class FixoTonalButton extends StatelessWidget {
       content = SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: fg,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2, color: fg),
       );
     } else if (icon != null) {
       content = Row(
@@ -549,11 +556,7 @@ class FixoTonalButton extends StatelessWidget {
     );
 
     if (fullWidth) {
-      return SizedBox(
-        width: double.infinity,
-        height: height,
-        child: child,
-      );
+      return SizedBox(width: double.infinity, height: height, child: child);
     }
 
     return ConstrainedBox(
@@ -597,5 +600,130 @@ class FixoWordmark extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Secondary action — white/card surface fill with a control border and
+/// brand-900 ink (kit.css `.btn-secondary`, 52dp). The calm counterpart to
+/// the amber primary CTA: "Pay now", "Decline", "See another tradie".
+/// Not the ghost button (transparent) and not tonal (blue tint).
+class FixoSecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool fullWidth;
+
+  const FixoSecondaryButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.fullWidth = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEnabled = onPressed != null;
+    final bg = DesignTokens.surfaceCard(isDark);
+    final fg = isEnabled
+        ? DesignTokens.foregroundBrand(isDark)
+        : DesignTokens.foregroundDisabled(isDark);
+
+    final child = Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          height: DesignTokens.heightSecondary,
+          padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+            border: Border.all(
+              color: DesignTokens.borderControl(isDark),
+              width: DesignTokens.borderWidthFor(isDark),
+            ),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeControl,
+              fontWeight: FW.semibold,
+              color: fg,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (fullWidth) {
+      return SizedBox(width: double.infinity, child: child);
+    }
+    return child;
+  }
+}
+
+/// Navy action — solid brand-900 fill with white ink (kit.css `.btn-navy`).
+/// For strong non-CTA commitments inside flows that already carry an amber
+/// primary elsewhere on screen ("Accept offer", "Check out"). NOT a second
+/// primary CTA — one amber per screen rule still applies.
+class FixoNavyButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool fullWidth;
+
+  const FixoNavyButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.fullWidth = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEnabled = onPressed != null;
+    // Dark mode: navy fills vanish against the dark paper, so the fill
+    // swaps to blue300 with navy ink (same pairing as THColors.dark.onBrand).
+    final bg = isEnabled
+        ? (isDark ? DesignTokens.brand300 : DesignTokens.brand900)
+        : DesignTokens.surfaceDisabled(isDark);
+    final fg = isEnabled
+        ? (isDark ? THPalette.navy : Colors.white)
+        : DesignTokens.foregroundDisabled(isDark);
+
+    final child = Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          height: DesignTokens.heightSecondary,
+          padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeControl,
+              fontWeight: FW.semibold,
+              color: fg,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (fullWidth) {
+      return SizedBox(width: double.infinity, child: child);
+    }
+    return child;
   }
 }

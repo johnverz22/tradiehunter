@@ -8,6 +8,7 @@ import '../../viewmodels/jobs_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_states.dart';
 import '../widgets/chat_widgets.dart';
+import '../states/designed_empty_state.dart';
 import 'chat_screen.dart';
 
 /// Messages inbox — rows push to /chat/:jobId.
@@ -79,13 +80,10 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
     }
 
     if (_conversations.isEmpty) {
+      // E-no-messages (v1.6.2 frames-states.html) — designed empty state.
       return const Scaffold(
         appBar: appBar,
-        body: FixoEmptyState(
-          icon: Icons.chat_bubble_outline,
-          title: 'No messages yet',
-          subtitle: 'Once a job is matched, your chats will show up here.',
-        ),
+        body: DesignedEmptyState(variant: DesignedStateVariant.noMessages),
       );
     }
 
@@ -97,7 +95,12 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
           onRefresh: _load,
           child: ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(Space.s4, Space.s4, Space.s4, Space.navClearance),
+            padding: const EdgeInsets.fromLTRB(
+              Space.s4,
+              Space.s4,
+              Space.s4,
+              Space.navClearance,
+            ),
             itemCount: _conversations.length,
             separatorBuilder: (_, _) => const SizedBox(height: Space.s1),
             itemBuilder: (_, i) {

@@ -8,9 +8,10 @@ import '../theme/design_tokens.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
 // ── Splash gradient colours (brand-screen only — always navy, not themed) ───
-const _gradientTop    = DesignTokens.brand900;
-const _gradientBottom = Color(0xFF2A5A8C); // brand700 lightened for depth — splash-only gradient stop
-const _ringColor      = Colors.white;      // opacity controlled per ring
+const _gradientTop = DesignTokens.brand900;
+const _gradientBottom =
+    DesignTokens.splashGradientBottom; // documented hero-glass constant
+const _ringColor = Colors.white; // opacity controlled per ring
 
 /// S01: full-bleed navy gradient, pulsing concentric rings, wordmark + tagline.
 /// Boot logic: first-launch → onboarding, JWT present → fetch role → /home or /tradie.
@@ -113,9 +114,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               left: 0,
               right: 0,
               height: size.height * 0.52,
-              child: _PulsingRings(
-                controllers: [_ring1, _ring2, _ring3],
-              ),
+              child: _PulsingRings(controllers: [_ring1, _ring2, _ring3]),
             ),
 
             // ── Wordmark + rule + tagline — centred ~55% down ─────────────
@@ -131,7 +130,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         fontFamily: DesignTokens.fontDisplay,
                         fontWeight: FW.bold,
                         fontSize: DesignTokens.fontSizeSplash,
-                        letterSpacing: Tracking.tight * DesignTokens.fontSizeSplash,
+                        letterSpacing:
+                            Tracking.tight * DesignTokens.fontSizeSplash,
                         color: DesignTokens.paperLight,
                       ),
                       children: const [
@@ -224,7 +224,8 @@ class _RingsPainter extends CustomPainter {
 
       // Fade: full opacity in first 20%, then fade to 0
       final opacity = t < 0.2
-          ? (t / 0.2) * 0.18        // fade in
+          ? (t / 0.2) *
+                0.18 // fade in
           : (1.0 - t) / 0.8 * 0.18; // fade out
 
       if (opacity <= 0) continue;

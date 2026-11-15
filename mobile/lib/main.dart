@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 import 'firebase_options.dart';
 import 'feedback/fixo_notice.dart';
 import 'router/app_router.dart';
 import 'theme/fixo_theme.dart';
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
+import 'widgets/notification_center.dart'; // notificationCenterProvider (H20)
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
 import 'views/settings_screen.dart'; // themeModeProvider
 
@@ -46,9 +48,11 @@ void main() async {
   // authenticate() / signOut() calls. serverClientId must match the backend's
   // Authentication:Google:ClientId and the value in mobile/.env.json.
   try {
-    await GoogleSignIn.instance.initialize(
-      serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
-    ).timeout(const Duration(seconds: 5));
+    await GoogleSignIn.instance
+        .initialize(
+          serverClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
+        )
+        .timeout(const Duration(seconds: 5));
   } catch (_) {
     // Already initialized (main() re-run by tests/hot restart) or the plugin
     // hung — either way, don't hold runApp hostage for it.
@@ -69,11 +73,7 @@ void main() async {
       .getInitialMessage()
       .timeout(const Duration(seconds: 3), onTimeout: () => null);
 
-  runApp(
-    ProviderScope(
-      child: FixoApp(initialMessage: initialMessage),
-    ),
-  );
+  runApp(ProviderScope(child: FixoApp(initialMessage: initialMessage)));
 }
 
 // ─── Permission request ──────────────────────────────────────────────────────
@@ -137,6 +137,17 @@ class _FixoAppState extends ConsumerState<FixoApp> {
     final notification = message.notification;
     if (!mounted) return;
 
+    // Record the live message in the H20 notifications inbox (H20 mockup).
+    ref
+        .read(notificationCenterProvider.notifier)
+        .add(
+          FixoNotification.fromRemote(
+            title: notification?.title,
+            body: notification?.body,
+            data: message.data,
+          ),
+        );
+
     FixoNotice.push(
       context,
       title: notification?.title ?? 'Fixo',
@@ -169,7 +180,10 @@ class _FixoAppState extends ConsumerState<FixoApp> {
     // P10-24: read app name from brand config; fallback to 'TradieHunter'.
     // The /api/config/locale response nests brand under the 'brand' key.
     final localeData = ref.watch(localeConfigProvider).value;
-    final appName = (localeData?['brand'] as Map<String, dynamic>?)?['appName'] as String? ?? 'TradieHunter';
+    final appName =
+        (localeData?['brand'] as Map<String, dynamic>?)?['appName']
+            as String? ??
+        'TradieHunter';
 
     return MaterialApp.router(
       title: appName,

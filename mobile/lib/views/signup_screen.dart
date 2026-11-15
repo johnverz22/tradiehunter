@@ -215,9 +215,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     hintText: 'e.g. kiaora@example.co.nz',
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Please enter your email';
-                    if (!v.contains('@')) return 'Please enter a valid email';
+                    }
+                    if (!v.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
                     return null;
                   },
                 ),

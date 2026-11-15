@@ -1,10 +1,15 @@
-// v1.7 design tokens — mirrors docs/design/v1.6/html/kit.css.
+// v1.6.2 design tokens — mirrors docs/design/v1.6.2/html/kit.css.
 //
 // Use via Theme.of(context).extension<THColors>()! for colours.
 // Use Space, Radii, Sizes for layout constants.
+// Use THType for the v1.6.2 type scale, THPalette/THHeroGlass for the
+// documented theme-invariant constants (heroes are navy in every theme).
 //
-// Source of truth: docs/design/v1.6/html/kit.css and
-//                  docs/design/v1.6/tokens/design_tokens.dart
+// Source of truth: docs/design/v1.6.2/html/kit.css,
+//                  docs/design/v1.6.2/tokens/design_tokens.dart and
+//                  docs/design/v1.6.2/tokens/tokens.json (parity-checked).
+// v1.6.2 changes folded in: F-106 outdoor line, F-114 hero-glass/on-hero
+// tokens, F-118 avTradie/onAvTradie avatar ink pair.
 library;
 
 import 'package:flutter/material.dart';
@@ -42,9 +47,9 @@ abstract class Space {
 abstract class Radii {
   Radii._();
 
-  static const double micro = 2.0;    // progress bars, tiny elements
-  static const double small = 10.0;   // small chips, inner elements
-  static const double medium = 12.0;  // intermediate radius
+  static const double micro = 2.0; // progress bars, tiny elements
+  static const double small = 10.0; // small chips, inner elements
+  static const double medium = 12.0; // intermediate radius
   static const double control = 14.0;
   static const double tile = 16.0;
   static const double card = 20.0;
@@ -71,6 +76,7 @@ abstract class Sizes {
   static const double segmentMin = 80.0;
   static const double dot = 10.0;
   static const double dotActive = 32.0;
+  static const double progressSegH = 6.0; // kit.css `.cpb .seg` segment height
   static const double nav = 68.0;
   static const double appBar = 56.0;
   static const double fab = 56.0;
@@ -116,73 +122,89 @@ abstract class Sizes {
   static const double borderWidthThin = 1.0; // hairline divider
 
   // Icon sizes (between iconXs=14 and iconSm=18)
-  static const double iconRating = 16.0;   // star in rating rows
-  static const double iconInfo   = 16.0;   // info banner / small inline notice icons
-  static const double iconChip   = 14.0;   // icon inside pill chips — matches iconXs
+  static const double iconRating = 16.0; // star in rating rows
+  static const double iconInfo =
+      16.0; // info banner / small inline notice icons
+  static const double iconChip =
+      14.0; // icon inside pill chips — matches iconXs
 
   // Spacing constants for Wrap / row gaps
-  static const double chipGap      = 6.0;  // horizontal gap between pill chips
-  static const double ratingGap    = 3.0;  // gap between star icon and rating text
-  static const double chipIconGap  = 5.0;  // gap between icon and label inside a pill/chip
+  static const double chipGap = 6.0; // horizontal gap between pill chips
+  static const double ratingGap = 3.0; // gap between star icon and rating text
+  static const double chipIconGap =
+      5.0; // gap between icon and label inside a pill/chip
 
   // Avatar overlay badge (verified checkmark badge on avatar corner)
-  static const double avatarBadge    = 22.0; // badge circle diameter
+  static const double avatarBadge = 22.0; // badge circle diameter
   static const double avatarBadgeIco = 13.0; // inner icon size within badge
-  static const double avatarRingW    = 3.0;  // white surface ring around avatar
+  static const double avatarRingW = 3.0; // white surface ring around avatar
 
   // Chat-specific
-  static const double chatVerifiedBadge    = 16.0;  // small verified badge on chat header avatar
-  static const double chatVerifiedBadgeIco = 9.0;   // icon inside the small badge
-  static const double borderWidthVerified  = 1.5;   // border around verified badge circles
-  static const double chatBubbleFullR      = 20.0;  // full corner radius for chat bubbles
-  static const double chatBubbleTailR      = 4.0;   // tail corner radius for chat bubbles
-  static const double dotPatternSpacing    = 20.0;  // dot-texture step in chat background
-  static const double dotPatternRadius     = 1.5;   // dot radius in chat background painter
-  static const double fabSend              = 48.0;  // send button diameter (tapMin)
-  static const double iconSend             = 24.0;  // send arrow icon size
-  static const double inboxAvatarSm        = 44.0;  // inbox conversation avatar (matches avatarMd)
-  static const double inboxAvatarSmBadge   = 16.0;  // verified badge on inbox avatar
-  static const double inboxTileMin         = 72.0;  // ConversationTile minimum height
-  static const double unreadBadgeMin       = 20.0;  // _UnreadBadge minimum size
+  static const double chatVerifiedBadge =
+      16.0; // small verified badge on chat header avatar
+  static const double chatVerifiedBadgeIco = 9.0; // icon inside the small badge
+  static const double borderWidthVerified =
+      1.5; // border around verified badge circles
+  static const double chatBubbleFullR =
+      20.0; // full corner radius for chat bubbles
+  static const double chatBubbleTailR =
+      4.0; // tail corner radius for chat bubbles
+  static const double dotPatternSpacing =
+      20.0; // dot-texture step in chat background
+  static const double dotPatternRadius =
+      1.5; // dot radius in chat background painter
+  static const double fabSend = 48.0; // send button diameter (tapMin)
+  static const double iconSend = 24.0; // send arrow icon size
+  static const double inboxAvatarSm =
+      44.0; // inbox conversation avatar (matches avatarMd)
+  static const double inboxAvatarSmBadge =
+      16.0; // verified badge on inbox avatar
+  static const double inboxTileMin = 72.0; // ConversationTile minimum height
+  static const double unreadBadgeMin = 20.0; // _UnreadBadge minimum size
 
   // Tradie request detail & gallery tokens
-  static const double iconAction           = 20.0;  // action icon size (location pin, calendar)
-  static const double photoThumb           = 90.0;  // photo thumbnail height in galleries
-  static const double photoThumbW          = 120.0; // photo thumbnail width in galleries
-  static const double expiryBarHeight      = 48.0;  // expiry bar min height (satisfies tapMin)
-  static const double expiryProgressH      = 8.0;   // expiry progress indicator height
-  static const double iconEmpty            = 72.0;  // empty state icon size
-  static const double photoMinScale        = 1.0;   // InteractiveViewer min scale
-  static const double photoMaxScale        = 4.0;   // InteractiveViewer max zoom scale
-  static const double handleW              = 40.0;  // bottom sheet drag handle width
-  static const double handleH              = 4.0;   // bottom sheet drag handle height
-  static const double avatarRadius         = 24.0;  // standard contact avatar radius (48dp diameter)
+  static const double iconAction =
+      20.0; // action icon size (location pin, calendar)
+  static const double photoThumb = 90.0; // photo thumbnail height in galleries
+  static const double photoThumbW = 120.0; // photo thumbnail width in galleries
+  static const double expiryBarHeight =
+      48.0; // expiry bar min height (satisfies tapMin)
+  static const double expiryProgressH = 8.0; // expiry progress indicator height
+  static const double iconEmpty = 72.0; // empty state icon size
+  static const double photoMinScale = 1.0; // InteractiveViewer min scale
+  static const double photoMaxScale = 4.0; // InteractiveViewer max zoom scale
+  static const double handleW = 40.0; // bottom sheet drag handle width
+  static const double handleH = 4.0; // bottom sheet drag handle height
+  static const double avatarRadius =
+      24.0; // standard contact avatar radius (48dp diameter)
 
   // FixoNotice (in-app toast/notice system)
-  static const double noticeIconSize       = 20.0;  // leading semantic icon inside notice pill
-  static const double noticeCloseSize      = 20.0;  // × close icon
-  static const double noticeMinH           = 52.0;  // minimum height; satisfies tapMin on close button
-  static const double noticeHPad          = 16.0;  // horizontal inner padding
-  static const double noticeVPad          = 10.0;  // vertical inner padding
-  static const double noticeBorderW       = 1.0;   // outline border width
+  static const double noticeIconSize =
+      20.0; // leading semantic icon inside notice pill
+  static const double noticeCloseSize = 20.0; // × close icon
+  static const double noticeMinH =
+      52.0; // minimum height; satisfies tapMin on close button
+  static const double noticeHPad = 16.0; // horizontal inner padding
+  static const double noticeVPad = 10.0; // vertical inner padding
+  static const double noticeBorderW = 1.0; // outline border width
 
   // Availability sliding switch tokens
-  static const double availabilityTrackW   = 112.0; // track width
-  static const double availabilityTrackH   = 44.0;  // track height
-  static const double availabilityThumb    = 36.0;  // thumb diameter
-  static const double availabilityThumbPad = 4.0;   // inset padding for thumb
+  static const double availabilityTrackW = 112.0; // track width
+  static const double availabilityTrackH = 44.0; // track height
+  static const double availabilityThumb = 36.0; // thumb diameter
+  static const double availabilityThumbPad = 4.0; // inset padding for thumb
   static const double availabilityGlowSpread = 2.0; // glow ring spread
-  static const double availabilityGlowBlur = 8.0;   // glow ring blur
+  static const double availabilityGlowBlur = 8.0; // glow ring blur
 
   // Filter pill tokens
-  static const double filterPillMinH       = 48.0;  // min tap target height
-  static const double filterPillH          = 38.0;  // visible pill container height
+  static const double filterPillMinH = 48.0; // min tap target height
+  static const double filterPillH = 38.0; // visible pill container height
 
   // Hero net-row layout tokens
   /// Minimum rendered width for the net earnings figure in the hero row.
   /// When the figure column would render narrower than this, the switch
   /// falls back to compact mode.
-  static const double heroMinFigureWidth   = 120.0;
+  static const double heroMinFigureWidth = 120.0;
 
   // Compact availability switch (narrow-screen / large-text fallback)
   /// Track width for the compact variant — thumb + icon only, no label.
@@ -197,6 +219,103 @@ abstract class TypeTokens {
   static const String fontDisplay = 'Space Grotesk';
   static const String fontBody = 'IBM Plex Sans';
   static const String fontMono = 'IBM Plex Mono';
+}
+
+// ── Type scale (v1.6.2) ─────────────────────────────────────────────────────
+//
+// The v1.6.2 type scale (tokens.json `type`), exposed as ready TextStyles so
+// the design2flutter output and hand-written views share one source.
+// Colours are intentionally unset — Text resolves them from the ambient
+// DefaultTextStyle/Theme so dark/outdoor stay token-swapped.
+//
+// | CSS (kit.css)               | Token                |
+// | Space Grotesk 700/40        | THType.hero          |
+// | Space Grotesk 700/28        | THType.display       |
+// | Space Grotesk 600/20        | THType.section       |
+// | IBM Plex Sans 600/18        | THType.cardTitle     |
+// | IBM Plex Sans 700/24        | THType.price         |
+// | IBM Plex Sans 400/16        | THType.body          |
+// | IBM Plex Sans 400/14        | THType.secondary     |
+// | IBM Plex Sans 600/14        | THType.secondaryW600 |
+// | IBM Plex Sans 500/12        | THType.caption       |
+// | IBM Plex Mono 500/13        | THType.mono          |
+abstract class THType {
+  THType._();
+
+  static const TextStyle hero = TextStyle(
+    fontFamily: TypeTokens.fontDisplay,
+    fontSize: DesignTokens.fontSizeSplash, // 40
+    fontWeight: FW.bold,
+    height: 1.1,
+    letterSpacing: Tracking.tight * DesignTokens.fontSizeSplash,
+  );
+
+  static const TextStyle display = TextStyle(
+    fontFamily: TypeTokens.fontDisplay,
+    fontSize: DesignTokens.fontSizeNameDisplay, // 28
+    fontWeight: FW.bold,
+    height: 1.15,
+    letterSpacing: Tracking.tight * DesignTokens.fontSizeNameDisplay,
+  );
+
+  static const TextStyle section = TextStyle(
+    fontFamily: TypeTokens.fontDisplay,
+    fontSize: DesignTokens.fontSizeH2, // 20
+    fontWeight: FW.semibold,
+    height: 1.2,
+    letterSpacing: Tracking.tightSm * DesignTokens.fontSizeH2,
+  );
+
+  static const TextStyle cardTitle = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize: DesignTokens.fontSizeH2Small, // 18
+    fontWeight: FW.semibold,
+    height: 1.25,
+  );
+
+  static const TextStyle price = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize: DesignTokens.fontSizeAmount, // 24
+    fontWeight: FW.bold,
+    height: 1.2,
+  );
+
+  static const TextStyle body = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize: DesignTokens.fontSizeBody, // 16
+    fontWeight: FW.regular,
+    height: 1.4,
+  );
+
+  static const TextStyle secondary = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize: DesignTokens.fontSizeSecondary, // 14
+    fontWeight: FW.regular,
+    height: 1.4,
+  );
+
+  static const TextStyle secondaryW600 = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize: DesignTokens.fontSizeSecondary, // 14
+    fontWeight: FW.semibold,
+    height: 1.4,
+  );
+
+  static const TextStyle caption = TextStyle(
+    fontFamily: TypeTokens.fontBody,
+    fontSize:
+        DesignTokens.fontSizeTiny, // 12 — hard floor, nothing smaller ships
+    fontWeight: FW.medium,
+    height: 1.3,
+    letterSpacing: Tracking.wide,
+  );
+
+  static const TextStyle mono = TextStyle(
+    fontFamily: TypeTokens.fontMono,
+    fontSize: DesignTokens.fontSizeMono, // 13
+    fontWeight: FW.medium,
+    height: 1.3,
+  );
 }
 
 // ── Font weights ────────────────────────────────────────────────────────────
@@ -216,28 +335,35 @@ abstract class FW {
 abstract class FixoDurations {
   FixoDurations._();
 
-  static const Duration fast = Duration(milliseconds: 150);            // button press
-  static const Duration toggle = Duration(milliseconds: 200);         // switch toggle
+  static const Duration fast = Duration(milliseconds: 150); // button press
+  static const Duration toggle = Duration(milliseconds: 200); // switch toggle
   static const Duration pageTransition = Duration(milliseconds: 220);
   static const Duration onboardingDot = Duration(milliseconds: 250);
   static const Duration onboardingSlide = Duration(milliseconds: 280);
-  static const Duration expand           = Duration(milliseconds: 300);  // expand/collapse sections
+  static const Duration expand = Duration(
+    milliseconds: 300,
+  ); // expand/collapse sections
   static const Duration debounce = Duration(milliseconds: 300);
   static const Duration addressDebounce = Duration(milliseconds: 400);
   static const Duration splashRing = Duration(milliseconds: 600);
-  static const Duration sheetDelay = Duration(milliseconds: 800);      // rating sheet
+  static const Duration sheetDelay = Duration(
+    milliseconds: 800,
+  ); // rating sheet
   /// Online dot pulse — one full pulsation cycle. Respect reduce-motion.
   static const Duration pulse = Duration(milliseconds: 900);
-  static const Duration sheetDelayLong = Duration(milliseconds: 1000); // schedule sheet
+  static const Duration sheetDelayLong = Duration(
+    milliseconds: 1000,
+  ); // schedule sheet
   static const Duration splashRingLate = Duration(milliseconds: 1200);
   static const Duration splash = Duration(milliseconds: 2800);
 
   // FixoNotice auto-dismiss durations
-  static const Duration noticeInfo    = Duration(seconds: 3);
+  static const Duration noticeInfo = Duration(seconds: 3);
   static const Duration noticeSuccess = Duration(seconds: 3);
   static const Duration noticeWarning = Duration(seconds: 4);
-  static const Duration noticeError   = Duration(seconds: 5);
-  static const Duration noticePush    = Duration(seconds: 5);
+  static const Duration noticeError = Duration(seconds: 5);
+  static const Duration noticePush = Duration(seconds: 5);
+
   /// Enter / exit slide + fade animation for FixoNotice banners.
   static const Duration noticeAnimate = Duration(milliseconds: 260);
 
@@ -253,13 +379,13 @@ abstract class FixoDurations {
 abstract class Tracking {
   Tracking._();
 
-  static const double tight = -0.02;   // multiply by font size — display headings
+  static const double tight = -0.02; // multiply by font size — display headings
   static const double tightSm = -0.01; // multiply by font size — small text
   static const double normal = 0.0;
-  static const double wide = 0.2;      // section labels, badges
-  static const double emphasis = 0.4;  // dashboard header
-  static const double wider = 0.5;     // uppercase chips
-  static const double widest = 0.8;    // onboarding emphasis
+  static const double wide = 0.2; // section labels, badges
+  static const double emphasis = 0.4; // dashboard header
+  static const double wider = 0.5; // uppercase chips
+  static const double widest = 0.8; // onboarding emphasis
 }
 
 // ── Alpha / opacity tints ───────────────────────────────────────────────────
@@ -269,26 +395,26 @@ abstract class Alpha {
 
   static const double subtle = 0.04;
   static const double overlay = 0.05;
-  static const double wash = 0.06;               // subtle card gradient stop
-  static const double faint = 0.07;              // info banner background
-  static const double tint = 0.08;               // tinted icon background
-  static const double tintLight = 0.10;          // light danger/success tint
-  static const double tintStandard = 0.12;       // standard tint — most common
+  static const double wash = 0.06; // subtle card gradient stop
+  static const double faint = 0.07; // info banner background
+  static const double tint = 0.08; // tinted icon background
+  static const double tintLight = 0.10; // light danger/success tint
+  static const double tintStandard = 0.12; // standard tint — most common
   static const double tintMid = 0.13;
   static const double tintSoft = 0.14;
-  static const double tintAccent = 0.15;         // accent/amber tint
-  static const double tintStrong = 0.16;         // green tint (profile)
-  static const double gradient = 0.18;           // brand gradient stop
-  static const double tintDark = 0.20;           // dark mode brand tint
-  static const double border = 0.25;             // border emphasis
-  static const double borderDark = 0.28;         // dark mode status tint
-  static const double borderMid = 0.30;          // border/divider emphasis
-  static const double borderStrong = 0.35;       // border accent
-  static const double ghost = 0.38;              // faint white on dark
-  static const double shadow = 0.40;             // shadow/border
-  static const double outlineDark = 0.45;        // dark mode outline
-  static const double divider = 0.50;            // divider fade
-  static const double fillDark = 0.55;           // dark mode progress bar
+  static const double tintAccent = 0.15; // accent/amber tint
+  static const double tintStrong = 0.16; // green tint (profile)
+  static const double gradient = 0.18; // brand gradient stop
+  static const double tintDark = 0.20; // dark mode brand tint
+  static const double border = 0.25; // border emphasis
+  static const double borderDark = 0.28; // dark mode status tint
+  static const double borderMid = 0.30; // border/divider emphasis
+  static const double borderStrong = 0.35; // border accent
+  static const double ghost = 0.38; // faint white on dark
+  static const double shadow = 0.40; // shadow/border
+  static const double outlineDark = 0.45; // dark mode outline
+  static const double divider = 0.50; // divider fade
+  static const double fillDark = 0.55; // dark mode progress bar
   static const double iconOnGradientSoft = 0.60;
   static const double iconOnGradient = 0.65;
   static const double iconOnGradientStrong = 0.70;
@@ -305,19 +431,28 @@ abstract class FixoPadding {
   FixoPadding._();
 
   /// Standard page padding — 24px sides, 16 top, 24 bottom.
-  static const EdgeInsets page =
-      EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s6);
+  static const EdgeInsets page = EdgeInsets.fromLTRB(
+    Space.s6,
+    Space.s4,
+    Space.s6,
+    Space.s6,
+  );
 
   /// Page padding with reduced bottom — content continues below.
-  static const EdgeInsets pageTop =
-      EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s4);
+  static const EdgeInsets pageTop = EdgeInsets.fromLTRB(
+    Space.s6,
+    Space.s4,
+    Space.s6,
+    Space.s4,
+  );
 
   /// Standard card interior padding.
   static const EdgeInsets card = EdgeInsets.all(Space.s5);
 
   /// Section horizontal padding aligned to the page gutter.
-  static const EdgeInsets section =
-      EdgeInsets.symmetric(horizontal: Space.gutter);
+  static const EdgeInsets section = EdgeInsets.symmetric(
+    horizontal: Space.gutter,
+  );
 }
 
 // ── Third-party brand colours ───────────────────────────────────────────────
@@ -326,6 +461,28 @@ abstract class SocialColors {
   SocialColors._();
 
   static const Color googleBlue = Color(0xFF4285F4);
+}
+
+// ── Availability switch colours ─────────────────────────────────────────────
+//
+// Online/offline sliding-switch track palette. Off-token by necessity: the
+// switch paints WHITE label text over the track in both states, so the fills
+// are picked for WCAG contrast (>= 4.5:1) rather than from the cream/navy
+// palette. Kept here (not in views) so the colours stay auditable.
+abstract class AvailabilityColors {
+  AvailabilityColors._();
+
+  /// Online track — WCAG contrast vs white = 7.4:1.
+  static const Color onlineTrack = Color(0xFF1E5E3A);
+
+  /// Offline track — WCAG contrast vs white = 9.6:1.
+  static const Color offlineTrack = Color(0xFF202C39);
+
+  /// Presence-dot glows / icon inks riding the tracks.
+  static const Color onlineBorder = Color(0x6634A853);
+  static const Color offlineBorder = Color(0x33FFFFFF);
+  static const Color onlineIcon = Color(0xFF1E5E3A);
+  static const Color offlineIcon = Color(0xFF334155);
 }
 
 // ── Colour theme extension ───────────────────────────────────────────────────
@@ -353,104 +510,134 @@ class THColors extends ThemeExtension<THColors> {
     required this.track,
     required this.danger,
     required this.success,
+    required this.avTradie,
+    required this.onAvTradie,
   });
 
-  final Color paper;      // screen/page background
-  final Color surface;    // card/sheet surface
-  final Color text;       // primary text
-  final Color textSoft;   // secondary/muted text
-  final Color textBrand;  // brand-coloured headings and labels
-  final Color brand;      // structural brand colour (navy light / blue300 dark)
-  final Color onBrand;    // text/icons on brand fills
-  final Color accent;     // amber — ONE primary CTA per screen only
+  final Color paper; // screen/page background
+  final Color surface; // card/sheet surface
+  final Color text; // primary text
+  final Color textSoft; // secondary/muted text
+  final Color textBrand; // brand-coloured headings and labels
+  final Color brand; // structural brand colour (navy light / blue300 dark)
+  final Color onBrand; // text/icons on brand fills
+  final Color accent; // amber — ONE primary CTA per screen only
   final Color accentText; // text on light backgrounds referring to accent (#8F4F08 light / amber dark)
-  final Color line;       // dividers and borders
-  final Color tintBrand;  // brand tint fill for pills, tonal buttons
-  final Color track;      // progress bar track, inactive segment
-  final Color danger;     // error / disputed
-  final Color success;    // verified / done
+  final Color line; // dividers and borders
+  final Color tintBrand; // brand tint fill for pills, tonal buttons
+  final Color track; // progress bar track, inactive segment
+  final Color danger; // error / disputed
+  final Color success; // verified / done
+  final Color avTradie; // tradie avatar fill (blue500 light / blue300 dark)
+  final Color
+  onAvTradie; // initials ink on tradie avatars (white light / navy dark)
 
   // ── Light theme ───────────────────────────────────────────────────────────
 
   static const light = THColors(
-    paper:      Color(0xFFF6F4EE),
-    surface:    Color(0xFFFFFFFF),
-    text:       Color(0xFF14181B),
-    textSoft:   Color(0xFF5B6570),
-    textBrand:  Color(0xFF193957),
-    brand:      Color(0xFF193957),
-    onBrand:    Color(0xFFFFFFFF),
-    accent:     Color(0xFFE38B29),
+    paper: Color(0xFFF6F4EE),
+    surface: Color(0xFFFFFFFF),
+    text: Color(0xFF14181B),
+    textSoft: Color(0xFF5B6570),
+    textBrand: Color(0xFF193957),
+    brand: Color(0xFF193957),
+    onBrand: Color(0xFFFFFFFF),
+    accent: Color(0xFFE38B29),
     accentText: Color(0xFF8F4F08),
-    line:       Color(0xFFE4E0D4),
-    tintBrand:  Color(0x1F3C75AA), // blue at 12%
-    track:      Color(0x1F193957), // navy at 12%
-    danger:     Color(0xFFB23A2E),
-    success:    Color(0xFF3A7D5C),
+    line: Color(0xFFE4E0D4),
+    tintBrand: Color(0x1F3C75AA), // blue at 12%
+    track: Color(0x1F193957), // navy at 12%
+    danger: Color(0xFFB23A2E),
+    success: Color(0xFF3A7D5C),
+    avTradie: Color(0xFF3C75AA),
+    onAvTradie: Color(0xFFFFFFFF),
   );
 
   // ── Dark theme ────────────────────────────────────────────────────────────
 
   static const dark = THColors(
-    paper:      Color(0xFF14181B),
-    surface:    Color(0xFF1E2328),
-    text:       Color(0xFFECEAE3),
-    textSoft:   Color(0xFF9AA4AC),
-    textBrand:  Color(0xFF89AFD2),
-    brand:      Color(0xFF89AFD2), // blue300 — lighter for dark surfaces
-    onBrand:    Color(0xFF193957),
-    accent:     Color(0xFFE38B29),
+    paper: Color(0xFF14181B),
+    surface: Color(0xFF1E2328),
+    text: Color(0xFFECEAE3),
+    textSoft: Color(0xFF9AA4AC),
+    textBrand: Color(0xFF89AFD2),
+    brand: Color(0xFF89AFD2), // blue300 — lighter for dark surfaces
+    onBrand: Color(0xFF193957),
+    accent: Color(0xFFE38B29),
     accentText: Color(0xFFE38B29), // amber is its own contrast on dark
-    line:       Color(0x1FFFFFFF), // white 12%
-    tintBrand:  Color(0x333C75AA), // blue at 20%
-    track:      Color(0x24FFFFFF), // white 14%
-    danger:     Color(0xFFE8968E),
-    success:    Color(0xFF8FC9A8),
+    line: Color(0x1FFFFFFF), // white 12%
+    tintBrand: Color(0x333C75AA), // blue at 20%
+    track: Color(0x24FFFFFF), // white 14%
+    danger: Color(0xFFE8968E),
+    success: Color(0xFF8FC9A8),
+    avTradie: Color(0xFF89AFD2),
+    onAvTradie: Color(
+      0xFF193957,
+    ), // F-118: white ink fails on light-blue fill in dark
   );
 
   // ── Outdoor / high-contrast variant ───────────────────────────────────────
   // Same hues as light; glass/gradients replaced with flat surfaces and 1px outlines.
 
   static const outdoor = THColors(
-    paper:      Color(0xFFF6F4EE),
-    surface:    Color(0xFFFFFFFF),
-    text:       Color(0xFF14181B),
-    textSoft:   Color(0xFF46505A), // darker than light for extra outdoor legibility
-    textBrand:  Color(0xFF193957),
-    brand:      Color(0xFF193957),
-    onBrand:    Color(0xFFFFFFFF),
-    accent:     Color(0xFFE38B29),
+    paper: Color(0xFFF6F4EE),
+    surface: Color(0xFFFFFFFF),
+    text: Color(0xFF14181B),
+    textSoft: Color(
+      0xFF46505A,
+    ), // darker than light for extra outdoor legibility
+    textBrand: Color(0xFF193957),
+    brand: Color(0xFF193957),
+    onBrand: Color(0xFFFFFFFF),
+    accent: Color(0xFFE38B29),
     accentText: Color(0xFF8F4F08),
-    line:       Color(0x47193957), // navy 28% — visible outlines replace shadows
-    tintBrand:  Color(0x1F3C75AA),
-    track:      Color(0x1F193957),
-    danger:     Color(0xFFB23A2E),
-    success:    Color(0xFF3A7D5C),
+    line: Color(0x47193957), // navy 28% — visible outlines replace shadows
+    tintBrand: Color(0x1F3C75AA),
+    track: Color(0x1F193957),
+    danger: Color(0xFFB23A2E),
+    success: Color(0xFF3A7D5C),
+    avTradie: Color(0xFF3C75AA),
+    onAvTradie: Color(0xFFFFFFFF),
   );
 
   // ── ThemeExtension boilerplate ────────────────────────────────────────────
 
   @override
   THColors copyWith({
-    Color? paper, Color? surface, Color? text, Color? textSoft, Color? textBrand,
-    Color? brand, Color? onBrand, Color? accent, Color? accentText, Color? line,
-    Color? tintBrand, Color? track, Color? danger, Color? success,
+    Color? paper,
+    Color? surface,
+    Color? text,
+    Color? textSoft,
+    Color? textBrand,
+    Color? brand,
+    Color? onBrand,
+    Color? accent,
+    Color? accentText,
+    Color? line,
+    Color? tintBrand,
+    Color? track,
+    Color? danger,
+    Color? success,
+    Color? avTradie,
+    Color? onAvTradie,
   }) {
     return THColors(
-      paper:      paper      ?? this.paper,
-      surface:    surface    ?? this.surface,
-      text:       text       ?? this.text,
-      textSoft:   textSoft   ?? this.textSoft,
-      textBrand:  textBrand  ?? this.textBrand,
-      brand:      brand      ?? this.brand,
-      onBrand:    onBrand    ?? this.onBrand,
-      accent:     accent     ?? this.accent,
+      paper: paper ?? this.paper,
+      surface: surface ?? this.surface,
+      text: text ?? this.text,
+      textSoft: textSoft ?? this.textSoft,
+      textBrand: textBrand ?? this.textBrand,
+      brand: brand ?? this.brand,
+      onBrand: onBrand ?? this.onBrand,
+      accent: accent ?? this.accent,
       accentText: accentText ?? this.accentText,
-      line:       line       ?? this.line,
-      tintBrand:  tintBrand  ?? this.tintBrand,
-      track:      track      ?? this.track,
-      danger:     danger     ?? this.danger,
-      success:    success    ?? this.success,
+      line: line ?? this.line,
+      tintBrand: tintBrand ?? this.tintBrand,
+      track: track ?? this.track,
+      danger: danger ?? this.danger,
+      success: success ?? this.success,
+      avTradie: avTradie ?? this.avTradie,
+      onAvTradie: onAvTradie ?? this.onAvTradie,
     );
   }
 
@@ -458,20 +645,22 @@ class THColors extends ThemeExtension<THColors> {
   THColors lerp(ThemeExtension<THColors>? other, double t) {
     if (other is! THColors) return this;
     return THColors(
-      paper:      Color.lerp(paper,      other.paper,      t)!,
-      surface:    Color.lerp(surface,    other.surface,    t)!,
-      text:       Color.lerp(text,       other.text,       t)!,
-      textSoft:   Color.lerp(textSoft,   other.textSoft,   t)!,
-      textBrand:  Color.lerp(textBrand,  other.textBrand,  t)!,
-      brand:      Color.lerp(brand,      other.brand,      t)!,
-      onBrand:    Color.lerp(onBrand,    other.onBrand,    t)!,
-      accent:     Color.lerp(accent,     other.accent,     t)!,
+      paper: Color.lerp(paper, other.paper, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      text: Color.lerp(text, other.text, t)!,
+      textSoft: Color.lerp(textSoft, other.textSoft, t)!,
+      textBrand: Color.lerp(textBrand, other.textBrand, t)!,
+      brand: Color.lerp(brand, other.brand, t)!,
+      onBrand: Color.lerp(onBrand, other.onBrand, t)!,
+      accent: Color.lerp(accent, other.accent, t)!,
       accentText: Color.lerp(accentText, other.accentText, t)!,
-      line:       Color.lerp(line,       other.line,       t)!,
-      tintBrand:  Color.lerp(tintBrand,  other.tintBrand,  t)!,
-      track:      Color.lerp(track,      other.track,      t)!,
-      danger:     Color.lerp(danger,     other.danger,     t)!,
-      success:    Color.lerp(success,    other.success,    t)!,
+      line: Color.lerp(line, other.line, t)!,
+      tintBrand: Color.lerp(tintBrand, other.tintBrand, t)!,
+      track: Color.lerp(track, other.track, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      avTradie: Color.lerp(avTradie, other.avTradie, t)!,
+      onAvTradie: Color.lerp(onAvTradie, other.onAvTradie, t)!,
     );
   }
 
@@ -481,8 +670,16 @@ class THColors extends ThemeExtension<THColors> {
   List<BoxShadow> get cardShadow => surface == const Color(0xFF1E2328)
       ? const []
       : const [
-          BoxShadow(color: Color(0x0F193957), blurRadius: 2,  offset: Offset(0, 1)),
-          BoxShadow(color: Color(0x14193957), blurRadius: 24, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x0F193957),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color(0x14193957),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
         ];
 
   /// CTA button shadow — amber glow.
@@ -531,70 +728,81 @@ abstract class DesignTokens {
   static const double hue = 209.0;
 
   static const Color brand100Light = Color(0xFFD9E8F5);
-  static const Color brand100Dark  = Color(0xFF1A2A38);
-  static const Color brand300      = Color(0xFF89AFD2);
-  static const Color brand500      = Color(0xFF3C75AA);
-  static const Color brand700      = Color(0xFF1F4E7E);
-  static const Color brand900      = Color(0xFF193957);
+  static const Color brand100Dark = Color(0xFF1A2A38);
+  static const Color brand300 = Color(0xFF89AFD2);
+  static const Color brand500 = Color(0xFF3C75AA);
+  static const Color brand700 = Color(0xFF1F4E7E);
+  static const Color brand900 = Color(0xFF193957);
 
-  static const Color amber     = Color(0xFFE38B29);
-  static const Color amberDark = Color(0xFFE38B29); // same amber, referenced by dark-mode callers
-  static const Color onAmber   = Color(0xFF3D1F00);
+  static const Color amber = Color(0xFFE38B29);
+  static const Color amberDark = Color(
+    0xFFE38B29,
+  ); // same amber, referenced by dark-mode callers
+  static const Color onAmber = Color(0xFF3D1F00);
+
+  /// Splash-only gradient stop — brand700 lightened for depth on the
+  /// always-navy brand screen (documented v1.6.2 hero-glass constant).
+  static const Color splashGradientBottom = Color(0xFF2A5A8C);
 
   static const Color green = Color(0xFF3A7D5C);
-  static const Color red   = Color(0xFFB23A2E);
+  static const Color red = Color(0xFFB23A2E);
 
   // ── Backgrounds ─────────────────────────────────────────────────────────
   static const Color paperLight = Color(0xFFF6F4EE);
-  static const Color paperDark  = Color(0xFF14181B);
-  static const Color cardDark   = Color(0xFF1E2328);
+  static const Color paperDark = Color(0xFF14181B);
+  static const Color cardDark = Color(0xFF1E2328);
 
   static const Color paperLineLight = Color(0xFFE4E0D4);
-  static const Color paperLineDark  = Color(0x1FFFFFFF); // white 12%
+  static const Color paperLineDark = Color(0x1FFFFFFF); // white 12%
 
   static const Color shadowCard = Color(0x14193957);
 
-  static Color paperLine(bool isDark) => isDark ? paperLineDark : paperLineLight;
+  static Color paperLine(bool isDark) =>
+      isDark ? paperLineDark : paperLineLight;
 
   // ── Surfaces ─────────────────────────────────────────────────────────────
-  static Color surfaceCard(bool isDark)     => isDark ? cardDark : Colors.white;
+  static Color surfaceCard(bool isDark) => isDark ? cardDark : Colors.white;
   static Color surfaceDisabled(bool isDark) =>
       // Light: warm cream-grey. Dark: pre-composited white@10% over #14181B=(20,24,27) → (44,47,50)
       isDark ? const Color(0xFF2C2F32) : const Color(0xFFE8E4DC);
-  static Color surfaceTonal(bool isDark)    =>
-      isDark ? brand300.withValues(alpha: Alpha.tintDark) : brand500.withValues(alpha: Alpha.tintLight);
-  static Color surfaceStatus(bool isDark)   =>
+  static Color surfaceTonal(bool isDark) => isDark
+      ? brand300.withValues(alpha: Alpha.tintDark)
+      : brand500.withValues(alpha: Alpha.tintLight);
+  static Color surfaceStatus(bool isDark) =>
       // Light: brand100Light. Dark: pre-composited brand300@28% over #14181B=(20,24,27) → (53,66,78)
       isDark ? const Color(0xFF35424E) : brand100Light;
 
   // ── Ink (text/icon) ───────────────────────────────────────────────────────
-  static const Color inkLight    = Color(0xFF14181B);
-  static const Color inkDark     = Color(0xFFECEAE3);
+  static const Color inkLight = Color(0xFF14181B);
+  static const Color inkDark = Color(0xFFECEAE3);
   static const Color inkSoftLight = Color(0xFF5B6570);
-  static const Color inkSoftDark  = Color(0xFF9AA4AC);
+  static const Color inkSoftDark = Color(0xFF9AA4AC);
 
-  static Color inkSoft(bool isDark)    => isDark ? inkSoftDark : inkSoftLight;
-  static Color inkAccent(bool isDark)  => isDark ? amber : const Color(0xFF8F4F08);
-  static Color inkDanger(bool isDark)  =>
+  static Color inkSoft(bool isDark) => isDark ? inkSoftDark : inkSoftLight;
+  static Color inkAccent(bool isDark) =>
+      isDark ? amber : const Color(0xFF8F4F08);
+  static Color inkDanger(bool isDark) =>
       isDark ? const Color(0xFFE8968E) : const Color(0xFF9B2B21);
   static Color inkSuccess(bool isDark) =>
       isDark ? const Color(0xFF8FC9A8) : const Color(0xFF1A4D33);
 
   // ── Foreground helpers ────────────────────────────────────────────────────
-  static Color foreground(bool isDark)         => isDark ? inkDark : inkLight;
-  static Color foregroundBrand(bool isDark)    => isDark ? brand300 : brand900;
-  static Color foregroundTonal(bool isDark)    => isDark ? brand300 : brand700;
+  static Color foreground(bool isDark) => isDark ? inkDark : inkLight;
+  static Color foregroundBrand(bool isDark) => isDark ? brand300 : brand900;
+  static Color foregroundTonal(bool isDark) => isDark ? brand300 : brand700;
   static Color foregroundDisabled(bool isDark) =>
       // Light: warm mid-grey #6B6560 (6.0:1 on #E8E4DC disabled surface).
       // Dark: pre-composited white@55% over #14181B=(20,24,27) → (149,151,152).
       isDark ? const Color(0xFF959798) : const Color(0xFF6B6560);
   // foregroundStatus: white on dark tinted surface (28% tint); brand900 on light tint.
-  static Color foregroundStatus(bool isDark)   => isDark ? Colors.white : brand900;
+  static Color foregroundStatus(bool isDark) =>
+      isDark ? Colors.white : brand900;
 
   // ── Borders ───────────────────────────────────────────────────────────────
   static const Color focus = Color(0xFF3C75AA);
 
-  static Color borderCard(bool isDark)    => isDark ? paperLineDark : paperLineLight;
+  static Color borderCard(bool isDark) =>
+      isDark ? paperLineDark : paperLineLight;
   // borderControl: visible control outline for inputs, checkboxes, chips.
   // Must meet WCAG 1.4.11 non-text contrast (>=3:1) against adjacent surfaces.
   // Light: #8A8882 warm-grey (4.2:1 on paper, 4.7:1 on white card).
@@ -608,8 +816,16 @@ abstract class DesignTokens {
   static List<BoxShadow> cardShadow(bool isDark) => isDark
       ? const []
       : const [
-          BoxShadow(color: Color(0x0F193957), blurRadius: 2, offset: Offset(0, 1)),
-          BoxShadow(color: Color(0x14193957), blurRadius: 24, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x0F193957),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color(0x14193957),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
         ];
 
   /// Chat send-button amber glow shadow (blurRadius 10, offset 4dp down).
@@ -619,48 +835,56 @@ abstract class DesignTokens {
 
   // ── Typography ────────────────────────────────────────────────────────────
   static const String fontDisplay = TypeTokens.fontDisplay;
-  static const String fontBody    = TypeTokens.fontBody;
-  static const String fontMono    = TypeTokens.fontMono;
+  static const String fontBody = TypeTokens.fontBody;
+  static const String fontMono = TypeTokens.fontMono;
 
-  static const double fontSizeDisplay   = 32.0;
-  static const double fontSizeH1        = 24.0;
-  static const double fontSizeH2        = 20.0;
-  static const double fontSizeH2Small   = 18.0;
-  static const double fontSizeH3        = 17.0; // was 16; one clear step above new body (16)
+  static const double fontSizeDisplay = 32.0;
+  static const double fontSizeH1 = 24.0;
+  static const double fontSizeH2 = 20.0;
+  static const double fontSizeH2Small = 18.0;
+  static const double fontSizeH3 =
+      17.0; // was 16; one clear step above new body (16)
   // ── Specialised sizes (not part of the main scale) ──────────────────────
   /// Hero display name in the dashboard header (larger than H1).
-  static const double fontSizeNameDisplay    = 28.0;
+  static const double fontSizeNameDisplay = 28.0;
+
   /// Avatar initials at medium size (match-result hero).
   static const double fontSizeAvatarInitials = 26.0;
+
   /// Avatar initials at large size (public profile hero).
   static const double fontSizeAvatarInitialsLg = 28.0;
+
   /// Sub-amount price display — reference code, compact price hero.
-  static const double fontSizeAmountSm       = 22.0;
+  static const double fontSizeAmountSm = 22.0;
+
   /// Splash / wordmark display — one-off, not in the content scale.
-  static const double fontSizeSplash         = 40.0;
+  static const double fontSizeSplash = 40.0;
   // ── Type scale (v1.7) ───────────────────────────────────────────────────────
   // Bumped from v1.6 to improve readability at 1.0×; floor is 12 sp (fontSizeTiny).
   // Line heights: ~1.4 for body, ~1.25 for headings (set in fixo_theme.dart).
-  static const double fontSizeBody      = 16.0; // was 15
-  static const double fontSizeSm        = 15.0; // was 14
+  static const double fontSizeBody = 16.0; // was 15
+  static const double fontSizeSm = 15.0; // was 14
   static const double fontSizeSecondary = 14.0; // was 13
-  static const double fontSizeCaption   = 13.0; // was 12
-  static const double fontSizeTiny      = 12.0; // was 11 — hard floor, nothing below 12
-  static const double fontSizeControl   = 16.0; // was 15; matches new body
-  static const double fontSizeStatus    = 13.0; // was 12; chip legibility
-  static const double fontSizeAmount    = 24.0; // unchanged
-  static const double fontSizeAmountLg  = 36.0; // unchanged
-  static const double fontSizeMono      = 13.0; // unchanged — opt-in for reference codes
-  static const double fontSizeStep      = 15.0; // status strip "Step X of 4" — unchanged
+  static const double fontSizeCaption = 13.0; // was 12
+  static const double fontSizeTiny =
+      12.0; // was 11 — hard floor, nothing below 12
+  static const double fontSizeControl = 16.0; // was 15; matches new body
+  static const double fontSizeStatus = 13.0; // was 12; chip legibility
+  static const double fontSizeAmount = 24.0; // unchanged
+  static const double fontSizeAmountLg = 36.0; // unchanged
+  static const double fontSizeMono =
+      13.0; // unchanged — opt-in for reference codes
+  static const double fontSizeStep =
+      15.0; // status strip "Step X of 4" — unchanged
 
   // ── Radii ─────────────────────────────────────────────────────────────────
-  static const double radius        = 4.0;   // legacy base radius (v1.5 contract)
-  static const double radiusCard    = Radii.card;
+  static const double radius = 4.0; // legacy base radius (v1.5 contract)
+  static const double radiusCard = Radii.card;
   static const double radiusControl = Radii.control;
-  static const double radiusTile    = Radii.tile;
-  static const double radiusSheet   = Radii.sheet;
-  static const double radiusPill    = Radii.pill;
-  static const double radiusInput   = Radii.control;
+  static const double radiusTile = Radii.tile;
+  static const double radiusSheet = Radii.sheet;
+  static const double radiusPill = Radii.pill;
+  static const double radiusInput = Radii.control;
 
   // ── Spacing ───────────────────────────────────────────────────────────────
   static const double space1 = Space.s1;
@@ -672,12 +896,65 @@ abstract class DesignTokens {
   static const double space8 = Space.s8;
 
   static const double cardPadding = Space.s5; // 20
-  static const double cardGap     = Space.s4; // 16
-  static const double pageMargin  = Space.gutter; // 20
+  static const double cardGap = Space.s4; // 16
+  static const double pageMargin = Space.gutter; // 20
 
   // ── Sizes ─────────────────────────────────────────────────────────────────
-  static const double targetMinimum   = Sizes.tapMin;
-  static const double heightPrimary   = Sizes.button;
+  static const double targetMinimum = Sizes.tapMin;
+  static const double heightPrimary = Sizes.button;
   static const double heightSecondary = Sizes.buttonSecondary;
-  static const double heightInput     = Sizes.input;
+  static const double heightInput = Sizes.input;
+}
+
+// ── Raw palette (theme-invariant) ────────────────────────────────────────────
+//
+// tokens.json `color` — the raw palette. Use ONLY where the spec marks a value
+// theme-invariant (hero glass, navy heroes, brand screens); everything else
+// resolves through THColors so dark/outdoor swap correctly.
+abstract class THPalette {
+  THPalette._();
+
+  static const Color navy = Color(0xFF193957); // brand900
+  static const Color amber = Color(0xFFE38B29);
+  static const Color blue300 = Color(0xFF89AFD2);
+  static const Color blue500 = Color(0xFF3C75AA);
+  static const Color cream = Color(0xFFF6F4EE);
+  static const Color green = Color(0xFF3A7D5C);
+  static const Color red = Color(0xFFB23A2E);
+  static const Color onAmber = Color(0xFF241300);
+  static const Color inkAccent = Color(0xFF8F4F08);
+
+  // Dark-mode raws (kit.css `.dark` custom properties that never swap again).
+  static const Color darkPaper = Color(0xFF14181B);
+  static const Color darkCard = Color(0xFF1E2328);
+  static const Color darkInk = Color(0xFFECEAE3);
+  static const Color darkInkSoft = Color(0xFF9AA4AC);
+}
+
+// ── Hero glass (theme-invariant) ─────────────────────────────────────────────
+//
+// Heroes are NAVY in every theme (audit F-114 conclusion), so the white-glass
+// overlays painted on them cannot flip with the theme. These are the
+// documented constants the transpiler emits for `.heroband` content.
+abstract class THHeroGlass {
+  THHeroGlass._();
+
+  /// Navy hero-band gradient — same pair the splash uses (brand screens only).
+  static const Gradient bandGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [THPalette.navy, DesignTokens.splashGradientBottom],
+  );
+
+  /// Status-strip navy — slightly darker in dark mode (kit.css `--strip`).
+  static Color strip(bool isDark) =>
+      isDark ? const Color(0xFF12293F) : THPalette.navy;
+
+  /// Ink constants painted on navy heroes / strips.
+  static const Color onHero = Color(0xFFFFFFFF); // --on-hero
+  static const Color onHeroSoft = Color(0xC0FFFFFF); // white @75%
+  static const Color onHeroFaint = Color(0x73FFFFFF); // white @45%
+  static const Color heroTrack = Color(
+    0x40FFFFFF,
+  ); // white @25% (hero glass track)
 }

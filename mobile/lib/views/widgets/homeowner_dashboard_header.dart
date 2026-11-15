@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../theme/fixo_theme.dart';
@@ -7,7 +8,9 @@ import '../../theme/fixo_theme.dart';
 class HomeownerDashboardHeader extends StatelessWidget {
   final String firstName;
   final String? location;
-  @Deprecated('Time-of-day greeting removed; "Kia ora" is used regardless of time.')
+  @Deprecated(
+    'Time-of-day greeting removed; "Kia ora" is used regardless of time.',
+  )
   final DateTime? now;
   final Widget? child;
 
@@ -65,7 +68,12 @@ class HomeownerDashboardHeader extends StatelessWidget {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s4, Space.gutter, Space.s7),
+              padding: const EdgeInsets.fromLTRB(
+                Space.gutter,
+                Space.s4,
+                Space.gutter,
+                Space.s7,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,7 +92,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                   fontSize: DesignTokens.fontSizeCaption,
                                   fontWeight: FW.semibold,
                                   letterSpacing: Tracking.emphasis,
-                                  color: Colors.white.withValues(alpha: Alpha.textOnGradient),
+                                  color: Colors.white.withValues(
+                                    alpha: Alpha.textOnGradient,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: Space.s1),
@@ -118,7 +128,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                   vertical: Space.s1_5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: Alpha.tintMid),
+                                  color: Colors.white.withValues(
+                                    alpha: Alpha.tintMid,
+                                  ),
                                   borderRadius: BorderRadius.circular(
                                     Radii.pill,
                                   ),
@@ -137,7 +149,8 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                         location!.trim(),
                                         style: const TextStyle(
                                           fontFamily: DesignTokens.fontBody,
-                                          fontSize: DesignTokens.fontSizeCaption,
+                                          fontSize:
+                                              DesignTokens.fontSizeCaption,
                                           fontWeight: FW.medium,
                                           color: Colors.white,
                                         ),
@@ -174,7 +187,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
                                   color: DesignTokens.amber,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: dark ? THColors.dark.brand : THColors.light.brand,
+                                    color: dark
+                                        ? THColors.dark.brand
+                                        : THColors.light.brand,
                                     width: 1.5,
                                   ),
                                 ),
@@ -182,21 +197,9 @@ class HomeownerDashboardHeader extends StatelessWidget {
                             ),
                           ],
                         ),
-                        onPressed: () => showDialog<void>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Notifications'),
-                            content: const Text(
-                              'Job updates appear on your dashboard. Push notifications are delivered to your device when enabled.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Close'),
-                              ),
-                            ],
-                          ),
-                        ),
+                        // H20 notifications inbox (v1.6.2) — replaces the
+                        // static placeholder dialog.
+                        onPressed: () => context.push('/notifications'),
                       ),
                     ],
                   ),
@@ -243,7 +246,10 @@ class HomeownerDashboardEmpty extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     Widget stat(String value, String label, Color color) => Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: Space.s2, vertical: Space.s4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.s2,
+          vertical: Space.s4,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: Alpha.tintLight),
           borderRadius: BorderRadius.circular(Radii.tile),
@@ -264,7 +270,10 @@ class HomeownerDashboardEmpty extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: DesignTokens.fontSizeCaption, color: colors.textSoft),
+              style: TextStyle(
+                fontSize: DesignTokens.fontSizeCaption,
+                color: colors.textSoft,
+              ),
             ),
           ],
         ),

@@ -53,14 +53,13 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
   late Animation<double> _shakeAnimation;
 
   // Track colors: >= 4.5:1 contrast against white label text
-  // _onlineTrackColor:  WCAG contrast vs white = 7.4:1
-  // _offlineTrackColor: WCAG contrast vs white = 9.6:1
-  static const Color _onlineTrackColor   = Color(0xFF1E5E3A);
-  static const Color _offlineTrackColor  = Color(0xFF202C39);
-  static const Color _onlineBorderColor  = Color(0x6634A853);
-  static const Color _offlineBorderColor = Color(0x33FFFFFF);
-  static const Color _onlineIconColor    = Color(0xFF1E5E3A);
-  static const Color _offlineIconColor   = Color(0xFF334155);
+  // (rationale lives with the AvailabilityColors tokens in design_tokens.dart)
+  static const Color _onlineTrackColor = AvailabilityColors.onlineTrack;
+  static const Color _offlineTrackColor = AvailabilityColors.offlineTrack;
+  static const Color _onlineBorderColor = AvailabilityColors.onlineBorder;
+  static const Color _offlineBorderColor = AvailabilityColors.offlineBorder;
+  static const Color _onlineIconColor = AvailabilityColors.onlineIcon;
+  static const Color _offlineIconColor = AvailabilityColors.offlineIcon;
 
   @override
   void initState() {
@@ -69,16 +68,16 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
       vsync: this,
       duration: FixoDurations.switchShake,
     );
-    _shakeAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -6.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -6.0, end: 6.0),  weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 6.0,  end: -4.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: -4.0, end: 4.0),  weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 4.0,  end: 0.0),  weight: 1),
-    ]).animate(CurvedAnimation(
-      parent: _shakeController,
-      curve: Curves.easeInOut,
-    ));
+    _shakeAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -6.0), weight: 1),
+          TweenSequenceItem(tween: Tween(begin: -6.0, end: 6.0), weight: 2),
+          TweenSequenceItem(tween: Tween(begin: 6.0, end: -4.0), weight: 2),
+          TweenSequenceItem(tween: Tween(begin: -4.0, end: 4.0), weight: 2),
+          TweenSequenceItem(tween: Tween(begin: 4.0, end: 0.0), weight: 1),
+        ]).animate(
+          CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
+        );
   }
 
   @override
@@ -113,18 +112,18 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
   Widget build(BuildContext context) {
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final animDuration =
-        reduceMotion ? Duration.zero : FixoDurations.availabilitySwitch;
+    final animDuration = reduceMotion
+        ? Duration.zero
+        : FixoDurations.availabilitySwitch;
 
     final isCompact = widget.compact;
     final trackW = isCompact
         ? Sizes.availabilityTrackWCompact
         : Sizes.availabilityTrackW;
 
-    final targetOnline    = widget.isOnline;
-    final effectiveFraction =
-        _dragFraction ?? (targetOnline ? 1.0 : 0.0);
-    final displayOnline   = effectiveFraction >= 0.5;
+    final targetOnline = widget.isOnline;
+    final effectiveFraction = _dragFraction ?? (targetOnline ? 1.0 : 0.0);
+    final displayOnline = effectiveFraction >= 0.5;
 
     final trackColor = Color.lerp(
       _offlineTrackColor,
@@ -142,11 +141,11 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
 
     return Semantics(
       excludeSemantics: true,
-      button:  true,
+      button: true,
       toggled: targetOnline,
-      label:   'Availability',
-      value:   label,
-      hint:    targetOnline
+      label: 'Availability',
+      value: label,
+      hint: targetOnline
           ? 'Double tap to go offline'
           : 'Double tap to go online',
       child: AnimatedBuilder(
@@ -173,7 +172,8 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
           onHorizontalDragUpdate: widget.isLoading
               ? null
               : (details) {
-                  final maxDrag = trackW -
+                  final maxDrag =
+                      trackW -
                       Sizes.availabilityThumb -
                       (Sizes.availabilityThumbPad * 2);
                   if (maxDrag <= 0) return;
@@ -204,12 +204,12 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
             child: AnimatedContainer(
               duration: animDuration,
               curve: Curves.easeInOutCubic,
-              width:  trackW,
+              width: trackW,
               height: Sizes.availabilityTrackH,
               decoration: BoxDecoration(
-                color:        trackColor,
+                color: trackColor,
                 borderRadius: BorderRadius.circular(Radii.pill),
-                border:       Border.all(color: borderColor),
+                border: Border.all(color: borderColor),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -219,7 +219,7 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                   if (!isCompact)
                     AnimatedAlign(
                       duration: animDuration,
-                      curve:    Curves.easeInOutCubic,
+                      curve: Curves.easeInOutCubic,
                       alignment: displayOnline
                           ? const Alignment(-0.65, 0.0)
                           : const Alignment(0.65, 0.0),
@@ -227,12 +227,12 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                         duration: animDuration,
                         curve: Curves.easeInOutCubic,
                         style: const TextStyle(
-                          fontFamily:    DesignTokens.fontBody,
-                          fontSize:      DesignTokens.fontSizeSecondary,
-                          fontWeight:    FW.semibold,
-                          color:         Colors.white, // white on dark track: >7:1
+                          fontFamily: DesignTokens.fontBody,
+                          fontSize: DesignTokens.fontSizeSecondary,
+                          fontWeight: FW.semibold,
+                          color: Colors.white, // white on dark track: >7:1
                           letterSpacing: Tracking.wide,
-                          height:        1.0,
+                          height: 1.0,
                         ),
                         child: Text(displayOnline ? 'Online' : 'Offline'),
                       ),
@@ -244,16 +244,13 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                         ? Duration.zero
                         : animDuration,
                     curve: Curves.easeInOutCubic,
-                    alignment: Alignment(
-                      (effectiveFraction * 2.0) - 1.0,
-                      0.0,
-                    ),
+                    alignment: Alignment((effectiveFraction * 2.0) - 1.0, 0.0),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: Sizes.availabilityThumbPad,
                       ),
                       child: Container(
-                        width:  Sizes.availabilityThumb,
+                        width: Sizes.availabilityThumb,
                         height: Sizes.availabilityThumb,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
@@ -261,8 +258,8 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                           boxShadow: (displayOnline && !reduceMotion)
                               ? const [
                                   BoxShadow(
-                                    color:       Color(0x6634A853),
-                                    blurRadius:  Sizes.availabilityGlowBlur,
+                                    color: AvailabilityColors.onlineBorder,
+                                    blurRadius: Sizes.availabilityGlowBlur,
                                     spreadRadius: Sizes.availabilityGlowSpread,
                                   ),
                                 ]
@@ -271,7 +268,7 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                         child: Center(
                           child: widget.isLoading
                               ? SizedBox(
-                                  width:  Sizes.iconXs,
+                                  width: Sizes.iconXs,
                                   height: Sizes.iconXs,
                                   child: CircularProgressIndicator(
                                     strokeWidth: Sizes.borderWidthThick,
@@ -288,8 +285,8 @@ class _SlidingAvailabilitySwitchState extends State<SlidingAvailabilitySwitch>
                                     displayOnline
                                         ? Icons.check_rounded
                                         : Icons.power_settings_new_rounded,
-                                    key:   ValueKey(displayOnline),
-                                    size:  displayOnline
+                                    key: ValueKey(displayOnline),
+                                    size: displayOnline
                                         ? Sizes.iconAction
                                         : Sizes.iconSm,
                                     color: displayOnline

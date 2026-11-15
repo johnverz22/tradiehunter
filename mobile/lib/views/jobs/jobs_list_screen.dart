@@ -14,6 +14,7 @@ import '../homeowner/homeowner_job_detail_screen.dart';
 import '../../widgets/fixo_states.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../widgets/homeowner_job_summary.dart';
+import '../states/designed_empty_state.dart';
 import '../widgets/tradie_job_card.dart';
 import '../widgets/fixo_filter_bar.dart';
 
@@ -143,7 +144,11 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
   }
 
   /// Opens a homeowner job detail in wide or narrow mode.
-  void _openHomeownerJob(BuildContext context, Job job, {required bool isWide}) {
+  void _openHomeownerJob(
+    BuildContext context,
+    Job job, {
+    required bool isWide,
+  }) {
     if (isWide) {
       setState(() {
         _selectedJobId = job.id;
@@ -290,11 +295,8 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
     }
     if (state.jobs.isEmpty) {
       return isTradie
-          ? const FixoEmptyState(
-              icon: Icons.work_off_outlined,
-              title: 'No jobs assigned yet',
-              subtitle: 'Accept an incoming request to get started.',
-            )
+          // E-empty-leads (v1.6.2 frames-states.html) — designed leads state.
+          ? const DesignedEmptyState(variant: DesignedStateVariant.emptyLeads)
           : FixoEmptyState(
               icon: Icons.work_off_outlined,
               title: 'No jobs yet',
@@ -361,8 +363,7 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                                 : _filter == _JobFilter.completed
                                 ? 'No completed jobs yet'
                                 : 'No active jobs',
-                            subtitle:
-                                'Choose All to see your other jobs.',
+                            subtitle: 'Choose All to see your other jobs.',
                             actionLabel: 'View all jobs',
                             onAction: () => setState(
                               () => isTradie
@@ -376,7 +377,12 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                     ? _tradieList(dayGroups, isWide: isWide)
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s4, Space.gutter, Space.navClearance),
+                        padding: const EdgeInsets.fromLTRB(
+                          Space.gutter,
+                          Space.s4,
+                          Space.gutter,
+                          Space.navClearance,
+                        ),
                         itemCount: jobs.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: Space.s3),
@@ -387,10 +393,7 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
                                   jobs[i],
                                   isWide: true,
                                 ),
-                                child: homeownerJobSummary(
-                                  context,
-                                  jobs[i],
-                                ),
+                                child: homeownerJobSummary(context, jobs[i]),
                               )
                             : homeownerJobSummary(context, jobs[i]),
                       ),
@@ -407,16 +410,19 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
     final theme = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s1, Space.gutter, Space.navClearance),
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.s1,
+        Space.gutter,
+        Space.navClearance,
+      ),
       children: [
         for (final group in groups) ...[
           Padding(
             padding: const EdgeInsets.only(top: Space.s2, bottom: Space.s2),
             child: Text(
               group.label,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FW.bold,
-              ),
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FW.bold),
             ),
           ),
           for (final job in group.jobs)

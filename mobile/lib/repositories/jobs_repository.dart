@@ -42,7 +42,7 @@ class JobsRepository {
     if (token == null) return const [];
     final res = await _dio.get(
       '/api/jobs',
-      queryParameters: {if (status != null) 'status': status, 'pageSize': '50'},
+      queryParameters: {'status': ?status, 'pageSize': '50'},
       options: _authOptions(token),
     );
     final items = res.data['items'] as List?;

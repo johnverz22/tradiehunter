@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../views/main_layout.dart';
 import '../views/splash_screen.dart';
 import '../views/onboarding/onboarding_view.dart';
@@ -26,20 +27,36 @@ import '../views/profile/public_profile_screen.dart';
 import '../views/payment/payment_screen.dart';
 import '../views/payment/payment_status_screen.dart';
 import '../views/jobs/dispute_screen.dart';
+import '../views/homeowner/categories_screen.dart';
+import '../views/homeowner/browse_tradies_screen.dart';
+import '../views/notifications/notifications_screen.dart';
+import '../views/states/designed_empty_state.dart';
+import '../widgets/fixo_buttons.dart';
 import '../feedback/notice_gallery.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
 /// Tabbed screens live inside the [MainLayout] shell; flow screens
 /// (post-job → matching → match-result, request detail, chat) are
 /// root-level so they render without a bottom nav bar.
-final GlobalKey<NavigatorState> _rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
-final GlobalKey<NavigatorState> _shellNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'shell');
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
+final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'shell',
+);
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
+  // E-job-not-found (v1.6.2 frames-states.html) — unknown deep links render
+  // the designed error screen instead of a blank page.
+  errorBuilder: (context, state) => Scaffold(
+    appBar: FixoAppBar(title: 'Job not found'),
+    body: DesignedEmptyState(
+      variant: DesignedStateVariant.jobNotFound,
+      onAction: () => appRouter.go('/home'),
+    ),
+  ),
   routes: [
     // Debug-only notice gallery — stripped from release builds.
     if (kDebugMode)
@@ -49,25 +66,16 @@ final GoRouter appRouter = GoRouter(
             maybeNoticeGallery() ?? const SizedBox.shrink(),
       ),
     // 01-splash
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     // 02-onboarding
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
     // 03-login
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/auth', builder: (context, state) => const LoginScreen()),
     // 04-signup
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
 
     // Shown after a new Google user authenticates — they pick Homeowner/Tradie.
     // P9-02: extra carries both the stub userId and the one-time registration
@@ -97,6 +105,22 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+    // H08 categories — browse the live service catalog
+    GoRoute(
+      path: '/categories',
+      builder: (context, state) => const CategoriesScreen(),
+    ),
+    // H19 find-a-tradie — live tradie search (extra = category seed)
+    GoRoute(
+      path: '/find-tradie',
+      builder: (context, state) =>
+          BrowseTradiesScreen(initialCategory: state.extra as String?),
+    ),
+    // H20 notifications — FCM-fed inbox
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
+    ),
     // 06-post-job
     GoRoute(
       path: '/jobs/new',
@@ -105,16 +129,14 @@ final GoRouter appRouter = GoRouter(
     // 07-matching
     GoRoute(
       path: '/jobs/:jobId/matching',
-      builder: (context, state) => MatchingScreen(
-        jobId: state.pathParameters['jobId']!,
-      ),
+      builder: (context, state) =>
+          MatchingScreen(jobId: state.pathParameters['jobId']!),
     ),
     // 08-match-result
     GoRoute(
       path: '/jobs/:jobId/match',
-      builder: (context, state) => MatchResultScreen(
-        jobId: state.pathParameters['jobId']!,
-      ),
+      builder: (context, state) =>
+          MatchResultScreen(jobId: state.pathParameters['jobId']!),
     ),
     // 10-request-detail (tradie)
     GoRoute(
@@ -210,11 +232,11 @@ final GoRouter appRouter = GoRouter(
           path: '/home',
           builder: (context, state) => const HomeownerDashboardView(),
         ),
-    // 09-tradie-home
-    GoRoute(
-      path: '/tradie',
-      builder: (context, state) => const TradieDashboardView(),
-    ),
+        // 09-tradie-home
+        GoRoute(
+          path: '/tradie',
+          builder: (context, state) => const TradieDashboardView(),
+        ),
         GoRoute(
           path: '/jobs',
           builder: (context, state) => const JobsListScreen(),

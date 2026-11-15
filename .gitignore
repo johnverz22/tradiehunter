@@ -6,7 +6,8 @@ scripts/address-resolution-tests/obj/
 *.user
 
 # Node / React
-web/**/node_modules/
+# dependency dirs (any depth — design2flutter, web, tooling)
+node_modules/
 web/**/dist/
 web/**/.vite/
 

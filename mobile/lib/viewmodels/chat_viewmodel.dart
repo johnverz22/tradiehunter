@@ -100,8 +100,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   ChatMessage _tag(ChatMessage m) {
     // Compare case-insensitively — server GUIDs may differ in case from JWT claims.
-    if (m.sentByMe || _myUserId.isEmpty ||
-        m.senderId.toLowerCase() != _myUserId.toLowerCase()) return m;
+    if (m.sentByMe ||
+        _myUserId.isEmpty ||
+        m.senderId.toLowerCase() != _myUserId.toLowerCase()) {
+      return m;
+    }
     return ChatMessage(
       id: m.id,
       jobId: m.jobId,
@@ -232,7 +235,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void _markIncomingRead(List<ChatMessage> messages) {
     if (!_hubReady) return;
     for (final m in messages) {
-      if (m.senderId.toLowerCase() == _myUserId.toLowerCase() || m.readAtUtc != null) continue;
+      if (m.senderId.toLowerCase() == _myUserId.toLowerCase() ||
+          m.readAtUtc != null) {
+        continue;
+      }
       final id = int.tryParse(m.id);
       if (id == null) continue; // optimistic local row — nothing to mark
       if (!_markedReadIds.add(id)) continue;

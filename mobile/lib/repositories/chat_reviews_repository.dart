@@ -138,10 +138,7 @@ class ChatRepository {
     try {
       final resp = await _dio.get(
         '/api/jobs/$jobId/messages',
-        queryParameters: {
-          if (beforeId != null) 'beforeId': beforeId,
-          'pageSize': pageSize,
-        },
+        queryParameters: {'beforeId': ?beforeId, 'pageSize': pageSize},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 

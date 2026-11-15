@@ -39,7 +39,10 @@ class AuthGoogleButton extends StatelessWidget {
     onPressed: onPressed,
     style: OutlinedButton.styleFrom(
       minimumSize: const Size(0, 56),
-      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s4,
+        vertical: Space.s4,
+      ),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -80,7 +83,7 @@ class AuthRoleChoice extends StatelessWidget {
     // Selected state: brand-coloured 2px border + brand tint background.
     // Unselected state: standard card border, card surface.
     final borderColor = selected ? th.brand : DesignTokens.borderCard(isDark);
-    final bgColor     = selected ? th.tintBrand : th.surface;
+    final bgColor = selected ? th.tintBrand : th.surface;
 
     return Semantics(
       selected: selected,
@@ -94,25 +97,23 @@ class AuthRoleChoice extends StatelessWidget {
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(Radii.card),
-            border: Border.all(
-              color: borderColor,
-              width: selected ? 2 : 1,
-            ),
+            border: Border.all(color: borderColor, width: selected ? 2 : 1),
             boxShadow: DesignTokens.cardShadow(isDark),
           ),
           padding: const EdgeInsets.all(Space.s4), // 16
           child: Row(
             children: [
               // ── Icon square ──────────────────────────────────────────────
+              // 48dp square — meets the F-108 tap-target floor.
               Container(
-                width: 44,
-                height: 44,
+                width: Sizes.tapMin,
+                height: Sizes.tapMin,
                 decoration: BoxDecoration(
                   color: selected
                       ? th.brand.withValues(alpha: Alpha.tintAccent)
                       : (isDark
-                          ? Colors.white.withValues(alpha: Alpha.tint)
-                          : DesignTokens.surfaceDisabled(false)),
+                            ? Colors.white.withValues(alpha: Alpha.tint)
+                            : DesignTokens.surfaceDisabled(false)),
                   borderRadius: BorderRadius.circular(Radii.control),
                 ),
                 child: Icon(
@@ -123,7 +124,6 @@ class AuthRoleChoice extends StatelessWidget {
               ),
 
               const SizedBox(width: Space.s3), // 12
-
               // ── Title + subtitle ─────────────────────────────────────────
               Expanded(
                 child: Column(
@@ -131,24 +131,20 @@ class AuthRoleChoice extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: th.text,
-                        fontWeight: FW.semibold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(color: th.text, fontWeight: FW.semibold),
                     ),
                     const SizedBox(height: Space.s0_5),
                     Text(
                       description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: th.textSoft,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: th.textSoft),
                     ),
                   ],
                 ),
               ),
 
               const SizedBox(width: Space.s3), // 12
-
               // ── Radio indicator ──────────────────────────────────────────
               AnimatedSwitcher(
                 duration: FixoDurations.fast,
