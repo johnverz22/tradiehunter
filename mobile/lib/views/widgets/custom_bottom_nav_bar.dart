@@ -73,7 +73,9 @@ class CustomBottomNavBar extends StatelessWidget {
     final leftTabs = tabs.sublist(0, tabs.length ~/ 2);
     final rightTabs = tabs.sublist(tabs.length ~/ 2);
 
-    // Top padding reserves room for the FAB's upper half above the tabs.
+    // The FAB's lower half overlaps the empty centre slot — the bar keeps
+    // the same height as the tradie dock (mockup: 68px bar, .fab top:-26px,
+    // centre .tab.slot is an inert spacer).
     final halfFab = Sizes.fab / 2;
 
     return Stack(
@@ -102,10 +104,11 @@ class CustomBottomNavBar extends StatelessWidget {
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  // Top pad lifts the tabs clear of the FAB's lower half.
-                  padding: EdgeInsets.fromLTRB(
+                  // Same padding as the tradie dock — bar height unchanged;
+                  // the FAB overlay handles its own clearance.
+                  padding: const EdgeInsets.fromLTRB(
                     Space.s3,
-                    halfFab + Space.s2,
+                    Space.s2_5,
                     Space.s3,
                     Space.s2,
                   ),

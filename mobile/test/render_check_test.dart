@@ -26,6 +26,58 @@ void main() {
     );
   });
 
+  testWidgets(
+    'homeowner dock keeps the tradie dock height (edge FAB adds none)',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 220);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      double barHeight(bool fab) {
+        return tester
+            .getSize(find.byType(CustomBottomNavBar).first)
+            .height;
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const SizedBox.expand(),
+            bottomNavigationBar: CustomBottomNavBar(
+              currentIndex: 0,
+              showFab: true,
+              tabs: CustomBottomNavBar.homeownerTabs,
+              onDestinationSelected: (_) {},
+              onPostJob: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final homeownerHeight = barHeight(true);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: const SizedBox.expand(),
+            bottomNavigationBar: CustomBottomNavBar(
+              currentIndex: 0,
+              showFab: false,
+              tabs: CustomBottomNavBar.tradieTabs,
+              onDestinationSelected: (_) {},
+              onPostJob: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final tradieHeight = barHeight(false);
+
+      // The edge FAB overlaps the bar, it must not inflate it.
+      expect(homeownerHeight, tradieHeight);
+    },
+  );
+
   testWidgets('render homeowner nav bar light+dark', (tester) async {
     tester.view.physicalSize = const Size(390, 220);
     tester.view.devicePixelRatio = 1;
