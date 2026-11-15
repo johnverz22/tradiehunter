@@ -35,16 +35,6 @@ class CustomBottomNavBar extends StatelessWidget {
     NavTab(Icons.person_outline, Icons.person, 'Profile'),
   ];
 
-  /// Centre action for the homeowner dock — a "new job" document-plus icon
-  /// rendered like every other nav item (brand-blue, icon + label) so all
-  /// five slots share equal width. Tapping pushes /jobs/new via [onPostJob];
-  /// it never takes the tab selection.
-  static const postJobTab = NavTab(
-    Icons.post_add_outlined,
-    Icons.post_add,
-    'New Job',
-  );
-
   static const tradieTabs = [
     NavTab(Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
     NavTab(Icons.work_outline, Icons.work, 'Jobs'),
@@ -63,88 +53,114 @@ class CustomBottomNavBar extends StatelessWidget {
     return _buildTradieDock(context, isDark, bottomPad);
   }
 
-  /// Homeowner dock — same glass bar as the tradie dock, with the New Job
-  /// action sitting inline as a fifth, equally-weighted slot in the row.
+  /// Homeowner dock — mockup `nav/bottom-homeowner` (component-sheet.html):
+  /// a 68px glass bar (`--glass rgba(255,255,255,.86)`, backdrop blur 20)
+  /// with the 56px New Job FAB straddling its top edge (`.fab { top: -26px }`)
+  /// — half in, half out, horizontally centred over the empty third slot.
   Widget _buildHomeownerDock(
     BuildContext context,
     bool isDark,
     double bottomPad,
   ) {
+    // --glass: rgba(255,255,255,.86) light / rgba(30,35,40,.86) dark.
     final bgColor = isDark
-        ? DesignTokens.cardDark.withValues(alpha: Alpha.navBar)
-        : Colors.white.withValues(alpha: Alpha.navBar);
+        ? DesignTokens.cardDark.withValues(alpha: Alpha.glass)
+        : Colors.white.withValues(alpha: Alpha.glass);
     final borderColor = DesignTokens.paperLine(isDark);
 
-    // Split the 4 tabs around the centre button.
+    // Split the 4 tabs around the centre FAB slot.
     // tabs = [Home, Jobs, Messages, Profile] → left: [0,1], right: [2,3]
     final leftTabs = tabs.sublist(0, tabs.length ~/ 2);
     final rightTabs = tabs.sublist(tabs.length ~/ 2);
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: bgColor,
-            border: Border(top: BorderSide(color: borderColor)),
-            boxShadow: [
-              BoxShadow(
-                color: DesignTokens.brand900.withValues(alpha: Alpha.subtle),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.zero,
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s3, Space.s2_5, Space.s3, Space.s2),
-              // spaceEvenly (not Expanded slots): every item — including the
-              // wider centre circle — gets identical free space around it, so
-              // the Jobs↔centre and centre↔Messages gaps match all others.
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left tabs
-                  for (var i = 0; i < leftTabs.length; i++)
-                    Expanded(
-                      child: _TradieNavItem(
-                        tab: leftTabs[i],
-                        selected: currentIndex == i,
-                        onTap: () => onDestinationSelected(i),
-                      ),
+    // Top padding reserves room for the FAB's upper half above the tabs.
+    final halfFab = Sizes.fab / 2;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.bottomCenter,
+      children: [
+        // ── The glass bar itself ─────────────────────────────────────────
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: bgColor,
+                border: Border(top: BorderSide(color: borderColor)),
+                boxShadow: [
+                  BoxShadow(
+                    color: DesignTokens.brand900.withValues(
+                      alpha: Alpha.subtle,
                     ),
-                  // Centre — New Job action
-                  _NewJobNavItem(onTap: onPostJob),
-                  // Right tabs (offset indices by left count)
-                  for (var i = 0; i < rightTabs.length; i++)
-                    Expanded(
-                      child: _TradieNavItem(
-                        tab: rightTabs[i],
-                        selected: currentIndex == (leftTabs.length + i),
-                        onTap: () => onDestinationSelected(leftTabs.length + i),
-                      ),
-                    ),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
                 ],
+              ),
+              padding: EdgeInsets.zero,
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  // Top pad lifts the tabs clear of the FAB's lower half.
+                  padding: EdgeInsets.fromLTRB(
+                    Space.s3,
+                    halfFab + Space.s2,
+                    Space.s3,
+                    Space.s2,
+                  ),
+                  child: Row(
+                    children: [
+                      // Left tabs
+                      for (var i = 0; i < leftTabs.length; i++)
+                        Expanded(
+                          child: _TradieNavItem(
+                            tab: leftTabs[i],
+                            selected: currentIndex == i,
+                            onTap: () => onDestinationSelected(i),
+                          ),
+                        ),
+                      // Centre slot stays empty — the FAB overlay owns it.
+                      const Expanded(child: SizedBox()),
+                      // Right tabs (offset indices by left count)
+                      for (var i = 0; i < rightTabs.length; i++)
+                        Expanded(
+                          child: _TradieNavItem(
+                            tab: rightTabs[i],
+                            selected: currentIndex == (leftTabs.length + i),
+                            onTap: () =>
+                                onDestinationSelected(leftTabs.length + i),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
+        // ── New Job FAB — straddles the bar's top edge (.fab top:-26px) ───
+        Positioned(
+          top: 0,
+          child: Transform.translate(
+            offset: Offset(0, -halfFab + 2),
+            child: _NewJobNavItem(onTap: onPostJob),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildTradieDock(BuildContext context, bool isDark, double bottomPad) {
+    // --glass: rgba(255,255,255,.86) light / rgba(30,35,40,.86) dark.
     final bgColor = isDark
-        ? DesignTokens.cardDark.withValues(alpha: Alpha.navBar)
-        : Colors.white.withValues(alpha: Alpha.navBar);
+        ? DesignTokens.cardDark.withValues(alpha: Alpha.glass)
+        : Colors.white.withValues(alpha: Alpha.glass);
     final borderColor = DesignTokens.paperLine(isDark);
 
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
             color: bgColor,
@@ -161,7 +177,12 @@ class CustomBottomNavBar extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s3, Space.s2_5, Space.s3, Space.s2),
+              padding: const EdgeInsets.fromLTRB(
+                Space.s3,
+                Space.s2_5,
+                Space.s3,
+                Space.s2,
+              ),
               child: Row(
                 children: [
                   for (var i = 0; i < tabs.length; i++)
@@ -228,7 +249,9 @@ class _TradieNavItem extends StatelessWidget {
                       padding: const EdgeInsets.all(Space.s1),
                       decoration: selected
                           ? BoxDecoration(
-                              color: activeColor.withValues(alpha: Alpha.tintLight),
+                              color: activeColor.withValues(
+                                alpha: Alpha.tintLight,
+                              ),
                               borderRadius: BorderRadius.circular(Radii.medium),
                             )
                           : null,
@@ -244,7 +267,10 @@ class _TradieNavItem extends StatelessWidget {
                         top: -2,
                         right: -6,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: Space.s1, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s1,
+                            vertical: 1,
+                          ),
                           constraints: const BoxConstraints(
                             minWidth: 18,
                             minHeight: 18,
@@ -306,12 +332,11 @@ class _TradieNavItem extends StatelessWidget {
   }
 }
 
-/// Centre "New Job" action for the homeowner dock.
-///
-/// Deliberately unique from the four tab items: no label, a bigger (60px)
-/// outlined circle — amber border with a subtle amber wash — centered in
-/// the row, with the new-job-request icon ([postJobTab]). Never selected —
-/// it pushes /jobs/new via [onPostJob].
+/// Centre "New Job" FAB for the homeowner dock — mockup `.fab`:
+/// 56×56, border-radius 18px, navy fill, white 26px plus glyph, 3px paper
+/// border, `0 6px 16px rgba(25,57,87,.28)` shadow. Rendered inside the
+/// bar's Stack so it straddles the top edge (`.fab { top: -26px }`);
+/// tapping pushes /jobs/new via [onPostJob].
 class _NewJobNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -320,45 +345,39 @@ class _NewJobNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Transform.translate(
-      offset: const Offset(0, -8),
-      child: Semantics(
-        button: true,
-        label: 'Post job',
-        child: Tooltip(
-          message: 'Post job',
-          child: InkResponse(
-            key: const Key('post_job_fab'),
-            onTap: onTap,
-            child: Container(
-              width: Sizes.fab,
-              height: Sizes.fab,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
-                color: DesignTokens.brand900,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withValues(alpha: 0.5)
-                        : DesignTokens.brand900.withValues(alpha: 0.28),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-                border: Border.all(
+    return Semantics(
+      button: true,
+      label: 'Post job',
+      child: Tooltip(
+        message: 'Post job',
+        child: InkResponse(
+          key: const Key('post_job_fab'),
+          onTap: onTap,
+          radius: Sizes.fab / 2 + 8,
+          child: Container(
+            width: Sizes.fab,
+            height: Sizes.fab,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: DesignTokens.brand900,
+              boxShadow: [
+                BoxShadow(
                   color: isDark
-                      ? DesignTokens.paperDark
-                      : DesignTokens.paperLight,
-                  width: 3,
+                      ? Colors.black.withValues(alpha: 0.5)
+                      : DesignTokens.brand900.withValues(alpha: 0.28),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.add,
-                size: 28,
-                color: Colors.white,
+              ],
+              border: Border.all(
+                color: isDark
+                    ? DesignTokens.paperDark
+                    : DesignTokens.paperLight,
+                width: 3,
               ),
             ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.add, size: 28, color: Colors.white),
           ),
         ),
       ),

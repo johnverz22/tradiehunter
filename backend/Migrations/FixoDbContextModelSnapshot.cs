@@ -1177,6 +1177,10 @@ namespace FixoApi.Migrations
                     b.Property<bool>("BankAccountVerified")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("BusinessName")
                         .HasColumnType("text");
 
@@ -1197,6 +1201,10 @@ namespace FixoApi.Migrations
 
                     b.Property<Point>("Location")
                         .HasColumnType("geometry (Point, 4326)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<decimal>("ServiceRadiusKm")
                         .HasColumnType("decimal(18,2)");

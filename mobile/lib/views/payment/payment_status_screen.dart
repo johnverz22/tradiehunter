@@ -11,7 +11,6 @@ import '../../widgets/fixo_cards.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/fixo_cta_stack.dart';
 
-
 /// Payment status screen — H15 design (4 states: review / confirmed /
 /// rejected / expired). Preserves all existing ViewModel wiring; only
 /// the visual layout is updated.
@@ -90,14 +89,21 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
 
   // ── Body ───────────────────────────────────────────────────────────────────
 
-  Widget _loadingOrError(BuildContext context, bool isDark, PaymentState state) {
+  Widget _loadingOrError(
+    BuildContext context,
+    bool isDark,
+    PaymentState state,
+  ) {
     if (state.error == null) {
       return const Center(child: CircularProgressIndicator());
     }
     return ListView(
       padding: const EdgeInsets.all(Space.s6),
       children: [
-        Text(state.error!, style: TextStyle(color: DesignTokens.inkSoft(isDark))),
+        Text(
+          state.error!,
+          style: TextStyle(color: DesignTokens.inkSoft(isDark)),
+        ),
         const SizedBox(height: Space.s4),
         FixoGhostButton(
           label: 'Try again',
@@ -134,27 +140,34 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
         ? DesignTokens.green
         : DesignTokens.brand500;
 
+    // H15 copy: "Payment confirmed" (success), "Under review",
+    // "Receipt needs another look" (rejected), "Payment window expired".
     final headline = isExpired
         ? 'Payment window expired'
         : isConfirmed
-        ? 'Payment verified'
+        ? 'Payment confirmed'
         : isRejected
-        ? 'We need a different receipt'
+        ? 'Receipt needs another look'
         : 'Under review';
 
     final body = isExpired
         ? 'This match has been released. Start again to find another tradie — your job details are saved.'
         : isConfirmed
-        ? "Your payment has been verified. The job is booked."
+        ? "Your payment has been verified. The job is booked with your tradie."
         : isRejected
         ? (payment.rejectReason ??
-              'The receipt was unclear — please upload a clearer photo or screenshot.')
+              'The receipt was unclear — please upload a clearer photo or screenshot of the transfer.')
         : "We're checking your receipt. This usually takes under a business day — we'll let you know.";
 
     final amountStr = formatMoney(payment.amount);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Space.s6, Space.s7, Space.s6, Space.s6),
+      padding: const EdgeInsets.fromLTRB(
+        Space.s6,
+        Space.s7,
+        Space.s6,
+        Space.s6,
+      ),
       children: [
         // ── Hero ────────────────────────────────────────────────────────────
         Center(
@@ -170,7 +183,11 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
                     shape: BoxShape.circle,
                     color: heroBg,
                   ),
-                  child: Icon(heroIcon, size: heroSize * 0.45, color: heroColor),
+                  child: Icon(
+                    heroIcon,
+                    size: heroSize * 0.45,
+                    color: heroColor,
+                  ),
                 ),
         ),
         const SizedBox(height: 18),
@@ -199,7 +216,10 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
           const SizedBox(height: Space.s3),
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: Space.s2_5, vertical: Space.s1),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.s2_5,
+                vertical: Space.s1,
+              ),
               decoration: BoxDecoration(
                 color: DesignTokens.green.withValues(alpha: Alpha.tintStandard),
                 borderRadius: BorderRadius.circular(Radii.pill),
@@ -275,7 +295,9 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
                         fontFamily: DesignTokens.fontBody,
                         fontSize: DesignTokens.fontSizeSm,
                         fontWeight: FW.semibold,
-                        color: isDark ? DesignTokens.inkDark : DesignTokens.inkLight,
+                        color: isDark
+                            ? DesignTokens.inkDark
+                            : DesignTokens.inkLight,
                       ),
                     ),
                   ],
@@ -295,7 +317,9 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
                         fontFamily: DesignTokens.fontBody,
                         fontSize: DesignTokens.fontSizeSm,
                         fontWeight: FW.semibold,
-                        color: isDark ? DesignTokens.inkDark : DesignTokens.inkLight,
+                        color: isDark
+                            ? DesignTokens.inkDark
+                            : DesignTokens.inkLight,
                       ),
                     ),
                   ],

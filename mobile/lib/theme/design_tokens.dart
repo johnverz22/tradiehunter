@@ -423,6 +423,10 @@ abstract class Alpha {
   static const double scrim = 0.85;
   static const double navBarStrong = 0.90;
   static const double navBar = 0.92;
+
+  /// Mockup `--glass` (kit.css): surface at .86 for both light and dark
+  /// nav bars — the value the backdrop blur composites over.
+  static const double glass = 0.86;
 }
 
 // ── Padding presets ─────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/marketplace.dart' show Job;
 import '../../models/payment.dart';
 import '../../theme/design_tokens.dart';
 import '../../utils/money.dart';
@@ -127,9 +128,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           key: const Key('refresh_payment_button'),
           label: state.isLoading ? 'Refreshing…' : 'Refresh payment details',
           isLoading: state.isLoading,
-          onPressed: () => ref
-              .read(paymentViewModelProvider(widget.jobId).notifier)
-              .load(),
+          onPressed: () =>
+              ref.read(paymentViewModelProvider(widget.jobId).notifier).load(),
         ),
       ],
     );
@@ -148,7 +148,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
     if (payment == null) {
       return ListView(
-        padding: const EdgeInsets.fromLTRB(Space.s6, Space.s6, Space.s6, Space.s6),
+        padding: const EdgeInsets.fromLTRB(
+          Space.s6,
+          Space.s6,
+          Space.s6,
+          Space.s6,
+        ),
         children: [
           if (state.error != null)
             FixoInfoBanner.error(
@@ -165,7 +170,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         ],
       );
     }
-
 
     // P10-22: materials disclaimer from locale config
     final localeAsync = ref.watch(localeConfigProvider);
@@ -228,7 +232,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               if (job != null) ...[
                 const SizedBox(height: Space.s1),
                 Text(
-                  job.title,
+                  // H14: "Leaking kitchen tap · Mike Te Rangi" — job and
+                  // tradie on one caption line, middle-dot separated.
+                  job.matchedTradieName?.trim().isNotEmpty == true
+                      ? '${job.title} · ${job.matchedTradieName!.trim()}'
+                      : job.title,
+                  key: const Key('payment_amount_subtitle'),
                   style: TextStyle(
                     fontFamily: DesignTokens.fontBody,
                     fontSize: DesignTokens.fontSizeSecondary,
@@ -248,8 +257,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               if (job != null && job.hours > 0 && job.hourlyRate != null)
                 FixoSummaryRow(
                   label: 'Labour',
-                  value:
-                      '${job.hours} h × ${formatRate(job.hourlyRate!)}',
+                  value: '${job.hours} h × ${formatRate(job.hourlyRate!)}',
                 ),
               if (job != null && job.hours > 0 && job.hourlyRate != null)
                 const FixoListDivider(),
@@ -285,46 +293,14 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // H14 order: 1 Transfer to the tradie → 2 the reference →
+                // 3 upload the receipt. The account move is the action the
+                // homeowner performs first; the reference rides along with it.
                 FixoStepRow(
                   number: 1,
-                  title: 'Copy the payment reference',
+                  title: 'Transfer to ${_tradieShort(job)}',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              payment.reference,
-                              style: const TextStyle(
-                                fontFamily: DesignTokens.fontMono,
-                                fontSize: DesignTokens.fontSizeAmountSm,
-                                fontWeight: FW.semibold,
-                              ),
-                            ),
-                          ),
-                          FixoCopyButton(
-                            label: 'reference',
-                            onTap: () => _copy(payment.reference, 'Reference'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: Space.s1),
-                      Text(
-                        'Quote this exact reference and amount so our team can match your transfer.',
-                        style: TextStyle(
-                          fontSize: DesignTokens.fontSizeCaption,
-                          color: DesignTokens.inkSoft(isDark),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const FixoListDivider(spacing: 29),
-                FixoStepRow(
-                  number: 2,
-                  title: 'Transfer ${formatMoney(payment.amount)}',
-                  child: Column(
                     children: [
                       FixoDetailRow(
                         label: 'Account name',
@@ -347,9 +323,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           label: const Text('Copy all'),
                           onPressed: () => _copy(
                             'Account name: ${bank.accountName}\n'
-                            'Account number: ${bank.accountNumber}\n'
-                            'Amount: ${formatMoney(payment.amount)}\n'
-                            'Reference: ${payment.reference}',
+                                'Account number: ${bank.accountNumber}\n'
+                                'Amount: ${formatMoney(payment.amount)}\n'
+                                'Reference: ${payment.reference}',
                             'Payment details',
                           ),
                         ),
@@ -359,12 +335,47 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 ),
                 const FixoListDivider(spacing: 29),
                 FixoStepRow(
+                  number: 2,
+                  title: 'Use this reference',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              payment.reference,
+                              style: const TextStyle(
+                                fontFamily: DesignTokens.fontMono,
+                                fontSize: DesignTokens.fontSizeAmountSm,
+                                fontWeight: FW.semibold,
+                              ),
+                            ),
+                          ),
+                          FixoCopyButton(
+                            key: const Key('copy_reference_button'),
+                            label: 'reference',
+                            onTap: () => _copy(payment.reference, 'Reference'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Space.s1),
+                      Text(
+                        'Quote this exact reference and amount so our team can match your transfer.',
+                        style: TextStyle(
+                          fontSize: DesignTokens.fontSizeCaption,
+                          color: DesignTokens.inkSoft(isDark),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const FixoListDivider(spacing: 29),
+                FixoStepRow(
                   number: 3,
-                  title: 'Upload your bank receipt',
+                  title: 'Upload your receipt',
                   child: Text(
-                    'Upload your receipt so our team can review your transfer. '
-                    'We will confirm your payment here — the job is booked only '
-                    'once the payment is verified.',
+                    'We check it within 1 business day.',
                     style: TextStyle(
                       fontSize: DesignTokens.fontSizeSecondary,
                       height: 1.45,
@@ -468,9 +479,41 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
         ],
 
+        // ── H14 footer: deadline + money-goes-straight line ──────────
+        if (bankReady && payment.canUploadReceipt) ...[
+          const SizedBox(height: Space.s3),
+          Text(
+            'Pay within ${payment.dueAtUtc.difference(DateTime.now()).inHours < 0 ? 0 : _windowHours(payment)} h or the match expires. Your money goes straight to the tradie.',
+            key: const Key('payment_window_note'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeCaption,
+              height: 1.45,
+              color: DesignTokens.inkSoft(isDark),
+            ),
+          ),
+        ],
+
         const SizedBox(height: Space.s5),
       ],
     );
+  }
+
+  /// Hours left on the server-set payment window, floor at 1 so the copy
+  /// never reads "0 h" while the deadline is still ahead.
+  static int _windowHours(PaymentStatus payment) {
+    final left = payment.dueAtUtc.difference(DateTime.now()).inHours;
+    return left < 1 ? 1 : left;
+  }
+
+  /// H14 step 1 title: the tradie's first name ("Transfer to Mike") when
+  /// the job carries one; "the tradie" otherwise.
+  static String _tradieShort(Job? job) {
+    final full = job?.matchedTradieName?.trim();
+    if (full == null || full.isEmpty) return 'the tradie';
+    final first = full.split(' ').first;
+    return first.isEmpty ? full : first;
   }
 
   static FixoBadgeKind _badgeKind(PaymentStage stage) => switch (stage) {
@@ -486,10 +529,3 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     _ => method.isEmpty ? 'Unavailable' : method,
   };
 }
-
-
-
-
-
-
-

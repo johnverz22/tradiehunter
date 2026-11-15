@@ -16,6 +16,9 @@ public class ProfileDto
     public decimal AverageRating { get; set; }
     /// <summary>Total reviews received as reviewee.</summary>
     public int ReviewCount { get; set; }
+
+    /// <summary>Account creation date — drives the H17 "Member since" line.</summary>
+    public DateTime MemberSinceUtc { get; set; }
     
     // Tradie specific
     public string? TradeType { get; set; }
@@ -27,6 +30,11 @@ public class ProfileDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public decimal? ServiceRadiusKm { get; set; }
+
+    // ── Public-profile extras (H17): self-written About blurb and trade ──
+    // ── registration number, e.g. "NZ Reg #E2491". Owner-editable.        ───
+    public string? Bio { get; set; }
+    public string? RegistrationNumber { get; set; }
 
     // ── Payout details — owner-only, never serialized on the public view ──
     public string? BankAccountName { get; set; }
@@ -50,6 +58,10 @@ public class ProfileUpdateDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public decimal? ServiceRadiusKm { get; set; }
+
+    // ── Public-profile extras (H17): owner-editable About + registration ──
+    public string? Bio { get; set; }
+    public string? RegistrationNumber { get; set; }
 
     // Tradie payout details (owner-editable). BankAccountVerified is not
     // settable here — changing the number clears it server-side.

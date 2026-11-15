@@ -1,15 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
 import '../../network/api_error.dart';
 import '../../repositories/chat_reviews_repository.dart';
+import '../../widgets/fixo_buttons.dart';
+import '../widgets/sticky_action_bar.dart';
 import '../../theme/design_tokens.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
-import '../../widgets/fixo_buttons.dart';
 import '../../widgets/rating_sheet.dart';
 import '../../widgets/fixo_states.dart';
 import '../../widgets/fixo_cards.dart';
@@ -146,6 +148,20 @@ class PublicProfileScreen extends ConsumerWidget {
             ),
         ],
       ),
+      // ── H17 sticky bar: tonal Message + primary "Request for a job" ─────
+      // shown to a signed-in non-owner on any public profile — Request
+      // only materialises for a homeowner viewing a tradie (the inner
+      // widget loads eligible jobs itself). The body's mid-list action
+      // buttons are retired in favour of this bar.
+      bottomNavigationBar: !isOwner && viewerId != null && viewerId.isNotEmpty
+          ? _ContextualActions(
+              profileId: profileId,
+              isTradie: isTradie,
+              viewerRole: viewer?['role'] as int?,
+              ref: ref,
+              sticky: true,
+            )
+          : null,
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => const Center(child: Text('Failed to load profile')),
@@ -214,7 +230,18 @@ class _ProfileBody extends StatelessWidget {
 
     final isVerified = profile?.isVerified ?? false;
     final hasInsurance = profile?.hasInsurance ?? false;
-    final isAvailable = profile?.isAvailable;
+
+    // H17 extras served by GET /api/profile/:id since the Bio/Registration
+    // migration: About blurb, registration number, member-since date.
+    final bio = profile?.bio;
+    final hasBio = bio != null && bio.trim().isNotEmpty;
+    final registrationNumber = profile?.registrationNumber;
+    final memberSince = profile?.memberSinceUtc;
+    final hasRating =
+        reviewCount != null &&
+        reviewCount > 0 &&
+        avgRating != null &&
+        avgRating > 0;
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notif) {
@@ -225,30 +252,67 @@ class _ProfileBody extends StatelessWidget {
         return false;
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s7),
+        padding: const EdgeInsets.fromLTRB(
+          Space.s6,
+          Space.s4,
+          Space.s6,
+          Space.s7,
+        ),
         children: [
-          // ── Avatar ──────────────────────────────────────────────────────
+          // ── Avatar — H17: 88px .av.xl solid on --av-tradie, with the ──
+          // green verified tick (.vbdg) clipped bottom-right when verified.
           Center(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: DesignTokens.brand500,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  fontFamily: DesignTokens.fontDisplay,
-                  fontWeight: FW.semibold,
-                  fontSize: DesignTokens.fontSizeAvatarInitialsLg,
-                  color: Colors.white,
-                ),
+            child: SizedBox(
+              width: 88,
+              height: 88,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: DesignTokens.brand500,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        fontFamily: DesignTokens.fontDisplay,
+                        fontWeight: FW.semibold,
+                        fontSize: 32,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (isVerified)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: DesignTokens.green,
+                          border: Border.all(
+                            color: DesignTokens.surfaceCard(isDark),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: Space.s3),
+          const SizedBox(height: Space.s2_5),
 
           // ── Name + subtitle ──────────────────────────────────────────────
           Center(
@@ -269,115 +333,121 @@ class _ProfileBody extends StatelessWidget {
           ),
           const SizedBox(height: Space.s3),
 
-          // ── Pills: Verified + Member ─────────────────────────────────────
-          Wrap(
-            alignment: WrapAlignment.center,
-            runSpacing: 8,
-            children: [
-              if (isVerified) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
-                  decoration: BoxDecoration(
-                    color: DesignTokens.green.withValues(alpha: Alpha.tintStrong),
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                  ),
-                  child: Text(
-                    '✓ Verified',
-                    style: TextStyle(
-                      fontFamily: DesignTokens.fontBody,
-                      fontSize: DesignTokens.fontSizeSecondary,
-                      fontWeight: FW.semibold,
-                      color: DesignTokens.inkSuccess(isDark),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Space.s2),
-              ],
-              if (hasInsurance) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
-                  decoration: BoxDecoration(
-                    color: DesignTokens.brand500.withValues(alpha: Alpha.tintStandard),
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+          // ── H17 trust tile: rating + badges + stats + member-since ──────
+          FixoCard(
+            padding: const EdgeInsets.all(Space.s4),
+            child: Column(
+              children: [
+                if (hasRating)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.shield_outlined,
-                        size: 14,
-                        color: DesignTokens.brand500,
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: DesignTokens.amber,
                       ),
                       const SizedBox(width: Space.s1),
                       Text(
-                        'Insured',
-                        style: TextStyle(
-                          fontFamily: DesignTokens.fontBody,
-                          fontSize: DesignTokens.fontSizeSecondary,
-                          fontWeight: FW.semibold,
-                          color: DesignTokens.brand500,
+                        avgRating.toStringAsFixed(1),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FW.bold,
+                        ),
+                      ),
+                      const SizedBox(width: Space.s1),
+                      Text(
+                        '($reviewCount)',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: Space.s2),
-              ],
-              if (isTradie && isAvailable != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? DesignTokens.brand100Dark
-                        : DesignTokens.brand100Light,
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                  ),
-                  child: Text(
-                    isAvailable ? 'Available for jobs' : 'Not taking jobs',
-                    style: TextStyle(
-                      fontFamily: DesignTokens.fontBody,
-                      fontSize: DesignTokens.fontSizeSecondary,
-                      fontWeight: FW.medium,
-                      color: theme.colorScheme.onSurface,
+                  )
+                else
+                  Text(
+                    isTradie ? 'New to Fixo' : 'Homeowner',
+                    key: const Key('profile_new_to_fixo'),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FW.bold,
                     ),
                   ),
+                const SizedBox(height: Space.s2_5),
+                // Trust badges — H17 `.badges` row: wraps, never truncated.
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: Space.s2,
+                  runSpacing: Space.s2,
+                  children: [
+                    if (isVerified)
+                      _H17Badge(
+                        icon: Icons.verified_user_outlined,
+                        label: 'Verified',
+                      ),
+                    if (isVerified && isTradie)
+                      _H17Badge(
+                        icon: Icons.workspace_premium_outlined,
+                        label: 'Licensed',
+                      ),
+                    if (hasInsurance)
+                      _H17Badge(icon: Icons.shield_outlined, label: 'Insured'),
+                  ],
                 ),
-                const SizedBox(width: Space.s2),
-              ],
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: Space.s1),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? DesignTokens.brand100Dark
-                      : DesignTokens.brand100Light,
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                ),
-                child: Text(
-                  'Member',
-                  style: TextStyle(
-                    fontFamily: DesignTokens.fontBody,
-                    fontSize: DesignTokens.fontSizeSecondary,
-                    fontWeight: FW.medium,
-                    color: theme.colorScheme.onSurface,
+                const SizedBox(height: Space.s2),
+                // Stats line: "126 jobs completed · NZ Reg #E2491" (H17).
+                Text(
+                  [
+                    if (isTradie && reviewCount != null)
+                      '$reviewCount jobs completed',
+                    if (registrationNumber != null)
+                      'NZ Reg #$registrationNumber',
+                  ].join(' · '),
+                  key: const Key('profile_stats_line'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-            ],
+                if (memberSince != null) ...[
+                  const SizedBox(height: Space.s2),
+                  Text(
+                    'Member since ${DateFormat('MMMM yyyy').format(memberSince)}',
+                    key: const Key('profile_member_since'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: Space.s4),
+          const SizedBox(height: Space.s5),
 
-          // ── Consolidated trust row ─────────────────────────────────────────
-          _TrustRow(
-            isDark: isDark,
-            isTradie: isTradie,
-            rating: (reviewCount != null && reviewCount > 0 && avgRating != null && avgRating > 0)
-                ? avgRating
-                : null,
-            reviewCount: reviewCount ?? 0,
-            isVerified: isVerified,
-            hasInsurance: hasInsurance,
-          ),
-          const SizedBox(height: Space.s4),
+          // ── About section — H17: blurb between stats and actions ──────
+          if (hasBio) ...[
+            Text(
+              'About',
+              key: const Key('profile_about_eyebrow'),
+              style: TextStyle(
+                fontFamily: DesignTokens.fontBody,
+                fontSize: DesignTokens.fontSizeCaption,
+                fontWeight: FW.semibold,
+                letterSpacing: Tracking.emphasis,
+                color: DesignTokens.inkSoft(isDark),
+              ),
+            ),
+            const SizedBox(height: Space.s2),
+            Text(
+              bio.trim(),
+              key: const Key('profile_about_body'),
+              style: TextStyle(
+                fontFamily: DesignTokens.fontBody,
+                fontSize: DesignTokens.fontSizeBody,
+                height: 1.55,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: Space.s5),
+          ],
 
           // ── Edit button ────────────────────────────────────────────────
           // Routes to the current-user edit form (PUT /api/profile).
@@ -391,23 +461,14 @@ class _ProfileBody extends StatelessWidget {
             ),
           const SizedBox(height: Space.s2),
 
-          // ── Contextual actions for signed-in non-owners ─────────────────
-          // Message stays job-scoped (existing conversation only — D5);
-          // Request reuses POST /api/jobs/:id/requests and only appears for
-          // a homeowner viewing a tradie while they own a Requested job.
-          // Report/Block live in the app-bar overflow menu.
-          if (!isOwner && viewerId != null && viewerId!.isNotEmpty)
-            _ContextualActions(
-              profileId: profileId,
-              isTradie: isTradie,
-              viewerRole: viewerRole,
-              ref: ref,
-            ),
+          // Contextual Message/Request actions moved to the H17 sticky bar
+          // (Scaffold.bottomNavigationBar); Report/Block stay in the
+          // app-bar overflow menu.
           const SizedBox(height: Space.s6),
 
-          // ── Reviews section header ────────────────────────────────────────
+          // ── Reviews section header — H17 eyebrow "Recent reviews" ──────
           Text(
-            'Recent Reviews',
+            'Recent reviews',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FW.semibold,
             ),
@@ -496,11 +557,17 @@ class _ContextualActions extends StatefulWidget {
   final int? viewerRole;
   final WidgetRef ref;
 
+  /// H17 `.btnrow` mode: tonal Message (1fr) + primary "Request for a job"
+  /// (2fr) side-by-side in the sticky bar instead of stacked full-width
+  /// buttons mid-list.
+  final bool sticky;
+
   const _ContextualActions({
     required this.profileId,
     required this.isTradie,
     required this.viewerRole,
     required this.ref,
+    this.sticky = false,
   });
 
   @override
@@ -570,7 +637,12 @@ class _ContextualActionsState extends State<_ContextualActions> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s2),
+              padding: const EdgeInsets.fromLTRB(
+                Space.s6,
+                Space.s4,
+                Space.s6,
+                Space.s2,
+              ),
               child: Text(
                 'Request this tradie',
                 style: Theme.of(ctx).textTheme.titleMedium
@@ -600,10 +672,7 @@ class _ContextualActionsState extends State<_ContextualActions> {
           'Request sent — you’ll be notified when they respond.',
         );
       } else {
-        FixoNotice.warning(
-          context,
-          'This job is no longer open for requests.',
-        );
+        FixoNotice.warning(context, 'This job is no longer open for requests.');
       }
     } catch (_) {
       if (!mounted) return;
@@ -615,42 +684,51 @@ class _ContextualActionsState extends State<_ContextualActions> {
 
   @override
   Widget build(BuildContext context) {
-    final actions = <Widget>[
-      if (_shared != null)
-        OutlinedButton.icon(
-          onPressed: _message,
-          icon: const Icon(Icons.chat_bubble_outline, size: 18),
-          label: const Text('Message'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(0, DesignTokens.heightSecondary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
-            ),
-          ),
+    final canMessage = _shared != null;
+    final canRequest = _requestable != null && _requestable!.isNotEmpty;
+    if (!canMessage && !canRequest) return const SizedBox.shrink();
+
+    if (widget.sticky) {
+      // H17 sticky bar: `.btnrow` — tonal Message 1fr + primary 2fr.
+      final message = _H17MessageButton(
+        onPressed: canMessage ? _message : null,
+      );
+      final request = canRequest
+          ? FixoPrimaryButton(
+              key: const Key('request_tradie_button'),
+              label: 'Request for a job',
+              onPressed: _sending ? null : _request,
+            )
+          : null;
+      return StickyActionBar(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(flex: 1, child: message),
+            const SizedBox(width: Space.s2),
+            Expanded(flex: 2, child: request ?? const SizedBox.shrink()),
+          ],
         ),
-      if (_requestable != null && _requestable!.isNotEmpty)
-        FilledButton.icon(
-          onPressed: _sending ? null : _request,
-          icon: const Icon(Icons.handshake_outlined, size: 18),
-          label: const Text('Request this tradie'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(0, DesignTokens.heightPrimary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
-            ),
-          ),
-        ),
-    ];
-    if (actions.isEmpty) return const SizedBox.shrink();
+      );
+    }
+
+    // Non-sticky fallback (inline use): same H17 row without the bar chrome.
+    final message = _H17MessageButton(onPressed: canMessage ? _message : null);
     return Padding(
       padding: const EdgeInsets.only(top: Space.s2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          for (var i = 0; i < actions.length; i++) ...[
-            if (i > 0) const SizedBox(height: Space.s2),
-            actions[i],
-          ],
+          Expanded(flex: 1, child: message),
+          const SizedBox(width: Space.s2),
+          Expanded(
+            flex: 2,
+            child: canRequest
+                ? FixoPrimaryButton(
+                    label: 'Request for a job',
+                    onPressed: _sending ? null : _request,
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -671,10 +749,7 @@ Future<void> _showReviewEntry(
     jobs = await ref.read(jobsRepositoryProvider).getMyJobs();
   } catch (_) {
     if (context.mounted) {
-      FixoNotice.error(
-        context,
-        'Could not check completed jobs. Try again.',
-      );
+      FixoNotice.error(context, 'Could not check completed jobs. Try again.');
     }
     return;
   }
@@ -789,130 +864,6 @@ Future<void> _blockUser(
 
 // ── Trust row widget ──────────────────────────────────────────────────────────
 
-class _TrustRow extends StatelessWidget {
-  final bool isDark;
-  final bool isTradie;
-  final double? rating;
-  final int reviewCount;
-  final bool isVerified;
-  final bool hasInsurance;
-
-  const _TrustRow({
-    required this.isDark,
-    required this.isTradie,
-    required this.rating,
-    required this.reviewCount,
-    required this.isVerified,
-    required this.hasInsurance,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasRating = rating != null && rating! > 0 && reviewCount > 0;
-
-    return FixoCard(
-      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: 14),
-      child: Center(
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 16,
-          runSpacing: 8,
-          children: [
-            if (hasRating)
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Icon(Icons.star_rounded, size: 20, color: DesignTokens.amber),
-                    ),
-                    const WidgetSpan(child: SizedBox(width: Space.s1)),
-                    TextSpan(
-                      text: rating!.toStringAsFixed(1),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FW.bold,
-                      ),
-                    ),
-                    const WidgetSpan(child: SizedBox(width: Space.s1)),
-                    TextSpan(
-                      text: '($reviewCount)',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              )
-            else
-              Text.rich(
-                TextSpan(
-                  children: [
-                    const WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Icon(Icons.verified_user_outlined, size: 18, color: DesignTokens.amber),
-                    ),
-                    const WidgetSpan(child: SizedBox(width: Space.s1_5)),
-                    TextSpan(
-                      text: 'New to TradieHunter',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FW.semibold,
-                        color: isDark ? Colors.white : DesignTokens.brand900,
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            if (isTradie && isVerified)
-              Text.rich(
-                TextSpan(
-                  children: [
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Icon(Icons.verified_outlined, size: 18, color: DesignTokens.inkSuccess(isDark)),
-                    ),
-                    const WidgetSpan(child: SizedBox(width: Space.s1)),
-                    TextSpan(
-                      text: 'Verified',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FW.semibold,
-                        color: DesignTokens.inkSuccess(isDark),
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            if (isTradie && hasInsurance)
-              Text.rich(
-                TextSpan(
-                  children: [
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Icon(Icons.shield_outlined, size: 18, color: DesignTokens.brand500),
-                    ),
-                    const WidgetSpan(child: SizedBox(width: Space.s1)),
-                    TextSpan(
-                      text: 'Insured',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FW.semibold,
-                        color: DesignTokens.brand500,
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Review card widget ────────────────────────────────────────────────────────
 
 class _ReviewCard extends StatelessWidget {
@@ -959,7 +910,9 @@ class _ReviewCard extends StatelessWidget {
               Text(
                 review.relativeDate,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: Alpha.divider),
+                  color: theme.colorScheme.onSurface.withValues(
+                    alpha: Alpha.divider,
+                  ),
                 ),
               ),
             ],
@@ -985,11 +938,92 @@ class _ReviewCard extends StatelessWidget {
             Text(
               review.comment!,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: Alpha.textOnGradientStrong),
+                color: theme.colorScheme.onSurface.withValues(
+                  alpha: Alpha.textOnGradientStrong,
+                ),
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// H17 `.badge` — non-interactive status label: 26px pill, tint-brand
+/// background, brand text, 14px glyph. NOT a chip (chips are interactive).
+class _H17Badge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _H17Badge({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = DesignTokens.foregroundBrand(isDark);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: Space.s1),
+      decoration: BoxDecoration(
+        color: DesignTokens.brand500.withValues(alpha: Alpha.tintStandard),
+        borderRadius: BorderRadius.circular(Radii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: fg),
+          const SizedBox(width: Space.s1),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: DesignTokens.fontBody,
+              fontSize: DesignTokens.fontSizeCaption,
+              fontWeight: FW.semibold,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// H17 `.btn-tonal` 56px Message button — tint-brand fill, brand text,
+/// chat glyph. Rendered disabled when no open conversation exists so the
+/// sticky bar keeps its 1fr shape instead of collapsing.
+class _H17MessageButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+
+  const _H17MessageButton({this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = DesignTokens.foregroundBrand(isDark);
+    return SizedBox(
+      height: DesignTokens.heightPrimary,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(Icons.chat_bubble_outline, size: 20, color: fg),
+        label: Text(
+          'Message',
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: DesignTokens.fontSizeControl,
+            fontWeight: FW.semibold,
+            color: fg,
+          ),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: DesignTokens.brand500.withValues(
+            alpha: Alpha.tintStandard,
+          ),
+          disabledBackgroundColor: DesignTokens.surfaceDisabled(isDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: Space.s2),
+        ),
       ),
     );
   }

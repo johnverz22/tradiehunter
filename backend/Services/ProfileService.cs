@@ -49,6 +49,7 @@ public class ProfileService : IProfileService
             Role          = user.Role,
             AverageRating = avgRating,
             ReviewCount   = reviews.Count,
+            MemberSinceUtc = user.CreatedAtUtc,
         };
 
         if (!isPublicView)
@@ -68,6 +69,8 @@ public class ProfileService : IProfileService
                 dto.HasInsurance    = tradie.HasInsurance;
                 dto.IsAvailable     = tradie.IsAvailable;
                 dto.ServiceRadiusKm = tradie.ServiceRadiusKm;
+                dto.Bio              = tradie.Bio;
+                dto.RegistrationNumber = tradie.RegistrationNumber;
                 
                 if (!isPublicView)
                 {
@@ -106,6 +109,8 @@ public class ProfileService : IProfileService
 
             if (dto.TradeType       != null) tradie.TradeType       = dto.TradeType;
             if (dto.BusinessName    != null) tradie.BusinessName    = dto.BusinessName;
+            if (dto.Bio             != null) tradie.Bio             = dto.Bio;
+            if (dto.RegistrationNumber != null) tradie.RegistrationNumber = dto.RegistrationNumber;
             if (dto.IsAvailable.HasValue)    tradie.IsAvailable     = dto.IsAvailable.Value;
             if (dto.ServiceRadiusKm.HasValue) tradie.ServiceRadiusKm = dto.ServiceRadiusKm.Value;
             if (dto.Address         != null) tradie.Address         = dto.Address;

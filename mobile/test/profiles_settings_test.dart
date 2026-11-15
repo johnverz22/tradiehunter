@@ -173,10 +173,10 @@ void main() {
       jobsFixture: jobs,
     );
     expect(find.text('Message'), findsOneWidget);
-    expect(find.text('Request this tradie'), findsOneWidget);
-    expect(find.text('Not taking jobs'), findsOneWidget);
+    expect(find.text('Request for a job'), findsOneWidget);
+    // Availability pill retired in the H17 trust tile.
 
-    await tester.tap(find.text('Request this tradie'));
+    await tester.tap(find.text('Request for a job'));
     await tester.pumpAndSettle();
     expect(jobs.requestedJobId, 'open-1');
     expect(jobs.requestedTradieId, 'target');
@@ -194,7 +194,7 @@ void main() {
       convs: const [],
       jobs: [job('closed', 'Completed', 'viewer', 'target')],
     );
-    expect(find.text('Request this tradie'), findsNothing);
+    expect(find.text('Request for a job'), findsNothing);
     expect(find.text('Message'), findsNothing);
   });
 
@@ -210,11 +210,9 @@ void main() {
       jobs: const [],
     );
     expect(find.text('Message'), findsOneWidget);
-    expect(find.text('Request this tradie'), findsNothing);
+    expect(find.text('Request for a job'), findsNothing);
     // Homeowner profiles never render the tradie-only Verified stat.
     expect(find.text('Verified'), findsNothing);
-    expect(find.text('Available for jobs'), findsNothing);
-    expect(find.text('Not taking jobs'), findsNothing);
   });
 
   testWidgets('closed shared conversation does not offer Message', (
@@ -249,7 +247,7 @@ void main() {
     );
     expect(find.text('Edit Profile'), findsOneWidget);
     expect(find.text('Message'), findsNothing);
-    expect(find.text('Request this tradie'), findsNothing);
+    expect(find.text('Request for a job'), findsNothing);
     expect(find.byIcon(Icons.more_vert), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -334,7 +332,6 @@ void main() {
     );
     expect(find.text('Tradie Information'), findsNothing);
     expect(find.text('Payout Details'), findsNothing);
-    expect(find.text('Available for jobs'), findsNothing);
   });
 
   testWidgets('availability toggle saves immediately via endpoint', (

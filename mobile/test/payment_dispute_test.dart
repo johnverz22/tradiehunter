@@ -128,12 +128,13 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await _scrollTo(tester, find.text('Copy the payment reference'));
-        expect(find.text('Copy the payment reference'), findsOneWidget);
-        await _scrollTo(tester, find.textContaining(r'Transfer $171.00'));
-        expect(find.text(r'Transfer $171.00'), findsOneWidget);
-        await _scrollTo(tester, find.text('Upload your bank receipt'));
-        expect(find.text('Upload your bank receipt'), findsOneWidget);
+        // H14 order: transfer first, reference second, upload third.
+        await _scrollTo(tester, find.text('Transfer to the tradie'));
+        expect(find.text('Transfer to the tradie'), findsOneWidget);
+        await _scrollTo(tester, find.text('Use this reference'));
+        expect(find.text('Use this reference'), findsOneWidget);
+        await _scrollTo(tester, find.text('Upload your receipt'));
+        expect(find.text('Upload your receipt'), findsOneWidget);
 
         // Authoritative breakdown: hours × rate from the job, total from the
         // payment — no invented fee lines.
@@ -145,7 +146,7 @@ void main() {
         expect(find.textContaining('NZD'), findsNothing);
 
         // Factual review copy; no escrow/protection/SLA claims.
-        expect(find.textContaining('our team can review'), findsWidgets);
+        expect(find.textContaining('within 1 business day'), findsOneWidget);
         expect(find.textContaining('escrow'), findsNothing);
         expect(find.textContaining('protected'), findsNothing);
         expect(find.textContaining('surcharge'), findsNothing);
@@ -201,8 +202,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _scrollTo(tester, find.text('Refresh payment details'));
-      expect(find.text('Copy the payment reference'), findsNothing);
-      expect(find.textContaining('Transfer'), findsNothing);
+      expect(find.text('Use this reference'), findsNothing);
+      expect(find.text('Transfer to the tradie'), findsNothing);
       expect(find.text('Refresh payment details'), findsOneWidget);
       expect(find.text('Job total'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -245,8 +246,10 @@ void main() {
         ]),
       );
       await tester.pumpAndSettle();
-      await _scrollTo(tester, find.text('Copy').first);
-      await tester.tap(find.text('Copy').first);
+      // H14: the reference Copy chip lives in step 2; the account row's
+      // copy control (step 1) also says "Copy", so target by key.
+      await _scrollTo(tester, find.byKey(const Key('copy_reference_button')));
+      await tester.tap(find.byKey(const Key('copy_reference_button')));
       await tester.pumpAndSettle();
       expect(copied, 'FIXO-42');
       expect(tester.takeException(), isNull);
@@ -303,7 +306,7 @@ void main() {
       await _scrollTo(tester, find.text('Verified'));
       expect(find.text('Paid'), findsOneWidget);
       expect(find.text('Verified'), findsWidgets);
-      expect(find.text('Payment verified'), findsOneWidget);
+      expect(find.text('Payment confirmed'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -323,7 +326,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await _scrollTo(tester, find.text('We need a different receipt'));
+      await _scrollTo(tester, find.text('Receipt needs another look'));
       expect(
         find.text('The amount on the slip does not match.'),
         findsOneWidget,

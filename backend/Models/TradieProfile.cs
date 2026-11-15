@@ -17,9 +17,17 @@ public class TradieProfile
     public ApplicationUser User { get; set; } = null!;
 
     public string TradeType { get; set; } = string.Empty;
-    
+
     public string? BusinessName { get; set; }
-    
+
+    /// <summary>Self-written "About" blurb shown on the public profile (H17). Max 500 chars.</summary>
+    [MaxLength(500)]
+    public string? Bio { get; set; }
+
+    /// <summary>Trade registration number shown on the public profile (H17), e.g. "E2491". Max 30 chars.</summary>
+    [MaxLength(30)]
+    public string? RegistrationNumber { get; set; }
+
     public bool IsVerified { get; set; } = false;
     
     public bool IsAvailable { get; set; } = true;

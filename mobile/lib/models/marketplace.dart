@@ -487,12 +487,22 @@ class UserProfile {
   final double? averageRating;
   final int? reviewCount;
 
+  /// Account creation date — drives the H17 "Member since March 2026" line.
+  final DateTime? memberSinceUtc;
+
   // Tradie-only
   final String? tradeType;
   final String? businessName;
   final bool? isVerified;
   final bool? hasInsurance;
   final bool? isAvailable;
+
+  /// Self-written About blurb (H17 "About" section). Nullable/empty → section
+  /// is omitted rather than showing a stub.
+  final String? bio;
+
+  /// Trade registration number, shown as "NZ Reg #E2491" (H17). Owner-set.
+  final String? registrationNumber;
 
   const UserProfile({
     required this.id,
@@ -501,11 +511,14 @@ class UserProfile {
     required this.role,
     required this.averageRating,
     required this.reviewCount,
+    this.memberSinceUtc,
     this.tradeType,
     this.businessName,
     this.isVerified,
     this.hasInsurance,
     this.isAvailable,
+    this.bio,
+    this.registrationNumber,
   });
 
   String get fullName => '$firstName $lastName'.trim();
@@ -536,11 +549,18 @@ class UserProfile {
       role: role,
       averageRating: (json['averageRating'] as num?)?.toDouble(),
       reviewCount: (json['reviewCount'] as num?)?.toInt(),
+      memberSinceUtc: DateTime.tryParse(
+        json['memberSinceUtc']?.toString() ?? '',
+      ),
       tradeType: json['tradeType'] as String?,
       businessName: json['businessName'] as String?,
       isVerified: json['isVerified'] as bool?,
       hasInsurance: json['hasInsurance'] as bool?,
       isAvailable: json['isAvailable'] as bool?,
+      bio: (json['bio'] as String?)?.trim(),
+      registrationNumber: (json['registrationNumber'] as String?)
+          ?.trim()
+          .toUpperCase(),
     );
   }
 }
