@@ -1,0 +1,65 @@
+# TradieHunter / Fixo mobile — agent rules (Windsurf)
+# Same rules as .cursorrules — full guide: agent/AGENT_GUIDE.md
+
+## Context
+- Product: Fixo (by TradieHunter). Flutter app in mobile/; design source of
+  truth in docs/design/v1.6.2 (HTML mockups + kit.css + tokens).
+- Frame ids: H* homeowner, T* tradie, S* auth, E* empty/error, cmp-* components,
+  IPAD* tablet. Themes: light / dark / outdoor (`.dark`, `.outdoor` classes).
+
+## Token enforcement — zero tolerance
+- Colors: ONLY via `Theme.of(context).extension<THColors>()!` (paper, surface,
+  line, text, textSoft, textBrand, brand, onBrand, accentText, success, danger,
+  tintBrand, track, avTradie, onAvTradie) or constants THPalette/THHeroGlass
+  where the spec marks theme-invariant. NEVER `Color(0x...)` in views.
+- Spacing: `Space.s1..s8`, `Space.gutter` (20). Compose off-grid as `n * Space.s1`.
+- Radii: `Radii.card/control/tile/sheet/pill`. Sizes: `Sizes.tapMin/button/
+  buttonSecondary/input/nav/appBar/fab`, avatar sm/md/lg/xl.
+- Type: `THType.hero/display/section/cardTitle/price/body/secondary/caption/mono`.
+  Nothing below THType.caption (12px floor).
+- Missing token? Add it to design_tokens.dart AND tokens.json AND kit.css in
+  the same commit, then use it.
+
+## Widget rules
+- Reuse the existing family first: FixoAppBar, FixoBackButton,
+  FixoAppBarAction, FixoPrimaryButton, FixoTonalButton, FixoGhostButton,
+  FixoCard, FixoAvatar, FixoWordmark, FixoEmptyState, FixoLoading, FixoErrorState.
+- New widgets: `TH<Thing>` per the contract in
+  tools/design2flutter/th_components.dart; put them in mobile/lib/widgets/.
+- Naming: Screens `<Feature><Role>Screen`; widgets `Fixo*`/`TH*` PascalCase;
+  private helpers `_buildXxx`; files snake_case.
+- Scaffold from mockups with tools/design2flutter (never hand-copy pixel
+  values). Generated files carry a `// GENERATED` header — fix the generator
+  or the mockup, not the output.
+- Mockup class semantics are binding: `.faderow` = horizontal ListView + 32px
+  fade (NEVER a clipped Row); `.badges` = Wrap; `.spread` = Row(spaceBetween)
+  with Expanded around growing text; `.chip` = interactive 40dp/48dp-hit;
+  `.badge` = 26px label.
+
+## Theme discipline
+- Dark/outdoor = the SAME widget; only THColors swaps. An `if (darkMode)` color
+  branch inside a view is a bug (audit findings F-102/104/105 were exactly this).
+- Hero bands/maps/status strips are navy in ALL themes; text on them uses the
+  THHeroGlass constants.
+
+## Brand rules
+- Max 2 orange elements per screen: one primary CTA + one urgency element
+  (a countdown widget = one element).
+- Green = verified/done only. Red = problem/dispute only. Selection state =
+  2px brand border + brand tint + check; never amber.
+- 48dp minimum hit target (chips: 40dp visual + 48dp hit). Back button glyph
+  sits ON the 20dp gutter.
+
+## Quality gates (run before every commit)
+- `make -C agent audit` — mockup audit gates pass.
+- `dart format mobile/lib` (or `make -C agent flutter`).
+- `flutter analyze` clean; `flutter test` green.
+- Stress test new screens: long text, 1.3x text scale, 360dp width, all themes.
+
+## Prohibitions
+- No hardcoded colors, no magic dp numbers, no `TextStyle(fontSize: 15)` inline.
+- No new state management; follow the existing provider/viewmodel pattern.
+- No editing generated files; no committing build/ or frames/ regenerations
+  without running the audit.
+- Do not invent mockup states; if a state is missing, add it to the mockup
+  first (light + dark + outdoor), then implement.
