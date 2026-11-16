@@ -28,7 +28,7 @@ Replaces v1.7: Space Grotesk (headings) + IBM Plex Sans (body) + IBM Plex Mono (
 ## pubspec.yaml font setup (bundled assets — D-2 decision)
 
 > [!IMPORTANT]
-> Per owner decision (D-2, 2026-11-16), fonts are **bundled as woff2/ttf assets** in `pubspec.yaml`, not loaded via `google_fonts`. Download Lexend (weights 400–800) and Source Sans 3 (weights 400–700) from Google Fonts and place them in `mobile/fonts/`.
+> Per owner decision (D-2, 2026-11-16), fonts are **bundled as woff2/ttf assets** in `pubspec.yaml`, not loaded via `google_fonts`. Download Lexend (weights 400–800) and Source Sans 3 (weights 400–700) from Google Fonts and place them in `mobile/assets/fonts/v2/` (static `.ttf`; implemented in Phase 2.2).
 
 ```yaml
 flutter:

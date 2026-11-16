@@ -108,3 +108,26 @@ flutter:
       fonts:
         - asset: assets/fonts/ibm-plex-mono-latin-500-normal.woff2
           weight: 500
+    # v2 (Trust Navy + Gold) — D-2: bundled; v1 families stay until Phase 6.
+    - family: Lexend
+      fonts:
+        - asset: assets/fonts/v2/Lexend-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/v2/Lexend-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/v2/Lexend-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/v2/Lexend-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/v2/Lexend-ExtraBold.ttf
+          weight: 800
+    - family: Source Sans 3
+      fonts:
+        - asset: assets/fonts/v2/SourceSans3-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/v2/SourceSans3-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/v2/SourceSans3-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/v2/SourceSans3-Bold.ttf
+          weight: 700
