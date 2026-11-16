@@ -30,10 +30,18 @@ void main() {
   test('the shipped allowlist only names real v2 screens', () {
     for (final id in v2Screens) {
       expect(
-        thScreenBuilders.containsKey(id),
+        thScreenBuilders.containsKey(id) || nonGalleryV2Screens.contains(id),
         isTrue,
         reason: '"$id" is not a v2 screen id',
       );
+    }
+  });
+
+  test('non-gallery ids do not shadow gallery ids', () {
+    // A non-gallery id must never also exist in the gallery registry, or
+    // goldens would start rendering real screens with provider fakes.
+    for (final id in nonGalleryV2Screens) {
+      expect(thScreenBuilders.containsKey(id), isFalse, reason: id);
     }
   });
 

@@ -16,9 +16,31 @@ library;
 /// Raw `--dart-define=UI_V2=…` value: empty, `all`, or comma-separated ids.
 const String kUiV2Define = String.fromEnvironment('UI_V2');
 
-/// Screens shipped on v2. Phases 3-5 add an id here as each screen's parity
-/// checklist, tests and visual QA are done. Empty until Phase 3 lands.
-const Set<String> v2Screens = <String>{};
+/// Screens shipped on v2 (migration plan Phase 3). One id per ported screen;
+/// rolling a screen back is a one-line removal here.
+const Set<String> v2Screens = <String>{
+  'shell', // ThShell (ui/shared/th_shell.dart) — swaps the ShellRoute builder
+  'splash',
+  'onboarding',
+  'sign_in',
+  'verify_otp',
+  'role_select',
+  'signup',
+  'chat',
+  'notifications',
+  'profile',
+  'messages_list',
+  'settings',
+};
+
+/// Phase 3 screens that are real app screens, not gallery mockups — they
+/// have no entry in `thScreenBuilders` (ui_flags_test checks the union).
+const Set<String> nonGalleryV2Screens = <String>{
+  'shell',
+  'signup',
+  'messages_list',
+  'settings',
+};
 
 /// Pure resolver, parameterised so it can be unit-tested without
 /// `--dart-define`. Prefer [isV2Screen] in app code.

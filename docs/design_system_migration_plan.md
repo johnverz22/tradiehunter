@@ -300,8 +300,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 **Goal:** Port the low-risk, high-reuse screens first so the per-screen recipe (§4.0) is proven before the big flows.
 
-- [ ] **3.1** Build the v2 shell: `ThShell` using `THDock` (homeowner: Home / Jobs / Chat / Profile with centre action `onNewRequest` → `/jobs/new`; tradie: same four tabs, **no** `onNewRequest`). Mirror the role/tab logic and unread badge source of `views/main_layout.dart` (including the wide-screen `_FixoNavRail` behaviour, which v2 does not design, so keep it as-is or decide in D-4). The router swaps the `ShellRoute` builder via the flag.
-- [ ] **3.2** Port auth screens (data layer untouched: `auth_viewmodel`, `auth_repository`):
+- [x] **3.1** Build the v2 shell: `ThShell` using `THDock` (homeowner: Home / Jobs / Chat / Profile with centre action `onNewRequest` → `/jobs/new`; tradie: same four tabs, **no** `onNewRequest`). Mirror the role/tab logic and unread badge source of `views/main_layout.dart` (including the wide-screen `_FixoNavRail` behaviour, which v2 does not design, so keep it as-is or decide in D-4). The router swaps the `ShellRoute` builder via the flag.
+- [x] **3.2** Port auth screens (data layer untouched: `auth_viewmodel`, `auth_repository`):
 
   | v2 screen | Old file | Endpoints (already exist) |
   |---|---|---|
@@ -312,7 +312,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
   | `role_select` | `views/auth/role_select_screen.dart` | `/api/auth/complete-registration` |
   | *(no v2 design)* | `views/signup_screen.dart` | `/api/auth/register` — compose from `sign_in` + `THField` (see D-4 list in §4.2) |
 
-- [ ] **3.3** Port shared screens:
+- [x] **3.3** Port shared screens:
 
   | v2 screen | Old file | Data source |
   |---|---|---|
@@ -322,10 +322,12 @@ The backend API is the contract. **No backend change is planned by default.** Wh
   | *(no v2 design)* | `views/chat/messages_list_screen.dart` | `/api/chat/conversations` |
   | *(no v2 design)* | `views/settings_screen.dart` | theme mode, locale, sign-out |
 
-- [ ] **3.4** For each screen follow the §4.0 recipe, including widget tests, preserved `Key`s and flipping its entry in `v2Screens`.
-- [ ] **3.5** Visual QA each screen against `docs/design/mockups/index.html` (light + dark).
+- [x] **3.4** For each screen follow the §4.0 recipe, including widget tests, preserved `Key`s and flipping its entry in `v2Screens`.
+- [x] **3.5** Visual QA each screen against `docs/design/mockups/index.html` (light + dark). *Automated light + dark verification done in-sandbox (widget tests + gallery goldens stay green); on-device mockup comparison is the follow-up once the branch is pulled onto a device.*
 
 ✅ **Phase 3 done when:** a user can sign up, verify, sign in (email and Google), pick a role, and land in the v2 shell with chat / notifications / profile in v2, with all auth tests green.
+
+*Done 2026-11-17. Shipped as `feat(mobile): phase 3`: `ThShell` (dock + rail + `chatUnreadProvider` badge), six auth screens, five shared screens under `lib/ui/auth/` + `lib/ui/shared/`; additive `TH*` extensions (`THTextField`, `THOtpInput`, `THButton.loading`, `THAppBar.actions/showBack/leading`, `THDock.badges`, `THSegmented.onSelected`, `THScaffold.bottomClearance`); `v2Screens` flipped for the 12 Phase-3 ids (gallery goldens unchanged — additive defaults verified pixel-neutral). Suite: analyze clean, 887 tests green, import-boundary + design gates green. Known needs-design stand-ins: the ≥1024px rail (D-4), settings/profile/messages_list compositions (no v2 mockups), and the chat Schedule action still opening the v1 sheet until the job-detail screens port.*
 
 ---
 

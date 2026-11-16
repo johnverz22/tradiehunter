@@ -35,6 +35,19 @@ import '../views/notifications/notifications_screen.dart';
 import '../views/states/designed_empty_state.dart';
 import '../widgets/fixo_buttons.dart';
 import '../feedback/notice_gallery.dart';
+import '../ui/ui_flags.dart';
+import '../ui/auth/splash_screen.dart';
+import '../ui/auth/onboarding_screen.dart';
+import '../ui/auth/sign_in_screen.dart';
+import '../ui/auth/sign_up_screen.dart';
+import '../ui/auth/verify_otp_screen.dart';
+import '../ui/auth/role_select_screen.dart';
+import '../ui/shared/th_shell.dart';
+import '../ui/shared/chat_screen.dart';
+import '../ui/shared/messages_list_screen.dart';
+import '../ui/shared/notifications_screen.dart';
+import '../ui/shared/profile_screen.dart';
+import '../ui/shared/settings_screen.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
 /// Tabbed screens live inside the [MainLayout] shell; flow screens
@@ -46,6 +59,12 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'shell',
 );
+
+/// Per-screen v1↔v2 switch (migration plan §4.0): the route builds the v2
+/// screen only when its id is in [v2Screens] (or --dart-define=UI_V2=all);
+/// otherwise it builds the old screen. Rollback of any screen is a one-line
+/// flag change.
+Widget _pick(String id, Widget v1, Widget v2) => isV2Screen(id) ? v2 : v1;
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -77,16 +96,32 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     // 01-splash
-    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(
+      path: '/',
+      builder: (context, state) =>
+          _pick('splash', const SplashScreen(), const ThSplashScreen()),
+    ),
     // 02-onboarding
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) => _pick(
+        'onboarding',
+        const OnboardingScreen(),
+        const ThOnboardingScreen(),
+      ),
     ),
     // 03-login
-    GoRoute(path: '/auth', builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: '/auth',
+      builder: (context, state) =>
+          _pick('sign_in', const LoginScreen(), const ThSignInScreen()),
+    ),
     // 04-signup
-    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+    GoRoute(
+      path: '/signup',
+      builder: (context, state) =>
+          _pick('signup', const SignupScreen(), const ThSignUpScreen()),
+    ),
 
     // Shown after a new Google user authenticates — they pick Homeowner/Tradie.
     // P9-02: extra carries both the stub userId and the one-time registration
@@ -98,9 +133,16 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final (:userId, :registrationToken) =
             state.extra as ({String userId, String registrationToken});
-        return RoleSelectScreen(
-          userId: userId,
-          registrationToken: registrationToken,
+        return _pick(
+          'role_select',
+          RoleSelectScreen(
+            userId: userId,
+            registrationToken: registrationToken,
+          ),
+          ThRoleSelectScreen(
+            userId: userId,
+            registrationToken: registrationToken,
+          ),
         );
       },
     ),
@@ -112,7 +154,11 @@ final GoRouter appRouter = GoRouter(
       path: '/verify-email',
       builder: (context, state) {
         final email = state.extra as String;
-        return OtpVerificationScreen(email: email);
+        return _pick(
+          'verify_otp',
+          OtpVerificationScreen(email: email),
+          ThVerifyOtpScreen(email: email),
+        );
       },
     ),
 
@@ -130,7 +176,11 @@ final GoRouter appRouter = GoRouter(
     // H20 notifications — FCM-fed inbox
     GoRoute(
       path: '/notifications',
-      builder: (context, state) => const NotificationsScreen(),
+      builder: (context, state) => _pick(
+        'notifications',
+        const NotificationsScreen(),
+        const ThNotificationsScreen(),
+      ),
     ),
     // 06-post-job
     GoRoute(
@@ -178,9 +228,16 @@ final GoRouter appRouter = GoRouter(
     // 11-chat
     GoRoute(
       path: '/chat/:jobId',
-      builder: (context, state) => ChatScreen(
-        key: ValueKey('chat_${state.pathParameters['jobId']}'),
-        jobId: state.pathParameters['jobId']!,
+      builder: (context, state) => _pick(
+        'chat',
+        ChatScreen(
+          key: ValueKey('chat_${state.pathParameters['jobId']}'),
+          jobId: state.pathParameters['jobId']!,
+        ),
+        ThChatScreen(
+          key: ValueKey('chat_${state.pathParameters['jobId']}'),
+          jobId: state.pathParameters['jobId']!,
+        ),
       ),
     ),
     // P4-07 homeowner payment. Both are root-level flow screens: paying is a
@@ -258,7 +315,8 @@ final GoRouter appRouter = GoRouter(
 
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => MainLayout(child: child),
+      builder: (context, state, child) =>
+          _pick('shell', MainLayout(child: child), ThShell(child: child)),
       routes: [
         // 05-homeowner-home
         GoRoute(
@@ -276,16 +334,25 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/messages',
-          builder: (context, state) => const MessagesListScreen(),
+          builder: (context, state) => _pick(
+            'messages_list',
+            const MessagesListScreen(),
+            const ThMessagesListScreen(),
+          ),
         ),
         GoRoute(
           path: '/profile',
-          builder: (context, state) => const ProfileScreen(),
+          builder: (context, state) =>
+              _pick('profile', const ProfileScreen(), const ThProfileScreen()),
         ),
         // 14-settings — inside shell so Profile tab stays active
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
+          builder: (context, state) => _pick(
+            'settings',
+            const SettingsScreen(),
+            const ThSettingsScreen(),
+          ),
         ),
       ],
     ),

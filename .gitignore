@@ -40,3 +40,6 @@ docs/runs/*/screenshots/
 
 # design2flutter generated output
 tools/design2flutter/output/
+
+# Golden failure diffs (test/ui run artifacts)
+mobile/test/ui/failures/

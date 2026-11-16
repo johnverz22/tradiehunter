@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'th_tokens.dart';
 
@@ -141,6 +142,7 @@ class THButton extends StatelessWidget {
     this.icon,
     this.fullWidth = true,
     this.onPressed,
+    this.loading = false,
   });
   final String label;
   final THButtonKind kind;
@@ -148,6 +150,10 @@ class THButton extends StatelessWidget {
   final IconData? icon;
   final bool fullWidth;
   final VoidCallback? onPressed;
+
+  /// While true the button renders a spinner instead of its icon and ignores
+  /// taps, regardless of [onPressed]. Mirrors the v1 FixoPrimaryButton.
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -172,8 +178,9 @@ class THButton extends StatelessWidget {
     final radius = BorderRadius.circular(
       sm ? Radii.control - 2 : Radii.control,
     );
+    final disabled = onPressed == null || loading;
     return Opacity(
-      opacity: onPressed == null ? 0.5 : 1,
+      opacity: disabled ? 0.5 : 1,
       child: Semantics(
         button: true,
         label: label,
@@ -181,7 +188,7 @@ class THButton extends StatelessWidget {
           color: bg,
           shape: RoundedRectangleBorder(borderRadius: radius, side: side),
           child: InkWell(
-            onTap: onPressed,
+            onTap: disabled ? null : onPressed,
             borderRadius: radius,
             child: SizedBox(
               height: sm ? Sizes.buttonSm : Sizes.button,
@@ -195,7 +202,16 @@ class THButton extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     spacing: Space.s2,
                     children: [
-                      if (icon != null) Icon(icon, size: 18, color: fg),
+                      if (loading)
+                        SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: fg,
+                          ),
+                        )
+                      else if (icon != null)
+                        Icon(icon, size: 18, color: fg),
                       Flexible(
                         child: Text(
                           label,
@@ -616,6 +632,137 @@ class THField extends StatelessWidget {
   }
 }
 
+/// Real text input styled with TH tokens (plan 3.2 — THField is display-only,
+/// so auth/profile screens compose on this). The label renders above the
+/// field, mirroring [THField]'s small-caps label; errors come from
+/// [validator] and render in the danger tone below the field.
+class THTextField extends StatelessWidget {
+  const THTextField({
+    super.key,
+    this.label,
+    this.hint,
+    this.controller,
+    this.focusNode,
+    this.obscure = false,
+    this.keyboardType,
+    this.textInputAction,
+    this.validator,
+    this.onChanged,
+    this.onFieldSubmitted,
+    this.enabled = true,
+    this.autofocus = false,
+    this.autofillHints,
+    this.inputFormatters,
+    this.maxLength,
+    this.icon,
+    this.trailing,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
+    this.textCapitalization = TextCapitalization.none,
+    this.minLines = 1,
+    this.maxLines = 1,
+    this.errorMaxLines = 4,
+  });
+  final String? label;
+  final String? hint;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final bool obscure;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final String? Function(String?)? validator;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onFieldSubmitted;
+  final bool enabled;
+  final bool autofocus;
+  final List<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final IconData? icon;
+
+  /// Widget-based suffix (e.g. the password visibility toggle button).
+  final Widget? trailing;
+  final bool autocorrect;
+  final bool enableSuggestions;
+  final TextCapitalization textCapitalization;
+  final int minLines;
+  final int maxLines;
+  final int errorMaxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Radii.control),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (label != null && label!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Text(
+              label!,
+              style: THType.label.copyWith(
+                fontSize: 10.5,
+                letterSpacing: 0.6,
+                color: c.textSoft,
+              ),
+            ),
+          ),
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          enabled: enabled,
+          autofocus: autofocus,
+          obscureText: obscure,
+          keyboardType: keyboardType,
+          textInputAction: textInputAction,
+          validator: validator,
+          onChanged: onChanged,
+          onFieldSubmitted: onFieldSubmitted,
+          autofillHints: autofillHints,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          autocorrect: autocorrect,
+          enableSuggestions: enableSuggestions,
+          textCapitalization: textCapitalization,
+          minLines: minLines,
+          maxLines: obscure ? 1 : maxLines,
+          style: THType.body.copyWith(color: enabled ? c.text : c.textSoft),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: THType.body.copyWith(color: c.textSoft),
+            errorMaxLines: errorMaxLines,
+            errorStyle: THType.meta.copyWith(color: c.danger, height: 1.3),
+            filled: true,
+            fillColor: c.surface,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: Space.s3_5,
+              vertical: Space.s3_5,
+            ),
+            prefixIcon: icon == null
+                ? null
+                : Icon(icon, size: 18, color: c.textSoft),
+            prefixIconColor: c.textSoft,
+            suffixIcon: trailing,
+            border: border(c.line),
+            enabledBorder: border(c.line),
+            disabledBorder: border(c.line),
+            focusedBorder: border(c.textBrand, 1.5),
+            errorBorder: border(c.danger),
+            focusedErrorBorder: border(c.danger, 1.5),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class THPillItem {
   const THPillItem(this.label, {this.selected = false, this.icon});
   final String label;
@@ -672,9 +819,18 @@ class THPills extends StatelessWidget {
 }
 
 class THSegmented extends StatelessWidget {
-  const THSegmented({super.key, required this.items, required this.selected});
+  const THSegmented({
+    super.key,
+    required this.items,
+    required this.selected,
+    this.onSelected,
+  });
   final List<String> items;
   final int selected;
+
+  /// When provided each segment becomes tappable (index callback). Without
+  /// it the control stays visual-only, matching the generated mockups.
+  final ValueChanged<int>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -689,19 +845,23 @@ class THSegmented extends StatelessWidget {
         children: [
           for (var i = 0; i < items.length; i++)
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: i == selected ? c.surface : null,
-                  borderRadius: BorderRadius.circular(Radii.control - 4),
-                ),
-                child: Text(
-                  items[i],
-                  style: THType.button.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: i == selected ? c.text : c.textSoft,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onSelected == null ? null : () => onSelected!(i),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: i == selected ? c.surface : null,
+                    borderRadius: BorderRadius.circular(Radii.control - 4),
+                  ),
+                  child: Text(
+                    items[i],
+                    style: THType.button.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: i == selected ? c.text : c.textSoft,
+                    ),
                   ),
                 ),
               ),
@@ -778,6 +938,162 @@ class THOtp extends StatelessWidget {
             child: Text(i < value.length ? value[i] : '', style: THType.h1),
           ),
       ],
+    );
+  }
+}
+
+/// Six-box one-time-code input (plan 3.2). A hidden [TextField] holds the
+/// value so keyboard, autofill (AutofillHints.oneTimeCode) and paste behave
+/// like a normal field; the boxes are a visual mirror, v1-OtpCodeField style
+/// but painted with TH tokens. [onCompleted] fires once when the last box is
+/// filled and [enabled].
+class THOtpInput extends StatefulWidget {
+  const THOtpInput({
+    super.key,
+    this.controller,
+    this.length = 6,
+    this.enabled = true,
+    this.autofocus = true,
+    this.autofillHints = const [AutofillHints.oneTimeCode],
+    this.onChanged,
+    this.onCompleted,
+  });
+
+  /// Fixed length — the backend issues 6-digit codes.
+  final int length;
+
+  /// Optional external controller; one is created when null.
+  final TextEditingController? controller;
+  final bool enabled;
+  final bool autofocus;
+  final List<String>? autofillHints;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onCompleted;
+
+  @override
+  State<THOtpInput> createState() => _THOtpInputState();
+}
+
+class _THOtpInputState extends State<THOtpInput> {
+  late final TextEditingController _controller =
+      widget.controller ?? TextEditingController();
+  late final FocusNode _focusNode = FocusNode();
+  bool get _ownsController => widget.controller == null;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onValueChanged);
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onValueChanged);
+    _focusNode.dispose();
+    if (_ownsController) _controller.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  String _previousCode = '';
+
+  void _onValueChanged() {
+    final code = _controller.text;
+    if (code == _previousCode) return;
+    _previousCode = code;
+    if (mounted) setState(() {});
+    widget.onChanged?.call(code);
+    if (code.length == widget.length && widget.enabled) {
+      widget.onCompleted?.call(code);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    final code = _controller.text;
+    return Semantics(
+      label: 'One-time code, ${widget.length} digits',
+      textField: true,
+      child: Stack(
+        children: [
+          // Real input, painted transparent, on top so the caret and
+          // selection stay alive. The boxes below are IgnorePointer.
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0,
+              alwaysIncludeSemantics: true,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                enabled: widget.enabled,
+                autofocus: widget.autofocus,
+                keyboardType: TextInputType.number,
+                autofillHints: widget.autofillHints,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                showCursor: false,
+                maxLength: widget.length,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  counterText: '',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+          ),
+          ExcludeSemantics(
+            child: IgnorePointer(
+              child: Row(
+                children: [
+                  for (var i = 0; i < widget.length; i++)
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: i == widget.length - 1 ? 0 : Space.s1,
+                        ),
+                        child: Container(
+                          height: 60, // one-off: matches THOtp box height
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: c.surface,
+                            borderRadius: BorderRadius.circular(
+                              Radii.control - 2,
+                            ),
+                            border: Border.all(
+                              color:
+                                  (i < code.length ||
+                                      (_focusNode.hasFocus && i == code.length))
+                                  ? (i < code.length ? c.textBrand : c.brand)
+                                  : c.line,
+                              width:
+                                  i < code.length ||
+                                      (_focusNode.hasFocus && i == code.length)
+                                  ? 1.5
+                                  : 1,
+                            ),
+                          ),
+                          child: Text(
+                            i < code.length ? code[i] : '',
+                            style: THType.h1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1636,9 +1952,25 @@ class THWordmark extends StatelessWidget {
 
 // ───────────────────────────── chrome ─────────────────────────────
 class THAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const THAppBar({super.key, required this.title, this.subtitle});
+  const THAppBar({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.actions = const <Widget>[],
+    this.showBack = true,
+    this.leading,
+  });
   final String title;
   final String? subtitle;
+
+  /// Trailing widgets (icon buttons, text actions) rendered after the title.
+  final List<Widget> actions;
+
+  /// Whether the default back button is shown when [leading] is null.
+  final bool showBack;
+
+  /// Overrides the default back button entirely (e.g. an avatar).
+  final Widget? leading;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -1646,6 +1978,15 @@ class THAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
+    final Widget? start =
+        leading ??
+        (showBack
+            ? THIconButton(
+                icon: Icons.arrow_back_rounded,
+                semanticLabel: 'Back',
+                onPressed: () => Navigator.maybePop(context),
+              )
+            : null);
     return Material(
       color: c.paper,
       child: SafeArea(
@@ -1660,25 +2001,29 @@ class THAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             spacing: Space.s3,
             children: [
-              THIconButton(
-                icon: Icons.arrow_back_rounded,
-                semanticLabel: 'Back',
-                onPressed: () => Navigator.maybePop(context),
-              ),
+              ?start,
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(title, style: THType.title.copyWith(color: c.text)),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: THType.meta.copyWith(color: c.textSoft),
-                      ),
-                  ],
+                // FittedBox keeps large accessibility text scales inside the
+                // fixed 64dp bar (identity at 1.0x — content always fits and
+                // stays left-aligned exactly as before).
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(title, style: THType.title.copyWith(color: c.text)),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: THType.meta.copyWith(color: c.textSoft),
+                        ),
+                    ],
+                  ),
                 ),
               ),
+              ...actions,
             ],
           ),
         ),
@@ -1728,21 +2073,28 @@ class THDock extends StatelessWidget {
     this.active,
     this.onSelected,
     this.onNewRequest,
+    this.badges = const <THDockTab, int>{},
   });
   final THDockRole role;
   final THDockTab? active;
   final ValueChanged<THDockTab>? onSelected;
   final VoidCallback? onNewRequest;
 
+  /// Unread counts per tab (e.g. chat badge from GET /api/chat/conversations).
+  /// Counts > 99 render as "99+". Empty map = no badges (mockup default).
+  final Map<THDockTab, int> badges;
+
   @override
   Widget build(BuildContext context) {
     final c = context.th;
     Widget item(THDockTab t, IconData icon, String label) {
       final on = t == active;
+      final count = badges[t] ?? 0;
+      final badge = count > 0 ? (count > 99 ? '99+' : '$count') : null;
       return Semantics(
         button: true,
         selected: on,
-        label: label,
+        label: count > 0 ? '$label, $count unread' : label,
         child: InkWell(
           onTap: onSelected == null ? null : () => onSelected!(t),
           borderRadius: BorderRadius.circular(Radii.control),
@@ -1752,7 +2104,36 @@ class THDock extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: 2,
               children: [
-                Icon(icon, size: 22, color: on ? c.textBrand : c.textSoft),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, size: 22, color: on ? c.textBrand : c.textSoft),
+                    if (badge != null)
+                      Positioned(
+                        top: -4,
+                        right: -8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s1,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: c.accent,
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                            border: Border.all(color: c.glass, width: 1.5),
+                          ),
+                          child: Text(
+                            badge,
+                            style: THType.label.copyWith(
+                              fontSize: 9.5,
+                              letterSpacing: 0,
+                              color: c.onAccent,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 Text(
                   label,
                   style: THType.label.copyWith(
@@ -1773,6 +2154,9 @@ class THDock extends StatelessWidget {
       button: true,
       label: 'New request',
       child: GestureDetector(
+        // Same key as the v1 FAB (Key('post_job_fab')) so integration
+        // helpers survive the shell swap.
+        key: const Key('post_job_fab'),
         onTap: onNewRequest,
         child: Transform.translate(
           offset: const Offset(0, -Space.s7 - 2),
@@ -1835,6 +2219,7 @@ class THScaffold extends StatelessWidget {
     this.stickyBar,
     this.scrollable = true,
     this.heroBackground = false,
+    this.bottomClearance,
   });
   final Widget body;
   final PreferredSizeWidget? appBar;
@@ -1843,12 +2228,19 @@ class THScaffold extends StatelessWidget {
   final bool scrollable;
   final bool heroBackground;
 
+  /// Overrides the default bottom body clearance — used by screens hosted in
+  /// the v2 shell, whose floating dock comes from [ThShell] instead of [dock].
+  final double? bottomClearance;
+
   @override
   Widget build(BuildContext context) {
     final c = context.th;
     final clearance = dock != null
         ? Sizes.dockClearance
-        : (stickyBar != null ? Sizes.stickyClearance + Space.s3 : Space.s6);
+        : (bottomClearance ??
+              (stickyBar != null
+                  ? Sizes.stickyClearance + Space.s3
+                  : Space.s6));
     final padded = Padding(
       padding: EdgeInsets.fromLTRB(
         Sizes.gutter,
