@@ -200,30 +200,30 @@ The following **specific strings** appear in multiple docs and rule files and mu
 - [x] **1.2** Move all files from `docs/design/` into `docs/archive/design-legacy-v1/` (preserving subdirectory layout)
 - [x] **1.3** Create `docs/archive/design-legacy-v1/ARCHIVE-NOTICE.md` (date, reason, pointer to v2)
 - [x] **1.4** Copy `th-design-v2/` contents into `docs/design/` following the structure in §2.2
-- [ ] **1.5** Create `docs/design/COLOUR.md` (extract from DESIGN_GUIDE.md §2)
-- [ ] **1.6** Create `docs/design/TYPOGRAPHY.md` (extract from DESIGN_GUIDE.md §3)
-- [ ] **1.7** Create `docs/design/COMPONENTS.md` (extract from DESIGN_GUIDE.md §5–§7)
-- [ ] **1.8** Add `docs/design/assets/ASSETS-NOTICE.md` documenting asset strategy decision (see §2.3) — *D-1 resolved: skip; brand assets stay in archive*
-- [ ] **1.9** Rewrite `docs/DESIGN.md` per §3.1
-- [ ] **1.10** Update `docs/ARCHITECTURE.md` per §3.1
-- [ ] **1.11** Update `docs/SPECS.md` per §3.1
-- [ ] **1.12** Update `docs/MVP.md` per §3.1
-- [ ] **1.13** Update `docs/PRD.md` per §3.1
-- [ ] **1.14** Update `docs/MILESTONES.md` per §3.1
-- [ ] **1.15** Update `docs/TESTING.md` per §3.1
-- [ ] **1.16** Update `docs/QA.md` per §3.1
-- [ ] **1.17** Update `docs/README.md` per §3.1
-- [ ] **1.18** Update `docs/ai/AI-TOOLING.md` per §3.1
-- [ ] **1.19** Update `docs/ai/AGENTS-docs-block.md` per §3.1
-- [ ] **1.20** Update `.agent/rules/mobile.md` per §3.2
-- [ ] **1.21** Update `AGENTS.md` (root) per §3.2
-- [ ] **1.22** Update `GEMINI.md` per §3.2
-- [ ] **1.23** Update `CLAUDE.md` per §3.2 (canonical — regenerate cursorrules/windsurfrules from it)
-- [ ] **1.24** Regenerate `.cursorrules` and `.windsurfrules` from updated `CLAUDE.md`
-- [ ] **1.25** Update `.agent/rules/ai-tools.md` per §3.2
-- [ ] **1.26** Check `.agent/rules/backend.md` and `.agent/rules/frontend.md` for stray mobile design refs
-- [ ] **1.27** Verify `docs/design/tools/build.mjs` runs correctly from its new location (`node docs/design/tools/build.mjs --check`)
-- [ ] **1.28** Commit with message: `docs: archive v1.7 design system, install v2 Trust Navy + Gold`
+- [x] **1.5** Create `docs/design/COLOUR.md` (extract from DESIGN_GUIDE.md §2)
+- [x] **1.6** Create `docs/design/TYPOGRAPHY.md` (extract from DESIGN_GUIDE.md §3)
+- [x] **1.7** Create `docs/design/COMPONENTS.md` (extract from DESIGN_GUIDE.md §5–§7)
+- [x] **1.8** Add `docs/design/assets/ASSETS-NOTICE.md` documenting asset strategy decision (see §2.3) — *D-1 resolved: skip; brand assets stay in archive*
+- [x] **1.9** Rewrite `docs/DESIGN.md` per §3.1
+- [x] **1.10** Update `docs/ARCHITECTURE.md` per §3.1
+- [x] **1.11** Update `docs/SPECS.md` per §3.1
+- [x] **1.12** Update `docs/MVP.md` per §3.1
+- [x] **1.13** Update `docs/PRD.md` per §3.1
+- [x] **1.14** Update `docs/MILESTONES.md` per §3.1
+- [x] **1.15** Update `docs/TESTING.md` per §3.1
+- [x] **1.16** Update `docs/QA.md` per §3.1
+- [x] **1.17** Update `docs/README.md` per §3.1
+- [x] **1.18** Update `docs/ai/AI-TOOLING.md` per §3.1
+- [x] **1.19** Update `docs/ai/AGENTS-docs-block.md` per §3.1
+- [x] **1.20** Update `.agent/rules/mobile.md` per §3.2
+- [x] **1.21** Update `AGENTS.md` (root) per §3.2
+- [x] **1.22** Update `GEMINI.md` per §3.2
+- [x] **1.23** Update `CLAUDE.md` per §3.2 (canonical — regenerate cursorrules/windsurfrules from it)
+- [x] **1.24** Regenerate `.cursorrules` and `.windsurfrules` from updated `CLAUDE.md`
+- [x] **1.25** Update `.agent/rules/ai-tools.md` per §3.2
+- [x] **1.26** Check `.agent/rules/backend.md` and `.agent/rules/frontend.md` for stray mobile design refs
+- [x] **1.27** Verify `docs/design/tools/build.mjs` runs correctly from its new location (`node docs/design/tools/build.mjs --check`)
+- [x] **1.28** Commit with message: `docs: archive v1.7 design system, install v2 Trust Navy + Gold`
 
 ✅ **Phase 1 done when:** `node docs/design/tools/build.mjs --check` passes, no doc or rule file references old v1 paths, and `docs/archive/design-legacy-v1/` contains the complete v1 set.
 
