@@ -654,7 +654,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
         if (state.estimatedHours != null)
           'estimatedHours': state.estimatedHours,
         'jobType': state.jobType,
-        if (state.isProject) ...[
+        if (state.isProject) ...{
           // Money stays text on the wire so it is never rounded through double.
           if (state.budgetMin != null) 'budgetMin': state.budgetMin.toString(),
           if (state.budgetMax != null) 'budgetMax': state.budgetMax.toString(),
@@ -662,7 +662,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
           'siteVisitWelcome': state.siteVisitWelcome,
           if (state.scopeNotes.trim().isNotEmpty)
             'scopeNotes': state.scopeNotes.trim(),
-        ],
+        },
       };
 
       final jobId =

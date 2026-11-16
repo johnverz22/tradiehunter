@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fixo/models/address.dart';
+import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/address_repository.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';

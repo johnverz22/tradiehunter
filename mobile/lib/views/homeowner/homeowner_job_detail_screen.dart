@@ -558,15 +558,15 @@ class _HomeownerJobDetailScreenState
       // After check-out the server's finalAmount is the authority.
       'AwaitingConfirmation' || 'AwaitingPayment' || 'PaymentReview' ||
       'Completed' =>
-        job.finalAmount != null
-            ? ('Total', job.finalAmount!)
+        (job.finalAmount ?? (job.flowVersion < Job.flowVersionV2 ? job.totalAmount : null)) != null
+            ? ('Total', (job.finalAmount ?? job.totalAmount)!)
             : (job.estimatedTotal != null
                 ? ('Estimated total', job.estimatedTotal!)
                 : null),
       _ =>
         // Before completion: an estimate when the server computed one.
-        job.estimatedTotal != null
-            ? ('Estimated total', job.estimatedTotal!)
+        (job.estimatedTotal ?? (job.flowVersion < Job.flowVersionV2 ? job.totalAmount : null)) != null
+            ? ('Estimated total', (job.estimatedTotal ?? job.totalAmount)!)
             : null,
     };
 
@@ -1764,7 +1764,6 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final a = widget.adjustment;
 
     // Running total if this proposal were approved: what's already approved

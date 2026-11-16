@@ -126,7 +126,7 @@ public class OfferService
             ExpiresAtUtc = DateTime.UtcNow.AddMinutes(windowMinutes),
             Response = OfferResponse.Pending,
             Stage = OfferStage.Direct,
-            HourlyRateSnapshot = rate.Value,
+            HourlyRateSnapshot = rate,
             Message = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim(),
             Kind = kind,
         };
@@ -149,7 +149,7 @@ public class OfferService
 
         _logger.LogInformation(
             "Direct request {OfferId}: job {JobId} → tradie {TradieId} (rate={Rate}, kind={Kind}, expires={Expires}).",
-            offer.Id, jobId, request.TradieId, rate.Value, kind, offer.ExpiresAtUtc);
+            offer.Id, jobId, request.TradieId, rate, kind, offer.ExpiresAtUtc);
 
         // SignalR to the job group (homeowner screens) + the tradie's user group.
         var payload = new OfferLifecyclePayload

@@ -15,7 +15,6 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/models/payment.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/payments_repository.dart';
-import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/dispute_viewmodel.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';

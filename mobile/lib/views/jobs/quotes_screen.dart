@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
+import '../../repositories/jobs_repository.dart';
 import '../../theme/design_tokens.dart';
 import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
@@ -184,7 +185,7 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
         child: ListView.separated(
           padding: EdgeInsets.all(Space.s4),
           itemCount: state.quotes.length,
-          separatorBuilder: (_, __) => SizedBox(height: Space.s3),
+          separatorBuilder: (context, index) => const SizedBox(height: Space.s3),
           itemBuilder: (context, index) => QuoteCard(
             quote: state.quotes[index],
             accepting: state.acceptingQuoteId == state.quotes[index].id,
@@ -230,7 +231,6 @@ class QuoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<THColors>()!;
-    final isDark = theme.brightness == Brightness.dark;
     final isAccepted = quote.status == Quote.statusAccepted;
     final isDecided = isAccepted ||
         quote.status == Quote.statusDeclined ||

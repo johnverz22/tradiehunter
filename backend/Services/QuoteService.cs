@@ -160,14 +160,14 @@ public class QuoteService
             .Where(r => tradieIds.Contains(r.RevieweeId))
             .GroupBy(r => r.RevieweeId)
             .Select(g => new { UserId = g.Key, Avg = g.Average(x => (double)x.Rating), Count = g.Count() })
-            .ToDictionaryAsync(x => x.UserId);
+            .ToDictionaryAsync(x => x.UserId, x => (x.Avg, x.Count));
 
         return job.Quotes
             .OrderByDescending(q => q.CreatedAtUtc)
             .Select(q =>
             {
                 profiles.TryGetValue(q.TradieId, out var p);
-                ratings.TryGetValue(q.TradieId, out var r);
+                (double Avg, int Count)? r = ratings.TryGetValue(q.TradieId, out var rating) ? rating : null;
                 return ToDto(q, job, p?.BusinessName, p?.IsVerified ?? false, r);
             })
             .ToList();

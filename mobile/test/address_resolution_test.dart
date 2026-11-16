@@ -86,6 +86,7 @@ Future<void> fill(PostJobNotifier notifier) async {
   // v1.7 (P12-04): the estimate is optional and the only pricing-adjacent
   // input — the client never sends a rate (contract #1).
   notifier.setEstimatedHours('2');
+  notifier.setTimingPreference('SpecificDate');
   notifier.setScheduledStartLocal(DateTime(2027, 1, 5, 10));
 }
 
@@ -225,7 +226,7 @@ void main() {
       // v1.7: hourlyRate is never sent — rates are snapshotted server-side
       // when a tradie accepts (contract #1).
       expect(repo.posted!.containsKey('hourlyRate'), isFalse);
-      expect(repo.posted!['estimatedHours'], 2.0);
+      expect(repo.posted!['estimatedHours'], 2);
       expect(repo.posted!['jobType'], 'Hourly');
       expect(repo.posted!['latitude'], -36.85);
       expect(DateTime.parse(repo.posted!['scheduledStartUtc']).isUtc, isTrue);
@@ -250,7 +251,7 @@ void main() {
     },
   );
 
-  test('missing service, title, address and hours do not post', () async {
+  test('missing service, title, address do not post', () async {
     final repo = PostFixture();
     final notifier = PostJobNotifier(repo);
     addTearDown(notifier.dispose);
@@ -259,7 +260,7 @@ void main() {
     notifier.setTitle('   ');
     expect(await notifier.submit(), isNull);
     notifier.setTitle('Title');
-    notifier.setEstimatedHours('0');
+    notifier.setAddress('');
     expect(await notifier.submit(), isNull);
     expect(repo.posts, 0);
   });

@@ -51,15 +51,6 @@ namespace FixoApi.Migrations
                 oldClrType: typeof(int),
                 oldType: "integer");
 
-            // Back-fill timing semantics: legacy jobs all carried a start date.
-            migrationBuilder.Sql(
-                "UPDATE \"Jobs\" SET \"TimingPreference\" = 'SpecificDate' " +
-                "WHERE \"ScheduledStartUtc\" IS NOT NULL AND \"TimingPreference\" = 'Flexible';");
-
-            migrationBuilder.Sql(
-                "UPDATE \"Jobs\" SET \"FinalAmount\" = \"EstimatedTotal\" " +
-                "WHERE \"Status\" = 'Completed' AND \"EstimatedTotal\" IS NOT NULL;");
-
             migrationBuilder.AddColumn<string>(
                 name: "TimingPreference",
                 table: "Jobs",
@@ -162,6 +153,21 @@ namespace FixoApi.Migrations
                 table: "Jobs",
                 type: "integer",
                 nullable: true);
+
+            migrationBuilder.AddColumn<decimal>(
+                name: "FinalAmount",
+                table: "Jobs",
+                type: "decimal(18,2)",
+                nullable: true);
+
+            // Back-fill timing semantics: legacy jobs all carried a start date.
+            migrationBuilder.Sql(
+                "UPDATE \"Jobs\" SET \"TimingPreference\" = 'SpecificDate' " +
+                "WHERE \"ScheduledStartUtc\" IS NOT NULL AND \"TimingPreference\" = 'Flexible';");
+
+            migrationBuilder.Sql(
+                "UPDATE \"Jobs\" SET \"FinalAmount\" = \"EstimatedTotal\" " +
+                "WHERE \"Status\" = 'Completed' AND \"EstimatedTotal\" IS NOT NULL;");
 
             // ── v1.7 P12-08: JobOffer rate snapshot + message + kind ────────────
 
@@ -412,6 +418,10 @@ namespace FixoApi.Migrations
 
             migrationBuilder.DropColumn(
                 name: "AcceptedQuoteId",
+                table: "Jobs");
+
+            migrationBuilder.DropColumn(
+                name: "FinalAmount",
                 table: "Jobs");
 
             migrationBuilder.AlterColumn<int>(

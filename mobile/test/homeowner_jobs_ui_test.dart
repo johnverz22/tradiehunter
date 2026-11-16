@@ -69,7 +69,7 @@ Job fixture(String status) => Job(
   category: 'Plumbing',
   suburb: 'Auckland',
   status: status,
-  stage: 0,
+  stage: Job.stageForStatus(status, flowVersion: Job.flowVersionV2),
   totalAmount: Decimal.parse('123.45'),
   scheduledStartUtc: DateTime.utc(2026, 11, 3, 9),
   hours: 2,

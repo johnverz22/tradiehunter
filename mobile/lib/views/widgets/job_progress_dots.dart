@@ -49,21 +49,25 @@ class JobProgressDots extends StatelessWidget {
           runSpacing: Space.s1,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                total,
-                (index) => Container(
-                  width: Sizes.progressDot,
-                  height: Sizes.progressDot,
-                  margin: EdgeInsets.only(
-                    right: index == total - 1 ? 0 : Sizes.progressDotGap,
-                  ),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: index < step
-                        ? (terminal ? colors.textSoft : colors.brand)
-                        : colors.track,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  total,
+                  (index) => Container(
+                    width: Sizes.progressDot,
+                    height: Sizes.progressDot,
+                    margin: EdgeInsets.only(
+                      right: index == total - 1 ? 0 : Sizes.progressDotGap,
+                    ),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: index < step
+                          ? (terminal ? colors.textSoft : colors.brand)
+                          : colors.track,
+                    ),
                   ),
                 ),
               ),

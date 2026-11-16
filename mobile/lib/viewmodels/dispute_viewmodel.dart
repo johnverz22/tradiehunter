@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../repositories/jobs_repository.dart';
-import '../repositories/profile_repository.dart';
 import 'jobs_viewmodel.dart'; // To get jobsRepositoryProvider
 
 class DisputeState {

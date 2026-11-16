@@ -40,31 +40,25 @@ public class CreateJobRequestValidator : AbstractValidator<CreateJobRequest>
                        ValidTimingPreferences.Contains(t, StringComparer.OrdinalIgnoreCase))
             .WithMessage($"TimingPreference must be one of: {string.Join(", ", ValidTimingPreferences)}.");
 
-        RuleFor(x => x)
-            .Must(x => ParseTiming(x.TimingPreference) is TimingPreference.SpecificDate or TimingPreference.DateRange
-                ? x.ScheduledStartUtc.HasValue
-                : !x.ScheduledStartUtc.HasValue)
-            .WithMessage("SpecificDate and DateRange require a start date; Flexible and Asap must not have one.");
-
-        RuleFor(x => x)
-            .Must(x => ParseTiming(x.TimingPreference) is TimingPreference.DateRange
-                ? x.ScheduledEndUtc.HasValue
-                : !x.ScheduledEndUtc.HasValue)
-            .WithMessage("DateRange requires an end date; other timings must not have one.");
-
         RuleFor(x => x.ScheduledStartUtc)
+            .Must((x, start) => ParseTiming(x.TimingPreference) is TimingPreference.SpecificDate or TimingPreference.DateRange
+                ? start.HasValue
+                : !start.HasValue)
+            .WithMessage("SpecificDate and DateRange require a start date; Flexible and Asap must not have one.")
             .Must(x => !x.HasValue || x.Value.Offset == TimeSpan.Zero)
-            .WithMessage("Scheduled start must be supplied in UTC.");
+            .WithMessage("Scheduled start must be supplied in UTC.")
+            .Must(x => !x.HasValue || x.Value.UtcDateTime > DateTime.UtcNow)
+            .WithMessage("Scheduled start must be in the future.");
 
         RuleFor(x => x.ScheduledEndUtc)
+            .Must((x, end) => ParseTiming(x.TimingPreference) is TimingPreference.DateRange
+                ? end.HasValue
+                : !end.HasValue)
+            .WithMessage("DateRange requires an end date; other timings must not have one.")
             .Must(x => !x.HasValue || x.Value.Offset == TimeSpan.Zero)
-            .WithMessage("Scheduled end must be supplied in UTC.");
-
-        RuleFor(x => x)
-            .Must(x => !x.ScheduledStartUtc.HasValue || x.ScheduledStartUtc.Value.UtcDateTime > DateTime.UtcNow)
-            .WithMessage("Scheduled start must be in the future.")
-            .Must(x => !x.ScheduledStartUtc.HasValue || !x.ScheduledEndUtc.HasValue
-                || x.ScheduledEndUtc.Value.UtcDateTime > x.ScheduledStartUtc.Value.UtcDateTime)
+            .WithMessage("Scheduled end must be supplied in UTC.")
+            .Must((x, end) => !x.ScheduledStartUtc.HasValue || !end.HasValue
+                || end.Value.UtcDateTime > x.ScheduledStartUtc.Value.UtcDateTime)
             .WithMessage("Scheduled end must be after the scheduled start.");
 
         // v1.7 (P12-02): the homeowner's guess is optional, but if given it must
@@ -92,10 +86,8 @@ public class CreateJobRequestValidator : AbstractValidator<CreateJobRequest>
         RuleFor(x => x.BudgetMin)
             .GreaterThan(0).When(x => x.BudgetMin.HasValue);
         RuleFor(x => x.BudgetMax)
-            .GreaterThan(0).When(x => x.BudgetMax.HasValue);
-
-        RuleFor(x => x)
-            .Must(x => !x.BudgetMin.HasValue || !x.BudgetMax.HasValue || x.BudgetMax >= x.BudgetMin)
+            .GreaterThan(0).When(x => x.BudgetMax.HasValue)
+            .Must((x, max) => !x.BudgetMin.HasValue || !max.HasValue || max >= x.BudgetMin)
             .WithMessage("BudgetMax must be greater than or equal to BudgetMin.");
 
         RuleFor(x => x.ScopeNotes)
@@ -199,11 +191,10 @@ public class SubmitQuoteRequestValidator : AbstractValidator<SubmitQuoteRequest>
         RuleFor(x => x.MaxAmount)
             .NotNull().GreaterThan(0)
             .When(x => Matches(x.PricingModel, QuotePricingModel.EstimateRange))
-            .WithMessage("EstimateRange quotes require MaxAmount.");
-        RuleFor(x => x)
-            .Must(x => !x.MinAmount.HasValue || !x.MaxAmount.HasValue || x.MaxAmount >= x.MinAmount)
-            .WithMessage("MaxAmount must be greater than or equal to MinAmount.")
-            .When(x => Matches(x.PricingModel, QuotePricingModel.EstimateRange));
+            .WithMessage("EstimateRange quotes require MaxAmount.")
+            .Must((x, max) => !x.MinAmount.HasValue || !max.HasValue || max >= x.MinAmount)
+            .When(x => Matches(x.PricingModel, QuotePricingModel.EstimateRange))
+            .WithMessage("MaxAmount must be greater than or equal to MinAmount.");
 
         // HourlyWithCap: hourly rate + total cap.
         RuleFor(x => x.Amount)

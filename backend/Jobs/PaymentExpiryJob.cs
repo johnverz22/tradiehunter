@@ -109,7 +109,7 @@ public class PaymentExpiryJob
             jobId, JobStatus.Expired, SystemUserId, UserRole.Staff,
             ReasonCode.no_payment, "Payment window elapsed without verification.");
 
-        await NotifyAsync(job);
+        await NotifyAsync(job, "Job expired", $"{job.Title} expired — payment was not completed.");
     }
 
     /// <summary>

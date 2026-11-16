@@ -67,6 +67,8 @@ Widget homeownerJobSummary(
     actionIsTonal: isBooked,
     actionIsSecondary: job.status == 'AwaitingPayment',
     progressStatus: job.status,
+    stage: job.stage,
+    flowVersion: job.flowVersion,
     isAttention: isAttention,
     onTap: isBooked ? onActionTap : onCardTap,
   );
@@ -170,7 +172,11 @@ class _BookedJobCard extends StatelessWidget {
                             ),
                           ),
                         const SizedBox(height: Space.s2),
-                        JobProgressDots(status: job.status),
+                        JobProgressDots(
+                          status: job.status,
+                          stage: job.stage,
+                          flowVersion: job.flowVersion,
+                        ),
                       ],
                     ),
                   ),

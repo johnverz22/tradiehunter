@@ -127,7 +127,6 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
   /// OfferCreated event from being lost.
   Future<void> _start() async {
     final hub = ref.read(jobHubClientProvider);
-    final progress = ref.read(matchingProgressProvider(widget.jobId).notifier);
 
     _offerSub ??= hub.onOfferLifecycle.listen(_onOfferEvent);
     _statusSub ??= hub.onJobStatusChanged.listen(_onStatusEvent);
@@ -751,11 +750,11 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
                             .read(jobsRepositoryProvider)
                             .cancelJob(widget.jobId);
                         if (mounted) {
-                          context.pushReplacement(
+                          this.context.pushReplacement(
                             '/jobs/${widget.jobId}/tradies',
                           );
                           FixoNotice.info(
-                            context,
+                            this.context,
                             'Request cancelled — the job is closed.',
                           );
                         }
@@ -793,7 +792,6 @@ class _RateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.extension<THColors>()!;
     return FixoCard(
       child: Row(
         children: [

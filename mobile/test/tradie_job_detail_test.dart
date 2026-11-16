@@ -54,9 +54,13 @@ class _JobsFixture extends JobsRepository {
   }
 
   @override
-  Future<bool> checkOut(String jobId) async {
+  Future<CheckOutSummary?> checkOut(
+    String jobId, {
+    required double finalHours,
+    String? notes,
+  }) async {
     checkOutCalls++;
-    return true;
+    return CheckOutSummary(jobId: jobId, finalHours: finalHours);
   }
 
   @override
@@ -68,6 +72,9 @@ class _JobsFixture extends JobsRepository {
     cancelCalls++;
     return true;
   }
+
+  @override
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async => const [];
 }
 
 class _LauncherFixture extends ExternalLauncher {
@@ -116,13 +123,16 @@ Job _job(
   double? longitude,
   Decimal? total,
   DateTime? scheduled,
+  int? stage,
+  int? flowVersion,
 }) => Job(
   id: '42',
   title: 'Fix leaking tap',
   category: 'Plumbing',
   suburb: 'Grafton',
   status: status,
-  stage: 2,
+  stage: stage ?? Job.stageForStatus(status, flowVersion: flowVersion ?? Job.flowVersionV2),
+  flowVersion: flowVersion ?? Job.flowVersionV2,
   description: 'Kitchen tap drips constantly.',
   address: address,
   latitude: latitude,
@@ -538,9 +548,9 @@ void main() {
         await mount(tester, _JobsFixture(_job('Booked')));
         // "Booked" pill is in the StatusBadge
         expect(find.text('Booked'), findsOneWidget);
-        // Caption is "Step 2 of 4" without duplicate "· Booked" suffix
-        expect(find.text('Step 2 of 4'), findsOneWidget);
-        expect(find.text('Step 2 of 4 · Booked'), findsNothing);
+        // Caption is "Step 2 of 6" without duplicate "· Booked" suffix
+        expect(find.text('Step 2 of 6'), findsOneWidget);
+        expect(find.text('Step 2 of 6 · Booked'), findsNothing);
       },
     );
 

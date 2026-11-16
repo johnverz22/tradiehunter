@@ -108,7 +108,7 @@ void main() {
         await tester.scrollUntilVisible(find.text('2 hours'), 150);
         if (status == 'Completed') {
           expect(find.text('Agreed Price'), findsNothing);
-          await tester.scrollUntilVisible(find.text('Not set'), -150);
+          await tester.scrollUntilVisible(find.text('Date TBC'), -150);
         } else {
           await tester.scrollUntilVisible(find.text('\$171.25'), 150);
           expect(
@@ -128,6 +128,12 @@ void main() {
           );
           await tester.tap(find.byKey(key));
           await tester.pumpAndSettle();
+          if (status == 'InProgress') {
+            final submit = find.byKey(const Key('check_out_submit_button'));
+            await tester.ensureVisible(submit);
+            await tester.tap(submit);
+            await tester.pumpAndSettle();
+          }
           expect(repo.calls, [status == 'Booked' ? 'check in' : 'check out']);
         } else if (status == 'Completed') {
           expect(
@@ -257,6 +263,7 @@ void main() {
               ? null
               : '123 Long Street, Test suburb, Test city',
           totalAmount: status == 'Completed' ? null : Decimal.parse('171.25'),
+          flowVersion: Job.flowVersionLegacy,
         );
         final router = GoRouter(
           initialLocation: '/jobs/42',
@@ -331,7 +338,7 @@ void main() {
             Key(
               status == 'Completed'
                   ? 'leave_review_button'
-                  : 'confirm_completion_button',
+                  : 'approve_pay_button',
             ),
           );
           expect(action, findsOneWidget);
@@ -816,6 +823,7 @@ class _ActiveJobsRepository implements JobsRepository {
           ? null
           : DateTime.utc(2030, 1, 15, 10),
       totalAmount: status == 'Completed' ? null : Decimal.parse('171.25'),
+      flowVersion: Job.flowVersionLegacy,
     );
   }
 
@@ -828,12 +836,19 @@ class _ActiveJobsRepository implements JobsRepository {
   }
 
   @override
-  Future<bool> checkOut(String id) async {
+  Future<CheckOutSummary?> checkOut(
+    String id, {
+    required double finalHours,
+    String? notes,
+  }) async {
     expect(id, '42');
     calls.add('check out');
     status = 'AwaitingConfirmation';
-    return true;
+    return CheckOutSummary(jobId: id, finalHours: finalHours);
   }
+
+  @override
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async => const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -846,6 +861,9 @@ class _DetailJobsRepository implements JobsRepository {
 
   @override
   Future<Job?> getJobById(String id) async => job;
+
+  @override
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async => const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

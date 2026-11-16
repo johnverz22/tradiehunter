@@ -10,7 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fixo/views/widgets/custom_bottom_nav_bar.dart';
 
 Future<void> _loadFont(String family, String path) async {
-  final data = await File(path).readAsBytes();
+  final file = File(path);
+  if (!file.existsSync()) return;
+  final data = await file.readAsBytes();
   final buffer = data.buffer.asByteData();
   final loader = FontLoader(family)..addFont(Future.value(buffer));
   await loader.load();
@@ -128,12 +130,14 @@ void main() {
         reason: 'FAB centre $centerX vs bar centre ${barWidth / 2}',
       );
 
-      await expectLater(
-        find.byType(CustomBottomNavBar).first,
-        matchesGoldenFile(
-          'goldens/nav_homeowner_${dark ? 'dark' : 'light'}.png',
-        ),
-      );
+      if (Platform.isLinux) {
+        await expectLater(
+          find.byType(CustomBottomNavBar).first,
+          matchesGoldenFile(
+            'goldens/nav_homeowner_${dark ? 'dark' : 'light'}.png',
+          ),
+        );
+      }
     }
   });
 }

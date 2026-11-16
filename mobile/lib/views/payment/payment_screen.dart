@@ -276,20 +276,20 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   if (hasLabourRow)
                     FixoSummaryRow(
                       label: 'Labour',
-                      value: formatMoney(job!.labourAmount!),
+                      value: formatMoney(job.labourAmount!),
                     )
                   else if (hasLegacyLabourRow)
                     FixoSummaryRow(
                       label: 'Labour',
                       value:
-                          '${job!.hours} h × ${formatRate(job.hourlyRate!)}',
+                          '${job.hours} h × ${formatRate(job.hourlyRate!)}',
                     ),
                   if (hasLabourRow || hasLegacyLabourRow)
                     const FixoListDivider(),
                   if (hasExtrasRow) ...[
                     FixoSummaryRow(
                       label: 'Approved extras',
-                      value: formatMoney(job!.adjustmentsTotal!),
+                      value: formatMoney(job.adjustmentsTotal!),
                     ),
                     const FixoListDivider(),
                   ],

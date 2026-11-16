@@ -69,11 +69,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   ChatNotifier({
     required this.jobId,
-    required ChatRepository repo,
-    required String myUserId,
-  }) : _repo = repo,
-       _myUserId = myUserId,
-       super(const ChatState());
+    required this._repo,
+    required this._myUserId,
+  }) : super(const ChatState());
 
   /// Call once when the chat screen mounts.
   Future<void> init(String baseUrl) async {

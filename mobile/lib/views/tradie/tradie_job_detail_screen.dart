@@ -243,10 +243,11 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Check-out submitted'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             if (summary.finalHours != null)
               Text('Hours worked: ${_formatHours(summary.finalHours!)}'),
             if (summary.labourAmount != null)
@@ -270,7 +271,8 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
             ),
           ],
         ),
-        actions: [
+      ),
+      actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
@@ -1261,7 +1263,7 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
     }
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           Space.gutter,
           Space.s6,
@@ -1412,18 +1414,8 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
 /// Helper used by the labour preview — multiplies the hourly [rate] by
 /// [hours] without ever leaving decimal arithmetic.
 Decimal labourPreview(Decimal rate, double hours) {
-  // Split the hours into a whole + fractional part so the multiplication
-  // stays exact: rate * whole + rate * fraction.
-  final whole = hours.truncate();
-  final fraction = hours - whole;
-  var result = rate * Decimal.fromInt(whole);
-  if (fraction > 0) {
-    // Represent the fraction as numerator/1000 — plenty for half-hour
-    // precision on a rate that is itself a 2dp decimal.
-    final scaled = (fraction * 1000).round();
-    result += rate * Decimal(scaled) / Decimal.fromInt(1000);
-  }
-  return result;
+  final hoursDecimal = Decimal.tryParse(hours.toStringAsFixed(2)) ?? Decimal.zero;
+  return rate * hoursDecimal;
 }
 
 // ── v1.7 P12-19: extra-cost card + sheets ────────────────────────────────────
@@ -1445,7 +1437,6 @@ class _TradieAdjustmentsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final colors = theme.extension<THColors>()!;
 
     final approvedTotal = adjustments
@@ -1700,7 +1691,7 @@ class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           Space.gutter,
           Space.s6,

@@ -42,6 +42,8 @@ class ModernJobCard extends StatelessWidget {
   final bool actionIsSecondary;
 
   final bool isAttention;
+  final int? stage;
+  final int? flowVersion;
 
   const ModernJobCard({
     super.key,
@@ -62,6 +64,8 @@ class ModernJobCard extends StatelessWidget {
     this.actionIsTonal = false,
     this.actionIsSecondary = false,
     this.isAttention = false,
+    this.stage,
+    this.flowVersion,
   });
 
   static String _initials(String name) {
@@ -455,7 +459,11 @@ class ModernJobCard extends StatelessWidget {
               // ── 5. Compact progress bar ────────────────────────────────────
               if (!isAttention && progressStatus != null) ...[
                 const SizedBox(height: DesignTokens.space4),
-                CompactProgressBar(status: progressStatus!),
+                CompactProgressBar(
+                  status: progressStatus!,
+                  stage: stage,
+                  flowVersion: flowVersion,
+                ),
               ],
             ],
           ),

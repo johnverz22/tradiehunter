@@ -341,7 +341,7 @@ class JobStepperFlow {
       'Cancelled' || 'Expired' || 'Disputed' => true,
       _ => false,
     };
-    final isV1 = flowVersion != null && flowVersion < 2 && stage == null;
+    final isV1 = flowVersion != null && flowVersion < 2;
     if (isV1) {
       return JobStepperFlow(
         titles: v1Titles,

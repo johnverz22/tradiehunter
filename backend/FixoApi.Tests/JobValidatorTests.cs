@@ -25,7 +25,7 @@ public class JobValidatorTests
     public void Flexible_timing_needs_no_dates()
     {
         var request = ValidRequest();
-        _validator.ShouldNotHaveAnyValidationErrors(request);
+        _validator.TestValidate(request).ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class JobValidatorTests
         var request = ValidRequest();
         request.EstimatedHours = null;
         request.HourlyRate = 0m; // legacy wire field, ignored
-        _validator.ShouldNotHaveAnyValidationErrors(request);
+        _validator.TestValidate(request).ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -44,10 +44,10 @@ public class JobValidatorTests
     {
         var request = ValidRequest();
         request.TimingPreference = "SpecificDate";
-        _validator.ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc);
 
         request.ScheduledStartUtc = DateTimeOffset.UtcNow.AddDays(2);
-        _validator.ShouldNotHaveValidationErrorFor(x => x.ScheduledStartUtc, request);
+        _validator.TestValidate(request).ShouldNotHaveValidationErrorFor(x => x.ScheduledStartUtc);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class JobValidatorTests
     {
         var request = ValidRequest();
         request.ScheduledStartUtc = DateTimeOffset.UtcNow.AddDays(2);
-        _validator.ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc);
     }
 
     [Fact]
@@ -65,14 +65,14 @@ public class JobValidatorTests
         request.TimingPreference = "DateRange";
         request.ScheduledStartUtc = DateTimeOffset.UtcNow.AddDays(2);
         // End missing → invalid.
-        _validator.ShouldHaveValidationErrorFor(x => x.ScheduledEndUtc, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.ScheduledEndUtc);
 
         request.ScheduledEndUtc = DateTimeOffset.UtcNow.AddDays(1);
         // End before start → invalid.
-        _validator.ShouldHaveValidationErrorFor(x => x.ScheduledEndUtc, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.ScheduledEndUtc);
 
         request.ScheduledEndUtc = DateTimeOffset.UtcNow.AddDays(3);
-        _validator.ShouldNotHaveValidationErrorFor(x => x.ScheduledEndUtc, request);
+        _validator.TestValidate(request).ShouldNotHaveValidationErrorFor(x => x.ScheduledEndUtc);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class JobValidatorTests
         var request = ValidRequest();
         request.TimingPreference = "SpecificDate";
         request.ScheduledStartUtc = DateTimeOffset.UtcNow.AddDays(-1);
-        _validator.ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.ScheduledStartUtc);
     }
 
     [Fact]
@@ -89,10 +89,10 @@ public class JobValidatorTests
     {
         var request = ValidRequest();
         request.EstimatedHours = 0;
-        _validator.ShouldHaveValidationErrorFor(x => x.EstimatedHours, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.EstimatedHours);
 
         request.EstimatedHours = 6;
-        _validator.ShouldNotHaveValidationErrorFor(x => x.EstimatedHours, request);
+        _validator.TestValidate(request).ShouldNotHaveValidationErrorFor(x => x.EstimatedHours);
     }
 
     [Fact]
@@ -102,10 +102,10 @@ public class JobValidatorTests
         request.JobType = "Project";
         request.BudgetMin = 500m;
         request.BudgetMax = 200m;
-        _validator.ShouldHaveValidationErrorFor(x => x.BudgetMax, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.BudgetMax);
 
         request.BudgetMax = 2000m;
-        _validator.ShouldNotHaveAnyValidationErrors(request);
+        _validator.TestValidate(request).ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class JobValidatorTests
     {
         var request = ValidRequest();
         request.TimingPreference = "Whenever";
-        _validator.ShouldHaveValidationErrorFor(x => x.TimingPreference, request);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.TimingPreference);
     }
 }
 
@@ -134,10 +134,10 @@ public class AdjustmentAndQuoteValidatorTests
             Description = "Replacing the mixer cartridge",
             Amount = 0m,
         };
-        _adjustmentValidator.ShouldHaveValidationErrorFor(x => x.Amount, request);
+        _adjustmentValidator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Amount);
 
         request.Amount = 42.50m;
-        _adjustmentValidator.ShouldNotHaveValidationErrorFor(x => x.Amount, request);
+        _adjustmentValidator.TestValidate(request).ShouldNotHaveValidationErrorFor(x => x.Amount);
     }
 
     [Fact]
@@ -149,8 +149,9 @@ public class AdjustmentAndQuoteValidatorTests
             Description = "",
             Amount = 10m,
         };
-        _adjustmentValidator.ShouldHaveValidationErrorFor(x => x.Kind, request);
-        _adjustmentValidator.ShouldHaveValidationErrorFor(x => x.Description, request);
+        var result = _adjustmentValidator.TestValidate(request);
+        result.ShouldHaveValidationErrorFor(x => x.Kind);
+        result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 
     [Fact]
@@ -161,10 +162,10 @@ public class AdjustmentAndQuoteValidatorTests
             PricingModel = "Fixed",
             GstIncluded = true,
         };
-        _quoteValidator.ShouldHaveValidationErrorFor(x => x.Amount, request);
+        _quoteValidator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Amount);
 
         request.Amount = 4500m;
-        _quoteValidator.ShouldNotHaveValidationErrorFor(x => x.Amount, request);
+        _quoteValidator.TestValidate(request).ShouldNotHaveValidationErrorFor(x => x.Amount);
     }
 
     [Fact]
@@ -177,10 +178,10 @@ public class AdjustmentAndQuoteValidatorTests
             MaxAmount = 500m,
             GstIncluded = true,
         };
-        _quoteValidator.ShouldHaveValidationErrorFor(x => x.MaxAmount, request);
+        _quoteValidator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.MaxAmount);
 
         request.MaxAmount = 1500m;
-        _quoteValidator.ShouldNotHaveAnyValidationErrors(request);
+        _quoteValidator.TestValidate(request).ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -191,12 +192,12 @@ public class AdjustmentAndQuoteValidatorTests
             PricingModel = "HourlyWithCap",
             GstIncluded = true,
         };
-        _quoteValidator.ShouldHaveValidationErrorFor(x => x.Amount, request);
+        _quoteValidator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Amount);
 
         request.Amount = 65m;
-        _quoteValidator.ShouldHaveValidationErrorFor(x => x.Cap, request);
+        _quoteValidator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Cap);
 
         request.Cap = 2000m;
-        _quoteValidator.ShouldNotHaveAnyValidationErrors(request);
+        _quoteValidator.TestValidate(request).ShouldNotHaveAnyValidationErrors();
     }
 }

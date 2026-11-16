@@ -2,6 +2,8 @@ using FixoApi.Data;
 using FixoApi.Enums;
 using FixoApi.Hubs;
 using FixoApi.Models;
+using FixoApi.Services;
+using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

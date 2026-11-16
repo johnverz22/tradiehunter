@@ -54,6 +54,9 @@ class _JobsFixture extends JobsRepository {
 
   @override
   Future<JobContact?> getJobContact(String jobId) async => null;
+
+  @override
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async => const [];
 }
 
 class _ReviewsFixture extends ReviewsRepository {

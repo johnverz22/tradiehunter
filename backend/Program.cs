@@ -318,6 +318,7 @@ builder.Services.AddScoped<FixoApi.Jobs.PaymentSlaJob>();
 // v1.7 (P12-18): expires stale pending price adjustments.
 builder.Services.AddScoped<FixoApi.Jobs.AdjustmentExpiryJob>();
 builder.Services.AddScoped<FixoApi.Jobs.AdjustmentReminderJob>();
+builder.Services.AddScoped<FixoApi.Jobs.EmailBounceReportJob>();
 
 // Admin seed — creates the default admin user on first startup if it doesn't exist.
 builder.Services.AddHostedService<AdminSeedService>();
@@ -370,30 +371,29 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     Authorization = [new FixoApi.Filters.HangfireDashboardAuthorizationFilter()]
 });
 
-// Configure recurring payout batch job
-var payoutOptions = app.Configuration.GetSection("PayoutOptions").Get<FixoApi.Options.PayoutOptions>() ?? new FixoApi.Options.PayoutOptions();
+// ── Recurring Hangfire jobs ──────────────────────────────────────────────────
+// Must be registered AFTER builder.Build() so JobStorage.Current is initialized.
+var payoutOptions = app.Services.GetRequiredService<IConfiguration>()
+    .GetSection("PayoutOptions").Get<FixoApi.Options.PayoutOptions>() ?? new FixoApi.Options.PayoutOptions();
+
 RecurringJob.AddOrUpdate<FixoApi.Jobs.PayoutBatchJob>(
     "payout-batch-job",
     j => j.ExecuteAsync(),
     payoutOptions.PayoutBatchCron);
 
-// Configure recurring review reveal job
 RecurringJob.AddOrUpdate<FixoApi.Jobs.RevealReviewsJob>(
     "reveal-reviews-job",
     j => j.ExecuteAsync(),
     "*/5 * * * *"); // Every 5 minutes
 
-// Configure recurring payment SLA job
 RecurringJob.AddOrUpdate<FixoApi.Jobs.PaymentSlaJob>(
     "payment-sla-job",
     j => j.ExecuteAsync(),
     "*/15 * * * *"); // Every 15 minutes
 
-// §5.4: weekly bounce + send-metrics report (Mondays 06:00 UTC).
-builder.Services.AddScoped<FixoApi.Jobs.EmailBounceReportJob>();
 RecurringJob.AddOrUpdate<FixoApi.Jobs.EmailBounceReportJob>(
     "email-bounce-report-job",
     j => j.ExecuteAsync(CancellationToken.None),
-    "0 6 * * 1");
+    "0 6 * * 1"); // Every Monday at 06:00
 
 app.Run();
