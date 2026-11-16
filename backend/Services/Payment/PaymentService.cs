@@ -176,6 +176,67 @@ public class PaymentService : IPaymentService
         };
     }
 
+    public async Task<PagedResult<OverduePaymentDto>> GetOverduePaymentsAsync(
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        // v2-flow jobs whose approved work is unpaid past the window. v1 jobs
+        // keep the old expiry path, so they never appear here.
+        var now = DateTime.UtcNow;
+        var query = _db.Jobs
+            .Include(j => j.Homeowner)
+            .Include(j => j.Payment)
+            .Where(j => j.FlowVersion >= 2
+                        && j.Status == JobStatus.AwaitingPayment
+                        && j.PaymentDueAtUtc != null
+                        && j.PaymentDueAtUtc < now)
+            .OrderBy(j => j.PaymentDueAtUtc);
+
+        var total = await query.CountAsync(ct);
+
+        var jobs = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        // GST label driver (D8): the matched tradie's registration flag.
+        var tradieIds = jobs
+            .Where(j => j.MatchedTradieId != null)
+            .Select(j => j.MatchedTradieId!)
+            .Distinct()
+            .ToList();
+        var gstFlags = tradieIds.Count == 0
+            ? new Dictionary<string, bool>()
+            : await _db.TradieProfiles
+                .Where(p => tradieIds.Contains(p.UserId))
+                .ToDictionaryAsync(p => p.UserId, p => p.IsGstRegistered, ct);
+
+        var items = jobs.Select(j => new OverduePaymentDto
+        {
+            JobId = j.Id,
+            JobTitle = j.Title,
+            HomeownerName = j.Homeowner?.FullName ?? "Unknown",
+            HomeownerEmail = j.Homeowner?.Email ?? string.Empty,
+            Amount = j.Payment?.Amount ?? j.FinalAmount ?? j.EstimatedTotal ?? 0m,
+            Currency = j.Payment?.Currency ?? "NZD",
+            Reference = j.Payment?.ProviderReference ?? string.Empty,
+            PaymentDueAtUtc = j.PaymentDueAtUtc,
+            DaysOverdue = j.PaymentDueAtUtc.HasValue
+                ? Math.Max(0, (int)(now - j.PaymentDueAtUtc.Value).TotalDays)
+                : 0,
+            IsGstRegistered = j.MatchedTradieId != null
+                && gstFlags.TryGetValue(j.MatchedTradieId, out var gst)
+                ? gst : null,
+        }).ToList();
+
+        return new PagedResult<OverduePaymentDto>
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        };
+    }
+
     public async Task<PaymentActionResult> VerifyPaymentAsync(
         int paymentId, string adminUserId, UserRole actorRole, CancellationToken ct = default)
     {
@@ -202,22 +263,27 @@ public class PaymentService : IPaymentService
         payment.RejectReason   = null;
         await _db.SaveChangesAsync(ct);
 
-        // PaymentReview → Booked releases the tradie. The expiry job becomes a
-        // no-op on its next run (payment is Verified, job is Booked).
+        // v1 (P4-05): PaymentReview → Booked releases the tradie.
+        // v2 (P12-13/16): the work is already done — verification COMPLETES the
+        // job, and the payout is created on that edge by IJobStatusService.
+        var targetStatus = payment.Job.FlowVersion >= 2 ? JobStatus.Completed : JobStatus.Booked;
         await _jobStatus.TransitionAsync(
-            payment.JobId, JobStatus.Booked, adminUserId, actorRole,
+            payment.JobId, targetStatus, adminUserId, actorRole,
             note: "Payment verified.");
 
         _logger.LogInformation(
-            "Payment {PaymentId} (job {JobId}) verified by {AdminId}.",
-            paymentId, payment.JobId, adminUserId);
+            "Payment {PaymentId} (job {JobId}) verified by {AdminId} — job now {Status}.",
+            paymentId, payment.JobId, adminUserId, targetStatus);
 
         await _audit.LogAsync(adminUserId, "payment.verify", "Payment", paymentId.ToString(),
             paymentBefore, new { payment.Id, Status = payment.Status.ToString(), payment.VerifiedBy });
 
+        // P12-16: copy matches the flow — v2 verification closes the job, v1 books it.
         await NotifyHomeownerAsync(
             payment, "Payment confirmed",
-            $"We verified your transfer for {payment.Job.Title}. Your tradie is booked.",
+            payment.Job.FlowVersion >= 2
+                ? $"We verified your transfer for {payment.Job.Title}. The job is complete — thanks!"
+                : $"We verified your transfer for {payment.Job.Title}. Your tradie is booked.",
             ct);
 
         return new PaymentActionResult { Succeeded = true, Payment = MapToDto(payment.Job, payment) };
@@ -299,13 +365,20 @@ public class PaymentService : IPaymentService
         var existing = await _db.Payments.FirstOrDefaultAsync(p => p.JobId == job.Id, ct);
         if (existing is not null) return existing;
 
+        // v1.7 (P12-13): the payment amount is the APPROVED final amount —
+        // labour + approved adjustments, computed at check-out. Legacy jobs
+        // (which still carry only the fixed estimate) keep their old behavior.
+        var amount = job.FinalAmount
+            ?? job.EstimatedTotal
+            ?? 0m;
+
         var options = _paymentOptions.Value;
         var reference = options.BuildReference(job.Id);
 
         var payment = new Payment
         {
             JobId             = job.Id,
-            Amount            = job.TotalAmount,
+            Amount            = amount,
             Currency          = _locale.Value.DefaultCurrency,
             Method            = "BankTransfer",
             Provider          = _provider.Name,
@@ -318,7 +391,7 @@ public class PaymentService : IPaymentService
             new PaymentRequest
             {
                 JobId         = job.Id,
-                Amount        = job.TotalAmount,
+                Amount        = amount,
                 Currency      = payment.Currency,
                 PayerUserId   = job.HomeownerId,
                 Reference     = reference,
@@ -386,6 +459,12 @@ public class PaymentService : IPaymentService
             ReUploadCount  = p.ReUploadCount,
             MinutesSinceSubmission = p.SubmittedAtUtc.HasValue ? (int)(DateTime.UtcNow - p.SubmittedAtUtc.Value).TotalMinutes : 0,
             ReceiptUrl     = receiptUrl,
+            // v1.7 (P12-16): itemised completion amounts + completion date.
+            LabourAmount   = p.Job.LabourAmount,
+            AdjustmentsTotal = p.Job.AdjustmentsTotal,
+            FinalAmount    = p.Job.FinalAmount,
+            EstimatedTotal = p.Job.EstimatedTotal,
+            CompletionSubmittedAtUtc = p.Job.CompletionSubmittedAtUtc,
         };
     }
 

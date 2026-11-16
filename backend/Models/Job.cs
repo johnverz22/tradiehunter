@@ -50,8 +50,20 @@ public class Job
 
     // ── Scheduling & Financials (v1.2) ───────────────────────────────────────
 
-    /// <summary>Scheduled appointment time, persisted in UTC.</summary>
-    public DateTimeOffset ScheduledStartUtc { get; set; }
+    /// <summary>
+    /// v1.7 (P12-01): when the homeowner wants the job done. Default
+    /// <see cref="TimingPreference.Flexible"/>; only SpecificDate/DateRange carry dates.
+    /// </summary>
+    public TimingPreference TimingPreference { get; set; } = TimingPreference.Flexible;
+
+    /// <summary>
+    /// Scheduled appointment start, persisted in UTC. Nullable since v1.7 —
+    /// flexible jobs have no fixed start (P12-01). Every consumer must handle null.
+    /// </summary>
+    public DateTimeOffset? ScheduledStartUtc { get; set; }
+
+    /// <summary>v1.7 (P12-01): optional range end for <see cref="TimingPreference.DateRange"/> jobs.</summary>
+    public DateTimeOffset? ScheduledEndUtc { get; set; }
 
     /// <summary>
     /// Compatibility projection for the pre-P2 scheduling workflow. New code must
@@ -60,21 +72,82 @@ public class Job
     [NotMapped]
     public DateTime? ScheduledStart
     {
-        get => ScheduledStartUtc == default ? null : ScheduledStartUtc.UtcDateTime;
+        get => ScheduledStartUtc?.UtcDateTime;
         set => ScheduledStartUtc = value is null
-            ? default
+            ? null
             : new DateTimeOffset(value.Value.ToUniversalTime());
     }
 
     public int ServiceId { get; set; }
 
-    public int Hours { get; set; }
+    /// <summary>v1.7 (P12-01): was <c>Hours</c> — the homeowner's optional guess; null means "total confirmed on completion".</summary>
+    public int? EstimatedHours { get; set; }
 
+    /// <summary>
+    /// Snapshot of the tradie's rate. Under the v2 flow it is copied from
+    /// <see cref="JobOffer.HourlyRateSnapshot"/> when the tradie accepts (P12-08);
+    /// under v1 it is still the rate picked on the Post Job screen.
+    /// </summary>
     [Column(TypeName = "decimal(18,2)")]
     public decimal HourlyRate { get; set; }
 
+    /// <summary>v1.7 (P12-01): was <c>TotalAmount</c> — display-only estimate, null when the homeowner skipped hours. Never the billed amount.</summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal TotalAmount { get; set; }
+    public decimal? EstimatedTotal { get; set; }
+
+    /// <summary>v1.7 (P12-11): hours the tradie submits at check-out.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? FinalHours { get; set; }
+
+    /// <summary>v1.7 (P12-11): FinalHours × HourlyRate, computed server-side at check-out.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? LabourAmount { get; set; }
+
+    /// <summary>v1.7 (P12-11): running total of Approved price adjustments (P12-17).</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? AdjustmentsTotal { get; set; }
+
+    /// <summary>v1.7 (P12-11): LabourAmount + AdjustmentsTotal — what the homeowner actually pays.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? FinalAmount { get; set; }
+
+    /// <summary>v1.7 (P12-11): when the tradie submitted the completion summary.</summary>
+    public DateTime? CompletionSubmittedAtUtc { get; set; }
+
+    // ── Job type & project fields (v1.7 P12-21) ──────────────────────────────
+
+    /// <summary>v1.7 (P12-21): Hourly (default) or Project. One table, one lifecycle.</summary>
+    public JobType JobType { get; set; } = JobType.Hourly;
+
+    /// <summary>v1.7 (P12-21): project-only, optional budget lower bound.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? BudgetMin { get; set; }
+
+    /// <summary>v1.7 (P12-21): project-only, optional budget upper bound.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? BudgetMax { get; set; }
+
+    /// <summary>v1.7 (P12-21): who buys materials on a project job.</summary>
+    public MaterialsResponsibility MaterialsBy { get; set; } = MaterialsResponsibility.Undecided;
+
+    /// <summary>v1.7 (P12-21): homeowner is happy for tradies to visit and quote on site.</summary>
+    public bool SiteVisitWelcome { get; set; }
+
+    /// <summary>v1.7 (P12-21): project scope notes beyond the shared description.</summary>
+    [MaxLength(5000)]
+    public string? ScopeNotes { get; set; }
+
+    /// <summary>v1.7 (P12-23): pricing model agreed with the accepted quote (projects only).</summary>
+    public QuotePricingModel? AgreedPricingModel { get; set; }
+
+    /// <summary>v1.7 (P12-23): the accepted quote, kept for history/audit.</summary>
+    public int? AcceptedQuoteId { get; set; }
+
+    /// <summary>v1.7 (P12-25): homeowner confirmed a written contract exists (≥ threshold quotes).</summary>
+    public bool WrittenContractConfirmed { get; set; }
+
+    /// <summary>v1.7 (P12-27): flow rules this job was posted under — 1 = legacy upfront payment, 2 = pay-at-completion. Behaviour branches on this, never on the global flag alone.</summary>
+    public int FlowVersion { get; set; } = 1;
 
     [MaxLength(50)]
     public string? ReferenceCode { get; set; }
@@ -124,6 +197,12 @@ public class Job
     public ICollection<JobStatusHistory> StatusHistory { get; set; } = new List<JobStatusHistory>();
     public ICollection<JobOffer> Offers { get; set; } = new List<JobOffer>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+    /// <summary>v1.7 (P12-17): on-demand price adjustments proposed during the job.</summary>
+    public ICollection<JobPriceAdjustment> Adjustments { get; set; } = new List<JobPriceAdjustment>();
+
+    /// <summary>v1.7 (P12-23): quotes submitted by tradies for project jobs.</summary>
+    public ICollection<Quote> Quotes { get; set; } = new List<Quote>();
 
     /// <summary>The single manual payment attached to this job (P4-01).</summary>
     public Payment? Payment { get; set; }

@@ -25,6 +25,13 @@ public interface IMatchingService
     Task<List<RankedTradieDto>> RankTradiesAsync(Job job, bool broadened = false);
 
     /// <summary>
+    /// v1.7 (P12-05): the Choose-a-Tradie screen list — per tradie: rate for the
+    /// job's service, rating, distance, availability, GST flag. Server-ranked;
+    /// "best" uses the existing composite score.
+    /// </summary>
+    Task<List<TradieListDto>> GetTradieListForJobAsync(Job job, TradieListQuery query);
+
+    /// <summary>
     /// Creates an offer for the next top-ranked tradie who has not yet been
     /// offered this job, schedules the Hangfire timeout job, and emits
     /// SignalR + FCM notifications. If no candidates remain, transitions the

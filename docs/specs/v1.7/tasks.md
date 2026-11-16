@@ -1,6 +1,6 @@
 # v1.7 — Implementation tasks
 
-**Status:** Not started — awaiting owner go signal
+**Status:** Implementation in progress on `dev` — all Phase 12 tasks (P12-01…P12-25, P12-27, P12-28) code-complete 2026-11-16; CI build/test verification pending (sandbox had no dotnet/flutter — run `docker compose run --rm --entrypoint /bin/bash api -c "dotnet build"`, `dotnet test`, `flutter analyze`/`test` before flipping `JobFlow:Version`). P12-26 (milestones) deferred per D2.
 **Date:** 2026-11-16
 **References:** [Specification](specification.md) · [README](README.md)
 
@@ -12,59 +12,59 @@ Unchecked tasks are not started. A task is complete only when its acceptance cri
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 1 | P12-01 Job pricing & timing migration | NOT STARTED | P0 | — | §5 |
-| 2 | P12-02 CreateJobRequest, validators, DTOs | NOT STARTED | P0 | P12-01 | §5 |
-| 3 | P12-03 Null-safe schedule consumers | NOT STARTED | P0 | P12-01 | §5 |
+| 1 | P12-01 Job pricing & timing migration | IN PROGRESS | P0 | — | §5 |
+| 2 | P12-02 CreateJobRequest, validators, DTOs | IN PROGRESS | P0 | P12-01 | §5 |
+| 3 | P12-03 Null-safe schedule consumers | IN PROGRESS | P0 | P12-01 | §5 |
 
 ### Workstream B — Post Job, tradie browse, request (spec §6)
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 4 | P12-04 Simplify Post Job screen | NOT STARTED | P1 | P12-02 | §6 |
-| 5 | P12-05 Tradie list API | NOT STARTED | P1 | P12-02 | §6 |
-| 6 | P12-06 Choose-a-Tradie screen | NOT STARTED | P1 | P12-05 | §6 |
-| 7 | P12-07 Profile in job context | NOT STARTED | P1 | P12-05 | §6 |
-| 8 | P12-08 Direct request (offer) with rate snapshot | NOT STARTED | P1 | P12-01, P12-02 | §6 |
-| 9 | P12-09 Request-sent screen | NOT STARTED | P1 | P12-08 | §6 |
+| 4 | P12-04 Simplify Post Job screen | IN PROGRESS | P1 | P12-02 | §6 |
+| 5 | P12-05 Tradie list API | IN PROGRESS | P1 | P12-02 | §6 |
+| 6 | P12-06 Choose-a-Tradie screen | IN PROGRESS | P1 | P12-05 | §6 |
+| 7 | P12-07 Profile in job context | IN PROGRESS | P1 | P12-05 | §6 |
+| 8 | P12-08 Direct request (offer) with rate snapshot | IN PROGRESS | P1 | P12-01, P12-02 | §6 |
+| 9 | P12-09 Request-sent screen | IN PROGRESS | P1 | P12-08 | §6 |
 
 ### Workstream C — Payment at completion (spec §7)
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 10 | P12-10 State-machine rewiring | NOT STARTED | P0 | P12-01 | §7 |
-| 11 | P12-11 Completion summary + approval | NOT STARTED | P0 | P12-10 | §7 |
-| 12 | P12-12 Auto-approve & overdue-payment policy | NOT STARTED | P0 | P12-10, P12-11 | §7 |
-| 13 | P12-13 Payment & payout on FinalAmount | NOT STARTED | P0 | P12-10, P12-11 | §7 |
-| 14 | P12-14 Cancellation, no-show & refund rework | NOT STARTED | P0 | P12-10, P12-13 | §7 |
-| 15 | P12-15 Mobile status/stepper/copy | NOT STARTED | P0 | P12-10, P12-11, P12-13 | §7 |
-| 16 | P12-16 Admin web | NOT STARTED | P0 | P12-10, P12-13 | §7 |
+| 10 | P12-10 State-machine rewiring | IN PROGRESS | P0 | P12-01 | §7 |
+| 11 | P12-11 Completion summary + approval | IN PROGRESS | P0 | P12-10 | §7 |
+| 12 | P12-12 Auto-approve & overdue-payment policy | IN PROGRESS | P0 | P12-10, P12-11 | §7 |
+| 13 | P12-13 Payment & payout on FinalAmount | IN PROGRESS | P0 | P12-10, P12-11 | §7 |
+| 14 | P12-14 Cancellation, no-show & refund rework | IN PROGRESS | P0 | P12-10, P12-13 | §7 |
+| 15 | P12-15 Mobile status/stepper/copy | IN PROGRESS | P0 | P12-10, P12-11, P12-13 | §7 |
+| 16 | P12-16 Admin web | IN PROGRESS | P0 | P12-10, P12-13 | §7 |
 
 ### Workstream D — On-demand price adjustments (spec §8)
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 17 | P12-17 `JobPriceAdjustment` entity & endpoints | NOT STARTED | P1 | P12-01, P12-02 | §8 |
-| 18 | P12-18 Realtime, push & expiry | NOT STARTED | P1 | P12-17 | §8 |
-| 19 | P12-19 Tradie UI — "Request extra cost" | NOT STARTED | P1 | P12-17 | §8 |
-| 20 | P12-20 Homeowner UI — approve / decline | NOT STARTED | P1 | P12-17, P12-18 | §8 |
+| 17 | P12-17 `JobPriceAdjustment` entity & endpoints | IN PROGRESS | P1 | P12-01, P12-02 | §8 |
+| 18 | P12-18 Realtime, push & expiry | IN PROGRESS | P1 | P12-17 | §8 |
+| 19 | P12-19 Tradie UI — "Request extra cost" | IN PROGRESS | P1 | P12-17 | §8 |
+| 20 | P12-20 Homeowner UI — approve / decline | IN PROGRESS | P1 | P12-17, P12-18 | §8 |
 
 ### Workstream E — Project-based jobs (spec §9)
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 21 | P12-21 Job type + project fields (backend) | NOT STARTED | P2 | P12-01, P12-02 | §9 |
-| 22 | P12-22 Post Job — project section | NOT STARTED | P2 | P12-04, P12-21 | §9 |
-| 23 | P12-23 Quote requests & `Quote` entity | NOT STARTED | P2 | P12-21, P12-08 | §9 |
-| 24 | P12-24 Quote UIs | NOT STARTED | P2 | P12-23, P12-06 | §9 |
-| 25 | P12-25 Large-job guardrails (NZ context) | NOT STARTED | P2 | P12-23 | §9 |
+| 21 | P12-21 Job type + project fields (backend) | IN PROGRESS | P2 | P12-01, P12-02 | §9 |
+| 22 | P12-22 Post Job — project section | IN PROGRESS | P2 | P12-04, P12-21 | §9 |
+| 23 | P12-23 Quote requests & `Quote` entity | IN PROGRESS | P2 | P12-21, P12-08 | §9 |
+| 24 | P12-24 Quote UIs | IN PROGRESS | P2 | P12-23, P12-06 | §9 |
+| 25 | P12-25 Large-job guardrails (NZ context) | IN PROGRESS | P2 | P12-23 | §9 |
 | 26 | P12-26 Milestone payments (deferred / Phase C2) | NOT STARTED | P3 | P12-23 | §9 |
 
 ### Workstream F — Rollout & quality (spec §10)
 
 | # | Task | Status | Priority | Depends | Spec ref |
 |---|---|---|---|---|---|
-| 27 | P12-27 Back-compat for in-flight jobs & feature flag | NOT STARTED | P0 | P12-10 (cross-cutting) | §10 |
-| 28 | P12-28 Tests & docs | NOT STARTED | P0 | All (cross-cutting) | §10 |
+| 27 | P12-27 Back-compat for in-flight jobs & feature flag | IN PROGRESS | P0 | P12-10 (cross-cutting) | §10 |
+| 28 | P12-28 Tests & docs | IN PROGRESS | P0 | All (cross-cutting) | §10 |
 
 ## Dependency graph
 

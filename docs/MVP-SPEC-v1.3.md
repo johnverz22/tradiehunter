@@ -1,5 +1,7 @@
 # TradieHunter MVP v1.3 — Gap Resolution & Extended Specification
 
+> **Superseded in part by v1.7 (2026-11-16, owner sign-off):** **A5** (hourly-only timing) -> timing is optional with Flexible/ASAP/date/date-range; **B1** (materials billed off-platform) -> in-app price adjustments with recorded homeowner approval (P12-17); **P4** (upfront-payment model) -> pay-at-completion (payment is the last step; see docs/specs/v1.7/specification.md SS4). Everything else in this spec remains in force.
+
 > **Rebrand note:** "Fixo" remains the internal codename and codebase identifier. All user-facing UI, copy, push notifications, and marketing material use **TradieHunter**. The `--hue` CSS variable and design tokens remain the source of truth for theming. Container names, config keys, and code namespaces keep `Fixo` to avoid a rename-everything migration.
 
 > **Provenance:** This spec resolves the gaps identified in the Client Clarification Questionnaire (Oct 2026). All pre-answers are accepted as agreed — the client has not overridden any. Each section maps back to the questionnaire item (e.g., A1, B2) and notes whether the gap requires new code, a config change, documentation only, or is deferred.

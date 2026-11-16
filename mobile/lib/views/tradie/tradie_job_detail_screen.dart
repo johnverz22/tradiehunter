@@ -18,7 +18,9 @@ import '../../widgets/fixo_cards.dart';
 import '../../widgets/rating_sheet.dart';
 import '../../widgets/tradie_widgets.dart';
 import '../widgets/cancel_job_sheet.dart';
+import '../widgets/fixo_filter_pill.dart';
 import '../widgets/job_info_grid.dart';
+import '../widgets/job_status_presentation.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
@@ -64,7 +66,9 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
   bool _hasReview = false;
   Job? _job;
   JobContact? _contact;
+  List<JobAdjustment> _adjustments = const [];
   StreamSubscription<JobStatusEvent>? _statusSub;
+  StreamSubscription<JobAdjustmentEvent>? _adjustmentSub;
 
   // Statuses a tradie is allowed to cancel.
   static const _cancellableStatuses = {
@@ -103,12 +107,28 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
     ) {
       if (event.jobId == widget.jobId && mounted) _load();
     });
+    // v1.7 P12-18: homeowner decisions on extra costs arrive live.
+    _adjustmentSub = ref
+        .read(jobHubClientProvider)
+        .onAdjustmentChanged
+        .listen((event) {
+      if (event.jobId == widget.jobId && mounted) _loadAdjustments();
+    });
   }
 
   @override
   void dispose() {
     _statusSub?.cancel();
+    _adjustmentSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAdjustments() async {
+    final adjustments = await ref
+        .read(jobsRepositoryProvider)
+        .getAdjustments(widget.jobId);
+    if (!mounted) return;
+    setState(() => _adjustments = adjustments);
   }
 
   Future<void> _load() async {
@@ -126,9 +146,13 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
       } catch (_) {}
       if (!mounted) return;
     }
+    // v1.7 P12-19: keep the extra-cost list in sync on every load.
+    final adjustments = await repo.getAdjustments(widget.jobId);
+    if (!mounted) return;
     setState(() {
       _job = job;
       _contact = contact;
+      _adjustments = adjustments;
       _loading = false;
     });
   }
@@ -176,18 +200,166 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
     if (mounted) setState(() => _busy = false);
   }
 
+  /// v1.7 P12-11: check-out collects the hours actually worked (plus an
+  /// optional note), shows the computed total before submitting, then
+  /// renders the server's own [CheckOutSummary] verbatim.
   Future<void> _checkOut() async {
+    final job = _job;
+    if (job == null) return;
+    final result = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      ),
+      builder: (_) => _CheckOutSheet(
+        job: job,
+        approvedAdjustmentsTotal: _approvedAdjustmentsTotal,
+      ),
+    );
+    if (result == null || !mounted) return;
+
     setState(() => _busy = true);
-    final repo = ref.read(jobsRepositoryProvider);
-    final ok = await repo.checkOut(widget.jobId);
+    final summary = await ref
+        .read(jobsRepositoryProvider)
+        .checkOut(widget.jobId, finalHours: result);
     if (!mounted) return;
-    if (ok) {
+    if (summary != null) {
       ref
           .read(jobsViewModelProvider.notifier)
           .applyStatusUpdate(widget.jobId, 'AwaitingConfirmation');
       await _load();
+      if (mounted) _showCheckOutSummary(summary);
     } else {
       FixoNotice.error(context, NoticeCopy.checkOutFailed);
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  /// Renders the server's returned check-out summary — never recomputed
+  /// client-side (contract #7).
+  void _showCheckOutSummary(CheckOutSummary summary) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Check-out submitted'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (summary.finalHours != null)
+              Text('Hours worked: ${_formatHours(summary.finalHours!)}'),
+            if (summary.labourAmount != null)
+              Text('Labour: ${formatMoney(summary.labourAmount!)}'),
+            if (summary.adjustmentsTotal != null &&
+                summary.adjustmentsTotal! > Decimal.zero)
+              Text('Approved extras: ${formatMoney(summary.adjustmentsTotal!)}'),
+            if (summary.finalAmount != null)
+              Text('Final total: ${formatMoney(summary.finalAmount!)}'),
+            if (summary.estimatedTotal != null && summary.finalAmount != null)
+              Text('Original estimate: ${formatMoney(summary.estimatedTotal!)}'),
+            const SizedBox(height: Space.s2),
+            Text(
+              summary.exceedsTolerance
+                  ? (summary.toleranceNote?.isNotEmpty == true
+                      ? summary.toleranceNote!
+                      : 'This total is above the estimate tolerance — the '
+                          'homeowner will review it before paying.')
+                  : 'The homeowner now reviews the summary and approves '
+                      'the amount.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sum of Approved adjustments — what actually lands on the homeowner's
+  /// bill (contract #9). Used by the check-out sheet's pre-submit total.
+  Decimal get _approvedAdjustmentsTotal {
+    var total = Decimal.zero;
+    for (final a in _adjustments) {
+      if (a.isApproved) total += a.amount;
+    }
+    return total;
+  }
+
+  // ── v1.7 P12-19: "Request extra cost" ─────────────────────────────────────
+
+  /// Bottom sheet: pick kind, amount, description and an optional receipt
+  /// indicator. Evidence attach is optional — the current API surface has no
+  /// generic blob-upload endpoint, so `evidenceFileKey` is only sent when a
+  /// key is already available (see [JobsRepository.createAdjustment]).
+  Future<void> _showRequestExtraCostSheet() async {
+    final proposal =
+        await showModalBottomSheet<(String, Decimal, String)?>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      ),
+      builder: (_) => _RequestExtraCostSheet(),
+    );
+    if (proposal == null || !mounted) return;
+    final (kind, amount, description) = proposal;
+
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(jobsRepositoryProvider)
+          .createAdjustment(
+            widget.jobId,
+            kind: kind,
+            amount: amount,
+            description: description,
+          );
+      await _loadAdjustments();
+      if (mounted) {
+        FixoNotice.success(
+          context,
+          'Extra cost sent — you\'ll hear back as soon as '
+          'the homeowner decides.',
+        );
+      }
+    } on ProfileApiException catch (e) {
+      if (mounted) FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (mounted) {
+        FixoNotice.error(
+          context,
+          'Could not send the extra cost request. Please try again.',
+        );
+      }
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  /// Withdraw a still-pending proposal (contract #10).
+  Future<void> _withdrawAdjustment(JobAdjustment adjustment) async {
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(jobsRepositoryProvider)
+          .withdrawAdjustment(widget.jobId, adjustment.id);
+      await _loadAdjustments();
+      if (mounted) {
+        FixoNotice.success(context, 'Extra cost withdrawn.');
+      }
+    } on ProfileApiException catch (e) {
+      if (mounted) FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (mounted) {
+        FixoNotice.error(
+          context,
+          'Could not withdraw the request. Please try again.',
+        );
+      }
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -354,12 +526,22 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
     // platform commission. The commission percent comes from the authorized
     // locale config; when it can't be loaded the net line is omitted rather
     // than estimated.
-    final total = job.totalAmount;
+    // v1.7: `totalAmount` is a deprecated wire alias — the figure the tradie
+    // cares about is finalAmount (post check-out) or estimatedTotal before.
+    final total = job.finalAmount ?? job.estimatedTotal ?? job.totalAmount;
+    final totalLabel = job.finalAmount != null
+        ? 'Job total'
+        : (job.estimatedTotal != null ? 'Estimated total' : 'Job total');
     final grossLabel = total != null ? formatMoney(total) : null;
     final commissionPercent = Decimal.tryParse(
       '${ref.watch(localeConfigProvider).valueOrNull?['commissionPercent'] ?? ''}',
     );
     final net = payoutNetAmount(total, commissionPercent);
+
+    final canRequestExtraCost =
+        status == 'Booked' ||
+        status == 'InProgress' ||
+        status == 'AwaitingConfirmation';
 
     final canNavigate =
         showFullAddress &&
@@ -407,6 +589,8 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         children: [
           StatusStrip(
             status: status,
+            stage: job.stage,
+            flowVersion: job.flowVersion,
             referenceCode: job.referenceCode,
           ),
           Expanded(
@@ -442,12 +626,18 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
                   tiles: [
                     JobInfoTile(
                       label: 'Scheduled',
-                      value: scheduledLabel ?? 'Not set',
+                      // v1.7: Flexible/ASAP jobs legitimately have no start
+                      // yet — show Date TBC, never a fabricated date.
+                      value: scheduledLabel ?? 'Date TBC',
                       icon: Icons.calendar_today_outlined,
                     ),
                     JobInfoTile(
                       label: 'Duration',
-                      value: '${job.hours} hour${job.hours != 1 ? 's' : ''}',
+                      value: job.hours > 0
+                          ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
+                          : (job.estimatedHours != null
+                              ? '≈ ${_formatHours(job.estimatedHours!)}'
+                              : 'TBC'),
                       icon: Icons.timer_outlined,
                     ),
                   ],
@@ -493,7 +683,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
                     ),
                     const SizedBox(height: Space.s2),
                     JobInfoTile(
-                      label: 'Job total',
+                      label: totalLabel,
                       value: grossLabel,
                       icon: Icons.attach_money_outlined,
                     ),
@@ -503,6 +693,16 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
                       label: 'You earn',
                       value: grossLabel,
                       icon: Icons.payments_outlined,
+                    ),
+                  ],
+                  if (job.estimatedTotal != null &&
+                      job.finalAmount == null) ...[
+                    const SizedBox(height: Space.s2),
+                    Text(
+                      'Total confirmed on completion',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ],
@@ -518,6 +718,16 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
               ],
             ),
           ),
+
+          // ── v1.7 P12-19: extra-cost requests + running total ─────────────
+          if (canRequestExtraCost) ...[
+            const SizedBox(height: Space.s4),
+            _TradieAdjustmentsCard(
+              adjustments: _adjustments,
+              onRequestExtra: _showRequestExtraCostSheet,
+              onWithdraw: _withdrawAdjustment,
+            ),
+          ],
 
           // ── Quiet "Need help?" row ────────────────────────────────────────
           if (canCancel || canDispute) ...[
@@ -980,3 +1190,612 @@ class _TradieJobNotFoundBody extends StatelessWidget {
     );
   }
 }
+
+// ── v1.7 P12-11: check-out sheet ─────────────────────────────────────────────
+
+/// Collects the hours actually worked (+ optional note) and previews the
+/// computed total before submitting: labour = rate × hours, plus the extras
+/// already approved by the homeowner. The server recomputes everything —
+/// this preview is arithmetic on server-owned figures only.
+class _CheckOutSheet extends StatefulWidget {
+  final Job job;
+  final Decimal approvedAdjustmentsTotal;
+
+  const _CheckOutSheet({
+    required this.job,
+    required this.approvedAdjustmentsTotal,
+  });
+
+  @override
+  State<_CheckOutSheet> createState() => _CheckOutSheetState();
+}
+
+class _CheckOutSheetState extends State<_CheckOutSheet> {
+  late final TextEditingController _hoursController;
+  final TextEditingController _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _hoursController = TextEditingController(
+      text: _formatHoursText(widget.job.hours.toDouble()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoursController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  static String _formatHoursText(double hours) =>
+      hours == hours.roundToDouble()
+          ? hours.round().toString()
+          : hours.toString();
+
+  double? get _parsedHours {
+    final parsed =
+        double.tryParse(_hoursController.text.trim().replaceAll(',', '.'));
+    return parsed != null && parsed > 0 ? parsed : null;
+  }
+
+  void _submit(BuildContext context) {
+    final hours = _parsedHours;
+    if (hours == null) return;
+    Navigator.pop(context, hours);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final job = widget.job;
+    final hours = _parsedHours;
+    final rate = job.hourlyRate;
+
+    // Preview only — the server's check-out response is the authority.
+    Decimal? labour;
+    if (hours != null && rate != null) {
+      labour = labourPreview(rate, hours);
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.s6,
+          Space.gutter,
+          MediaQuery.of(context).viewInsets.bottom + Space.s6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Check out & submit hours',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FW.bold,
+              ),
+            ),
+            const SizedBox(height: Space.s1),
+            Text(
+              'The homeowner reviews this summary and approves the amount '
+              'before paying.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.s4),
+            TextField(
+              key: const Key('final_hours_field'),
+              controller: _hoursController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Hours worked',
+                errorText: _hoursController.text.trim().isNotEmpty &&
+                        hours == null
+                    ? 'Enter the hours you worked, e.g. 3.5'
+                    : null,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Space.s3),
+            TextField(
+              controller: _notesController,
+              maxLines: 2,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: 'Notes (optional)',
+                hintText: 'What was done, anything the homeowner should '
+                    'know…',
+              ),
+            ),
+            const SizedBox(height: Space.s3),
+            // Computed preview — shown before the submit button (P12-11).
+            if (labour != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Labour (${_formatHoursText(hours!)} × ${formatMoney(rate!)})',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      formatMoney(labour),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (widget.approvedAdjustmentsTotal > Decimal.zero) ...[
+              const SizedBox(height: Space.s1),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Approved extras',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      formatMoney(widget.approvedAdjustmentsTotal),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (labour != null) ...[
+              const SizedBox(height: Space.s2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Estimated total',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FW.bold,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      formatMoney(labour + widget.approvedAdjustmentsTotal),
+                      style: TextStyle(
+                        fontFamily: DesignTokens.fontBody,
+                        fontSize: DesignTokens.fontSizeH2,
+                        fontWeight: FW.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: isDark ? Colors.white : DesignTokens.brand900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: Space.s4),
+            FixoPrimaryButton(
+              key: const Key('check_out_submit_button'),
+              label: 'Submit check-out',
+              onPressed: hours == null ? null : () => _submit(context),
+            ),
+            if (hours == null)
+              Padding(
+                padding: const EdgeInsets.only(top: Space.s2),
+                child: Text(
+                  'Enter your hours to enable check-out.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Helper used by the labour preview — multiplies the hourly [rate] by
+/// [hours] without ever leaving decimal arithmetic.
+Decimal labourPreview(Decimal rate, double hours) {
+  // Split the hours into a whole + fractional part so the multiplication
+  // stays exact: rate * whole + rate * fraction.
+  final whole = hours.truncate();
+  final fraction = hours - whole;
+  var result = rate * Decimal.fromInt(whole);
+  if (fraction > 0) {
+    // Represent the fraction as numerator/1000 — plenty for half-hour
+    // precision on a rate that is itself a 2dp decimal.
+    final scaled = (fraction * 1000).round();
+    result += rate * Decimal(scaled) / Decimal.fromInt(1000);
+  }
+  return result;
+}
+
+// ── v1.7 P12-19: extra-cost card + sheets ────────────────────────────────────
+
+/// The tradie's extra-cost list for this job: status per request, running
+/// approved total, withdraw action for pending items, and the
+/// "Request extra cost" entry point.
+class _TradieAdjustmentsCard extends StatelessWidget {
+  final List<JobAdjustment> adjustments;
+  final VoidCallback onRequestExtra;
+  final ValueChanged<JobAdjustment> onWithdraw;
+
+  const _TradieAdjustmentsCard({
+    required this.adjustments,
+    required this.onRequestExtra,
+    required this.onWithdraw,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colors = theme.extension<THColors>()!;
+
+    final approvedTotal = adjustments
+        .where((a) => a.isApproved)
+        .fold<Decimal>(Decimal.zero, (sum, a) => sum + a.amount);
+    final declined = adjustments
+        .where((a) => a.status == JobAdjustment.statusDeclined)
+        .toList();
+
+    return FixoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Extra costs',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FW.bold,
+            ),
+          ),
+          const SizedBox(height: Space.s1),
+          Text(
+            'Ask the homeowner to approve extra costs — materials, labour, '
+            'travel. Nothing is billed without their approval.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Space.s3),
+          FixoTonalButton(
+            key: const Key('request_extra_cost_button'),
+            icon: Icons.add_circle_outline,
+            label: 'Request extra cost',
+            fullWidth: true,
+            onPressed: onRequestExtra,
+          ),
+          if (adjustments.isNotEmpty) ...[
+            const SizedBox(height: Space.s3),
+            for (final a in adjustments) ...[
+              _TradieAdjustmentRow(
+                adjustment: a,
+                onWithdraw: a.isPending ? () => onWithdraw(a) : null,
+              ),
+              const SizedBox(height: Space.s2),
+            ],
+            if (approvedTotal > Decimal.zero) ...[
+              const Divider(
+                height: Space.s4,
+                color: DesignTokens.paperLineLight,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Approved total',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      formatMoney(approvedTotal),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: colors.text,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+          // A declined proposal puts the choice back with the tradie —
+          // continue the original scope, or cancel with the no-penalty
+          // scope_change_declined reason (P6-03 cancel sheet).
+          if (declined.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.s2),
+              child: Text(
+                'A declined extra isn\'t billed — keep to the original scope '
+                'or cancel the job with "Scope changed" (no penalty).',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.accentText,
+                  fontSize: DesignTokens.fontSizeCaption,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TradieAdjustmentRow extends StatelessWidget {
+  final JobAdjustment adjustment;
+  final VoidCallback? onWithdraw;
+
+  const _TradieAdjustmentRow({
+    required this.adjustment,
+    this.onWithdraw,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final a = adjustment;
+    final (:tone, :label, :icon) = switch (a.status) {
+      JobAdjustment.statusApproved => (
+          tone: ChipTone.success,
+          label: 'Approved',
+          icon: Icons.check_circle_outline,
+        ),
+      JobAdjustment.statusDeclined => (
+          tone: ChipTone.danger,
+          label: 'Declined',
+          icon: Icons.cancel_outlined,
+        ),
+      JobAdjustment.statusPending => (
+          tone: ChipTone.warning,
+          label: 'Waiting for approval',
+          icon: Icons.hourglass_top_outlined,
+        ),
+      JobAdjustment.statusWithdrawn => (
+          tone: ChipTone.neutral,
+          label: 'Withdrawn',
+          icon: Icons.undo_outlined,
+        ),
+      JobAdjustment.statusExpired => (
+          tone: ChipTone.neutral,
+          label: 'Expired',
+          icon: Icons.timer_off_outlined,
+        ),
+      _ => (
+          tone: ChipTone.neutral,
+          label: a.status,
+          icon: Icons.help_outline_rounded,
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(Space.s3),
+      decoration: BoxDecoration(
+        color: DesignTokens.surfaceTonal(isDark),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+        border: Border.all(color: DesignTokens.paperLine(isDark)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              StatusChip(label: label, tone: tone, icon: icon),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  formatMoney(a.amount),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FW.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.s1),
+          if (a.description.isNotEmpty)
+            Text(a.description, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: Space.s0_5),
+          Text(
+            [
+              a.kind,
+              'sent ${DateFormat('d MMM').format(a.createdAtUtc.toLocal())}',
+              if (a.evidenceUrl?.isNotEmpty == true) 'receipt attached',
+              if (a.responseNote?.isNotEmpty == true) 'note: ${a.responseNote}',
+            ].join(' · '),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: DesignTokens.fontSizeCaption,
+            ),
+          ),
+          if (onWithdraw != null) ...[
+            const SizedBox(height: Space.s2),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FixoTonalButton(
+                key: Key('adjustment_withdraw_${a.id}'),
+                label: 'Withdraw',
+                onPressed: onWithdraw,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Kind picker + amount + description for a new extra-cost proposal
+/// (P12-19). Receipt attach is shown as a disabled "add from camera" row —
+/// the API has no generic upload endpoint yet, so it stays optional and
+/// documents itself.
+class _RequestExtraCostSheet extends StatefulWidget {
+  const _RequestExtraCostSheet();
+
+  @override
+  State<_RequestExtraCostSheet> createState() => _RequestExtraCostSheetState();
+}
+
+class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
+  static const _kinds = <(String, String)>[
+    (JobAdjustment.kindMaterials, 'Materials'),
+    (JobAdjustment.kindExtraLabour, 'Extra labour'),
+    (JobAdjustment.kindTravel, 'Travel'),
+    (JobAdjustment.kindOther, 'Other'),
+  ];
+
+  String _kind = JobAdjustment.kindMaterials;
+  final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Decimal? get _parsedAmount =>
+      Decimal.tryParse(_amountController.text.trim());
+
+  bool get _canSubmit =>
+      _parsedAmount != null &&
+      _parsedAmount! > Decimal.zero &&
+      _descriptionController.text.trim().isNotEmpty;
+
+  void _submit(BuildContext context) {
+    if (!_canSubmit) return;
+    Navigator.pop(
+      context,
+      (
+        _kind,
+        _parsedAmount!,
+        _descriptionController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.s6,
+          Space.gutter,
+          MediaQuery.of(context).viewInsets.bottom + Space.s6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Request extra cost',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FW.bold,
+              ),
+            ),
+            const SizedBox(height: Space.s1),
+            Text(
+              'The homeowner approves or declines — only approved extras '
+              'are added to the total.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.s4),
+            Wrap(
+              spacing: Space.s2,
+              runSpacing: Space.s2,
+              children: _kinds
+                  .map(
+                    (kind) => FixoFilterPill(
+                      label: kind.$2,
+                      selected: _kind == kind.$1,
+                      onSelected: (_) => setState(() => _kind = kind.$1),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: Space.s3),
+            TextField(
+              key: const Key('extra_cost_amount_field'),
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '\$',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Space.s3),
+            TextField(
+              key: const Key('extra_cost_description_field'),
+              controller: _descriptionController,
+              maxLines: 2,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: 'What is it for?',
+                hintText: 'e.g. Replacement mixer tap, bought from Mitre 10',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Space.s2),
+            // Receipt attach — optional and documented: the API surface has
+            // no generic blob-upload endpoint, so nothing is faked here.
+            Opacity(
+              opacity: Alpha.divider,
+              child: ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.receipt_long_outlined,
+                  size: Sizes.iconAction,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                title: Text(
+                  'Attach a receipt or photo (optional — coming soon)',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: Space.s3),
+            FixoPrimaryButton(
+              key: const Key('extra_cost_submit_button'),
+              label: 'Send to homeowner',
+              onPressed: _canSubmit ? () => _submit(context) : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
+String _formatHours(double hours) =>
+    hours == hours.roundToDouble() ? hours.round().toString() : hours.toString();

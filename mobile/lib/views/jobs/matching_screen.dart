@@ -1,30 +1,75 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../theme/design_tokens.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
+import '../../widgets/fixo_buttons.dart';
+import '../../widgets/fixo_cards.dart';
+import '../widgets/offer_countdown.dart';
 import '../widgets/sticky_action_bar.dart';
+import '../../feedback/fixo_notice.dart';
 
-/// Mockup 07-matching: radar ripple + sequential offer progress.
+/// Which waiting experience this screen runs.
+enum MatchingScreenMode {
+  /// Quick match: dispatch POST /api/jobs/:id/match and watch the server's
+  /// sequential offers (P3-09/P3-10). Reached from "Quick match for me" and
+  /// from a `Requested` job card.
+  autoMatch,
+
+  /// Request-sent (v1.7 P12-08/P12-09): the homeowner directly requested one
+  /// tradie (POST /api/jobs/:id/request). No dispatch happens — the screen
+  /// shows who was asked, at what rate, counts down to `expiresAtUtc` and
+  /// navigates on the response.
+  requestSent,
+}
+
+/// Homeowner waiting screen for both matching paths.
 ///
-/// Calls POST /api/jobs/:id/match, then watches SignalR for the server's
-/// offer lifecycle events — the server owns the run (offer → timeout/decline
-/// → next tradie → broaden → cancel), so this screen only renders progress
-/// and never polls. See P3-09 / P3-10.
+/// **autoMatch** (mockup 07): radar ripple + sequential offer progress. Calls
+/// POST /api/jobs/:id/match, then watches SignalR for the server's offer
+/// lifecycle events — the server owns the run (offer → timeout/decline →
+/// next tradie → broaden → cancel), so this screen only renders progress and
+/// never polls. See P3-09 / P3-10.
+///
+/// **requestSent** (v1.7): shows the asked tradie ([JobOffer.tradieName]),
+/// their snapshot rate with the D8 GST label when supplied, and a live
+/// countdown to the offer's `expiresAtUtc`. An accepted offer (SignalR
+/// `OfferLifecycleEvent` or the `Booked` status event, or a poll fallback of
+/// GET /api/jobs/:id/offers/pending) navigates to the booked job detail;
+/// decline/timeout returns to the tradie list with a notice. The match
+/// result screen with its auto-selected `matches[0]` is retired (P12-09).
 class MatchingScreen extends ConsumerStatefulWidget {
   final String jobId;
-  const MatchingScreen({super.key, required this.jobId});
+  final MatchingScreenMode mode;
+
+  /// D8 GST label for the requested tradie's snapshot rate
+  /// ("Incl. GST" / "No GST charged"); null when unknown — the label is
+  /// omitted rather than guessed.
+  final String? gstLabel;
 
   /// How long the screen waits in `starting` before telling the homeowner the
   /// run may be stalled. Offer timeouts themselves stay server-owned — this
   /// only covers the case where no offer event ever arrives.
   static const stallDuration = Duration(seconds: 45);
+
+  /// Poll cadence for the request-sent fallback (SignalR is primary).
+  static const pollInterval = Duration(seconds: 15);
+
+  const MatchingScreen({
+    super.key,
+    required this.jobId,
+    this.mode = MatchingScreenMode.autoMatch,
+    this.gstLabel,
+  });
 
   @override
   ConsumerState<MatchingScreen> createState() => _MatchingScreenState();
@@ -38,11 +83,21 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
   StreamSubscription? _reconnectingSub;
   StreamSubscription? _reconnectedSub;
   Timer? _stallTimer;
+  Timer? _pollTimer;
   bool _dispatchFailed = false;
   bool _stalled = false;
   bool _reconnecting = false;
   bool _animationsEnabled = false;
   bool _busy = false;
+
+  /// The pending direct request (requestSent mode only).
+  JobOffer? _request;
+
+  /// The pending-offer fetch finished in requestSent mode.
+  bool _requestChecked = false;
+
+  bool get _isRequestSent =>
+      widget.mode == MatchingScreenMode.requestSent;
 
   @override
   void initState() {
@@ -61,34 +116,82 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     final enabled = !MediaQuery.disableAnimationsOf(context);
     if (enabled != _animationsEnabled) {
       _animationsEnabled = enabled;
-      enabled ? _ctrl.repeat() : _ctrl.stop();
+      if (!_isRequestSent) {
+        enabled ? _ctrl.repeat() : _ctrl.stop();
+      }
     }
   }
 
-  /// Subscribes to hub events once, then dispatches the match run. Subscribing
-  /// before dispatching keeps the first OfferCreated event from being lost.
+  /// Subscribes to hub events once, then dispatches (autoMatch) or seeds the
+  /// request (requestSent). Subscribing before dispatching keeps the first
+  /// OfferCreated event from being lost.
   Future<void> _start() async {
     final hub = ref.read(jobHubClientProvider);
     final progress = ref.read(matchingProgressProvider(widget.jobId).notifier);
 
-    _offerSub ??= hub.onOfferLifecycle.listen(progress.applyOfferEvent);
-    _statusSub ??= hub.onJobStatusChanged.listen((event) {
-      progress.applyStatusEvent(event);
-      if (event.jobId == widget.jobId &&
-          (event.status == 'AwaitingPayment' || event.status == 'Matched')) {
-        _goToResult();
-      }
-    });
+    _offerSub ??= hub.onOfferLifecycle.listen(_onOfferEvent);
+    _statusSub ??= hub.onJobStatusChanged.listen(_onStatusEvent);
     _reconnectingSub ??= hub.onReconnecting.listen((_) {
       if (mounted) setState(() => _reconnecting = true);
     });
     _reconnectedSub ??= hub.onReconnected.listen((_) => _onReconnected());
 
+    if (_isRequestSent) {
+      await _loadRequest();
+      if (!mounted) return;
+      _pollTimer = Timer.periodic(MatchingScreen.pollInterval, (_) {
+        if (mounted) _loadRequest();
+      });
+      return;
+    }
+
     await _dispatch();
   }
 
+  void _onOfferEvent(OfferLifecycleEvent event) {
+    if (event.jobId != widget.jobId) return;
+    if (_isRequestSent) {
+      switch (event.eventType) {
+        case OfferEventType.accepted:
+          _goToBookedDetail();
+        case OfferEventType.declined:
+        case OfferEventType.expired:
+          _returnToList(
+            'Your request wasn\'t taken up — pick another tradie.',
+          );
+        case OfferEventType.created:
+        case OfferEventType.unknown:
+          break;
+      }
+      return;
+    }
+    final progress = ref.read(matchingProgressProvider(widget.jobId).notifier);
+    progress.applyOfferEvent(event);
+  }
+
+  void _onStatusEvent(JobStatusEvent event) {
+    if (event.jobId != widget.jobId) return;
+    if (_isRequestSent) {
+      if (event.status == 'Booked') {
+        _goToBookedDetail();
+      } else if (event.status == 'Cancelled') {
+        _returnToList('This job was cancelled.');
+      }
+      return;
+    }
+    final progress = ref.read(matchingProgressProvider(widget.jobId).notifier);
+    progress.applyStatusEvent(event);
+    if (event.status == 'Booked') {
+      // v1.7: a tradie accepting books the job (contract #5) — go straight
+      // to the booked job detail instead of the retired match-result screen.
+      _goToBookedDetail();
+    } else if (event.status == 'AwaitingPayment' || event.status == 'Matched') {
+      _goToBookedDetail();
+    }
+  }
+
   /// Connects (idempotent), joins the job group, triggers the run and re-reads
-  /// state. Also used by the Try-again retry path.
+  /// state. Also used by the Try-again retry path (autoMatch only).
   Future<void> _dispatch() async {
     if (_busy) return;
     _busy = true;
@@ -146,8 +249,10 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     final job = await repo.getJobById(widget.jobId);
     if (!mounted) return;
     if (job != null) {
-      if (job.status == 'AwaitingPayment' || job.status == 'Matched') {
-        _goToResult();
+      if (job.status == 'AwaitingPayment' ||
+          job.status == 'Matched' ||
+          job.status == 'Booked') {
+        _goToBookedDetail();
         return;
       }
       if (job.status == 'Cancelled') {
@@ -169,14 +274,53 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     }
   }
 
-  /// Reconnected SignalR gets a new connection id — group membership is gone,
-  /// so re-join and re-read in case events landed while disconnected.
+  // ── Request-sent data (v1.7) ────────────────────────────────────────────────
+
+  Future<void> _loadRequest() async {
+    final repo = ref.read(jobsRepositoryProvider);
+    final job = await repo.getJobById(widget.jobId);
+    if (!mounted) return;
+    if (job != null && job.status == 'Booked') {
+      _goToBookedDetail();
+      return;
+    }
+    if (job != null && job.status != 'Requested' && job.status != 'Matching') {
+      // The direct request resolved some other way (declined, cancelled).
+      _returnToList('Your request wasn\'t taken up — pick another tradie.');
+      return;
+    }
+
+    try {
+      final offer = await repo.getPendingOffer(widget.jobId);
+      if (!mounted) return;
+      setState(() {
+        _request = offer;
+        _requestChecked = true;
+        _reconnecting = false;
+      });
+      if (offer == null && job != null) {
+        // No pending request and the job is still Requested — the request
+        // expired or was declined; the homeowner picks someone else.
+        _returnToList(
+          'Your request expired without a response — pick another tradie.',
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _requestChecked = true);
+    }
+  }
+
   Future<void> _onReconnected() async {
     if (!mounted) return;
     setState(() => _reconnecting = false);
     final hub = ref.read(jobHubClientProvider);
     await hub.joinJobGroup(widget.jobId);
     if (!mounted) return;
+    if (_isRequestSent) {
+      await _loadRequest();
+      return;
+    }
     await _refreshState();
     if (mounted &&
         ref.read(matchingProgressProvider(widget.jobId)).phase ==
@@ -196,11 +340,25 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     });
   }
 
-  Future<void> _goToResult() async {
+  /// Accept → booked job detail (v1.7: no match-result screen).
+  Future<void> _goToBookedDetail() async {
     _stallTimer?.cancel();
+    _pollTimer?.cancel();
     await _leave();
     if (mounted) {
-      context.pushReplacement('/jobs/${widget.jobId}/match');
+      context.pushReplacement('/jobs/${widget.jobId}/detail');
+    }
+  }
+
+  /// Decline / timeout / manual cancel → back to the tradie list with a
+  /// truthful notice (P12-09).
+  Future<void> _returnToList(String notice) async {
+    _stallTimer?.cancel();
+    _pollTimer?.cancel();
+    await _leave();
+    if (mounted) {
+      context.pushReplacement('/jobs/${widget.jobId}/tradies');
+      FixoNotice.info(context, notice);
     }
   }
 
@@ -215,6 +373,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     _reconnectingSub?.cancel();
     _reconnectedSub?.cancel();
     _stallTimer?.cancel();
+    _pollTimer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -222,12 +381,14 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (_isRequestSent) return _buildRequestSent(context, theme, isDark);
+
     final progress = ref.watch(matchingProgressProvider(widget.jobId));
     final done = progress.phase == MatchingPhase.noTradieFound;
     final matched = progress.phase == MatchingPhase.matched;
     final searching = !done && !matched;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
@@ -390,11 +551,14 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
               ),
             TextButton(
               onPressed: () async {
-                // Factual cancel: DELETE /api/jobs/:id, then pop.
+                // Factual cancel: DELETE /api/jobs/:id, then back to the
+                // tradie list — the run itself is server-owned.
                 _stallTimer?.cancel();
                 await _leave();
                 await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
-                if (context.mounted) context.pop();
+                if (context.mounted) {
+                  context.pushReplacement('/jobs/${widget.jobId}/tradies');
+                }
               },
               style: TextButton.styleFrom(
                 minimumSize: const Size.fromHeight(Sizes.tapMin),
@@ -406,6 +570,305 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
       ),
     ), // Scaffold
     ); // AnnotatedRegion
+  }
+
+  // ── Request-sent UI (v1.7 P12-09) ───────────────────────────────────────────
+
+  Widget _buildRequestSent(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+  ) {
+    final request = _request;
+    final expired = request != null && request.remaining().isNegative;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        appBar: FixoAppBar(title: 'Request sent'),
+        body: !_requestChecked
+            ? const Center(child: CircularProgressIndicator())
+            : request == null
+                ? SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(Space.gutter),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.timer_off_outlined,
+                            size: Sizes.iconHero,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: Space.s6),
+                          Text(
+                            'This request is no longer open',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FW.bold,
+                            ),
+                          ),
+                          const SizedBox(height: Space.s2),
+                          Text(
+                            'It may have expired or been answered. '
+                            'Pick another tradie to keep going.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : SafeArea(
+                    child: ListView(
+                      padding: FixoPadding.page,
+                      children: [
+                        const SizedBox(height: Space.s5),
+                        Icon(
+                          Icons.mark_email_read_outlined,
+                          size: Sizes.iconHero,
+                          color: isDark
+                              ? DesignTokens.brand300
+                              : DesignTokens.brand700,
+                        ),
+                        const SizedBox(height: Space.s5),
+                        Text(
+                          'You asked ${_displayName(request)}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FW.bold,
+                          ),
+                        ),
+                        const SizedBox(height: Space.s2),
+                        Text(
+                          'We\'ll let you know the moment they reply — '
+                          'usually well before the timer runs out.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: Space.s6),
+                        // Rate + GST label (D8): snapshot rate shown only
+                        // when the server supplied one.
+                        if (request.hourlyRateSnapshot != null)
+                          _RateCard(
+                            rate: request.hourlyRateSnapshot!,
+                            gstLabel: widget.gstLabel,
+                            name: _displayName(request),
+                            isDark: isDark,
+                          ),
+                        const SizedBox(height: Space.s4),
+                        if (_reconnecting)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: Space.s3),
+                            child: Text(
+                              'Connection lost — reconnecting…',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        OfferCountdown(
+                          offer: request,
+                          onExpired: () {
+                            if (mounted) setState(() {});
+                          },
+                        ),
+                        if (request.message?.trim().isNotEmpty ?? false) ...[
+                          const SizedBox(height: Space.s4),
+                          _MessageCard(message: request.message!.trim()),
+                        ],
+                        const SizedBox(height: Space.s6),
+                        Text(
+                          expired
+                              ? 'The request has run out of time. '
+                                  'Pick another tradie — the job stays open.'
+                              : 'If they can\'t take it, the job stays open '
+                                  'and nothing is charged.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: Space.stickyBarClearance),
+                      ],
+                    ),
+                  ),
+        bottomNavigationBar: StickyActionBar(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FixoPrimaryButton(
+                key: const Key('pick_someone_else_button'),
+                label: 'Pick someone else',
+                onPressed: request == null || expired
+                    ? () => _returnToList(
+                        'Pick another tradie — the job is still open.',
+                      )
+                    : null,
+              ),
+              const SizedBox(height: Space.s2),
+              TextButton(
+                key: const Key('cancel_request_button'),
+                onPressed: request == null || expired
+                    ? null
+                    : () async {
+                        // Factual cancel: the only server-side cancel for a
+                        // request-stage job is DELETE /api/jobs/:id (P6-03
+                        // contract) — the request dies with the job.
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Cancel this request?'),
+                            content: const Text(
+                              'Cancelling closes the whole job request — '
+                              'the tradie will be told and nothing is '
+                              'charged. You can always post it again.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Keep waiting'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Cancel request'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed != true || !mounted) return;
+                        _pollTimer?.cancel();
+                        await _leave();
+                        await ref
+                            .read(jobsRepositoryProvider)
+                            .cancelJob(widget.jobId);
+                        if (mounted) {
+                          context.pushReplacement(
+                            '/jobs/${widget.jobId}/tradies',
+                          );
+                          FixoNotice.info(
+                            context,
+                            'Request cancelled — the job is closed.',
+                          );
+                        }
+                      },
+                child: const Text('Cancel request'),
+              ),
+            ],
+          ),
+        ),
+      ), // Scaffold
+    ); // AnnotatedRegion
+  }
+
+  String _displayName(JobOffer offer) {
+    final name = offer.tradieName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return 'the tradie';
+  }
+}
+
+/// Snapshot rate card: "their hourly rate for this job" + GST label (D8).
+class _RateCard extends StatelessWidget {
+  final Decimal rate;
+  final String? gstLabel;
+  final String name;
+  final bool isDark;
+
+  const _RateCard({
+    required this.rate,
+    required this.gstLabel,
+    required this.name,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<THColors>()!;
+    return FixoCard(
+      child: Row(
+        children: [
+          Icon(
+            Icons.payments_outlined,
+            size: Sizes.iconAction,
+            color: isDark ? DesignTokens.brand300 : DesignTokens.brand700,
+          ),
+          const SizedBox(width: Space.s3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${formatRate(rate)}${gstLabel == null ? '' : ' · $gstLabel'}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FW.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(height: Space.s0_5),
+                Text(
+                  '$name\'s rate for this job — agreed before they book in.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The homeowner's optional pre-acceptance message (D3: the only contact
+/// channel before Booked — no chat thread exists yet).
+class _MessageCard extends StatelessWidget {
+  final String message;
+  const _MessageCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<THColors>()!;
+    return FixoCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: Sizes.iconAction,
+            color: colors.textBrand,
+          ),
+          const SizedBox(width: Space.s3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your message',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FW.semibold,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: Space.s0_5),
+                Text(message, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

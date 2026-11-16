@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // v1.7 (P12-15): status-only progress resolves under the v2 stepper.
+  const v2Titles = JobStepperFlow.v2Titles;
   const stages = {
     'Requested': 0,
     'AwaitingPayment': 0,
@@ -35,11 +37,11 @@ void main() {
           home: Scaffold(body: JobProgress(status: 'AwaitingConfirmation')),
         ),
       );
-      expect(find.text('Step 3 of 4'), findsOneWidget);
+      expect(find.text('Step 4 of 6 · Review & approve'), findsOneWidget);
       expect(find.text('View all steps'), findsOneWidget);
       await tester.tap(find.text('View all steps'));
       await tester.pumpAndSettle();
-      for (final label in JobStatusPresentation.progressLabels) {
+      for (final label in v2Titles) {
         expect(find.text(label), findsWidgets);
       }
       expect(find.text('Hide steps'), findsOneWidget);
@@ -56,7 +58,7 @@ void main() {
       );
       await tester.tap(find.text('Refresh status'));
       expect(refreshes, 1);
-      expect(find.text('Done'), findsNothing);
+      expect(find.text('Completed'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -97,15 +99,17 @@ void main() {
           expect(find.text(presentation.label), findsWidgets);
           if (entry.value == null) {
             expect(find.textContaining('Step '), findsNothing);
-            expect(find.text('Done'), findsNothing);
+            expect(find.text('Completed'), findsNothing);
           } else {
-            expect(find.text(presentation.progressLabel!), findsOneWidget);
-            for (final label in JobStatusPresentation.progressLabels) {
+            // The caption renders as main + sublabel texts (plus the
+            // invisible combined measurement text), so match loosely.
+            expect(find.textContaining('Step '), findsWidgets);
+            for (final label in v2Titles) {
               expect(find.text(label), findsWidgets);
             }
             expect(
               find.bySemanticsLabel(
-                RegExp('Requested.*Booked.*In progress.*Done'),
+                RegExp('Requested.*Booked.*In progress.*Review & approve.*Pay.*Completed'),
               ),
               findsOneWidget,
             );

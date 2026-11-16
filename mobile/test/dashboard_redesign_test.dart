@@ -120,7 +120,9 @@ void main() {
           DesignTokens.brand500.withValues(alpha: 0),
         ]);
         expect(find.byType(JobProgressDots), findsOneWidget);
-        expect(find.text('Step 1 of 4'), findsOneWidget);
+        // v1.7 (P12-15): status-only progress resolves under the 6-step
+        // v2 stepper — AwaitingPayment is the Pay step.
+        expect(find.text('Step 5 of 6'), findsOneWidget);
       },
     );
 

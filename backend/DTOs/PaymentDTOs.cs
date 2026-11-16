@@ -98,6 +98,52 @@ public class PendingPaymentDto
 
     /// <summary>Short-lived (15 min) SAS URL to view the receipt in the private container.</summary>
     public string ReceiptUrl { get; set; } = string.Empty;
+
+    // ── v1.7 (P12-16): itemised completion amounts ─────────────────────────
+
+    /// <summary>Labour component: finalHours × rate, computed at check-out.</summary>
+    public decimal? LabourAmount { get; set; }
+
+    /// <summary>Σ approved price adjustments included in the total.</summary>
+    public decimal? AdjustmentsTotal { get; set; }
+
+    /// <summary>What the homeowner approved — the amount to verify.</summary>
+    public decimal? FinalAmount { get; set; }
+
+    /// <summary>The homeowner's original estimate, for the "higher than estimate" hint.</summary>
+    public decimal? EstimatedTotal { get; set; }
+
+    /// <summary>When the tradie submitted the completion summary — "work completed on <date>".</summary>
+    public DateTime? CompletionSubmittedAtUtc { get; set; }
+}
+
+/// <summary>
+/// v1.7 (P12-16): one row in the admin overdue-payments view — a v2-flow job
+/// in AwaitingPayment past its due date. The work is done; staff chase the
+/// payment (reminders went out, the homeowner is flagged per P12-12).
+/// </summary>
+public class OverduePaymentDto
+{
+    public int JobId { get; set; }
+    public string JobTitle { get; set; } = string.Empty;
+    public string HomeownerName { get; set; } = string.Empty;
+    public string HomeownerEmail { get; set; } = string.Empty;
+
+    /// <summary>The approved final amount the homeowner still owes.</summary>
+    public decimal Amount { get; set; }
+
+    public string Currency { get; set; } = string.Empty;
+
+    /// <summary>Job-specific transfer reference the homeowner should have used.</summary>
+    public string Reference { get; set; } = string.Empty;
+
+    public DateTime? PaymentDueAtUtc { get; set; }
+
+    /// <summary>Whole days past the due date (floor, ≥ 0) for the "overdue by" label.</summary>
+    public int DaysOverdue { get; set; }
+
+    /// <summary>"Incl. GST" / "No GST charged" label driver (D8) — null when unknown.</summary>
+    public bool? IsGstRegistered { get; set; }
 }
 
 /// <summary>Body for <c>POST /api/admin/payments/{id}/reject</c>.</summary>

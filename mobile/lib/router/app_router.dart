@@ -20,7 +20,8 @@ import '../views/tradie/tradie_job_detail_screen.dart';
 import '../views/jobs/jobs_list_screen.dart';
 import '../views/jobs/post_job_screen.dart';
 import '../views/jobs/matching_screen.dart';
-import '../views/jobs/match_result_screen.dart';
+import '../views/jobs/tradie_list_screen.dart';
+import '../views/jobs/quotes_screen.dart';
 import '../views/chat/chat_screen.dart';
 import '../views/chat/messages_list_screen.dart';
 import '../views/profile/public_profile_screen.dart';
@@ -126,17 +127,35 @@ final GoRouter appRouter = GoRouter(
       path: '/jobs/new',
       builder: (context, state) => const PostJobScreen(),
     ),
-    // 07-matching
+    // 07-matching — dual-mode waiting screen (v1.7 P12-08/P12-09):
+    //   /jobs/:id/matching = quick-match radar (POST /match + SignalR)
+    //   /jobs/:id/request  = request-sent state for a direct request
+    //     (extra: gstLabel — the D8 label for the tradie's snapshot rate)
     GoRoute(
       path: '/jobs/:jobId/matching',
       builder: (context, state) =>
           MatchingScreen(jobId: state.pathParameters['jobId']!),
     ),
-    // 08-match-result
     GoRoute(
-      path: '/jobs/:jobId/match',
+      path: '/jobs/:jobId/request',
+      builder: (context, state) => MatchingScreen(
+        jobId: state.pathParameters['jobId']!,
+        mode: MatchingScreenMode.requestSent,
+        gstLabel: state.extra is String ? state.extra as String? : null,
+      ),
+    ),
+    // v1.7 P12-06: Choose-a-Tradie — lands here after posting a job
+    // (extra: gstLabel is not needed; the list rows carry their own).
+    GoRoute(
+      path: '/jobs/:jobId/tradies',
       builder: (context, state) =>
-          MatchResultScreen(jobId: state.pathParameters['jobId']!),
+          TradieListScreen(jobId: state.pathParameters['jobId']!),
+    ),
+    // v1.7 P12-24: homeowner quote comparison for Project jobs.
+    GoRoute(
+      path: '/jobs/:jobId/quotes',
+      builder: (context, state) =>
+          QuotesScreen(jobId: state.pathParameters['jobId']!),
     ),
     // 10-request-detail (tradie)
     GoRoute(
@@ -206,12 +225,16 @@ final GoRouter appRouter = GoRouter(
       path: '/tradie/onboarding',
       builder: (context, state) => const TradieOnboardingWizard(),
     ),
-    // 12-profile (tradie public/self)
+    // 12-profile (tradie public/self). v1.7 P12-07: an optional `jobId`
+    // query parameter switches the screen into job context — the tradie's
+    // rate for the job's service + a sticky "Request this tradie" CTA
+    // (POST /api/jobs/:id/request). Without it the screen is unchanged.
     GoRoute(
       path: '/tradie/:id',
       builder: (context, state) => PublicProfileScreen(
         profileId: state.pathParameters['id']!,
         isTradie: true,
+        jobId: state.uri.queryParameters['jobId'],
       ),
     ),
     // 15-homeowner-profile (public)

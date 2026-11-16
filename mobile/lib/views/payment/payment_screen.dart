@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,10 +20,15 @@ import '../../feedback/fixo_notice.dart';
 
 /// Homeowner payment screen (P4-07).
 ///
-/// Shows the transfer instructions — amount, bank details, and the job-specific
-/// reference that has to be quoted — plus a receipt picker. The money moves out
-/// of band; this screen's whole job is making the reference unambiguous and
-/// getting the resulting receipt in front of staff.
+/// v1.7: this screen is entered from "Approve & pay" on the itemised review
+/// — the homeowner has already approved the completed work, and paying here
+/// settles it (it is never a booking deposit).
+///
+/// Shows the transfer instructions — amount, itemised breakdown, bank
+/// details, and the job-specific reference that has to be quoted — plus a
+/// receipt picker. The money moves out of band; this screen's whole job is
+/// making the reference unambiguous and getting the resulting receipt in
+/// front of staff.
 class PaymentScreen extends ConsumerStatefulWidget {
   final String jobId;
   const PaymentScreen({super.key, required this.jobId});
@@ -250,26 +256,57 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         ),
 
         // ── The breakdown ──────────────────────────────────────────────
+        // v1.7: the payment settles the completed work, so the breakdown is
+        // the server's own itemisation — labour + approved adjustments =
+        // total (contract #7/#9). The legacy hours × rate line only shows
+        // when the job predates itemisation; a missing figure is dropped,
+        // never invented.
         const SizedBox(height: Space.s4),
-        FixoCard(
-          child: Column(
-            children: [
-              if (job != null && job.hours > 0 && job.hourlyRate != null)
-                FixoSummaryRow(
-                  label: 'Labour',
-                  value: '${job.hours} h × ${formatRate(job.hourlyRate!)}',
-                ),
-              if (job != null && job.hours > 0 && job.hourlyRate != null)
-                const FixoListDivider(),
-              FixoSummaryRow(
-                label: 'Job total',
-                value: formatMoney(payment.amount),
-                emphasize: true,
+        Builder(
+          builder: (context) {
+            final hasLabourRow = job != null && job.labourAmount != null;
+            final hasLegacyLabourRow =
+                job != null && job.hours > 0 && job.hourlyRate != null;
+            final hasExtrasRow = job != null &&
+                job.adjustmentsTotal != null &&
+                job.adjustmentsTotal! > Decimal.zero;
+            return FixoCard(
+              child: Column(
+                children: [
+                  if (hasLabourRow)
+                    FixoSummaryRow(
+                      label: 'Labour',
+                      value: formatMoney(job!.labourAmount!),
+                    )
+                  else if (hasLegacyLabourRow)
+                    FixoSummaryRow(
+                      label: 'Labour',
+                      value:
+                          '${job!.hours} h × ${formatRate(job.hourlyRate!)}',
+                    ),
+                  if (hasLabourRow || hasLegacyLabourRow)
+                    const FixoListDivider(),
+                  if (hasExtrasRow) ...[
+                    FixoSummaryRow(
+                      label: 'Approved extras',
+                      value: formatMoney(job!.adjustmentsTotal!),
+                    ),
+                    const FixoListDivider(),
+                  ],
+                  FixoSummaryRow(
+                    label: 'Job total',
+                    value: formatMoney(payment.amount),
+                    emphasize: true,
+                  ),
+                  const FixoListDivider(),
+                  FixoSummaryRow(
+                    label: 'Method',
+                    value: _method(payment.method),
+                  ),
+                ],
               ),
-              const FixoListDivider(),
-              FixoSummaryRow(label: 'Method', value: _method(payment.method)),
-            ],
-          ),
+            );
+          },
         ),
 
         // ── P10-22: Materials disclaimer ────────────────────────────────
@@ -479,11 +516,15 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
         ],
 
-        // ── H14 footer: deadline + money-goes-straight line ──────────
+        // ── H14 footer: deadline + what this payment is ───────────
         if (bankReady && payment.canUploadReceipt) ...[
           const SizedBox(height: Space.s3),
           Text(
-            'Pay within ${payment.dueAtUtc.difference(DateTime.now()).inHours < 0 ? 0 : _windowHours(payment)} h or the match expires. Your money goes straight to the tradie.',
+            // v1.7: paying settles the completed work — never a booking
+            // deposit or a match window.
+            'Pay within ${payment.dueAtUtc.difference(DateTime.now()).inHours < 0 ? 0 : _windowHours(payment)} h. '
+                'Your money goes straight to the tradie — this payment '
+                'settles the completed work.',
             key: const Key('payment_window_note'),
             textAlign: TextAlign.center,
             style: TextStyle(

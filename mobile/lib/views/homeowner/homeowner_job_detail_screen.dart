@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ import '../../widgets/tradie_widgets.dart';
 import '../../widgets/rating_sheet.dart';
 import '../widgets/cancel_job_sheet.dart';
 import '../widgets/job_info_grid.dart';
+import '../widgets/job_status_presentation.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
@@ -28,7 +30,8 @@ import '../../feedback/fixo_notice.dart';
 ///
 /// Shows contextual primary action per status:
 /// – Booked / InProgress    → "Open Chat" (tradie is on the way / working)
-/// – AwaitingConfirmation   → "Confirm Completion" button
+/// – AwaitingConfirmation   → "Approve & pay" — review the itemised summary,
+///                            POST /approve, then continue to payment
 /// – Completed              → "Leave a Review" prompt (if no review yet) + read-only stepper
 /// – Cancelled              → read-only
 ///
@@ -52,11 +55,14 @@ class _HomeownerJobDetailScreenState
     extends ConsumerState<HomeownerJobDetailScreen> {
   bool _busy = false;
   bool _loading = true;
+  bool _approving = false;
   Job? _job;
   bool _hasReview = false;
   UserProfile? _tradieProfile;
   JobContact? _contact;
+  List<JobAdjustment> _adjustments = const [];
   StreamSubscription<JobStatusEvent>? _statusSub;
+  StreamSubscription<JobAdjustmentEvent>? _adjustmentSub;
 
   // Statuses a homeowner is allowed to cancel.
   static const _cancellableStatuses = {
@@ -87,12 +93,30 @@ class _HomeownerJobDetailScreenState
     ) {
       if (event.jobId == widget.jobId && mounted) _load();
     });
+    // v1.7 P12-18: adjustment proposals/decisions arrive live — reload the
+    // adjustments history and the completion summary so the running total
+    // stays current.
+    _adjustmentSub = ref
+        .read(jobHubClientProvider)
+        .onAdjustmentChanged
+        .listen((event) {
+      if (event.jobId == widget.jobId && mounted) _loadAdjustments();
+    });
   }
 
   @override
   void dispose() {
     _statusSub?.cancel();
+    _adjustmentSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadAdjustments() async {
+    final adjustments = await ref
+        .read(jobsRepositoryProvider)
+        .getAdjustments(widget.jobId);
+    if (!mounted) return;
+    setState(() => _adjustments = adjustments);
   }
 
   Future<void> _load() async {
@@ -116,29 +140,50 @@ class _HomeownerJobDetailScreenState
 
     const bool hasReview = false;
 
+    // v1.7 P12-20: adjustments history — always loaded when the job exists
+    // so the homeowner sees every proposed extra cost.
+    final adjustments = await repo.getAdjustments(widget.jobId);
+    if (!mounted) return;
+
     setState(() {
       _job = job;
       _tradieProfile = tradie;
       _contact = contact;
       _hasReview = hasReview;
+      _adjustments = adjustments;
       _loading = false;
     });
   }
 
-  Future<void> _confirmCompletion() async {
-    setState(() => _busy = true);
+  /// v1.7 P12-11: homeowner approves the itemised completion summary.
+  /// POST /api/jobs/:id/approve books the amount — the job becomes
+  /// AwaitingPayment and the homeowner lands on the payment screen
+  /// (payment is never reached directly from a Requested job).
+  Future<void> _approveAndPay() async {
+    if (_approving) return;
+    setState(() => _approving = true);
     final repo = ref.read(jobsRepositoryProvider);
-    final ok = await repo.confirmCompletion(widget.jobId);
-    if (!mounted) return;
-    if (ok) {
+    try {
+      await repo.approveJob(widget.jobId);
+      if (!mounted) return;
       ref
           .read(jobsViewModelProvider.notifier)
-          .applyStatusUpdate(widget.jobId, 'Completed');
+          .applyStatusUpdate(widget.jobId, 'AwaitingPayment');
       await _load();
-    } else {
-      FixoNotice.error(context, 'Could not confirm completion. Please try again.');
+      if (mounted) {
+        await context.push('/jobs/${widget.jobId}/payment');
+      }
+    } on ProfileApiException catch (e) {
+      if (mounted) FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (mounted) {
+        FixoNotice.error(
+          context,
+          'Could not approve the amount. Please try again.',
+        );
+      }
     }
-    if (mounted) setState(() => _busy = false);
+    if (mounted) setState(() => _approving = false);
   }
 
   void _openChat() {
@@ -191,6 +236,19 @@ class _HomeownerJobDetailScreenState
         Icons.gavel,
         theme.colorScheme.error,
         'This job has an active dispute under review.',
+      );
+    }
+
+    // v1.7 P12-11: check-out total exceeded the homeowner's estimate
+    // tolerance — flag it ahead of the itemised summary. The server's
+    // tolerance reason is not part of the JobDto, so the banner stays
+    // factual rather than inventing one.
+    if (status == 'AwaitingConfirmation' && job.isAboveEstimateTolerance) {
+      return (
+        Icons.trending_up_outlined,
+        DesignTokens.inkAccent(isDark),
+        'The final total is higher than the original estimate. '
+            'Check the breakdown before you approve.',
       );
     }
 
@@ -374,6 +432,73 @@ class _HomeownerJobDetailScreenState
     if (mounted) setState(() => _busy = false);
   }
 
+  // ── v1.7 P12-20: homeowner approve/decline an extra cost ────────────────
+
+  /// Approve/Decline sheet for a pending adjustment (P12-20). Shows what was
+  /// proposed, how much, whether a receipt is attached, and the running
+  /// total vs estimate before the homeowner commits — one explicit tap, no
+  /// auto-approval path (D6 cut).
+  Future<void> _showAdjustmentDecisionSheet(JobAdjustment adjustment) async {
+    final decision = await showModalBottomSheet<(
+      bool approve,
+      String? note,
+    )>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      ),
+      builder: (_) => _AdjustmentDecisionSheet(
+        adjustment: adjustment,
+        estimatedTotal: _job?.estimatedTotal,
+        approvedAdjustmentsTotal: _approvedAdjustmentsTotal,
+      ),
+    );
+    if (decision == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(jobsRepositoryProvider)
+          .respondToAdjustment(
+            widget.jobId,
+            adjustment.id,
+            approve: decision.$1,
+            note: decision.$2,
+          );
+      await _loadAdjustments();
+      await _load();
+      if (mounted) {
+        FixoNotice.success(
+          context,
+          decision.$1
+              ? 'Extra cost approved — it\'s added to the job total.'
+              : 'Extra cost declined.',
+        );
+      }
+    } on ProfileApiException catch (e) {
+      if (mounted) FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (mounted) {
+        FixoNotice.error(
+          context,
+          'Could not record your decision. Please try again.',
+        );
+      }
+    }
+    if (mounted) setState(() => _busy = false);
+  }
+
+  /// Sum of Approved adjustments only — unapproved extras never reach the
+  /// homeowner's total (contract #9).
+  Decimal get _approvedAdjustmentsTotal {
+    var total = Decimal.zero;
+    for (final a in _adjustments) {
+      if (a.isApproved) total += a.amount;
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -419,9 +544,31 @@ class _HomeownerJobDetailScreenState
         ? DateFormat.MMMEd().add_jm().format(job.scheduledStartUtc!.toLocal())
         : null;
 
-    final priceLabel = job.totalAmount != null
-        ? formatMoney(job.totalAmount!)
-        : null;
+    // v1.7 (P12-15): never a fixed total before completion. Hourly jobs show
+    // the rate with "total confirmed on completion"; project jobs show the
+    // quote/estimate total; completed jobs show the final amount. The
+    // deprecated `totalAmount` wire alias is intentionally not used here.
+    final showRateLine = job.hourlyRate != null &&
+        (status == 'Requested' ||
+            status == 'Matching' ||
+            status == 'Booked' ||
+            status == 'InProgress' ||
+            status == 'AwaitingConfirmation');
+    final totalLabel = switch (status) {
+      // After check-out the server's finalAmount is the authority.
+      'AwaitingConfirmation' || 'AwaitingPayment' || 'PaymentReview' ||
+      'Completed' =>
+        job.finalAmount != null
+            ? ('Total', job.finalAmount!)
+            : (job.estimatedTotal != null
+                ? ('Estimated total', job.estimatedTotal!)
+                : null),
+      _ =>
+        // Before completion: an estimate when the server computed one.
+        job.estimatedTotal != null
+            ? ('Estimated total', job.estimatedTotal!)
+            : null,
+    };
 
     // P10-22: materials disclaimer from locale config
     final materialsDisclaimer =
@@ -480,6 +627,8 @@ class _HomeownerJobDetailScreenState
         children: [
           StatusStrip(
             status: status,
+            stage: job.stage,
+            flowVersion: job.flowVersion,
             referenceCode: job.referenceCode,
           ),
           Expanded(
@@ -508,17 +657,22 @@ class _HomeownerJobDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Scheduled / Duration grid
+                // Scheduled / Duration grid — "Date TBC" when the job has no
+                // confirmed start (v1.7: Flexible/ASAP jobs never fake one).
                 JobInfoGrid(
                   tiles: [
                     JobInfoTile(
                       label: 'Scheduled',
-                      value: scheduledLabel ?? 'Not set',
+                      value: scheduledLabel ?? 'Date TBC',
                       icon: Icons.calendar_today_outlined,
                     ),
                     JobInfoTile(
                       label: 'Duration',
-                      value: '${job.hours} hour${job.hours != 1 ? 's' : ''}',
+                      value: (job.hours > 0)
+                          ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
+                          : (job.estimatedHours != null
+                              ? '≈ ${_formatHours(job.estimatedHours!)}'
+                              : 'TBC'),
                       icon: Icons.timer_outlined,
                     ),
                   ],
@@ -545,15 +699,17 @@ class _HomeownerJobDetailScreenState
                     ],
                   ),
                 ],
-                // Total price row
-                if (priceLabel != null) ...[
+                // Total price row — v1.7: label reflects the pricing stage
+                // (Estimated total → Total after approval) and hourly jobs
+                // show the rate line instead of a fixed total.
+                if (totalLabel case (final totalTitle, final totalValue)) ...[
                   const SizedBox(height: Space.s2_5),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
-                          'Total',
+                          totalTitle,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: DesignTokens.inkSoft(isDark),
                           ),
@@ -563,7 +719,7 @@ class _HomeownerJobDetailScreenState
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            priceLabel,
+                            formatMoney(totalValue),
                             style: TextStyle(
                               fontFamily: DesignTokens.fontBody,
                               fontSize: DesignTokens.fontSizeAmount,
@@ -575,6 +731,15 @@ class _HomeownerJobDetailScreenState
                         ),
                       ),
                     ],
+                  ),
+                ],
+                if (showRateLine) ...[
+                  const SizedBox(height: Space.s2),
+                  Text(
+                    '${formatMoney(job.hourlyRate!)}/hr · total confirmed on completion',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: DesignTokens.inkSoft(isDark),
+                    ),
                   ),
                 ],
                 if (status == 'AwaitingPayment') ...[
@@ -613,6 +778,42 @@ class _HomeownerJobDetailScreenState
                 ],
               ],
             ),
+          ),
+
+          // ── v1.7 P12-11: itemised completion summary (AwaitingConfirmation)
+          if (status == 'AwaitingConfirmation') ...[
+            const SizedBox(height: Space.s3),
+            _CompletionSummaryCard(
+              job: job,
+              adjustments: _adjustments,
+              isDark: isDark,
+            ),
+          ],
+
+          // ── v1.7 P12-24: quote comparison for Project jobs still seeking
+          // tradies — quotes live on their own comparison screen.
+          if (job.isProject && (status == 'Requested' || status == 'Matching')) ...[
+            const SizedBox(height: Space.s3),
+            FixoTonalButton(
+              key: const Key('compare_quotes_button'),
+              icon: Icons.receipt_long_outlined,
+              label: 'Compare quotes',
+              fullWidth: true,
+              onPressed: () => context.push('/jobs/${widget.jobId}/quotes'),
+            ),
+          ],
+
+          // ── v1.7 P12-20: adjustments history (all statuses, always honest)
+          const SizedBox(height: Space.s3),
+          _AdjustmentsSection(
+            adjustments: _adjustments,
+            isDark: isDark,
+            // Homeowner decisions only apply while the job is in flight.
+            canRespond:
+                status == 'Booked' ||
+                status == 'InProgress' ||
+                status == 'AwaitingConfirmation',
+            onRespond: (adjustment) => _showAdjustmentDecisionSheet(adjustment),
           ),
 
           // ── Collapsible cancellation policy ───────────────────────────────
@@ -702,6 +903,15 @@ class _HomeownerJobDetailScreenState
         job.disputeStatus == 'Open' || job.disputeStatus == 'UnderReview';
     switch (status) {
       case 'Requested':
+        if (job.isProject) {
+          return StickyActionBar(
+            child: FixoPrimaryButton(
+              key: const Key('view_quotes_button'),
+              label: 'Compare quotes',
+              onPressed: () => context.push('/jobs/${widget.jobId}/quotes'),
+            ),
+          );
+        }
         return StickyActionBar(
           child: FixoPrimaryButton(
             key: const Key('view_matching_button'),
@@ -727,36 +937,54 @@ class _HomeownerJobDetailScreenState
           ),
         );
       case 'AwaitingConfirmation':
-        // Completion cannot be confirmed while a dispute is open (V16-02).
-        if (hasOpenDispute) {
-          return StickyActionBar(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FixoPrimaryButton(
-                  key: const Key('confirm_completion_button'),
-                  label: 'Confirm Completion',
-                  onPressed: null, // semantically disabled
-                ),
+        // v1.7 P12-11: itemised review & approve — the homeowner approves
+        // the amount (POST /approve) then pays; nothing is confirmed while
+        // a dispute is open or an adjustment is still pending (the server
+        // 409s the approve and the message surfaces).
+        final hasPendingAdjustments =
+            _adjustments.any((a) => a.isPending);
+        return StickyActionBar(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FixoPrimaryButton(
+                key: const Key('approve_pay_button'),
+                label: 'Approve & pay',
+                isLoading: _approving || _busy,
+                onPressed:
+                    (hasOpenDispute || hasPendingAdjustments || _approving)
+                        ? null
+                        : _approveAndPay,
+              ),
+              if (hasPendingAdjustments) ...[
                 const SizedBox(height: Space.s2),
                 Text(
-                  'Completion cannot be confirmed while a dispute is open.',
+                  'An extra cost is waiting for your decision above — '
+                  'approve or decline it first.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ],
-            ),
-          );
-        }
-        return StickyActionBar(
-          child: FixoPrimaryButton(
-            key: const Key('confirm_completion_button'),
-            label: 'Confirm Completion',
-            isLoading: _busy,
-            onPressed: _busy ? null : _confirmCompletion,
+              if (hasOpenDispute) ...[
+                const SizedBox(height: Space.s2),
+                Text(
+                  'The amount cannot be approved while a dispute is open.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: Space.s2),
+              FixoGhostButton(
+                key: const Key('dispute_amount_button'),
+                label: 'Dispute amount',
+                onPressed: _openDispute,
+              ),
+            ],
           ),
         );
       case 'Completed':
@@ -1096,3 +1324,594 @@ class _JobNotFoundBody extends StatelessWidget {
     );
   }
 }
+
+// ── v1.7 P12-11: itemised completion summary ─────────────────────────────────
+
+/// Itemised summary shown at AwaitingConfirmation: labour + each approved
+/// adjustment + the final total, against the original estimate. Renders only
+/// server-supplied figures — a missing line stays missing.
+class _CompletionSummaryCard extends StatelessWidget {
+  final Job job;
+  final List<JobAdjustment> adjustments;
+  final bool isDark;
+
+  const _CompletionSummaryCard({
+    required this.job,
+    required this.adjustments,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<THColors>()!;
+    final approved =
+        adjustments.where((a) => a.isApproved).toList();
+    final hasBreakdown =
+        job.labourAmount != null || approved.isNotEmpty;
+
+    return FixoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Completion summary',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FW.bold,
+            ),
+          ),
+          const SizedBox(height: Space.s1),
+          Text(
+            'Review the final amount before approving — payment happens '
+            'after you approve.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Space.s3),
+          if (hasBreakdown) ...[
+            if (job.finalHours != null)
+              _SummaryLine(
+                label:
+                    'Labour · ${_hours(job.finalHours!)} × ${formatMoney(job.hourlyRate ?? Decimal.zero)}',
+                value: formatMoneyOrDash(job.labourAmount),
+              ),
+            if (job.finalHours == null && job.labourAmount != null)
+              _SummaryLine(label: 'Labour', value: formatMoney(job.labourAmount!)),
+            for (final a in approved)
+              _SummaryLine(
+                label:
+                    '${_kindLabel(a.kind)} — ${a.description.isEmpty ? 'extra cost' : a.description}',
+                value: formatMoney(a.amount),
+              ),
+            const Divider(height: Space.s5, color: DesignTokens.paperLineLight),
+          ],
+          if (job.finalAmount != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total to approve',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FW.bold,
+                  ),
+                ),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      formatMoney(job.finalAmount!),
+                      style: TextStyle(
+                        fontFamily: DesignTokens.fontBody,
+                        fontSize: DesignTokens.fontSizeH2,
+                        fontWeight: FW.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: DesignTokens.foreground(isDark),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          if (job.finalAmount == null)
+            Text(
+              'The final amount hasn\'t been calculated yet — check back '
+              'shortly.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          if (job.estimatedTotal != null && job.finalAmount != null) ...[
+            const SizedBox(height: Space.s2),
+            Text(
+              job.finalAmount! > job.estimatedTotal!
+                  ? 'That\'s ${formatMoney(job.finalAmount! - job.estimatedTotal!)} '
+                      'above the original estimate of '
+                      '${formatMoney(job.estimatedTotal!)}.'
+                  : 'That\'s ${formatMoney(job.estimatedTotal! - job.finalAmount!)} '
+                      'under the original estimate of '
+                      '${formatMoney(job.estimatedTotal!)}.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: job.finalAmount! > job.estimatedTotal!
+                    ? colors.accentText
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (job.completionSubmittedAtUtc != null) ...[
+            const SizedBox(height: Space.s2),
+            Text(
+              'Submitted ${DateFormat.MMMEd().add_jm().format(job.completionSubmittedAtUtc!.toLocal())}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: DesignTokens.fontSizeCaption,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _hours(double hours) =>
+      hours == hours.roundToDouble()
+          ? hours.round().toString()
+          : hours.toString();
+
+  static String _kindLabel(String kind) => switch (kind) {
+        JobAdjustment.kindMaterials => 'Materials',
+        JobAdjustment.kindExtraLabour => 'Extra labour',
+        JobAdjustment.kindTravel => 'Travel',
+        _ => 'Other',
+      };
+}
+
+class _SummaryLine extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SummaryLine({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+          Flexible(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FW.semibold,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── v1.7 P12-20: adjustments history ─────────────────────────────────────────
+
+/// Every proposed extra cost with its status chip and the running total of
+/// approved items. Pending proposals show the homeowner's Approve / Decline
+/// action — the only decision path in v1.7 (D6: no auto-approval).
+class _AdjustmentsSection extends StatelessWidget {
+  final List<JobAdjustment> adjustments;
+  final bool isDark;
+  final bool canRespond;
+  final ValueChanged<JobAdjustment> onRespond;
+
+  const _AdjustmentsSection({
+    required this.adjustments,
+    required this.isDark,
+    required this.canRespond,
+    required this.onRespond,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<THColors>()!;
+
+    if (adjustments.isEmpty) return const SizedBox.shrink();
+
+    final approvedTotal = adjustments
+        .where((a) => a.isApproved)
+        .fold<Decimal>(Decimal.zero, (sum, a) => sum + a.amount);
+
+    return FixoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Adjustments',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FW.bold,
+            ),
+          ),
+          const SizedBox(height: Space.s1),
+          Text(
+            'Extra costs your tradie asked for. Only approved items are '
+            'added to the total.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Space.s3),
+          for (final a in adjustments) ...[
+            _AdjustmentRow(
+              adjustment: a,
+              canRespond: canRespond && a.isPending,
+              onRespond: () => onRespond(a),
+            ),
+            const SizedBox(height: Space.s2),
+          ],
+          if (approvedTotal > Decimal.zero) ...[
+            const Divider(height: Space.s4, color: DesignTokens.paperLineLight),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Approved extras so far',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    formatMoney(approvedTotal),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FW.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: colors.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdjustmentRow extends StatelessWidget {
+  final JobAdjustment adjustment;
+  final bool canRespond;
+  final VoidCallback onRespond;
+
+  const _AdjustmentRow({
+    required this.adjustment,
+    required this.canRespond,
+    required this.onRespond,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final a = adjustment;
+    return Container(
+      padding: const EdgeInsets.all(Space.s3),
+      decoration: BoxDecoration(
+        color: DesignTokens.surfaceTonal(isDark),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+        border: Border.all(color: DesignTokens.paperLine(isDark)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _AdjustmentStatusChip(status: a.status),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  formatMoney(a.amount),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FW.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.s1),
+          if (a.description.isNotEmpty)
+            Text(
+              a.description,
+              style: theme.textTheme.bodyMedium,
+            ),
+          const SizedBox(height: Space.s0_5),
+          Text(
+            [
+              a.kind,
+              'asked ${DateFormat('d MMM').format(a.createdAtUtc.toLocal())}',
+              if (a.evidenceUrl?.isNotEmpty == true) 'receipt attached',
+              if (a.responseNote?.isNotEmpty == true)
+                'note: ${a.responseNote}',
+            ].join(' · '),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: DesignTokens.fontSizeCaption,
+            ),
+          ),
+          if (canRespond) ...[
+            const SizedBox(height: Space.s2),
+            Row(
+              children: [
+                Expanded(
+                  child: FixoTonalButton(
+                    key: Key('adjustment_decline_${a.id}'),
+                    label: 'Decline',
+                    onPressed: onRespond,
+                  ),
+                ),
+                const SizedBox(width: Space.s2),
+                Expanded(
+                  child: FixoTonalButton(
+                    key: Key('adjustment_approve_${a.id}'),
+                    label: 'Approve',
+                    onPressed: onRespond,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Small tinted chip mirroring the adjustment's server status.
+class _AdjustmentStatusChip extends StatelessWidget {
+  final String status;
+
+  const _AdjustmentStatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (:tone, :label, :icon) = switch (status) {
+      JobAdjustment.statusApproved => (
+          tone: ChipTone.success,
+          label: 'Approved',
+          icon: Icons.check_circle_outline,
+        ),
+      JobAdjustment.statusDeclined => (
+          tone: ChipTone.danger,
+          label: 'Declined',
+          icon: Icons.cancel_outlined,
+        ),
+      JobAdjustment.statusPending => (
+          tone: ChipTone.warning,
+          label: 'Waiting on you',
+          icon: Icons.hourglass_top_outlined,
+        ),
+      JobAdjustment.statusWithdrawn => (
+          tone: ChipTone.neutral,
+          label: 'Withdrawn',
+          icon: Icons.undo_outlined,
+        ),
+      JobAdjustment.statusExpired => (
+          tone: ChipTone.neutral,
+          label: 'Expired',
+          icon: Icons.timer_off_outlined,
+        ),
+      _ => (
+          tone: ChipTone.neutral,
+          label: status,
+          icon: Icons.help_outline_rounded,
+        ),
+    };
+    return StatusChip(label: label, tone: tone, icon: icon);
+  }
+}
+
+/// Approve / Decline decision sheet (P12-20): what was asked, how much, the
+/// receipt indicator and the running total vs estimate — then one explicit
+/// Approve or Decline (+ optional note). No pre-approval (D6 cut).
+class _AdjustmentDecisionSheet extends StatefulWidget {
+  final JobAdjustment adjustment;
+  final Decimal? estimatedTotal;
+  final Decimal approvedAdjustmentsTotal;
+
+  const _AdjustmentDecisionSheet({
+    required this.adjustment,
+    required this.estimatedTotal,
+    required this.approvedAdjustmentsTotal,
+  });
+
+  @override
+  State<_AdjustmentDecisionSheet> createState() =>
+      _AdjustmentDecisionSheetState();
+}
+
+class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
+  late final TextEditingController _noteController;
+  bool _approved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _submit(BuildContext context) {
+    Navigator.pop(
+      context,
+      (_approved, _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final a = widget.adjustment;
+
+    // Running total if this proposal were approved: what's already approved
+    // plus this item. A truthful projection of server data only.
+    final projected =
+        widget.approvedAdjustmentsTotal + a.amount;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.s6,
+          Space.gutter,
+          MediaQuery.of(context).viewInsets.bottom + Space.s6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Extra cost request',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FW.bold,
+              ),
+            ),
+            const SizedBox(height: Space.s3),
+            Text(
+              a.description.isEmpty
+                  ? a.kind
+                  : a.description,
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: Space.s1),
+            Text(
+              [
+                a.kind,
+                'asked by ${a.proposedByTradieName.isEmpty ? 'your tradie' : a.proposedByTradieName}',
+                if (a.evidenceUrl?.isNotEmpty == true)
+                  'receipt attached',
+              ].join(' · '),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.s3),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Amount',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  formatMoney(a.amount),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FW.bold,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+            if (widget.estimatedTotal != null) ...[
+              const SizedBox(height: Space.s2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Running total vs estimate',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      '${formatMoney(projected)} · est. ${formatMoney(widget.estimatedTotal!)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: projected > widget.estimatedTotal!
+                            ? theme.extension<THColors>()!.accentText
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: Space.s4),
+            TextField(
+              controller: _noteController,
+              maxLines: 2,
+              maxLength: 300,
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                hintText: 'Anything the tradie should know…',
+              ),
+            ),
+            const SizedBox(height: Space.s3),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                  value: true,
+                  icon: Icon(Icons.check_rounded),
+                  label: Text('Approve'),
+                ),
+                ButtonSegment(
+                  value: false,
+                  icon: Icon(Icons.close_rounded),
+                  label: Text('Decline'),
+                ),
+              ],
+              selected: {_approved},
+              onSelectionChanged: (selection) =>
+                  setState(() => _approved = selection.first),
+            ),
+            const SizedBox(height: Space.s4),
+            FixoPrimaryButton(
+              key: const Key('adjustment_decision_submit'),
+              label: _approved
+                  ? 'Approve this extra cost'
+                  : 'Decline this extra cost',
+              onPressed: () => _submit(context),
+            ),
+            const SizedBox(height: Space.s2),
+            Text(
+              _approved
+                  ? 'Approved extras are added to the job total — you\'ll '
+                      'see them itemised before you pay.'
+                  : 'Declined extras are never added to the total. Your '
+                      'tradie can keep to the original scope or cancel '
+                      'without penalty.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
+String _formatHours(double hours) =>
+    hours == hours.roundToDouble()
+        ? hours.round().toString()
+        : hours.toString();

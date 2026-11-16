@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  fetchOverduePayments,
   fetchPendingPayments,
   rejectPayment,
   verifyPayment,
+  type OverduePaymentsParams,
   type PagedResult,
   type PaymentQueueParams,
   type PendingPayment,
@@ -12,6 +14,9 @@ import {
 /** Prefix shared by every cached page of the queue — used for partial-key updates. */
 const QUEUE_KEY = ['admin', 'payments', 'pending'] as const;
 
+/** Cached pages of the overdue view (v1.7) — jobs awaiting payment past their due date. */
+const OVERDUE_KEY = ['admin', 'payments', 'overdue'] as const;
+
 export const usePaymentQueue = (params: PaymentQueueParams) =>
   useQuery({
     queryKey: [...QUEUE_KEY, params],
@@ -19,10 +24,18 @@ export const usePaymentQueue = (params: PaymentQueueParams) =>
     staleTime: 30_000,
   });
 
+export const useOverduePayments = (params: OverduePaymentsParams) =>
+  useQuery({
+    queryKey: [...OVERDUE_KEY, params],
+    queryFn: () => fetchOverduePayments(params),
+    staleTime: 30_000,
+  });
+
 /**
  * Both review actions end the same way — the receipt leaves the queue — so they
- * share the cache handling. A verified payment books the job, and a rejected one
- * sends it back to AwaitingPayment, so the job list is stale either way.
+ * share the cache handling. A verified payment completes the job and queues the
+ * tradie's payout (v1.7), and a rejected one sends it back to AwaitingPayment,
+ * so the job list and the overdue view are stale either way.
  */
 export const usePaymentReview = () => {
   const qc = useQueryClient();
@@ -40,6 +53,9 @@ export const usePaymentReview = () => {
         : page,
     );
     qc.invalidateQueries({ queryKey: QUEUE_KEY });
+    // Verify completes the job (leaves the overdue list); reject can push a job
+    // further past its due date — either way the overdue view is stale.
+    qc.invalidateQueries({ queryKey: OVERDUE_KEY });
     qc.invalidateQueries({ queryKey: ['admin', 'jobs'] });
   };
 

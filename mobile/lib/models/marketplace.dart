@@ -8,10 +8,27 @@ import 'package:rational/rational.dart';
 
 /// Job posted by a homeowner. Mirrors mockups 05/06/10.
 /// Wire shape mirrors backend JobDto: photos[] -> photoUrls,
-/// suburb derived from address server-side, stage 0..5 mapped from
-/// JobStatus (Requested=0, Payment=1, Booked=2, InProgress=3,
-/// Confirmation=4, Completed=5). Urgency is Low|Medium|High|Emergency.
+/// suburb derived from address server-side. Urgency is
+/// Low|Medium|High|Emergency.
+///
+/// v1.7 flow (contract #6): [stage] maps to the v2 stepper —
+/// Requested=0, Booked=1, InProgress=2, AwaitingConfirmation=3,
+/// AwaitingPayment/PaymentReview=4, Completed=5 — for jobs whose
+/// [flowVersion] is 2. FlowVersion 1 jobs keep the legacy 4-step mapping
+/// (see [stageForStatus]). [totalAmount] is a deprecated wire alias kept
+/// parseable for old payloads; new code reads [estimatedTotal] /
+/// [finalAmount] instead.
 class Job {
+  /// Legacy 4-step flow (v1): Requested → Booked → In progress → Done.
+  static const int flowVersionLegacy = 1;
+
+  /// v1.7 6-step flow: Requested → Booked → In progress → Review & approve
+  /// → Pay → Completed.
+  static const int flowVersionV2 = 2;
+
+  /// Job pricing model: `Hourly` (pay when done) or `Project` (quotes).
+  static const String jobTypeHourly = 'Hourly';
+  static const String jobTypeProject = 'Project';
   final String id;
   final String title;
   final String category;
@@ -32,9 +49,55 @@ class Job {
   final DateTime? scheduledStartUtc;
   final int hours;
   final Decimal? hourlyRate;
+
+  /// Deprecated wire alias — present for back-compat with v1 payloads.
+  /// New code shows [estimatedTotal] (pre-completion) or [finalAmount]
+  /// (post check-out) instead.
   final Decimal? totalAmount;
   final String? referenceCode;
   final String? disputeStatus;
+
+  // ── v1.7 fields (contract #6) ─────────────────────────────────────────────
+
+  /// Flexible | Asap | SpecificDate | DateRange (null on legacy payloads).
+  final String? timingPreference;
+  final DateTime? scheduledEndUtc;
+
+  /// Homeowner's optional pre-job estimate of hours.
+  final double? estimatedHours;
+
+  /// Server-computed estimate before completion (null until priced).
+  final Decimal? estimatedTotal;
+
+  /// Hours the tradie reported at check-out.
+  final double? finalHours;
+
+  /// Check-out breakdown: labour + approved adjustments = final.
+  final Decimal? labourAmount;
+  final Decimal? adjustmentsTotal;
+  final Decimal? finalAmount;
+  final DateTime? completionSubmittedAtUtc;
+
+  /// Hourly | Project.
+  final String jobType;
+
+  /// Pricing model agreed at booking (e.g. Hourly | Quote) — informational.
+  final String? agreedPricingModel;
+
+  /// 1 = legacy pay-first flow, 2 = v1.7 pay-at-completion flow.
+  final int flowVersion;
+
+  /// True when the check-out total exceeds the homeowner's estimate tolerance.
+  final bool isAboveEstimateTolerance;
+
+  // ── Project-only optional fields (contract #1) ────────────────────────────
+  final Decimal? budgetMin;
+  final Decimal? budgetMax;
+
+  /// Tradie | Homeowner | Undecided — who buys materials on a project.
+  final String? materialsBy;
+  final bool? siteVisitWelcome;
+  final String? scopeNotes;
 
   const Job({
     required this.id,
@@ -60,7 +123,56 @@ class Job {
     this.totalAmount,
     this.referenceCode,
     this.disputeStatus,
+    this.timingPreference,
+    this.scheduledEndUtc,
+    this.estimatedHours,
+    this.estimatedTotal,
+    this.finalHours,
+    this.labourAmount,
+    this.adjustmentsTotal,
+    this.finalAmount,
+    this.completionSubmittedAtUtc,
+    this.jobType = Job.jobTypeHourly,
+    this.agreedPricingModel,
+    this.flowVersion = Job.flowVersionV2,
+    this.isAboveEstimateTolerance = false,
+    this.budgetMin,
+    this.budgetMax,
+    this.materialsBy,
+    this.siteVisitWelcome,
+    this.scopeNotes,
   });
+
+  bool get isProject => jobType == Job.jobTypeProject;
+
+  /// Whether this job uses the v1.7 pay-at-completion flow.
+  bool get usesV2Flow => flowVersion >= Job.flowVersionV2;
+
+  /// Stage for a status string under this job's flow version.
+  /// v2 mapping (contract #6): Requested=0, Booked=1, InProgress=2,
+  /// AwaitingConfirmation=3, AwaitingPayment/PaymentReview=4, Completed=5.
+  /// Legacy flowVersion-1 jobs keep the v1 mapping.
+  static int stageForStatus(String status, {int? flowVersion}) {
+    if (flowVersion != null && flowVersion < Job.flowVersionV2) {
+      return switch (status) {
+        'Requested' || 'Matching' => 0,
+        'Matched' || 'AwaitingPayment' || 'PaymentReview' => 1,
+        'Booked' || 'InProgress' => 2,
+        'AwaitingConfirmation' => 3,
+        'Completed' => 4,
+        _ => 0,
+      };
+    }
+    return switch (status) {
+      'Requested' || 'Matching' => 0,
+      'Booked' => 1,
+      'InProgress' => 2,
+      'AwaitingConfirmation' => 3,
+      'AwaitingPayment' || 'PaymentReview' => 4,
+      'Completed' => 5,
+      _ => 0,
+    };
+  }
 
   factory Job.fromJson(Map<String, dynamic> json) {
     // Backend sends photos: [{id, url, originalFileName}]; older stubs
@@ -110,8 +222,88 @@ class Job {
       totalAmount: _decimalFromJson(json['totalAmount']),
       referenceCode: json['referenceCode'] as String?,
       disputeStatus: json['disputeStatus'] as String?,
+      timingPreference: json['timingPreference'] as String?,
+      scheduledEndUtc: json['scheduledEndUtc'] != null
+          ? DateTime.parse(json['scheduledEndUtc'] as String).toUtc()
+          : null,
+      estimatedHours: (json['estimatedHours'] as num?)?.toDouble(),
+      estimatedTotal: _decimalFromJson(json['estimatedTotal']),
+      finalHours: (json['finalHours'] as num?)?.toDouble(),
+      labourAmount: _decimalFromJson(json['labourAmount']),
+      adjustmentsTotal: _decimalFromJson(json['adjustmentsTotal']),
+      finalAmount: _decimalFromJson(json['finalAmount']),
+      completionSubmittedAtUtc: json['completionSubmittedAtUtc'] != null
+          ? DateTime.parse(json['completionSubmittedAtUtc'] as String).toUtc()
+          : null,
+      jobType: json['jobType'] as String? ?? Job.jobTypeHourly,
+      agreedPricingModel: json['agreedPricingModel'] as String?,
+      flowVersion: (json['flowVersion'] as num?)?.toInt() ?? Job.flowVersionV2,
+      isAboveEstimateTolerance:
+          json['isAboveEstimateTolerance'] as bool? ?? false,
+      budgetMin: _decimalFromJson(json['budgetMin']),
+      budgetMax: _decimalFromJson(json['budgetMax']),
+      materialsBy: json['materialsBy'] as String?,
+      siteVisitWelcome: json['siteVisitWelcome'] as bool?,
+      scopeNotes: json['scopeNotes'] as String?,
     );
   }
+
+  /// Structural copy used by live status updates (SignalR) — every field
+  /// carries over unless overridden.
+  Job copyWith({
+    String? status,
+    int? stage,
+    String? matchedTradieId,
+    String? matchedTradieName,
+    Decimal? hourlyRate,
+    DateTime? scheduledStartUtc,
+    String? disputeStatus,
+    Decimal? estimatedTotal,
+    Decimal? finalAmount,
+    double? finalHours,
+  }) => Job(
+        id: id,
+        title: title,
+        category: category,
+        suburb: suburb,
+        status: status ?? this.status,
+        stage: stage ?? this.stage,
+        urgency: urgency,
+        description: description,
+        photoUrls: photoUrls,
+        createdAtUtc: createdAtUtc,
+        address: address,
+        latitude: latitude,
+        longitude: longitude,
+        matchedTradieId: matchedTradieId ?? this.matchedTradieId,
+        matchedTradieName: matchedTradieName ?? this.matchedTradieName,
+        homeownerId: homeownerId,
+        serviceId: serviceId,
+        scheduledStartUtc: scheduledStartUtc ?? this.scheduledStartUtc,
+        hours: hours,
+        hourlyRate: hourlyRate ?? this.hourlyRate,
+        totalAmount: totalAmount,
+        referenceCode: referenceCode,
+        disputeStatus: disputeStatus ?? this.disputeStatus,
+        timingPreference: timingPreference,
+        scheduledEndUtc: scheduledEndUtc,
+        estimatedHours: estimatedHours,
+        estimatedTotal: estimatedTotal ?? this.estimatedTotal,
+        finalHours: finalHours ?? this.finalHours,
+        labourAmount: labourAmount,
+        adjustmentsTotal: adjustmentsTotal,
+        finalAmount: finalAmount ?? this.finalAmount,
+        completionSubmittedAtUtc: completionSubmittedAtUtc,
+        jobType: jobType,
+        agreedPricingModel: agreedPricingModel,
+        flowVersion: flowVersion,
+        isAboveEstimateTolerance: isAboveEstimateTolerance,
+        budgetMin: budgetMin,
+        budgetMax: budgetMax,
+        materialsBy: materialsBy,
+        siteVisitWelcome: siteVisitWelcome,
+        scopeNotes: scopeNotes,
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -241,6 +433,11 @@ class ServiceRateOption {
 /// A single sequential offer sent to a tradie (P3-01 / P3-07).
 /// Mirrors backend OfferDto. Only one offer is Pending per job at a time;
 /// after a response or timeout the next ranked tradie receives theirs.
+///
+/// v1.7 (contract #3/#4): a direct request carries [kind]
+/// (`Direct` | `QuoteRequest` | `Auto`), the rate snapshotted at request
+/// time ([hourlyRateSnapshot]), the tradie's display [tradieName], the
+/// homeowner's optional pre-acceptance [message] and the [jobTitle].
 class JobOffer {
   final String id;
   final String jobId;
@@ -259,6 +456,21 @@ class JobOffer {
   /// Auto (strict radius) | Broadened (expanded radius).
   final String stage;
 
+  /// Direct | QuoteRequest | Auto — how this offer was created (v1.7).
+  final String kind;
+
+  /// Hourly rate copied onto the job when this offer is accepted.
+  final Decimal? hourlyRateSnapshot;
+
+  /// Optional homeowner message attached to a direct request.
+  final String? message;
+
+  /// Display name of the tradie being asked (homeowner-facing).
+  final String? tradieName;
+
+  /// Title of the job the offer belongs to.
+  final String? jobTitle;
+
   const JobOffer({
     required this.id,
     required this.jobId,
@@ -267,9 +479,16 @@ class JobOffer {
     required this.expiresAtUtc,
     required this.response,
     required this.stage,
+    this.kind = 'Auto',
+    this.hourlyRateSnapshot,
+    this.message,
+    this.tradieName,
+    this.jobTitle,
   });
 
   bool get isPending => response == 'Pending';
+
+  bool get isQuoteRequest => kind == 'QuoteRequest';
 
   /// Time left to respond. Zero or negative once the offer has expired.
   Duration remaining([DateTime? now]) =>
@@ -283,6 +502,11 @@ class JobOffer {
     expiresAtUtc: DateTime.parse(json['expiresAtUtc'] as String).toUtc(),
     response: json['response'] as String? ?? 'Pending',
     stage: json['stage'] as String? ?? 'Auto',
+    kind: json['kind'] as String? ?? 'Auto',
+    hourlyRateSnapshot: _decimalFromJson(json['hourlyRateSnapshot']),
+    message: json['message'] as String?,
+    tradieName: json['tradieName'] as String?,
+    jobTitle: json['jobTitle'] as String?,
   );
 }
 
@@ -504,6 +728,11 @@ class UserProfile {
   /// Trade registration number, shown as "NZ Reg #E2491" (H17). Owner-set.
   final String? registrationNumber;
 
+  /// D8: whether this tradie is GST registered. Drives the
+  /// "Incl. GST" / "No GST charged" label wherever a rate is shown to a
+  /// homeowner. Null on legacy payloads → label omitted (never guessed).
+  final bool? isGstRegistered;
+
   const UserProfile({
     required this.id,
     required this.firstName,
@@ -519,6 +748,7 @@ class UserProfile {
     this.isAvailable,
     this.bio,
     this.registrationNumber,
+    this.isGstRegistered,
   });
 
   String get fullName => '$firstName $lastName'.trim();
@@ -561,6 +791,7 @@ class UserProfile {
       registrationNumber: (json['registrationNumber'] as String?)
           ?.trim()
           .toUpperCase(),
+      isGstRegistered: json['isGstRegistered'] as bool?,
     );
   }
 }
@@ -607,4 +838,331 @@ class TradieEarnings {
     pendingNet: _amount(json['pendingNet']),
     failedNet: _amount(json['failedNet']),
   );
+}
+
+/// One tradie row on the Choose-a-Tradie screen (v1.7 P12-05/P12-06).
+/// Mirrors backend TradieListEntryDto from GET /api/jobs/{id}/tradies.
+/// [hourlyRate] is the job's-service final consumer price — GST-inclusive
+/// when [isGstRegistered] is true (D8); the label comes from
+/// [gstLabelFor]. [score] is the server's own "best" ranking value.
+class TradieListEntry {
+  final String tradieId;
+  final String name;
+  final String? businessName;
+  final String initials;
+  final bool verified;
+  final bool insured;
+  final bool available;
+  final double? rating;
+  final int? reviewCount;
+  final int? completedJobs;
+  final double distanceKm;
+
+  /// Server-rendered distance display string ("1.2 km away"); empty when
+  /// no distance was computed.
+  final String distance;
+  final Decimal? hourlyRate;
+  final bool? isGstRegistered;
+  final double? score;
+  final String? bio;
+
+  const TradieListEntry({
+    required this.tradieId,
+    required this.name,
+    this.businessName,
+    required this.initials,
+    this.verified = false,
+    this.insured = false,
+    this.available = false,
+    this.rating,
+    this.reviewCount,
+    this.completedJobs,
+    required this.distanceKm,
+    this.distance = '',
+    this.hourlyRate,
+    this.isGstRegistered,
+    this.score,
+    this.bio,
+  });
+
+  /// Name shown on the card — business name when present, else the person.
+  String get displayName {
+    final business = businessName?.trim();
+    if (business != null && business.isNotEmpty) return business;
+    return name;
+  }
+
+  /// A distance is only worth showing when the server computed one.
+  bool get hasDistance =>
+      distance.trim().isNotEmpty || distanceKm > 0;
+
+  factory TradieListEntry.fromJson(Map<String, dynamic> json) {
+    final numKm = (json['distanceKm'] as num?)?.toDouble() ?? 0;
+    final rawDistance = json['distance'] as String?;
+    return TradieListEntry(
+      tradieId: json['tradieId']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      businessName: json['businessName'] as String?,
+      initials: json['initials'] as String? ?? '',
+      verified: json['verified'] as bool? ?? false,
+      insured: json['insured'] as bool? ?? false,
+      available: json['available'] as bool? ?? false,
+      rating: (json['rating'] as num?)?.toDouble(),
+      reviewCount: (json['reviewCount'] as num?)?.toInt(),
+      completedJobs: (json['completedJobs'] as num?)?.toInt(),
+      distanceKm: numKm,
+      distance: (rawDistance != null && rawDistance.isNotEmpty)
+          ? rawDistance
+          : (numKm > 0 ? '${numKm.toStringAsFixed(1)} km away' : ''),
+      hourlyRate: _decimalFromJson(json['hourlyRate']),
+      isGstRegistered: json['isGstRegistered'] as bool?,
+      score: (json['score'] as num?)?.toDouble(),
+      bio: json['bio'] as String?,
+    );
+  }
+}
+
+/// D8: GST label shown next to any rate/price a homeowner sees.
+/// Returns null when the GST status is unknown — the label is omitted
+/// rather than guessed.
+String? gstLabelFor(bool? isGstRegistered) {
+  if (isGstRegistered == null) return null;
+  return isGstRegistered ? 'Incl. GST' : 'No GST charged';
+}
+
+/// A tradie-proposed extra cost during a job (v1.7 P12-17).
+/// Mirrors backend JobAdjustmentDto from GET /api/jobs/{id}/adjustments.
+class JobAdjustment {
+  static const kindMaterials = 'Materials';
+  static const kindExtraLabour = 'ExtraLabour';
+  static const kindTravel = 'Travel';
+  static const kindOther = 'Other';
+
+  static const statusPending = 'Pending';
+  static const statusApproved = 'Approved';
+  static const statusDeclined = 'Declined';
+  static const statusWithdrawn = 'Withdrawn';
+  static const statusExpired = 'Expired';
+
+  final String id;
+  final String jobId;
+  final String proposedByTradieId;
+  final String proposedByTradieName;
+
+  /// Materials | ExtraLabour | Travel | Other.
+  final String kind;
+  final String description;
+  final Decimal amount;
+
+  /// Blob key of an attached receipt/photo — null when the tradie sent none.
+  final String? evidenceUrl;
+
+  /// Pending | Approved | Declined | Withdrawn | Expired.
+  final String status;
+  final DateTime createdAtUtc;
+  final DateTime? respondedAtUtc;
+  final String? responseNote;
+  final DateTime? expiresAtUtc;
+
+  const JobAdjustment({
+    required this.id,
+    required this.jobId,
+    required this.proposedByTradieId,
+    required this.proposedByTradieName,
+    required this.kind,
+    required this.description,
+    required this.amount,
+    this.evidenceUrl,
+    required this.status,
+    required this.createdAtUtc,
+    this.respondedAtUtc,
+    this.responseNote,
+    this.expiresAtUtc,
+  });
+
+  bool get isPending => status == JobAdjustment.statusPending;
+  bool get isApproved => status == JobAdjustment.statusApproved;
+
+  factory JobAdjustment.fromJson(Map<String, dynamic> json) =>
+      JobAdjustment(
+        id: json['id']?.toString() ?? '',
+        jobId: json['jobId']?.toString() ?? '',
+        proposedByTradieId: json['proposedByTradieId']?.toString() ?? '',
+        proposedByTradieName:
+            json['proposedByTradieName'] as String? ?? '',
+        kind: json['kind'] as String? ?? JobAdjustment.kindOther,
+        description: json['description'] as String? ?? '',
+        amount: _decimalFromJson(json['amount']) ?? Decimal.zero,
+        evidenceUrl: json['evidenceUrl'] as String?,
+        status: json['status'] as String? ?? JobAdjustment.statusPending,
+        createdAtUtc: json['createdAtUtc'] != null
+            ? DateTime.parse(json['createdAtUtc'] as String).toUtc()
+            : DateTime.now().toUtc(),
+        respondedAtUtc: json['respondedAtUtc'] != null
+            ? DateTime.parse(json['respondedAtUtc'] as String).toUtc()
+            : null,
+        responseNote: json['responseNote'] as String?,
+        expiresAtUtc: json['expiresAtUtc'] != null
+            ? DateTime.parse(json['expiresAtUtc'] as String).toUtc()
+            : null,
+      );
+}
+
+/// Server response from POST /api/jobs/{id}/check-out (v1.7 contract #7).
+/// Every amount is server-computed; the UI renders these verbatim.
+class CheckOutSummary {
+  final String jobId;
+  final double? finalHours;
+  final Decimal? hourlyRate;
+  final Decimal? labourAmount;
+  final Decimal? adjustmentsTotal;
+  final Decimal? finalAmount;
+  final Decimal? estimatedTotal;
+
+  /// True when [finalAmount] exceeds the homeowner's estimate tolerance —
+  /// the homeowner must review before approving.
+  final bool exceedsTolerance;
+
+  /// Server-supplied explanation of the tolerance result.
+  final String? toleranceNote;
+  final DateTime? completionSubmittedAtUtc;
+
+  const CheckOutSummary({
+    required this.jobId,
+    this.finalHours,
+    this.hourlyRate,
+    this.labourAmount,
+    this.adjustmentsTotal,
+    this.finalAmount,
+    this.estimatedTotal,
+    this.exceedsTolerance = false,
+    this.toleranceNote,
+    this.completionSubmittedAtUtc,
+  });
+
+  factory CheckOutSummary.fromJson(Map<String, dynamic> json) =>
+      CheckOutSummary(
+        jobId: json['jobId']?.toString() ?? '',
+        finalHours: (json['finalHours'] as num?)?.toDouble(),
+        hourlyRate: _decimalFromJson(json['hourlyRate']),
+        labourAmount: _decimalFromJson(json['labourAmount']),
+        adjustmentsTotal: _decimalFromJson(json['adjustmentsTotal']),
+        finalAmount: _decimalFromJson(json['finalAmount']),
+        estimatedTotal: _decimalFromJson(json['estimatedTotal']),
+        exceedsTolerance: json['exceedsTolerance'] as bool? ?? false,
+        toleranceNote: json['toleranceNote'] as String?,
+        completionSubmittedAtUtc: json['completionSubmittedAtUtc'] != null
+            ? DateTime.parse(json['completionSubmittedAtUtc'] as String)
+                .toUtc()
+            : null,
+      );
+}
+
+/// A tradie's quote for a project job (v1.7 P12-23).
+/// Mirrors backend QuoteDto from GET/POST /api/jobs/{id}/quotes.
+class Quote {
+  static const pricingFixed = 'Fixed';
+  static const pricingEstimateRange = 'EstimateRange';
+  static const pricingHourlyWithCap = 'HourlyWithCap';
+
+  static const statusPending = 'Pending';
+  static const statusAccepted = 'Accepted';
+  static const statusDeclined = 'Declined';
+  static const statusWithdrawn = 'Withdrawn';
+  static const statusExpired = 'Expired';
+
+  final String id;
+  final String jobId;
+  final String tradieId;
+  final String tradieName;
+  final String? businessName;
+  final String initials;
+  final bool verified;
+  final double? rating;
+  final int? reviewCount;
+
+  /// Fixed | EstimateRange | HourlyWithCap.
+  final String pricingModel;
+  final Decimal? amount;
+  final Decimal? minAmount;
+  final Decimal? maxAmount;
+  final Decimal? cap;
+  final String? inclusions;
+  final String? exclusions;
+  final bool materialsIncluded;
+
+  /// GST rule (contract #12): true for GST-registered tradies, false
+  /// otherwise — the backend enforces this on submit.
+  final bool gstIncluded;
+  final DateTime? proposedStartUtc;
+  final int? estimatedDurationDays;
+  final DateTime? validUntilUtc;
+  final String status;
+
+  const Quote({
+    required this.id,
+    required this.jobId,
+    required this.tradieId,
+    required this.tradieName,
+    this.businessName,
+    required this.initials,
+    this.verified = false,
+    this.rating,
+    this.reviewCount,
+    required this.pricingModel,
+    this.amount,
+    this.minAmount,
+    this.maxAmount,
+    this.cap,
+    this.inclusions,
+    this.exclusions,
+    this.materialsIncluded = false,
+    this.gstIncluded = false,
+    this.proposedStartUtc,
+    this.estimatedDurationDays,
+    this.validUntilUtc,
+    this.status = Quote.statusPending,
+  });
+
+  bool get isFixed => pricingModel == Quote.pricingFixed;
+  bool get isEstimateRange => pricingModel == Quote.pricingEstimateRange;
+  bool get isHourlyWithCap => pricingModel == Quote.pricingHourlyWithCap;
+
+  /// Display name — business name when present, else the person.
+  String get displayName {
+    final business = businessName?.trim();
+    if (business != null && business.isNotEmpty) return business;
+    return tradieName;
+  }
+
+  factory Quote.fromJson(Map<String, dynamic> json) => Quote(
+        id: json['id']?.toString() ?? '',
+        jobId: json['jobId']?.toString() ?? '',
+        tradieId: json['tradieId']?.toString() ?? '',
+        tradieName: json['tradieName'] as String? ?? '',
+        businessName: json['businessName'] as String?,
+        initials: json['initials'] as String? ?? '',
+        verified: json['verified'] as bool? ?? false,
+        rating: (json['rating'] as num?)?.toDouble(),
+        reviewCount: (json['reviewCount'] as num?)?.toInt(),
+        pricingModel:
+            json['pricingModel'] as String? ?? Quote.pricingFixed,
+        amount: _decimalFromJson(json['amount']),
+        minAmount: _decimalFromJson(json['minAmount']),
+        maxAmount: _decimalFromJson(json['maxAmount']),
+        cap: _decimalFromJson(json['cap']),
+        inclusions: json['inclusions'] as String?,
+        exclusions: json['exclusions'] as String?,
+        materialsIncluded: json['materialsIncluded'] as bool? ?? false,
+        gstIncluded: json['gstIncluded'] as bool? ?? false,
+        proposedStartUtc: json['proposedStartUtc'] != null
+            ? DateTime.parse(json['proposedStartUtc'] as String).toUtc()
+            : null,
+        estimatedDurationDays:
+            (json['estimatedDurationDays'] as num?)?.toInt(),
+        validUntilUtc: json['validUntilUtc'] != null
+            ? DateTime.parse(json['validUntilUtc'] as String).toUtc()
+            : null,
+        status: json['status'] as String? ?? Quote.statusPending,
+      );
 }

@@ -304,6 +304,24 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// v1.7 (P12-16): v2-flow jobs in AwaitingPayment past their due date — the
+    /// work was approved and completed but the homeowner has not paid. Staff
+    /// follow-up list; the job stays payable and the homeowner is flagged.
+    /// </summary>
+    [HttpGet("payments/overdue")]
+    [ProducesResponseType<PagedResult<OverduePaymentDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetOverduePayments(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var result = await _payments.GetOverduePaymentsAsync(page, pageSize);
+        return Ok(result);
+    }
+
     /// <summary>Approve a receipt — payment becomes Verified and the job is booked.</summary>
     [HttpPost("payments/{id:int}/verify")]
     [ProducesResponseType<PaymentStatusDto>(StatusCodes.Status200OK)]

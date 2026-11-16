@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/address.dart';
 import 'package:fixo/models/marketplace.dart';
@@ -26,12 +25,6 @@ const selectedAddress = AddressCandidate(
   longitude: 174.76,
 );
 const service = ServiceOption(id: 1, name: 'Plumbing', category: 'Plumber');
-final rate = ServiceRateOption(
-  tradieId: 'tradie',
-  name: 'Fixture tradie',
-  hourlyRate: Decimal.parse('123.45'),
-  distanceKm: 1.2,
-);
 const results = AddressSearchResult(
   provider: 'Linz',
   attribution: 'LINZ · CC BY 4.0',
@@ -51,7 +44,6 @@ class AddressFixture extends AddressRepository {
 }
 
 class PostFixture extends JobsRepository {
-  Future<List<ServiceRateOption>> Function()? rates;
   Map<String, dynamic>? posted;
   int posts = 0;
   bool failUpload = false;
@@ -59,12 +51,6 @@ class PostFixture extends JobsRepository {
   PostFixture() : super(Dio(), const FlutterSecureStorage());
   @override
   Future<List<ServiceOption>> getServiceCatalog() async => [service];
-  @override
-  Future<List<ServiceRateOption>> searchServiceRates({
-    required int serviceId,
-    required double latitude,
-    required double longitude,
-  }) async => rates == null ? [rate] : await rates!();
   @override
   Future<String> postJob(Map<String, dynamic> data) async {
     posts++;
@@ -95,10 +81,11 @@ class ProfileFixture extends ProfileRepository {
 Future<void> fill(PostJobNotifier notifier) async {
   await notifier.selectService(service);
   await notifier.selectAddress(selectedAddress, results.attribution);
-  notifier.selectRate(rate);
   notifier.setTitle('Fix the tap');
   notifier.setDescription('The tap is leaking.');
-  notifier.setHours('2');
+  // v1.7 (P12-04): the estimate is optional and the only pricing-adjacent
+  // input — the client never sends a rate (contract #1).
+  notifier.setEstimatedHours('2');
   notifier.setScheduledStartLocal(DateTime(2027, 1, 5, 10));
 }
 
@@ -212,7 +199,7 @@ void main() {
     expect(notifier.state.error, isNotNull);
   });
 
-  test('address edit clears coordinates, selection and stale rates', () async {
+  test('address edit clears coordinates and selection', () async {
     final repo = PostFixture();
     final notifier = PostJobNotifier(repo);
     addTearDown(notifier.dispose);
@@ -222,32 +209,12 @@ void main() {
     expect(notifier.state.latitude, isNull);
     expect(notifier.state.longitude, isNull);
     expect(notifier.state.resolvedAddress, isNull);
-    expect(notifier.state.selectedRate, isNull);
-    expect(notifier.state.rateOptions, isEmpty);
     expect(await notifier.submit(), isNull);
     expect(repo.posts, 0);
   });
 
   test(
-    'late rates cannot restore an edited address or changed service',
-    () async {
-      final repo = PostFixture();
-      final pending = Completer<List<ServiceRateOption>>();
-      repo.rates = () => pending.future;
-      final notifier = PostJobNotifier(repo);
-      addTearDown(notifier.dispose);
-      await notifier.selectService(service);
-      final request = notifier.selectAddress(selectedAddress, 'LINZ');
-      notifier.setAddress('Edited');
-      pending.complete([rate]);
-      await request;
-      expect(notifier.state.rateOptions, isEmpty);
-      expect(notifier.state.isLoadingRates, isFalse);
-    },
-  );
-
-  test(
-    'submission preserves explicit title, Decimal pricing and UTC schedule',
+    'submission preserves explicit title, estimate and UTC schedule, never a rate',
     () async {
       final repo = PostFixture();
       final notifier = PostJobNotifier(repo);
@@ -255,8 +222,11 @@ void main() {
       await fill(notifier);
       expect(await notifier.submit(), '123');
       expect(repo.posted!['title'], 'Fix the tap');
-      expect(repo.posted!['hourlyRate'], '123.45');
-      expect(repo.posted!['hours'], 2);
+      // v1.7: hourlyRate is never sent — rates are snapshotted server-side
+      // when a tradie accepts (contract #1).
+      expect(repo.posted!.containsKey('hourlyRate'), isFalse);
+      expect(repo.posted!['estimatedHours'], 2.0);
+      expect(repo.posted!['jobType'], 'Hourly');
       expect(repo.posted!['latitude'], -36.85);
       expect(DateTime.parse(repo.posted!['scheduledStartUtc']).isUtc, isTrue);
     },
@@ -289,7 +259,7 @@ void main() {
     notifier.setTitle('   ');
     expect(await notifier.submit(), isNull);
     notifier.setTitle('Title');
-    notifier.setHours('0');
+    notifier.setEstimatedHours('0');
     expect(await notifier.submit(), isNull);
     expect(repo.posts, 0);
   });

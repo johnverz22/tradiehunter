@@ -39,6 +39,11 @@ const PaymentQueue = React.lazy(() =>
     default: m.PaymentQueue,
   })),
 );
+const OverduePayments = React.lazy(() =>
+  import('./features/payments/pages/OverduePayments').then((m) => ({
+    default: m.OverduePayments,
+  })),
+);
 const Settings = React.lazy(() =>
   import('./features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
@@ -129,6 +134,7 @@ function App() {
           <Route path="jobs/:id" element={<JobDetail />} />
           <Route path="credentials" element={<CredentialQueue />} />
           <Route path="payments" element={<PaymentQueue />} />
+          <Route path="payments/overdue" element={<OverduePayments />} />
           <Route path="payouts" element={<PayoutQueue />} />
           <Route path="payouts/batches" element={<PayoutBatches />} />
           <Route path="payouts/batches/:id" element={<PayoutBatchDetail />} />

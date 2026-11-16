@@ -18,12 +18,23 @@ import 'profile_repository.dart';
 ///   DELETE /api/jobs/:id
 ///   POST   /api/jobs/:id/match   (trigger matching run)
 ///   GET    /api/jobs/:id/matches (fetch match list)
-///   POST   /api/jobs/:id/requests {tradieId}
+///   POST   /api/jobs/:id/request {tradieId, message?}  (v1.7 direct request)
+///   POST   /api/jobs/:id/requests {tradieId}           (legacy direct request)
+///   GET    /api/jobs/:id/tradies?sort=&verified=&insured=&availableNow=
 ///   POST   /api/jobs/:id/accept
 ///   POST   /api/jobs/:id/decline
 ///   GET    /api/jobs/:id/offers/pending     (tradie's own pending offer)
 ///   POST   /api/jobs/:id/offers/:offerId/respond
 ///   POST   /api/jobs/:id/photos  (multipart, up to 5 files)
+///   POST   /api/jobs/:id/check-out {finalHours, notes?}  (v1.7)
+///   POST   /api/jobs/:id/approve {note?}                 (v1.7)
+///   GET    /api/jobs/:id/adjustments                     (v1.7)
+///   POST   /api/jobs/:id/adjustments                     (v1.7)
+///   POST   /api/jobs/:id/adjustments/:adjId/respond      (v1.7)
+///   POST   /api/jobs/:id/adjustments/:adjId/withdraw     (v1.7)
+///   GET    /api/jobs/:id/quotes                          (v1.7)
+///   POST   /api/jobs/:id/quotes                          (v1.7)
+///   POST   /api/jobs/:id/quotes/:quoteId/accept          (v1.7)
 class JobsRepository {
   final Dio _dio;
   final FlutterSecureStorage _storage;
@@ -405,22 +416,315 @@ class JobsRepository {
   }
 
   // ── POST /api/jobs/:id/check-out ────────────────────────────────────────────
-  // P5-02: Tradie checks out - transitions job to AwaitingConfirmation
+  // v1.7 (contract #7): tradie submits the hours actually worked; the server
+  // computes labour + adjustments and returns the itemised summary. The job
+  // transitions to AwaitingConfirmation so the homeowner can review & approve.
 
-  Future<bool> checkOut(String jobId) async {
+  /// Submits the check-out. Returns the server's own [CheckOutSummary] —
+  /// the caller renders it verbatim, never recomputes. Returns null on
+  /// failure (stale status / network).
+  Future<CheckOutSummary?> checkOut(
+    String jobId, {
+    required double finalHours,
+    String? notes,
+  }) async {
     final token = await _token();
-    if (token == null) return false;
+    if (token == null) return null;
     try {
-      await _dio.post(
+      final res = await _dio.post(
         '/api/jobs/$jobId/check-out',
+        data: {
+          'finalHours': finalHours,
+          if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+        },
         options: _authOptions(token),
       );
-      return true;
+      return CheckOutSummary.fromJson(
+        res.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       debugPrint(
         '[Jobs] checkOut failed: ${friendlyDioError(e, tag: 'CheckOut')}',
       );
-      return false;
+      return null;
+    }
+  }
+
+  // ── POST /api/jobs/:id/approve ──────────────────────────────────────────────
+  // v1.7 (contract #8): the homeowner approves the itemised completion
+  // summary; the job moves to AwaitingPayment. 409 while an adjustment is
+  // still pending — the server's message is surfaced to the caller.
+
+  /// Approves the completion. Throws [ProfileApiException] with the server's
+  /// message on failure (e.g. "adjustments are still pending") so the caller
+  /// can show the real reason.
+  Future<void> approveJob(String jobId, {String? note}) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/approve',
+        data: {
+          if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        },
+        options: _authOptions(token),
+      );
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Approve'));
+    }
+  }
+
+  // ── GET /api/jobs/:id/tradies ───────────────────────────────────────────────
+  // v1.7 (contract #2): the Choose-a-Tradie list. The server owns ranking
+  // ("best" = score) and filtering; hourlyRate is the job's-service final
+  // consumer price with the GST status attached (D8).
+
+  Future<List<TradieListEntry>> getTradieList(
+    String jobId, {
+    String sort = 'best',
+    bool? verified,
+    bool? insured,
+    bool? availableNow,
+  }) async {
+    final token = await _token();
+    if (token == null) return const [];
+    final res = await _dio.get(
+      '/api/jobs/$jobId/tradies',
+      queryParameters: {
+        'sort': sort,
+        if (verified == true) 'verified': 'true',
+        if (insured == true) 'insured': 'true',
+        if (availableNow == true) 'availableNow': 'true',
+      },
+      options: _authOptions(token),
+    );
+    final items = res.data as List?;
+    return items
+            ?.map(
+              (t) => TradieListEntry.fromJson(t as Map<String, dynamic>),
+            )
+            .toList() ??
+        const [];
+  }
+
+  // ── POST /api/jobs/:id/request ──────────────────────────────────────────────
+  // v1.7 (contract #3): direct request for a specific tradie with an optional
+  // pre-acceptance message (D3 — the only contact channel before Booked).
+  // The server replies 202 with the created offer; 409 means a conflict
+  // (pending request exists, tradie already asked, ...) and its message is
+  // surfaced to the caller.
+
+  /// Sends a direct request. Returns the created [JobOffer] on success.
+  /// Throws [ProfileApiException] with the server's message on conflict or
+  /// failure — callers must not navigate on a throw.
+  Future<JobOffer> requestTradieForJob(
+    String jobId,
+    String tradieId, {
+    String? message,
+  }) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      final res = await _dio.post(
+        '/api/jobs/$jobId/request',
+        data: {
+          'tradieId': tradieId,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+        },
+        options: _authOptions(token),
+      );
+      return JobOffer.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Request'));
+    }
+  }
+
+  // ── v1.7 adjustments (contract #9 / #10) ────────────────────────────────────
+
+  /// Lists every price adjustment proposed on [jobId].
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async {
+    final token = await _token();
+    if (token == null) return const [];
+    try {
+      final res = await _dio.get(
+        '/api/jobs/$jobId/adjustments',
+        options: _authOptions(token),
+      );
+      final items = res.data as List?;
+      return items
+              ?.map(
+                (a) => JobAdjustment.fromJson(a as Map<String, dynamic>),
+              )
+              .toList() ??
+          const [];
+    } on DioException catch (e) {
+      debugPrint(
+        '[Jobs] getAdjustments failed: '
+        '${friendlyDioError(e, tag: 'Adjustments')}',
+      );
+      return const [];
+    }
+  }
+
+  /// Tradie proposes an extra cost. Throws [ProfileApiException] with the
+  /// server's message on validation/conflict failure.
+  ///
+  /// [evidenceFileKey] is a pre-uploaded blob key. There is no generic file
+  /// upload endpoint in the current API surface (only job photos), so the
+  /// mobile UI keeps the receipt attach optional and this argument is only
+  /// sent when the caller actually holds a blob key.
+  Future<void> createAdjustment(
+    String jobId, {
+    required String kind,
+    required String description,
+    required Decimal amount,
+    String? evidenceFileKey,
+  }) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/adjustments',
+        data: {
+          'kind': kind,
+          'description': description,
+          'amount': amount.toString(),
+          if (evidenceFileKey != null && evidenceFileKey.isNotEmpty)
+            'evidenceFileKey': evidenceFileKey,
+        },
+        options: _authOptions(token),
+      );
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Adjustment'));
+    }
+  }
+
+  /// Homeowner approves/declines a proposed adjustment
+  /// (contract #10). Throws [ProfileApiException] with the server's message.
+  Future<void> respondToAdjustment(
+    String jobId,
+    String adjustmentId, {
+    required bool approve,
+    String? note,
+  }) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/adjustments/$adjustmentId/respond',
+        data: {
+          'approve': approve,
+          if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        },
+        options: _authOptions(token),
+      );
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Adjustment'));
+    }
+  }
+
+  /// Tradie withdraws their own still-pending proposal (contract #10).
+  Future<void> withdrawAdjustment(String jobId, String adjustmentId) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/adjustments/$adjustmentId/withdraw',
+        options: _authOptions(token),
+      );
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Adjustment'));
+    }
+  }
+
+  // ── v1.7 quotes (contract #11–#13) ──────────────────────────────────────────
+
+  /// Lists the quotes submitted on a project job.
+  Future<List<Quote>> getQuotes(String jobId) async {
+    final token = await _token();
+    if (token == null) return const [];
+    try {
+      final res = await _dio.get(
+        '/api/jobs/$jobId/quotes',
+        options: _authOptions(token),
+      );
+      final items = res.data as List?;
+      return items
+              ?.map((q) => Quote.fromJson(q as Map<String, dynamic>))
+              .toList() ??
+          const [];
+    } on DioException catch (e) {
+      debugPrint(
+        '[Jobs] getQuotes failed: ${friendlyDioError(e, tag: 'Quotes')}',
+      );
+      return const [];
+    }
+  }
+
+  /// Tradie submits a quote (contract #12) while a QuoteRequest offer is
+  /// pending. [gstIncluded] must match the tradie's GST registration — the
+  /// backend enforces the rule. Throws [ProfileApiException] with the
+  /// server's message on failure.
+  Future<void> createQuote(String jobId, Map<String, dynamic> payload) async {
+    final token = await _token();
+    if (token == null) {
+      throw const ProfileApiException('Please sign in again.');
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/quotes',
+        data: payload,
+        options: _authOptions(token),
+      );
+    } on DioException catch (e) {
+      throw ProfileApiException(friendlyDioError(e, tag: 'Quote'));
+    }
+  }
+
+  /// Homeowner accepts a quote (contract #13). Amounts ≥ NZD 30,000 require
+  /// the written-contract confirmation — retry with
+  /// [confirmWrittenContract] = true after the 409. Returns the parsed 409
+  /// body so the caller can show the threshold notice.
+  Future<QuoteAcceptResult> acceptQuote(
+    String jobId,
+    String quoteId, {
+    required bool confirmWrittenContract,
+  }) async {
+    final token = await _token();
+    if (token == null) {
+      return const QuoteAcceptResult.signedOut();
+    }
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/quotes/$quoteId/accept',
+        data: {'confirmWrittenContract': confirmWrittenContract},
+        options: _authOptions(token),
+      );
+      return const QuoteAcceptResult.accepted();
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      final requiresContract =
+          body is Map && body['requiresWrittenContractConfirmation'] == true;
+      if (requiresContract) {
+        return QuoteAcceptResult.needsWrittenContract(
+          threshold: body['threshold']?.toString(),
+          message: body['message']?.toString(),
+        );
+      }
+      return QuoteAcceptResult.failure(
+        friendlyDioError(e, tag: 'Quote'),
+      );
     }
   }
 
@@ -578,4 +882,57 @@ class JobsRepository {
       return false;
     }
   }
+}
+
+/// Outcome of POST /api/jobs/:id/quotes/:quoteId/accept (v1.7 contract #13).
+/// Large quotes (≥ NZD 30,000) come back as [requiresWrittenContract] with
+/// the server's threshold + message; the caller shows the notice and retries
+/// with `confirmWrittenContract: true`.
+class QuoteAcceptResult {
+  final bool accepted;
+  final bool requiresWrittenContract;
+
+  /// True when the caller had no session token — treated like a failure.
+  final bool signedOut;
+
+  /// Server-supplied threshold (e.g. "30000") and human message from the 409.
+  final String? threshold;
+  final String? message;
+
+  /// True on a generic failure; [message] carries the reason.
+  final bool failed;
+
+  const QuoteAcceptResult._({
+    required this.accepted,
+    required this.requiresWrittenContract,
+    required this.signedOut,
+    required this.failed,
+    this.threshold,
+    this.message,
+  });
+
+  const QuoteAcceptResult.accepted()
+      : this._(accepted: true, requiresWrittenContract: false, signedOut: false, failed: false);
+
+  const QuoteAcceptResult.needsWrittenContract({String? threshold, String? message})
+      : this._(
+          accepted: false,
+          requiresWrittenContract: true,
+          signedOut: false,
+          failed: false,
+          threshold: threshold,
+          message: message,
+        );
+
+  const QuoteAcceptResult.signedOut()
+      : this._(accepted: false, requiresWrittenContract: false, signedOut: true, failed: true);
+
+  const QuoteAcceptResult.failure(String reason)
+      : this._(
+          accepted: false,
+          requiresWrittenContract: false,
+          signedOut: false,
+          failed: true,
+          message: reason,
+        );
 }

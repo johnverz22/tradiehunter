@@ -25,6 +25,8 @@ class JobHubClient {
   final _statusController = StreamController<JobStatusEvent>.broadcast();
   final _matchController = StreamController<NewJobMatchEvent>.broadcast();
   final _offerController = StreamController<OfferLifecycleEvent>.broadcast();
+  final _adjustmentController =
+      StreamController<JobAdjustmentEvent>.broadcast();
   final _reconnectingController = StreamController<void>.broadcast();
   final _reconnectedController = StreamController<void>.broadcast();
 
@@ -39,6 +41,12 @@ class JobHubClient {
   /// screen renders progress from these; the tradie request-detail screen
   /// uses them to stop its expiry countdown.
   Stream<OfferLifecycleEvent> get onOfferLifecycle => _offerController.stream;
+
+  /// Stream of v1.7 price-adjustment events (P12-18, `JobAdjustmentChanged`).
+  /// Listeners reload the job's adjustment list — the payload shape is
+  /// server-owned, so only the jobId is surfaced here.
+  Stream<JobAdjustmentEvent> get onAdjustmentChanged =>
+      _adjustmentController.stream;
 
   /// Fires when the automatic-reconnect policy drops the live connection.
   /// Events stop arriving until [onReconnected] fires; server-side job-group
@@ -93,6 +101,25 @@ class JobHubClient {
       }
     });
 
+    _connection!.on('JobAdjustmentChanged', (args) {
+      if (args == null || args.isEmpty) return;
+      final first = args.first;
+      // Payload is server-owned — surface the jobId only; the payload may be
+      // a flat map or nested under "adjustment".
+      String? jobId;
+      if (first is Map) {
+        final map = Map<String, dynamic>.from(first);
+        jobId = (map['jobId'] ??
+                (map['adjustment'] is Map
+                    ? (map['adjustment'] as Map)['jobId']
+                    : null))
+            ?.toString();
+      }
+      if (jobId != null) {
+        _adjustmentController.add(JobAdjustmentEvent(jobId: jobId));
+      }
+    });
+
     _connection!.onreconnecting(({error}) => _reconnectingController.add(null));
     _connection!.onreconnected(
       ({connectionId}) => _reconnectedController.add(null),
@@ -120,6 +147,7 @@ class JobHubClient {
     _statusController.close();
     _matchController.close();
     _offerController.close();
+    _adjustmentController.close();
     _reconnectingController.close();
     _reconnectedController.close();
     disconnect();
@@ -233,4 +261,13 @@ class OfferLifecycleEvent {
         jobTitle: json['jobTitle'] as String?,
         offerIndex: (json['offerIndex'] as num?)?.toInt() ?? 0,
       );
+}
+
+/// v1.7: a price adjustment was proposed or decided on a job (P12-18).
+/// Deliberately minimal — listeners refetch GET /api/jobs/:id/adjustments
+/// rather than trusting an event payload.
+class JobAdjustmentEvent {
+  final String jobId;
+
+  const JobAdjustmentEvent({required this.jobId});
 }

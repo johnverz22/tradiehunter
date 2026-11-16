@@ -1,15 +1,12 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
-import 'package:fixo/views/jobs/match_result_screen.dart';
 import 'package:fixo/views/jobs/matching_screen.dart';
-import 'package:fixo/widgets/fixo_cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -21,7 +18,6 @@ class MatchRepo extends JobsRepository {
   MatchRepo() : super(Dio(), const FlutterSecureStorage());
 
   bool triggerSucceeds = true;
-  bool requestSucceeds = true;
   Job? job = const Job(
     id: '42',
     title: 'Fix leaking tap',
@@ -39,9 +35,6 @@ class MatchRepo extends JobsRepository {
   int triggerCalls = 0;
   int jobReads = 0;
   int offerReads = 0;
-  int requestCalls = 0;
-  int cancelCalls = 0;
-  String? requestedTradieId;
 
   @override
   Future<bool> triggerMatch(String jobId) async {
@@ -63,19 +56,6 @@ class MatchRepo extends JobsRepository {
 
   @override
   Future<List<TradieMatch>> getMatches(String jobId) async => matches;
-
-  @override
-  Future<bool> requestTradie(String jobId, String tradieId) async {
-    requestCalls++;
-    requestedTradieId = tradieId;
-    return requestSucceeds;
-  }
-
-  @override
-  Future<bool> cancelJob(String jobId) async {
-    cancelCalls++;
-    return true;
-  }
 }
 
 class MatchHub extends JobHubClient {
@@ -124,34 +104,6 @@ class MatchHub extends JobHubClient {
   }
 }
 
-TradieMatch matchFixture({
-  String id = 't1',
-  String name = 'Sam Carter',
-  String trade = 'Plumber',
-  double km = 1.2,
-}) => TradieMatch(
-  tradieId: id,
-  initials: 'SC',
-  name: name,
-  trade: trade,
-  distance: '${km.toStringAsFixed(1)} km away',
-  distanceKm: km,
-  rating: null,
-  reviewCount: 0,
-);
-
-Job pricedJob({String status = 'Requested'}) => Job(
-  id: '42',
-  title: 'Fix leaking tap',
-  category: 'Plumbing',
-  suburb: 'Grafton',
-  status: status,
-  stage: 0,
-  hours: 2,
-  hourlyRate: Decimal.parse('85.50'),
-  totalAmount: Decimal.parse('171.00'),
-);
-
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
@@ -173,10 +125,13 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (_, _) => child),
+        // v1.7: matching no longer routes to a match-result screen — a
+        // matched status pushes the booked job detail (and payment stays a
+        // detail-screen action), so only those destinations are mounted.
         for (final path in [
-          '/jobs/:id/match',
           '/jobs/:id/payment',
           '/jobs/:id/detail',
+          '/jobs/:id/tradies',
           '/chat/:id',
         ])
           GoRoute(
@@ -234,45 +189,18 @@ void main() {
         expect(find.text('Cancel'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
-
-      testWidgets('match result renders rate/total at 320px dark=$dark', (
-        tester,
-      ) async {
-        final repo = MatchRepo()
-          ..job = pricedJob()
-          ..matches = [matchFixture()];
-        await mount(
-          tester,
-          const MatchResultScreen(jobId: '42'),
-          repo: repo,
-          hub: MatchHub(),
-          dark: dark,
-        );
-        expect(find.text('We found your tradie'), findsOneWidget);
-        expect(find.text('Estimated total'), findsOneWidget);
-        expect(find.text('\$171.00'), findsOneWidget);
-        expect(find.text('\$85.50/h'), findsOneWidget);
-        expect(find.text('2 h'), findsOneWidget);
-        expect(find.text('Request Sam'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
     }
 
-    testWidgets('large text scale 2.0 has no overflow on either screen', (
-      tester,
-    ) async {
-      final repo = MatchRepo()
-        ..job = pricedJob()
-        ..matches = [matchFixture()];
+    testWidgets('large text scale 2.0 has no overflow', (tester) async {
       await mount(
         tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
+        const MatchingScreen(jobId: '42'),
+        repo: MatchRepo(),
         hub: MatchHub(),
         scale: 2.0,
+        disableAnimations: true,
       );
-      expect(find.text('We found your tradie'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Request Sam'), 400);
+      expect(find.text('Finding tradies near you…'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -386,23 +314,24 @@ void main() {
       expect(find.text('Connection lost — reconnecting…'), findsNothing);
     });
 
-    testWidgets('match status event replaces route with match result', (
-      tester,
-    ) async {
-      final hub = MatchHub();
-      await mount(
-        tester,
-        const MatchingScreen(jobId: '42'),
-        repo: MatchRepo(),
-        hub: hub,
-        disableAnimations: true,
-      );
-      hub.statusEvents.add(
-        const JobStatusEvent(jobId: '42', status: 'AwaitingPayment'),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Destination /jobs/42/match'), findsOneWidget);
-    });
+    testWidgets(
+      'match status event routes to the booked job detail (v1.7: no match-result screen)',
+      (tester) async {
+        final hub = MatchHub();
+        await mount(
+          tester,
+          const MatchingScreen(jobId: '42'),
+          repo: MatchRepo(),
+          hub: hub,
+          disableAnimations: true,
+        );
+        hub.statusEvents.add(
+          const JobStatusEvent(jobId: '42', status: 'AwaitingPayment'),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Destination /jobs/42/detail'), findsOneWidget);
+      },
+    );
 
     testWidgets('no_tradie_found cancel shows empty state and Go Back', (
       tester,
@@ -493,202 +422,6 @@ void main() {
         );
       }
       expect(tester.takeException(), isNull);
-    });
-  });
-
-  group('MatchResultScreen', () {
-    testWidgets('Request calls repository and navigates to chat', (
-      tester,
-    ) async {
-      final repo = MatchRepo()
-        ..job = pricedJob()
-        ..matches = [matchFixture()];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      await tester.tap(find.text('Request Sam'));
-      await tester.pumpAndSettle();
-      expect(repo.requestCalls, 1);
-      expect(repo.requestedTradieId, 't1');
-      expect(find.text('Destination /chat/42'), findsOneWidget);
-    });
-
-    testWidgets('request failure stays put with an error', (tester) async {
-      final repo = MatchRepo()
-        ..job = pricedJob()
-        ..matches = [matchFixture()]
-        ..requestSucceeds = false;
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      await tester.tap(find.text('Request Sam'));
-      await tester.pumpAndSettle();
-      expect(repo.requestCalls, 1);
-      expect(
-        find.text(
-          'Couldn\'t send the request. Check your connection and try again.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Destination /chat/42'), findsNothing);
-      expect(find.text('We found your tradie'), findsOneWidget);
-    });
-
-    testWidgets(
-      'AwaitingPayment job offers Continue to payment, never Request',
-      (tester) async {
-        final repo = MatchRepo()
-          ..job = pricedJob(status: 'AwaitingPayment')
-          ..matches = [matchFixture()];
-        await mount(
-          tester,
-          const MatchResultScreen(jobId: '42'),
-          repo: repo,
-          hub: MatchHub(),
-        );
-        expect(find.text('Continue to payment'), findsOneWidget);
-        expect(find.text('Request Sam'), findsNothing);
-        await tester.tap(find.text('Continue to payment'));
-        await tester.pumpAndSettle();
-        expect(find.text('Destination /jobs/42/payment'), findsOneWidget);
-        expect(repo.requestCalls, 0);
-      },
-    );
-
-    testWidgets('Booked job offers View job instead of Request', (
-      tester,
-    ) async {
-      final repo = MatchRepo()
-        ..job = pricedJob(status: 'Booked')
-        ..matches = [matchFixture()];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.text('View job'), findsOneWidget);
-      expect(find.text('Request Sam'), findsNothing);
-      await tester.tap(find.text('View job'));
-      await tester.pumpAndSettle();
-      expect(find.text('Destination /jobs/42/detail'), findsOneWidget);
-      expect(repo.requestCalls, 0);
-    });
-
-    testWidgets('Cancelled job shows no request action', (tester) async {
-      final repo = MatchRepo()
-        ..job = pricedJob(status: 'Cancelled')
-        ..matches = [matchFixture()];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.text('Request Sam'), findsNothing);
-      expect(find.text('View job'), findsNothing);
-      expect(find.text('Continue to payment'), findsNothing);
-    });
-
-    for (final scale in [1.0, 1.3, 2.0]) {
-      testWidgets('headline is not covered by the card at scale $scale', (
-        tester,
-      ) async {
-        final repo = MatchRepo()
-          ..job = pricedJob()
-          ..matches = [matchFixture()];
-        await mount(
-          tester,
-          const MatchResultScreen(jobId: '42'),
-          repo: repo,
-          hub: MatchHub(),
-          scale: scale,
-        );
-        final headline = tester.getRect(find.text('We found your tradie'));
-        final card = tester.getRect(find.byType(FixoCard).first);
-        expect(headline.bottom, lessThanOrEqualTo(card.top));
-        expect(tester.takeException(), isNull);
-      });
-    }
-
-    testWidgets('unknown or zero distance is hidden, not shown as 0.0 km', (
-      tester,
-    ) async {
-      final repo = MatchRepo()
-        ..job = pricedJob()
-        ..matches = [
-          const TradieMatch(
-            tradieId: 't1',
-            initials: 'SC',
-            name: 'Sam Carter',
-            trade: 'Plumber',
-            distance: '0.0 km away',
-            distanceKm: 0,
-            rating: null,
-            reviewCount: 0,
-          ),
-        ];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.textContaining('0.0 km'), findsNothing);
-      expect(find.byKey(const Key('view_profile_button')), findsOneWidget);
-    });
-
-    testWidgets('known distance is still shown', (tester) async {
-      final repo = MatchRepo()
-        ..job = pricedJob()
-        ..matches = [matchFixture()];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.text('1.2 km away'), findsOneWidget);
-    });
-
-    testWidgets('empty matches renders the no-match state', (tester) async {
-      final repo = MatchRepo()..job = pricedJob();
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.text('No tradies available'), findsOneWidget);
-      expect(find.text('Back to jobs'), findsOneWidget);
-    });
-
-    testWidgets('missing price fields are omitted, not zeroed', (tester) async {
-      final repo = MatchRepo()
-        ..job = const Job(
-          id: '42',
-          title: 'Fix leaking tap',
-          category: 'Plumbing',
-          suburb: 'Grafton',
-          status: 'Requested',
-          stage: 0,
-        )
-        ..matches = [matchFixture()];
-      await mount(
-        tester,
-        const MatchResultScreen(jobId: '42'),
-        repo: repo,
-        hub: MatchHub(),
-      );
-      expect(find.text('Estimated total'), findsNothing);
-      expect(find.text('\$0.00'), findsNothing);
-      expect(find.text('Request Sam'), findsOneWidget);
     });
   });
 }

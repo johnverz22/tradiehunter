@@ -11,18 +11,29 @@ import '../../feedback/fixo_notice.dart';
 /// app bar on job detail screens (H12, T22).
 ///
 /// Contains:
-/// - CompactProgressBar (4-segment) with "Step X of 4" caption
+/// - CompactProgressBar with "Step X of N" caption
 /// - Reference code (right-aligned, muted monospace)
-/// - Tap the entire strip to expand/collapse the full 4-step timeline inline
+/// - Tap the entire strip to expand/collapse the full step timeline inline
 ///
 /// The entire band is brand-gradient, so all text/icons are white-alpha.
+///
+/// v1.7 (P12-15): the step order comes from [JobStepperFlow] — 6 steps
+/// (Requested → Booked → In progress → Review & approve → Pay → Completed)
+/// for v2 jobs, the legacy 4-step order for flowVersion-1 jobs.
 class StatusStrip extends StatefulWidget {
   final String status;
+
+  /// v1.7 JobDto stage (0..5) under the job's [flowVersion]; null falls
+  /// back to the legacy status mapping.
+  final int? stage;
+  final int? flowVersion;
   final String? referenceCode;
 
   const StatusStrip({
     super.key,
     required this.status,
+    this.stage,
+    this.flowVersion,
     this.referenceCode,
   });
 
@@ -34,29 +45,13 @@ class _StatusStripState extends State<StatusStrip>
     with SingleTickerProviderStateMixin {
   bool _expanded = false;
 
-  static const _stepTitles = ['Requested', 'Booked', 'In progress', 'Done'];
-  static const _stepSubtitles = [
-    'Job request submitted',
-    'Tradie matched & booked',
-    'Work underway on site',
-    'Work complete & verified',
-  ];
+  JobStepperFlow get _flow => JobStepperFlow.resolve(
+        widget.status,
+        stage: widget.stage,
+        flowVersion: widget.flowVersion,
+      );
 
-  int get _activeStepIndex => switch (widget.status) {
-        'Requested' || 'AwaitingPayment' || 'PaymentReview' => 0,
-        'Booked' => 1,
-        'InProgress' || 'AwaitingConfirmation' => 2,
-        'Completed' => 3,
-        'Cancelled' => 1,
-        'Expired' => 0,
-        'Disputed' => 2,
-        _ => 0,
-      };
-
-  bool get _isTerminal => switch (widget.status) {
-        'Cancelled' || 'Expired' || 'Disputed' => true,
-        _ => false,
-      };
+  bool get _isTerminal => _flow.isTerminal;
 
   void _toggle() {
     setState(() => _expanded = !_expanded);
@@ -66,17 +61,24 @@ class _StatusStripState extends State<StatusStrip>
   Widget build(BuildContext context) {
     final presentation = JobStatusPresentation.forStatus(widget.status);
     final isDisputed = widget.status == 'Disputed';
-    final hasProgress = presentation.progressStage != null;
-    final stepIndex = presentation.progressStage ?? 0;
-    final completedSteps = stepIndex + 1;
 
-    // Step label for cpb caption
-    final stepLabel = hasProgress
-        ? JobStatusPresentation.progressLabels[stepIndex]
-        : presentation.label;
-    final shouldShowSublabel = hasProgress &&
-        stepLabel.trim().toLowerCase() !=
-            presentation.label.trim().toLowerCase();
+    final flow = _flow;
+    final totalSteps = flow.totalSteps;
+    final stepIndex = flow.activeIndex;
+    final completedSteps = stepIndex + 1;
+    // The current step's own title is the clearest caption; it differs from
+    // the status-chip label for most statuses, in which case the chip label
+    // shows as the sub-caption.
+    final stepLabel = flow.titles.isNotEmpty && stepIndex < flow.titles.length
+        ? flow.titles[stepIndex]
+        : flow.stepCaption;
+    final shouldShowSublabel = stepLabel.trim().toLowerCase() !=
+        presentation.label.trim().toLowerCase();
+
+    // Progress bar shows for known, non-terminal statuses only — unknown
+    // statuses and Cancelled/Expired/Disputed render the pill alone.
+    final bool hasProgress =
+        presentation.label != 'Status unavailable' && !flow.isTerminal;
 
     final muted = isDisputed || widget.status == 'Cancelled';
 
@@ -153,8 +155,8 @@ class _StatusStripState extends State<StatusStrip>
             const SizedBox(height: Space.s2_5),
             CompactProgressBar(
               completedSteps: completedSteps,
-              totalSteps: 4,
-              label: 'Step $completedSteps of 4',
+              totalSteps: totalSteps,
+              label: 'Step $completedSteps of $totalSteps',
               sublabel: shouldShowSublabel ? stepLabel : null,
               muted: muted,
               onDark: true,
@@ -193,16 +195,18 @@ class _StatusStripState extends State<StatusStrip>
   }
 
   Widget _buildStepList() {
-    final activeIndex = _activeStepIndex;
+    final flow = _flow;
+    final activeIndex = flow.activeIndex;
+    final total = flow.totalSteps;
     final lineColor = Colors.white.withValues(alpha: Alpha.tintAccent);
     final activeLineColor = Colors.white.withValues(alpha: Alpha.gradient);
 
     return Column(
-      children: List.generate(4, (index) {
+      children: List.generate(total, (index) {
         final isCompleted = index < activeIndex;
         final isCurrent = index == activeIndex;
         final isUpcoming = index > activeIndex;
-        final isLast = index == 3;
+        final isLast = index == total - 1;
 
         // Terminal subtitle override
         String subtitleText;
@@ -211,10 +215,10 @@ class _StatusStripState extends State<StatusStrip>
             'Cancelled' => 'Job was cancelled',
             'Expired' => 'Job request expired',
             'Disputed' => 'Dispute raised; awaiting resolution',
-            _ => _stepSubtitles[index],
+            _ => flow.subtitles[index],
           };
         } else {
-          subtitleText = _stepSubtitles[index];
+          subtitleText = flow.subtitles[index];
         }
 
         return IntrinsicHeight(
@@ -254,7 +258,7 @@ class _StatusStripState extends State<StatusStrip>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _stepTitles[index],
+                        flow.titles[index],
                         style: TextStyle(
                           fontSize: DesignTokens.fontSizeBody,
                           fontWeight: isCurrent

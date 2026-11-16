@@ -77,6 +77,13 @@ abstract class Sizes {
   static const double dot = 10.0;
   static const double dotActive = 32.0;
   static const double progressSegH = 6.0; // kit.css `.cpb .seg` segment height
+
+  /// Step-dot diameter in the [JobProgressDots] stepper caption — matches the
+  /// progress segment height for visual rhythm.
+  static const double progressDot = 6.0;
+
+  /// Gap between two step dots in the stepper caption.
+  static const double progressDotGap = 5.0;
   static const double nav = 68.0;
   static const double appBar = 56.0;
   static const double fab = 56.0;

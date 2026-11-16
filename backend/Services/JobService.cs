@@ -3,8 +3,10 @@ using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Hubs;
 using FixoApi.Models;
+using FixoApi.Options;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NetTopologySuite.Geometries;
 using System.Security.Cryptography;
 
@@ -26,6 +28,7 @@ public class JobService : IJobService
     private readonly IHubContext<JobHub> _hub;
     private readonly PushNotificationService _push;
     private readonly FixoDbContext _context;
+    private readonly IOptions<JobFlowOptions> _jobFlowOptions;
     private readonly ILogger<JobService> _logger;
 
     public JobService(
@@ -34,6 +37,7 @@ public class JobService : IJobService
         IHubContext<JobHub> hub,
         PushNotificationService push,
         FixoDbContext context,
+        IOptions<JobFlowOptions> jobFlowOptions,
         ILogger<JobService> logger)
     {
         _jobRepo         = jobRepo;
@@ -41,6 +45,7 @@ public class JobService : IJobService
         _hub             = hub;
         _push            = push;
         _context         = context;
+        _jobFlowOptions  = jobFlowOptions;
         _logger          = logger;
     }
 
@@ -51,21 +56,36 @@ public class JobService : IJobService
         var service = await _context.Services.FindAsync(request.ServiceId)
             ?? throw new ArgumentException("The selected service does not exist.");
 
-        var selectedRateExists = await _context.TradieRates.AnyAsync(rate =>
-            rate.ServiceId == request.ServiceId
-            && rate.HourlyRate == request.HourlyRate
-            && rate.TradieProfile.IsVerified
-            && rate.TradieProfile.IsAvailable);
-        if (!selectedRateExists)
-            throw new ArgumentException("The selected hourly rate is no longer available.");
+        // P12-12: a homeowner with an unresolved OverduePayment flag cannot post
+        // or request new jobs until staff clear it after payment verification.
+        var blocked = await _context.AccountFlags.AnyAsync(f =>
+            f.UserId == homeownerId
+            && f.Type == AccountFlagType.OverduePayment
+            && f.ThresholdHit
+            && !f.Resolved);
+        if (blocked)
+            throw new InvalidOperationException(
+                "Your account has an overdue payment. Settle the outstanding job before posting a new one.");
 
         if (!Enum.TryParse<JobUrgency>(request.Urgency ?? "Medium", ignoreCase: true, out var urgency))
             urgency = JobUrgency.Medium;
+
+        if (!Enum.TryParse<TimingPreference>(request.TimingPreference ?? "Flexible", ignoreCase: true, out var timing))
+            timing = TimingPreference.Flexible;
+
+        if (!Enum.TryParse<JobType>(request.JobType ?? "Hourly", ignoreCase: true, out var jobType))
+            jobType = JobType.Hourly;
+
+        if (!Enum.TryParse<MaterialsResponsibility>(request.MaterialsBy ?? "Undecided", ignoreCase: true, out var materialsBy))
+            materialsBy = MaterialsResponsibility.Undecided;
 
         Point? location = null;
         if (request.Latitude.HasValue && request.Longitude.HasValue)
             location = new Point(request.Longitude.Value, request.Latitude.Value) { SRID = 4326 };
 
+        // P12-01: the rate check is gone — the rate no longer exists at posting.
+        // It is chosen on the Choose-a-Tradie screen and snapshotted onto the
+        // offer at request time (P12-08). request.HourlyRate is ignored.
         var job = new Job
         {
             HomeownerId     = homeownerId,
@@ -77,17 +97,31 @@ public class JobService : IJobService
             Location        = location,
             Address         = request.Address,
             ServiceId       = service.Id,
-            ScheduledStartUtc = request.ScheduledStartUtc,
-            Hours           = request.Hours,
-            HourlyRate      = request.HourlyRate,
-            TotalAmount     = request.HourlyRate * request.Hours,
+            TimingPreference = timing,
+            ScheduledStartUtc = timing is TimingPreference.SpecificDate or TimingPreference.DateRange
+                ? request.ScheduledStartUtc
+                : null,
+            ScheduledEndUtc = timing == TimingPreference.DateRange ? request.ScheduledEndUtc : null,
+            EstimatedHours  = request.EstimatedHours,
+            // Display-only estimate (rate × guess is unknown here — estimated
+            // total is filled when a quote is accepted or the rate snapshots on accept).
+            EstimatedTotal  = null,
             ReferenceCode   = await GenerateReferenceCodeAsync(),
+            JobType         = jobType,
+            BudgetMin       = jobType == JobType.Project ? request.BudgetMin : null,
+            BudgetMax       = jobType == JobType.Project ? request.BudgetMax : null,
+            MaterialsBy     = jobType == JobType.Project ? materialsBy : MaterialsResponsibility.Undecided,
+            SiteVisitWelcome = jobType == JobType.Project && request.SiteVisitWelcome,
+            ScopeNotes      = jobType == JobType.Project ? request.ScopeNotes : null,
+            FlowVersion     = Math.Max(1, _jobFlowOptions.Value.Version),
             CreatedAtUtc    = DateTime.UtcNow,
             UpdatedAtUtc    = DateTime.UtcNow,
         };
 
         var created = await _jobRepo.CreateAsync(job);
-        _logger.LogInformation("Job {JobId} created by homeowner {HomeownerId}", created.Id, homeownerId);
+        _logger.LogInformation(
+            "Job {JobId} created by homeowner {HomeownerId} (type={JobType}, timing={Timing}, flow=v{Flow}).",
+            created.Id, homeownerId, created.JobType, created.TimingPreference, created.FlowVersion);
         return MapToDto(created);
     }
 
@@ -137,6 +171,12 @@ public class JobService : IJobService
         if (request.Description != null) job.Description = request.Description;
         if (request.Address     != null) job.Address     = request.Address;
         if (request.ScheduledStartUtc.HasValue) job.ScheduledStartUtc = request.ScheduledStartUtc.Value;
+        if (request.ScheduledEndUtc.HasValue) job.ScheduledEndUtc = request.ScheduledEndUtc.Value;
+        if (request.EstimatedHours.HasValue) job.EstimatedHours = request.EstimatedHours.Value;
+
+        if (!string.IsNullOrEmpty(request.TimingPreference) &&
+            Enum.TryParse<TimingPreference>(request.TimingPreference, ignoreCase: true, out var timingPref))
+            job.TimingPreference = timingPref;
 
         if (!string.IsNullOrEmpty(request.Urgency) &&
             Enum.TryParse<JobUrgency>(request.Urgency, ignoreCase: true, out var urgency))
@@ -185,7 +225,16 @@ public class JobService : IJobService
             return new MatchResultDto { Matches = matches };
         }
 
-        // Transition → Matched (picks the top-ranked tradie as the suggested match)
+        if (job.FlowVersion >= 2)
+        {
+            // v1.7 (P12-04): under the pay-at-completion flow the quick-match
+            // fallback runs through the sequential offer engine — no instant
+            // match-to-AwaitingPayment shortcut anymore. Rate comes from the
+            // offer snapshot when a tradie accepts (P12-08).
+            return new MatchResultDto { Matches = matches };
+        }
+
+        // Legacy v1: transition → Matched (picks the top-ranked tradie as the suggested match)
         job.MatchedTradieId = matches[0].TradieId;
         await TransitionStatusAsync(job, JobStatus.AwaitingPayment);
 
@@ -207,8 +256,13 @@ public class JobService : IJobService
 
     public async Task<bool> RequestTradieAsync(int jobId, string homeownerId, string tradieId)
     {
+        // v1.7 (P12-08): the real direct-request flow moved to
+        // POST /api/jobs/{id}/request (OfferService), which snapshots the rate
+        // and creates a JobOffer for exactly the chosen tradie. This legacy
+        // path only serves v1 in-flight jobs and keeps its old behaviour.
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.HomeownerId != homeownerId) return false;
+        if (job.FlowVersion >= 2) return false; // v2 must use the new endpoint
         if (job.Status is not (JobStatus.AwaitingPayment or JobStatus.Requested)) return false;
 
         job.MatchedTradieId = tradieId;
@@ -220,6 +274,7 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.MatchedTradieId != tradieId) return false;
+        if (job.FlowVersion >= 2) return false; // v2 accepts via the offer endpoints
         if (job.Status != JobStatus.AwaitingPayment) return false;
 
         await TransitionStatusAsync(job, JobStatus.Booked);
@@ -230,6 +285,7 @@ public class JobService : IJobService
     {
         var job = await _jobRepo.GetByIdAsync(jobId);
         if (job == null || job.MatchedTradieId != tradieId) return false;
+        if (job.FlowVersion >= 2) return false;
         if (job.Status != JobStatus.AwaitingPayment) return false;
 
         // Clear matched tradie and go back to Matching so another can be found.
@@ -344,19 +400,35 @@ public class JobService : IJobService
         throw new InvalidOperationException("Could not generate a unique job reference code.");
     }
 
-    private static JobDto MapToDto(Job job, bool isTradie = false)
+    private JobDto MapToDto(Job job, bool isTradie = false)
     {
-        var stage = job.Status switch
-        {
-            JobStatus.Requested          => 0,
-            JobStatus.AwaitingPayment    => 1,
-            JobStatus.PaymentReview      => 1,
-            JobStatus.Booked             => 2,
-            JobStatus.InProgress         => 3,
-            JobStatus.AwaitingConfirmation => 4,
-            JobStatus.Completed          => 5,
-            _                            => 0,
-        };
+        var flow = _jobFlowOptions.Value;
+        // P12-15: stage mapping follows the stepper order for the flow the job
+        // runs under. v2: Requested → Booked → In progress → Review & approve →
+        // Pay → Completed. v1 keeps the legacy upfront-payment mapping.
+        var stage = job.FlowVersion >= 2
+            ? job.Status switch
+            {
+                JobStatus.Requested            => 0,
+                JobStatus.Booked               => 1,
+                JobStatus.InProgress           => 2,
+                JobStatus.AwaitingConfirmation => 3, // Review & approve
+                JobStatus.AwaitingPayment      => 4, // Pay
+                JobStatus.PaymentReview        => 4, // Pay (receipt queued)
+                JobStatus.Completed            => 5,
+                _                              => 0,
+            }
+            : job.Status switch
+            {
+                JobStatus.Requested          => 0,
+                JobStatus.AwaitingPayment    => 1,
+                JobStatus.PaymentReview      => 1,
+                JobStatus.Booked             => 2,
+                JobStatus.InProgress         => 3,
+                JobStatus.AwaitingConfirmation => 4,
+                JobStatus.Completed          => 5,
+                _                            => 0,
+            };
 
         // Extract suburb as the first comma-separated segment of the address.
         var suburb = job.Address?.Split(',').FirstOrDefault()?.Trim() ?? "";
@@ -366,6 +438,13 @@ public class JobService : IJobService
         var addressToShow = showFullAddress ? job.Address : suburb;
         var latToShow = showFullAddress ? job.Location?.Y : null;
         var lngToShow = showFullAddress ? job.Location?.X : null;
+
+        // P12-11: the "higher than estimate" banner flag, computed server-side
+        // from the same money math the auto-approve guard uses.
+        var aboveTolerance = job.FinalAmount.HasValue &&
+            JobMoney.ExceedsTolerance(
+                job.FinalAmount.Value, job.EstimatedTotal,
+                flow.EstimateTolerancePercent, flow.AutoApproveNoEstimateCap);
 
         return new JobDto
         {
@@ -383,10 +462,21 @@ public class JobService : IJobService
             CreatedAtUtc     = job.CreatedAtUtc,
             UpdatedAtUtc     = job.UpdatedAtUtc,
             ServiceId        = job.ServiceId,
+            TimingPreference = job.TimingPreference.ToString(),
             ScheduledStartUtc = job.ScheduledStartUtc,
-            Hours            = job.Hours,
+            ScheduledEndUtc  = job.ScheduledEndUtc,
+            EstimatedHours   = job.EstimatedHours,
             HourlyRate       = job.HourlyRate,
-            TotalAmount      = job.TotalAmount,
+            EstimatedTotal   = job.EstimatedTotal,
+            FinalHours       = job.FinalHours,
+            LabourAmount     = job.LabourAmount,
+            AdjustmentsTotal = job.AdjustmentsTotal,
+            FinalAmount      = job.FinalAmount,
+            CompletionSubmittedAtUtc = job.CompletionSubmittedAtUtc,
+            JobType          = job.JobType.ToString(),
+            AgreedPricingModel = job.AgreedPricingModel?.ToString(),
+            FlowVersion      = job.FlowVersion,
+            IsAboveEstimateTolerance = aboveTolerance,
             ReferenceCode    = job.ReferenceCode,
             MatchedTradieId  = job.MatchedTradieId,
             MatchedTradieName = string.IsNullOrWhiteSpace(job.MatchedTradie?.FullName) ? null : job.MatchedTradie.FullName,

@@ -4,7 +4,7 @@ This directory contains the v1.7 specification and implementation tasks for the 
 
 ## Status
 
-**Approved for build — implementation not started.** Owner sign-off received 2026-11-16 for the scope flag in the specification (it changes decisions recorded in `docs/MVP-SPEC-v1.3.md`: **A5** hourly-only, **B1** materials off-platform, and the **P4** upfront-payment model). All eight open decisions (**D1–D8**) were resolved by the owner on 2026-11-16 — see [Decisions](#decisions). Implementation is tracked task-by-task in [tasks.md](tasks.md) and starts on the owner's go signal. In-app card payments / BNZ integration remain out of scope; payment stays manual bank-transfer + receipt + admin verification.
+**Implementation in progress on `dev` (code-complete 2026-11-16; CI verification pending).** Owner sign-off received 2026-11-16 for the scope flag in the specification (it changes decisions recorded in `docs/MVP-SPEC-v1.3.md`: **A5** hourly-only, **B1** materials off-platform, and the **P4** upfront-payment model). All eight open decisions (**D1–D8**) were resolved by the owner on 2026-11-16 — see [Decisions](#decisions). Implementation is tracked task-by-task in [tasks.md](tasks.md); all Phase 12 tasks are code-complete on `dev` pending CI verification. In-app card payments / BNZ integration remain out of scope; payment stays manual bank-transfer + receipt + admin verification.
 
 ## Contents
 
@@ -37,7 +37,7 @@ All eight open decisions (D1–D8) were resolved by the owner on 2026-11-16; res
 
 ## QA
 
-A `QA-14-p12-*.md` checklist will be added under `qa/` as part of P12-28, inheriting all v1.2/v1.3 cases (current set: QA-00–QA-13).
+The `QA-14-p12-job-flow.md` checklist now lives under `qa/`, inheriting all v1.2/v1.3 cases (current set: QA-00–QA-13). A `scripts/p12-smoke.sh` drives the full §4.2 flow end-to-end.
 
 ## Relationship to earlier versions
 

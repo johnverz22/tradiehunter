@@ -92,7 +92,9 @@ void _tradieSuite() {
 
 void _homeownerSuite() {
   group('P5 — Lifecycle (homeowner side)', () {
-    testWidgets('P5-05 homeowner can confirm completion', (tester) async {
+    testWidgets('P5-05 homeowner can approve the itemised amount', (
+      tester,
+    ) async {
       final jobId =
           await FixtureHelper.awaitingConfirmationJob(tag: 'p5-05');
 
@@ -102,17 +104,19 @@ void _homeownerSuite() {
       appRouter.go('/jobs/$jobId/detail');
       await pumpFor(tester, kNetworkSettle);
 
-      // P5-11: Confirm Completion button
-      expect(find.text('Confirm Completion'), findsOneWidget);
+      // v1.7 P12-11: AwaitingConfirmation is the Review & approve step —
+      // the primary action approves the itemised amount (POST /approve)
+      // and lands the homeowner on the payment screen.
+      expect(find.byKey(const Key('approve_pay_button')), findsOneWidget);
 
-      await tester.tap(find.text('Confirm Completion'));
+      await tester.tap(find.byKey(const Key('approve_pay_button')));
       await pumpFor(tester, kNetworkSettle);
 
       await pollUntil(
         () async =>
             (await ApiHelper.getJobStatus(
                 jobId, await ApiHelper.homeownerToken)) ==
-            'Completed',
+            'AwaitingPayment',
       );
     });
 

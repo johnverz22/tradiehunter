@@ -11,7 +11,6 @@
 // Run:
 //   flutter test integration_test/job_request_test.dart --device-id <id>
 
-import 'package:decimal/decimal.dart';
 import 'package:fixo/main.dart' as app;
 import 'package:fixo/router/app_router.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
@@ -162,24 +161,15 @@ void main() {
             );
             await notifier.selectService(service.first);
           } else {
-            for (final service in services) {
-              await notifier.selectService(service);
-              if (container.read(postJobProvider).rateOptions.isNotEmpty) {
-                break;
-              }
-            }
+            expect(
+              services,
+              isNotEmpty,
+              reason: 'The service catalog must return at least one service; '
+                  'no fixture is invented.',
+            );
+            await notifier.selectService(services.first);
           }
-          expect(
-            container.read(postJobProvider).rateOptions,
-            isNotEmpty,
-            reason: 'A verified available nearby tradie rate is required; no fixture is invented.',
-          );
           await tester.pump();
-          final rateTile = find.byType(CheckboxListTile).first;
-          await tester.ensureVisible(rateTile);
-          await tester.tap(rateTile);
-          await tester.pump();
-          final chosenRate = container.read(postJobProvider).selectedRate!;
           final titleField = find.byKey(const Key('title_field'));
           await tester.ensureVisible(titleField);
           await tester.enterText(
@@ -192,12 +182,19 @@ void main() {
             descriptionField,
             'Approved local address/post/matching test. Cancel after matching starts.',
           );
-          notifier.setHours('2');
+          // v1.7 (P12-04): no rate picking and no rate fields on this screen —
+          // the optional hours estimate is the only pricing-adjacent input,
+          // and rates are snapshotted server-side when a tradie accepts.
+          notifier.setEstimatedHours('2');
           final scheduled = DateTime.now().add(const Duration(days: 2));
           notifier.setScheduledStartLocal(scheduled);
           FocusManager.instance.primaryFocus?.unfocus();
           await tester.pump();
           expect(container.read(postJobProvider).isValid, isTrue);
+          expect(
+            container.read(postJobProvider).submittedJobId,
+            isNull,
+          );
           await tester.tap(find.byKey(const Key('post_job_button')));
           await pumpFor(tester, kNetworkSettle);
           createdId = container.read(postJobProvider).submittedJobId;
@@ -211,8 +208,9 @@ void main() {
           expect(job!.address, '70 Symonds Street, Grafton, Auckland');
           expect(job.latitude, closeTo(-36.8559449861, 0.000001));
           expect(job.longitude, closeTo(174.7665433333, 0.000001));
-          expect(job.hourlyRate, chosenRate.hourlyRate);
-          expect(job.totalAmount, chosenRate.hourlyRate * Decimal.fromInt(2));
+          // v1.7: no rate is set before a tradie accepts (contract #1) —
+          // the client never sends or fabricates one.
+          expect(job.hourlyRate, isNull);
           expect(job.scheduledStartUtc!.isUtc, isTrue);
           await pollUntil(() async {
             await tester.pump(const Duration(seconds: 1));
@@ -223,7 +221,7 @@ void main() {
           }, timeout: kMatchingSettle);
           expect(find.textContaining('Contacting'), findsWidgets);
           debugPrint(
-            'V15-10 local job $createdId: resolved coordinates, Decimal total, UTC timestamp and matching offer verified.',
+            'V15-10 local job $createdId: resolved coordinates, UTC timestamp and matching offer verified.',
           );
         } finally {
           createdId ??= container.read(postJobProvider).submittedJobId;

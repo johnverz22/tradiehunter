@@ -15,13 +15,13 @@ using System.Security.Claims;
 namespace FixoApi.Controllers;
 
 /// <summary>
-/// Handles tradie responses to sequential job offers (P3-07).
+/// Handles tradie responses to job offers (P3-07; v1.7 P12-08).
 ///
 /// POST /api/jobs/{id}/offers/{offerId}/respond
 ///
 /// Controller purity: only validates auth + ownership, then delegates to
-/// IJobStatusService and the Hangfire-driven offer engine. No direct
-/// state-machine logic here.
+/// OfferService (v2: accept books the job with the rate snapshot) or the
+/// legacy sequential path (v1). No direct state-machine logic here.
 /// </summary>
 [ApiController]
 [Route("api/jobs")]
@@ -30,6 +30,7 @@ public class OffersController : ControllerBase
 {
     private readonly FixoDbContext _context;
     private readonly IJobStatusService _jobStatusService;
+    private readonly OfferService _offerService;
     private readonly IHubContext<JobHub> _jobHub;
     private readonly IBackgroundJobClient _hangfire;
     private readonly ILogger<OffersController> _logger;
@@ -37,12 +38,14 @@ public class OffersController : ControllerBase
     public OffersController(
         FixoDbContext context,
         IJobStatusService jobStatusService,
+        OfferService offerService,
         IHubContext<JobHub> jobHub,
         IBackgroundJobClient hangfire,
         ILogger<OffersController> logger)
     {
         _context          = context;
         _jobStatusService = jobStatusService;
+        _offerService     = offerService;
         _jobHub           = jobHub;
         _hangfire         = hangfire;
         _logger           = logger;
@@ -89,6 +92,16 @@ public class OffersController : ControllerBase
 
         if (offer == null) return NoContent();
 
+        // v1.7: surface who was asked, at what rate, with the optional message.
+        string? tradieName = null;
+        if (User.IsInRole("Homeowner") || !User.IsInRole("Tradie"))
+        {
+            tradieName = await _context.Users
+                .Where(u => u.Id == offer.TradieId)
+                .Select(u => u.FirstName + " " + u.LastName)
+                .FirstOrDefaultAsync();
+        }
+
         return Ok(new OfferDto
         {
             Id           = offer.Id,
@@ -98,6 +111,11 @@ public class OffersController : ControllerBase
             ExpiresAtUtc = offer.ExpiresAtUtc,
             Response     = offer.Response.ToString(),
             Stage        = offer.Stage.ToString(),
+            Kind         = offer.Kind.ToString(),
+            HourlyRateSnapshot = offer.HourlyRateSnapshot,
+            Message      = offer.Message,
+            TradieName   = string.IsNullOrWhiteSpace(tradieName) ? null : tradieName.Trim(),
+            JobTitle     = offer.Job?.Title,
         });
     }
 
@@ -168,40 +186,39 @@ public class OffersController : ControllerBase
         await _jobHub.Clients.Group(JobHub.GroupName(jobId))
             .SendAsync("OfferLifecycleEvent", lifeCyclePayload);
 
-        if (parsedResponse == OfferResponse.Accepted)
+        try
         {
-            // Requested → AwaitingPayment is this state machine's "tradie matched"
-            // edge; JobStatusService owns the transition and its history row.
-            offer.Job.MatchedTradieId = userId;
-            await _context.SaveChangesAsync();
-
-            try
+            if (parsedResponse == OfferResponse.Accepted)
             {
-                await _jobStatusService.TransitionAsync(
-                    jobId,
-                    JobStatus.AwaitingPayment,
-                    userId,
-                    UserRole.Tradie);
+                // v2 (P12-08/P12-10): accept books the job with the rate snapshot.
+                // v1 legacy jobs keep the old Requested → AwaitingPayment path
+                // (OfferService routes on the job's stored FlowVersion).
+                var dto = await _offerService.AcceptOfferAsync(jobId, offerId, userId);
+                return Ok(dto);
             }
-            catch (InvalidOperationException ex)
+
+            // Declined (P12-08): the job stays Requested so the homeowner can
+            // pick someone else — no auto-broaden on direct requests. Quick
+            // match offers keep the sequential dispatch.
+            var isQuickMatch = offer.Stage != OfferStage.Direct;
+            var legacy = await _context.Jobs.Where(j => j.Id == jobId).Select(j => j.FlowVersion).FirstAsync();
+            if (isQuickMatch || legacy < 2)
             {
-                // Job left Requested between dispatch and response (e.g. the
-                // homeowner cancelled). The offer is already recorded as
-                // Accepted, so report the conflict rather than a 500.
-                _logger.LogWarning(ex,
-                    "Offer {OfferId}: cannot accept — job {JobId} is not awaiting a match.",
-                    offerId, jobId);
-                return Conflict(new { error = ex.Message });
+                _hangfire.Enqueue<SendOfferJob>(j => j.ExecuteAsync(jobId, userId));
             }
 
             return Ok(ToDto(offer));
         }
-
-        // Declined → offer the next ranked tradie (P3-07 AC). Enqueued rather
-        // than run inline so a slow push or a transient failure here cannot
-        // fail an already-recorded decline.
-        _hangfire.Enqueue<SendOfferJob>(j => j.ExecuteAsync(jobId, userId));
-        return Ok(ToDto(offer));
+        catch (InvalidOperationException ex)
+        {
+            // Job left Requested between dispatch and response (e.g. the
+            // homeowner cancelled). The response is already recorded, so report
+            // the conflict rather than a 500.
+            _logger.LogWarning(ex,
+                "Offer {OfferId}: cannot process — job {JobId} is not awaiting a match.",
+                offerId, jobId);
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     private static OfferDto ToDto(JobOffer offer) => new()
@@ -213,5 +230,8 @@ public class OffersController : ControllerBase
         ExpiresAtUtc = offer.ExpiresAtUtc,
         Response     = offer.Response.ToString(),
         Stage        = offer.Stage.ToString(),
+        Kind         = offer.Kind.ToString(),
+        HourlyRateSnapshot = offer.HourlyRateSnapshot,
+        Message      = offer.Message,
     };
 }

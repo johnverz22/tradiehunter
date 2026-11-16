@@ -269,6 +269,18 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
 builder.Services.AddScoped<IAccountFlagService, AccountFlagService>();
 
+// ── v1.7 (P12-27): job-flow feature flag — 1 = legacy, 2 = pay-at-completion ──
+builder.Services.Configure<FixoApi.Options.JobFlowOptions>(builder.Configuration.GetSection("JobFlow"));
+
+// v1.7 (P12-08): direct requests to a chosen tradie, with rate snapshot.
+builder.Services.AddScoped<FixoApi.Services.OfferService>();
+
+// v1.7 (P12-17): on-demand price adjustments.
+builder.Services.AddScoped<FixoApi.Services.AdjustmentService>();
+
+// v1.7 (P12-23): project quotes.
+builder.Services.AddScoped<FixoApi.Services.QuoteService>();
+
 // ── Email templates & sending (EMAIL-TEMPLATE-REVISION-PLAN §4/§5) ───────────
 builder.Services.Configure<FixoApi.Options.EmailSenderOptions>(builder.Configuration.GetSection("EmailSender"));
 builder.Services.AddSingleton<FixoApi.Email.EmailTemplateRenderer>();
@@ -302,6 +314,10 @@ builder.Services.AddScoped<FixoApi.Jobs.PaymentExpiryJob>();
 builder.Services.AddScoped<FixoApi.Jobs.PayoutBatchJob>();
 builder.Services.AddScoped<FixoApi.Jobs.RevealReviewsJob>();
 builder.Services.AddScoped<FixoApi.Jobs.PaymentSlaJob>();
+
+// v1.7 (P12-18): expires stale pending price adjustments.
+builder.Services.AddScoped<FixoApi.Jobs.AdjustmentExpiryJob>();
+builder.Services.AddScoped<FixoApi.Jobs.AdjustmentReminderJob>();
 
 // Admin seed — creates the default admin user on first startup if it doesn't exist.
 builder.Services.AddHostedService<AdminSeedService>();

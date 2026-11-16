@@ -15,8 +15,17 @@ import 'job_status_presentation.dart';
 ///   without using any radio buttons
 /// - Shows step timestamps when provided
 /// - Gracefully handles terminal states (Cancelled, Expired, Disputed)
+///
+/// v1.7 (P12-15): step order is resolved by [JobStepperFlow] — the 6-step
+/// Requested → Booked → In progress → Review & approve → Pay → Completed
+/// order for v2 jobs, the legacy 4-step order for flowVersion-1 jobs.
 class JobTimeline extends StatefulWidget {
   final String status;
+
+  /// v1.7 JobDto stage (0..5) under the job's [flowVersion]; null falls
+  /// back to the legacy status mapping.
+  final int? stage;
+  final int? flowVersion;
   final VoidCallback? onRefresh;
   final Map<int, DateTime>? stepDates;
   final bool initialExpanded;
@@ -24,6 +33,8 @@ class JobTimeline extends StatefulWidget {
   const JobTimeline({
     super.key,
     required this.status,
+    this.stage,
+    this.flowVersion,
     this.onRefresh,
     this.stepDates,
     this.initialExpanded = false,
@@ -46,37 +57,19 @@ class _JobTimelineState extends State<JobTimeline> {
   void didUpdateWidget(JobTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.status != widget.status ||
+        oldWidget.stage != widget.stage ||
         oldWidget.initialExpanded != widget.initialExpanded) {
       _expanded = widget.initialExpanded;
     }
   }
 
-  static const stepTitles = ['Requested', 'Booked', 'In progress', 'Done'];
+  JobStepperFlow get _flow => JobStepperFlow.resolve(
+        widget.status,
+        stage: widget.stage,
+        flowVersion: widget.flowVersion,
+      );
 
-  static const defaultSubtitles = [
-    'Job request submitted',
-    'Tradie matched & booked',
-    'Work underway on site',
-    'Work complete & verified',
-  ];
-
-  bool get _isTerminal => switch (widget.status) {
-        'Cancelled' || 'Expired' || 'Disputed' => true,
-        _ => false,
-      };
-
-  int get _activeStepIndex {
-    return switch (widget.status) {
-      'Requested' || 'AwaitingPayment' || 'PaymentReview' => 0,
-      'Booked' => 1,
-      'InProgress' || 'AwaitingConfirmation' => 2,
-      'Completed' => 3,
-      'Cancelled' => 1,
-      'Expired' => 0,
-      'Disputed' => 2,
-      _ => 0,
-    };
-  }
+  bool get _isTerminal => _flow.isTerminal;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +101,11 @@ class _JobTimelineState extends State<JobTimeline> {
           ],
         ] else ...[
           // Compact progress bar
-          CompactProgressBar(status: widget.status),
+          CompactProgressBar(
+            status: widget.status,
+            stage: widget.stage,
+            flowVersion: widget.flowVersion,
+          ),
           const SizedBox(height: Space.s2),
 
           // Inline expanded timeline or toggle button
@@ -143,7 +140,7 @@ class _JobTimelineState extends State<JobTimeline> {
   }) {
     final color = isDark ? DesignTokens.brand300 : DesignTokens.brand700;
     return SizedBox(
-      height: 48,
+      height: Sizes.tapMin,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
@@ -164,7 +161,7 @@ class _JobTimelineState extends State<JobTimeline> {
                 ),
               ),
               const SizedBox(width: Space.s1),
-              Icon(icon, size: 20, color: color),
+              Icon(icon, size: Sizes.iconAction, color: color),
             ],
           ),
         ),
@@ -173,7 +170,9 @@ class _JobTimelineState extends State<JobTimeline> {
   }
 
   Widget _buildExpandedTimeline(BuildContext context, bool isDark) {
-    final activeIndex = _activeStepIndex;
+    final flow = _flow;
+    final activeIndex = flow.activeIndex;
+    final total = flow.totalSteps;
     final theme = Theme.of(context);
 
     final lineColor = isDark
@@ -184,21 +183,21 @@ class _JobTimelineState extends State<JobTimeline> {
         : DesignTokens.brand700;
 
     return Semantics(
-      label: List.generate(4, (index) {
+      label: List.generate(total, (index) {
         final state = index < activeIndex
             ? 'complete'
             : (index == activeIndex
                 ? (_isTerminal ? 'terminal' : 'current')
                 : 'upcoming');
-        return '${stepTitles[index]}: $state';
+        return '${flow.titles[index]}: $state';
       }).join(', '),
       child: ExcludeSemantics(
         child: Column(
-          children: List.generate(4, (index) {
+          children: List.generate(total, (index) {
             final isCompleted = index < activeIndex;
             final isCurrent = index == activeIndex;
             final isUpcoming = index > activeIndex;
-            final isLast = index == 3;
+            final isLast = index == total - 1;
 
             // Date / subtitle logic
             final stepDate = widget.stepDates?[index];
@@ -209,9 +208,9 @@ class _JobTimelineState extends State<JobTimeline> {
                         'Cancelled' => 'Job was cancelled',
                         'Expired' => 'Job request expired',
                         'Disputed' => 'Dispute raised; awaiting resolution',
-                        _ => defaultSubtitles[index],
+                        _ => flow.subtitles[index],
                       }
-                    : defaultSubtitles[index]);
+                    : flow.subtitles[index]);
 
             return IntrinsicHeight(
               child: Row(
@@ -219,7 +218,7 @@ class _JobTimelineState extends State<JobTimeline> {
                 children: [
                   // Step indicator column with connecting line
                   SizedBox(
-                    width: 28,
+                    width: Sizes.stepNodeCol,
                     child: Column(
                       children: [
                         _buildStepNode(
@@ -232,8 +231,10 @@ class _JobTimelineState extends State<JobTimeline> {
                         if (!isLast)
                           Expanded(
                             child: Container(
-                              width: 2,
-                              margin: const EdgeInsets.symmetric(vertical: Space.s0_5),
+                              width: Sizes.borderWidthThick,
+                              margin: const EdgeInsets.symmetric(
+                                vertical: Space.s0_5,
+                              ),
                               color: isCompleted ? activeLineColor : lineColor,
                             ),
                           ),
@@ -245,12 +246,15 @@ class _JobTimelineState extends State<JobTimeline> {
                   // Step title and subtitle
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(top: Space.s0_5, bottom: isLast ? 0 : 20),
+                      padding: EdgeInsets.only(
+                        top: Space.s0_5,
+                        bottom: isLast ? 0 : Space.s5,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            stepTitles[index],
+                            flow.titles[index],
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: isCurrent
                                   ? FW.bold
@@ -301,15 +305,15 @@ class _JobTimelineState extends State<JobTimeline> {
   }) {
     if (isCompleted) {
       return Container(
-        width: 24,
-        height: 24,
+        width: Sizes.stepNode,
+        height: Sizes.stepNode,
         decoration: BoxDecoration(
           color: isDark ? DesignTokens.brand300 : DesignTokens.brand700,
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.check_rounded,
-          size: 14,
+          size: Sizes.iconChip,
           color: isDark ? DesignTokens.brand900 : Colors.white,
         ),
       );
@@ -326,20 +330,20 @@ class _JobTimelineState extends State<JobTimeline> {
           _ => Icons.close_rounded,
         };
         return Container(
-          width: 24,
-          height: 24,
+          width: Sizes.stepNode,
+          height: Sizes.stepNode,
           decoration: BoxDecoration(
             color: terminalColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(terminalIcon, size: 14, color: Colors.white),
+          child: Icon(terminalIcon, size: Sizes.iconChip, color: Colors.white),
         );
       }
 
       final currentColor = isDark ? DesignTokens.brand300 : DesignTokens.brand700;
       return Container(
-        width: 24,
-        height: 24,
+        width: Sizes.stepNode,
+        height: Sizes.stepNode,
         decoration: BoxDecoration(
           color: currentColor,
           shape: BoxShape.circle,
@@ -362,12 +366,15 @@ class _JobTimelineState extends State<JobTimeline> {
         ? Colors.white.withValues(alpha: Alpha.tintDark)
         : DesignTokens.paperLineLight;
     return Container(
-      width: 24,
-      height: 24,
+      width: Sizes.stepNode,
+      height: Sizes.stepNode,
       decoration: BoxDecoration(
         color: Colors.transparent,
         shape: BoxShape.circle,
-        border: Border.all(color: outlineColor, width: DesignTokens.borderWidthFor(isDark)),
+        border: Border.all(
+          color: outlineColor,
+          width: DesignTokens.borderWidthFor(isDark),
+        ),
       ),
       child: Center(
         child: Text(
@@ -375,7 +382,9 @@ class _JobTimelineState extends State<JobTimeline> {
           style: TextStyle(
             fontSize: DesignTokens.fontSizeCaption,
             fontWeight: FW.medium,
-            color: isDark ? Colors.white.withValues(alpha: Alpha.ghost) : DesignTokens.inkSoft(isDark),
+            color: isDark
+                ? Colors.white.withValues(alpha: Alpha.ghost)
+                : DesignTokens.inkSoft(isDark),
           ),
         ),
       ),

@@ -29,36 +29,58 @@ void main() {
   }
 
   group('CompactProgressBar steps', () {
-    testWidgets('Step 1: Requested renders step 1 of 4 and 1 segment', (tester) async {
+    // v1.7 (P12-15): a status-only bar resolves under the current v2 flow —
+    // the 6-step Requested → Booked → In progress → Review & approve → Pay →
+    // Completed stepper.
+    testWidgets('Step 1: Requested renders step 1 of 6 and 1 segment', (tester) async {
       await tester.pumpWidget(wrapBar(
         child: const CompactProgressBar(status: 'Requested'),
       ));
-      expect(find.text('Step 1 of 4 · Requested'), findsOneWidget);
-      expect(find.bySemanticsLabel('Progress: Step 1 of 4 · Requested'), findsOneWidget);
+      expect(find.text('Step 1 of 6 · Requested'), findsOneWidget);
+      expect(find.bySemanticsLabel('Progress: Step 1 of 6 · Requested'), findsOneWidget);
     });
 
-    testWidgets('Step 2: Booked renders step 2 of 4 and 2 segments', (tester) async {
+    testWidgets('Step 2: Booked renders step 2 of 6 and 2 segments', (tester) async {
       await tester.pumpWidget(wrapBar(
         child: const CompactProgressBar(status: 'Booked'),
+      ));
+      expect(find.text('Step 2 of 6 · Booked'), findsOneWidget);
+      expect(find.bySemanticsLabel('Progress: Step 2 of 6 · Booked'), findsOneWidget);
+    });
+
+    testWidgets('Step 3: InProgress renders step 3 of 6 and 3 segments', (tester) async {
+      await tester.pumpWidget(wrapBar(
+        child: const CompactProgressBar(status: 'InProgress'),
+      ));
+      expect(find.text('Step 3 of 6 · In progress'), findsOneWidget);
+      expect(find.bySemanticsLabel('Progress: Step 3 of 6 · In progress'), findsOneWidget);
+    });
+
+    testWidgets('Step 6: Completed renders step 6 of 6 · Completed and all 6 segments', (tester) async {
+      await tester.pumpWidget(wrapBar(
+        child: const CompactProgressBar(status: 'Completed'),
+      ));
+      expect(find.text('Step 6 of 6 · Completed'), findsOneWidget);
+      expect(find.bySemanticsLabel('Progress: Step 6 of 6 · Completed'), findsOneWidget);
+    });
+
+    testWidgets('legacy flowVersion-1 job keeps the 4-step order', (tester) async {
+      await tester.pumpWidget(wrapBar(
+        child: const CompactProgressBar(status: 'Booked', flowVersion: 1),
       ));
       expect(find.text('Step 2 of 4 · Booked'), findsOneWidget);
       expect(find.bySemanticsLabel('Progress: Step 2 of 4 · Booked'), findsOneWidget);
     });
 
-    testWidgets('Step 3: InProgress renders step 3 of 4 and 3 segments', (tester) async {
+    testWidgets('v2 stage drives the index directly (Review & approve = step 4)', (tester) async {
       await tester.pumpWidget(wrapBar(
-        child: const CompactProgressBar(status: 'InProgress'),
+        child: const CompactProgressBar(
+          status: 'AwaitingConfirmation',
+          stage: 3,
+          flowVersion: 2,
+        ),
       ));
-      expect(find.text('Step 3 of 4 · In progress'), findsOneWidget);
-      expect(find.bySemanticsLabel('Progress: Step 3 of 4 · In progress'), findsOneWidget);
-    });
-
-    testWidgets('Step 4: Completed renders step 4 of 4 · Done and all 4 segments', (tester) async {
-      await tester.pumpWidget(wrapBar(
-        child: const CompactProgressBar(status: 'Completed'),
-      ));
-      expect(find.text('Step 4 of 4 · Done'), findsOneWidget);
-      expect(find.bySemanticsLabel('Progress: Step 4 of 4 · Done'), findsOneWidget);
+      expect(find.text('Step 4 of 6 · Review & approve'), findsOneWidget);
     });
   });
 
@@ -105,7 +127,7 @@ void main() {
             textScale: scale,
           ));
           expect(tester.takeException(), isNull);
-          expect(find.text('Step 3 of 4 · In progress'), findsOneWidget);
+          expect(find.text('Step 3 of 6 · In progress'), findsOneWidget);
         });
       }
     }

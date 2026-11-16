@@ -119,9 +119,10 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.beat(tester, 2.5);
   await Demo.waitSignal(tester, 'offer_accepted');
 
-  // 5a. Match result (H11) — clean Flex layout: avatar overlap, price, tradie details.
-  await Demo.step(_ho, 'Homeowner: tradie matched — reviews hourly rate and schedule');
-  appRouter.go('/jobs/$jobId/match');
+  // 5a. v1.7 (contract #5/#6): an accepted offer books the job — the
+  //     retired match-result screen is replaced by the booked job detail.
+  await Demo.step(_ho, 'Homeowner: tradie matched — reviews the booked job');
+  appRouter.go('/jobs/$jobId/detail');
   await Demo.beat(tester, 2);
 
   // 5b. Payment instructions and bank-transfer receipt upload.
@@ -157,19 +158,21 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.beat(tester, 2);
   // Scroll up to reveal the full chat history (messages load from the bottom).
   await Demo.scrollScreen(tester, pixels: 350, scrollBack: false);
-  await Demo.step(_ho, 'Homeowner: confirms job completion');
+  await Demo.step(_ho, 'Homeowner: approves the itemised amount');
   appRouter.go('/jobs/$jobId/detail');
   await Demo.beat(tester);
-  if (!await Demo.tapKey(tester, 'confirm_completion_button')) {
-    await Demo.note(_ho, 'confirm button not found; confirmed via API');
-    await ApiHelper.confirmCompletion(jobId, homeowner);
+  // v1.7 P12-11: AwaitingConfirmation is the Review & approve step — the
+  // primary action is "Approve & pay" (POST /approve → AwaitingPayment).
+  if (!await Demo.tapKey(tester, 'approve_pay_button')) {
+    await Demo.note(_ho, 'approve button not found; approved via API');
+    await ApiHelper.approveJob(jobId, homeowner);
   }
   // Let a FixoNotice.success animate in and be visible on camera.
   await Demo.beat(tester, 0.75);
   await Demo.until(
       tester,
       () async =>
-          await ApiHelper.getJobStatus(jobId, homeowner) == 'Completed');
+          await ApiHelper.getJobStatus(jobId, homeowner) == 'AwaitingPayment');
   await pumpFor(tester, const Duration(seconds: 3));
   await Demo.step(_ho, 'Homeowner: leaves a review for the tradie');
   await _leaveReview(tester, 'Fast, tidy and friendly. Highly recommend!');

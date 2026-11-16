@@ -37,22 +37,33 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(paymentViewModelProvider(widget.jobId));
     final payment = state.payment;
+    // The job's flow version decides whether payment closes out completed
+    // work (v1.7) or opens a booking (legacy pay-first). A failed job read
+    // defaults to v1.7 — that is the current flow version — and only copy
+    // differs, never data.
+    final isV2Flow =
+        ref.watch(paymentJobProvider(widget.jobId)).valueOrNull?.usesV2Flow ??
+            true;
 
     return Scaffold(
       key: const Key('payment_status_screen'),
       appBar: const FixoAppBar(title: 'Payment status'),
       body: payment == null
           ? _loadingOrError(context, isDark, state)
-          : _body(context, isDark, payment),
+          : _body(context, isDark, payment, isV2Flow),
       bottomNavigationBar: payment == null
           ? null
-          : StickyActionBar(child: _cta(context, payment)),
+          : StickyActionBar(child: _cta(context, payment, isV2Flow)),
     );
   }
 
   // ── CTA per state ──────────────────────────────────────────────────────────
 
-  Widget _cta(BuildContext context, PaymentStatus payment) {
+  Widget _cta(
+    BuildContext context,
+    PaymentStatus payment,
+    bool isV2Flow,
+  ) {
     switch (payment.stage) {
       case PaymentStage.rejected:
         return FixoCtaStack(
@@ -70,6 +81,18 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
           onSecondary: () => context.go('/jobs/${widget.jobId}/detail'),
         );
       case PaymentStage.expired:
+        // v1.7: the window closed on a payment that settles completed work —
+        // re-posting a job cannot fix it, so support is the primary route.
+        if (isV2Flow) {
+          return FixoCtaStack(
+            primaryKey: const Key('contact_support_button'),
+            primaryLabel: 'Contact support',
+            onPrimary: () => context.push('/settings'),
+            secondaryKey: const Key('back_to_job_button'),
+            secondaryLabel: 'Back to job',
+            onSecondary: () => context.go('/jobs/${widget.jobId}/detail'),
+          );
+        }
         return FixoCtaStack(
           primaryKey: const Key('start_again_button'),
           primaryLabel: 'Start again',
@@ -114,7 +137,12 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
     );
   }
 
-  Widget _body(BuildContext context, bool isDark, PaymentStatus payment) {
+  Widget _body(
+    BuildContext context,
+    bool isDark,
+    PaymentStatus payment,
+    bool isV2Flow,
+  ) {
     final isExpired = payment.stage == PaymentStage.expired;
     final isConfirmed = payment.stage == PaymentStage.verified;
     final isRejected = payment.stage == PaymentStage.rejected;
@@ -151,9 +179,19 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
         : 'Under review';
 
     final body = isExpired
-        ? 'This match has been released. Start again to find another tradie — your job details are saved.'
+        ? (isV2Flow
+            // v1.7: this payment was settling completed work — there is no
+            // match to release and nothing to re-post.
+            ? 'The payment window closed without a receipt. Contact support '
+                'to sort out the payment for this job.'
+            : 'This match has been released. Start again to find another tradie — your job details are saved.')
         : isConfirmed
-        ? "Your payment has been verified. The job is booked with your tradie."
+        ? (isV2Flow
+            // v1.7: the payment confirms the completed work — it is not a
+            // booking.
+            ? 'Your payment has been verified — the completed work is now '
+                'settled. Thanks for paying through Fixo.'
+            : "Your payment has been verified. The job is booked with your tradie.")
         : isRejected
         ? (payment.rejectReason ??
               'The receipt was unclear — please upload a clearer photo or screenshot of the transfer.')

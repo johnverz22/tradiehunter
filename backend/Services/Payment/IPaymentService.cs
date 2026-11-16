@@ -32,6 +32,13 @@ public interface IPaymentService
     /// <summary>Oldest-first page of receipts waiting on staff review (P4-05).</summary>
     Task<PagedResult<PendingPaymentDto>> GetPendingPaymentsAsync(int page, int pageSize, CancellationToken ct = default);
 
+    /// <summary>
+    /// v1.7 (P12-16): v2-flow jobs in AwaitingPayment past their payment due
+    /// date — the homeowner approved the work but never paid. Staff follow-up
+    /// list; the job stays payable and the homeowner is flagged (P12-12).
+    /// </summary>
+    Task<PagedResult<OverduePaymentDto>> GetOverduePaymentsAsync(int page, int pageSize, CancellationToken ct = default);
+
     /// <summary>Approve a receipt: payment → Verified, job → Booked (P4-05).</summary>
     Task<PaymentActionResult> VerifyPaymentAsync(
         int paymentId, string adminUserId, UserRole actorRole, CancellationToken ct = default);

@@ -145,6 +145,7 @@ class JobStatusPresentation {
 
   final int? progressStage;
 
+  /// Legacy (v1 flowVersion) 4-step labels.
   static const progressLabels = ['Requested', 'Booked', 'In progress', 'Done'];
 
   /// "Step X of 4" — no status text (status shown by the chip).
@@ -267,4 +268,123 @@ class JobStatusPresentation {
       kind: FixoBadgeKind.problem,
     ),
   };
+}
+
+// ── v1.7 stepper flow (P12-11 / P12-15) ──────────────────────────────────────
+
+/// Resolves the job stepper for a status under the job's flow version.
+///
+/// v1.7 (contract #6) 6-step order: Requested → Booked → In progress →
+/// Review & approve → Pay → Completed. FlowVersion-1 jobs keep the legacy
+/// 4-step order (Requested → Booked → In progress → Done) so in-flight v1
+/// jobs never show the new steps mid-flight (P12-27 back-compat).
+///
+/// Every stepper widget (status strip, timeline, dots, compact bar) resolves
+/// through this class so the order can never drift between them.
+class JobStepperFlow {
+  /// Legacy v1 step titles (flowVersion 1).
+  static const v1Titles = ['Requested', 'Booked', 'In progress', 'Done'];
+
+  static const v1Subtitles = [
+    'Job request submitted',
+    'Tradie matched & booked',
+    'Work underway on site',
+    'Work complete & verified',
+  ];
+
+  /// v1.7 v2 step titles (flowVersion 2) — pay last, per spec §7.
+  static const v2Titles = [
+    'Requested',
+    'Booked',
+    'In progress',
+    'Review & approve',
+    'Pay',
+    'Completed',
+  ];
+
+  static const v2Subtitles = [
+    'Job request submitted',
+    'Tradie booked your job',
+    'Work underway on site',
+    'Check the summary & approve',
+    'Payment is due',
+    'All done — thanks!',
+  ];
+
+  final List<String> titles;
+  final List<String> subtitles;
+  final int totalSteps;
+
+  /// 0-based index of the step matching the current status.
+  final int activeIndex;
+
+  /// Cancelled / Expired / Disputed — renders muted, never "complete".
+  final bool isTerminal;
+
+  const JobStepperFlow({
+    required this.titles,
+    required this.subtitles,
+    required this.totalSteps,
+    required this.activeIndex,
+    required this.isTerminal,
+  });
+
+  /// Resolves from a raw status string. When [flowVersion] is 1 (or unknown
+  /// with no stage) the legacy mapping applies; when the job carries a v2
+  /// [stage] (0..5, contract #6) it drives the index directly.
+  factory JobStepperFlow.resolve(
+    String status, {
+    int? stage,
+    int? flowVersion,
+  }) {
+    final terminal = switch (status) {
+      'Cancelled' || 'Expired' || 'Disputed' => true,
+      _ => false,
+    };
+    final isV1 = flowVersion != null && flowVersion < 2 && stage == null;
+    if (isV1) {
+      return JobStepperFlow(
+        titles: v1Titles,
+        subtitles: v1Subtitles,
+        totalSteps: 4,
+        activeIndex: switch (status) {
+          'Requested' || 'AwaitingPayment' || 'PaymentReview' => 0,
+          'Booked' => 1,
+          'InProgress' || 'AwaitingConfirmation' => 2,
+          'Completed' => 3,
+          'Cancelled' => 1,
+          'Expired' => 0,
+          'Disputed' => 2,
+          _ => 0,
+        },
+        isTerminal: terminal,
+      );
+    }
+    // v2 flow: stage drives the index when present, status otherwise.
+    final active = (stage != null && stage >= 0 && stage <= 5)
+        ? stage
+        : switch (status) {
+            'Requested' => 0,
+            'Booked' => 1,
+            'InProgress' => 2,
+            'AwaitingConfirmation' => 3,
+            'AwaitingPayment' || 'PaymentReview' => 4,
+            'Completed' => 5,
+            'Cancelled' => 1,
+            'Expired' => 0,
+            'Disputed' => 2,
+            _ => 0,
+          };
+    return JobStepperFlow(
+      titles: v2Titles,
+      subtitles: v2Subtitles,
+      totalSteps: 6,
+      activeIndex: active.clamp(0, 5),
+      isTerminal: terminal,
+    );
+  }
+
+  /// "Step X of N" caption used by the compact progress bar.
+  String get stepCaption =>
+      'Step ${activeIndex + 1} of $totalSteps';
 }

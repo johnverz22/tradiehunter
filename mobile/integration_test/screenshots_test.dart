@@ -41,7 +41,7 @@ const _matchJobId = String.fromEnvironment('SHOT_MATCH_JOB', defaultValue: '64')
 const _offerJobId = String.fromEnvironment('SHOT_OFFER_JOB', defaultValue: '64');
 
 /// A job in `AwaitingPayment` matched to the tradie persona — feeds the
-/// match-result, payment, payment-status and dispute shots.
+/// payment, payment-status and dispute shots.
 const _paymentJobId =
     String.fromEnvironment('SHOT_PAYMENT_JOB', defaultValue: '64');
 
@@ -171,8 +171,10 @@ void main() {
         await _go(tester, '/jobs/$_matchJobId/matching',
             'homeowner/07_matching',
             settle: const Duration(seconds: 6));
-        await _go(tester, '/jobs/$_paymentJobId/match',
-            'homeowner/08_match_result');
+        // v1.7 (P12-06): the match-result screen is retired — the
+        // Choose-a-Tradie list is its homeowner-facing successor.
+        await _go(tester, '/jobs/$_matchJobId/tradies',
+            'homeowner/08_choose_tradie');
         await _go(tester, '/jobs/$_inProgressJobId/detail',
             'homeowner/09_job_detail_inprogress');
         // push (not go) between same-pattern routes — go_router reuses the

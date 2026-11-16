@@ -67,3 +67,29 @@ test.describe('P4 — Payment Queue', () => {
   });
 
 });
+
+// P12-16 — v1.7 rewires payments to the end of the flow: rows are finished work,
+// verifying completes the job, and an overdue view lists past-due payments.
+test.describe('P12-16 — Overdue payments view', () => {
+
+  test('overdue page loads and renders rows or the empty state', async ({ page }) => {
+    await page.goto('/payments/overdue');
+    await expect(page.locator('h1').first()).toHaveText(/overdue/i, { timeout: 10_000 });
+
+    // Either overdue rows or the defensive empty state — never a crash screen.
+    const rows = page.locator('table tbody tr');
+    const hasRows = await rows.first().waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
+    if (!hasRows) {
+      await expect(page.locator('body')).toContainText(/no overdue payments|isn't available/i);
+    }
+  });
+
+  test('payment queue links to the overdue view', async ({ page }) => {
+    await page.goto('/payments');
+    const link = page.getByRole('link', { name: /overdue payments/i }).first();
+    await link.waitFor({ state: 'visible', timeout: 10_000 });
+    await link.click();
+    await expect(page.locator('h1').first()).toHaveText(/overdue/i);
+  });
+
+});

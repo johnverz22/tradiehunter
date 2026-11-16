@@ -340,9 +340,25 @@ export interface PendingPayment {
   reUploadCount: number;
   /** Private-container SAS URL for the receipt image; expires 15 minutes after load. */
   receiptUrl: string;
+  // ── v1.7 (P12-16): payments now relate to finished work. Optional so older
+  // payloads (pre-flag backend, in-flight legacy jobs) still render. ──
+  /** Homeowner-approved total: labour + approved adjustments. */
+  finalAmount?: number;
+  /** Labour component of the final amount, from the tradie's rate snapshot. */
+  labourAmount?: number;
+  /** Sum of approved price adjustments (materials, extra work, travel). */
+  adjustmentsTotal?: number;
+  /** Original estimate the final amount can be compared against. */
+  estimatedTotal?: number;
+  /** When the tradie marked the work done — shown as "work completed on <date>". */
+  completionSubmittedAtUtc?: string;
 }
 
-/** Shape returned by verify/reject — the homeowner's view of the payment afterwards. */
+/**
+ * Shape returned by verify/reject — the homeowner's view of the payment afterwards.
+ * v1.7: a successful verify leaves the job `Completed` (payment is the last step)
+ * and a pending payout created; reject sends the job back to AwaitingPayment.
+ */
 export interface PaymentResult {
   paymentId: number;
   jobId: number;
@@ -376,6 +392,68 @@ export interface RejectPaymentBody {
 
 export const rejectPayment = (id: number, body: RejectPaymentBody): Promise<PaymentResult> =>
   api.post(`/admin/payments/${id}/reject`, body).then((r) => r.data);
+
+// ── Overdue payments (v1.7 / P12-16) ─────────────────────────────────────────
+
+/**
+ * A job still in AwaitingPayment past its PaymentDueAtUtc. Work is already done
+ * (payment is the last step in v1.7), so staff follow up with the homeowner
+ * rather than cancel — the tradie's payout waits on this payment.
+ */
+export interface OverduePayment {
+  jobId: number;
+  jobTitle?: string;
+  homeownerName?: string;
+  homeownerEmail?: string;
+  amount?: number;
+  currency?: string;
+  /** When the payment window closed — "overdue by" is measured from here. */
+  paymentDueAtUtc?: string;
+  /** Server-computed day count, when provided. Falls back to client maths. */
+  daysOverdue?: number;
+  /** When the tradie marked the work done, if job info is included. */
+  completionSubmittedAtUtc?: string;
+  /** The related payment row, when the job has one already. */
+  paymentId?: number;
+}
+
+export interface OverduePaymentsParams {
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * GET /admin/payments/overdue — jobs in AwaitingPayment past their due date.
+ * Normalises both a paged result and a bare array so the view stays renderable
+ * whatever shape the backend ships, and degrades to an empty page (never a
+ * crash) when the response has no rows or unexpected fields.
+ */
+export const fetchOverduePayments = async (
+  params: OverduePaymentsParams = {},
+): Promise<PagedResult<OverduePayment>> => {
+  const data: unknown = await api
+    .get('/admin/payments/overdue', { params })
+    .then((r) => r.data);
+
+  if (Array.isArray(data)) {
+    return {
+      items: data as OverduePayment[],
+      totalCount: data.length,
+      page: 1,
+      pageSize: data.length || 1,
+      totalPages: 1,
+    };
+  }
+
+  const paged = (data ?? {}) as Partial<PagedResult<OverduePayment>>;
+  return {
+    items: Array.isArray(paged.items) ? paged.items : [],
+    totalCount: paged.totalCount ?? 0,
+    page: paged.page ?? 1,
+    pageSize: paged.pageSize ?? 1,
+    totalPages: paged.totalPages ?? 1,
+  };
+};
 
 // ── Audit log (P8-07) ─────────────────────────────────────────────────────────
 

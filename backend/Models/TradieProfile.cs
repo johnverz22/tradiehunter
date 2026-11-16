@@ -53,4 +53,12 @@ public class TradieProfile
 
     /// <summary>Running total of tradie-initiated cancellations (P6-02). Used to flag repeated cancellers.</summary>
     public int CancellationCount { get; set; } = 0;
+
+    /// <summary>
+    /// v1.7 (P12-05/D8): GST registration flag. Drives consumer-price labelling —
+    /// registered tradies' listed rates are GST-inclusive ("Incl. GST");
+    /// unregistered tradies legally cannot charge GST ("No GST charged").
+    /// NZ businesses under $60k turnover need not register (NZ Fair Trading Act).
+    /// </summary>
+    public bool IsGstRegistered { get; set; } = false;
 }

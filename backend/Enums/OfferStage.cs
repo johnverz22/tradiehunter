@@ -10,5 +10,8 @@ public enum OfferStage
     Auto,
 
     /// <summary>Expanded-radius phase after the Auto list was exhausted.</summary>
-    Broadened
+    Broadened,
+
+    /// <summary>v1.7 (P12-08): the homeowner picked this tradie by name on the Choose-a-Tradie screen.</summary>
+    Direct
 }

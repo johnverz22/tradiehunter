@@ -187,6 +187,122 @@ public class MatchingService : IMatchingService
             .ToList();
     }
 
+    // ── P12-05: Choose-a-Tradie list ─────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<List<TradieListDto>> GetTradieListForJobAsync(
+        Job job, TradieListQuery query)
+    {
+        if (job.Location == null)
+            return new List<TradieListDto>();
+
+        var jobLocation  = job.Location;
+        var radiusMetres = _radiusKm * MetresPerKm;
+        var categoryString = job.Category.ToString();
+        var searchArea   = Geo.SearchArea(jobLocation, radiusMetres);
+
+        var service = await _context.Services.FindAsync(job.ServiceId);
+
+        // P8-02: never surface a tradie on either side of a block.
+        var excluded = await GetBlockedTradieIdsAsync(job.HomeownerId);
+
+        // P10-08 licence gating still applies to the browse list.
+        var inBoxQuery = _context.TradieRates
+            .Include(rate => rate.TradieProfile).ThenInclude(profile => profile.User)
+            .Where(rate => rate.ServiceId == job.ServiceId
+                && rate.TradieProfile.IsAvailable
+                && rate.TradieProfile.IsVerified
+                && rate.TradieProfile.Location != null
+                && rate.TradieProfile.TradeType.ToLower() == categoryString.ToLower()
+                && !excluded.Contains(rate.TradieProfile.UserId)
+                && rate.TradieProfile.Location.Intersects(searchArea));
+
+        if (service != null && service.RequiresLicence)
+        {
+            inBoxQuery = inBoxQuery.Where(rate =>
+                _context.TradieCredentials.Any(c =>
+                    c.TradieProfileId == rate.TradieProfileId &&
+                    c.Status == CredentialStatus.Approved &&
+                    c.Type == CredentialType.License));
+        }
+
+        // Optional client-side filters (P12-05).
+        if (query.Verified == true)  inBoxQuery = inBoxQuery.Where(r => r.TradieProfile.IsVerified);
+        if (query.Insured == true)   inBoxQuery = inBoxQuery.Where(r => r.TradieProfile.HasInsurance);
+        if (query.AvailableNow == true) inBoxQuery = inBoxQuery.Where(r => r.TradieProfile.IsAvailable);
+
+        var inBox = await inBoxQuery.ToListAsync();
+
+        var candidates = inBox
+            .Where(r => Geo.HaversineMetres(r.TradieProfile.Location!, jobLocation) <= radiusMetres)
+            .ToList();
+
+        if (candidates.Count == 0)
+            return new List<TradieListDto>();
+
+        var tradieIds   = candidates.Select(r => r.TradieProfile.UserId).ToList();
+        var ratingLookup = await GetRatingLookupAsync(tradieIds);
+
+        // Completed-jobs count per tradie (P12-05 row data).
+        var completedCounts = await _context.Jobs
+            .Where(j => j.Status == JobStatus.Completed && j.MatchedTradieId != null
+                        && tradieIds.Contains(j.MatchedTradieId))
+            .GroupBy(j => j.MatchedTradieId!)
+            .Select(g => new { TradieId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.TradieId, x => x.Count);
+
+        // v1.7 (P12-03): reuse the null-safe scoring — flexible jobs redistribute
+        // the schedule weight to distance/rating instead of scoring 0.
+        var ranked = await RankTradiesAsync(job, broadened: false);
+        var scoreById = ranked.ToDictionary(r => r.TradieId, r => r.Score);
+
+        var rows = candidates.Select(rate =>
+        {
+            var t        = rate.TradieProfile;
+            var distanceM  = Geo.HaversineMetres(t.Location!, jobLocation);
+            var distanceKm = distanceM / MetresPerKm;
+
+            ratingLookup.TryGetValue(t.UserId, out var stats);
+            var hasStats = ratingLookup.ContainsKey(t.UserId);
+
+            scoreById.TryGetValue(t.UserId, out var score);
+            if (score == 0) score = rate.HourlyRate == 0 ? 0 : 0.5; // sane fallback for unrated tradies
+
+            return new TradieListDto
+            {
+                TradieId       = t.UserId,
+                Name           = $"{t.User.FirstName} {t.User.LastName}".Trim(),
+                BusinessName   = t.BusinessName,
+                Initials       = GetInitials(t.User.FirstName, t.User.LastName),
+                Verified       = t.IsVerified,
+                Insured        = t.HasInsurance,
+                Available      = t.IsAvailable,
+                Rating         = hasStats ? Math.Round(stats.AvgRating, 1) : 0,
+                ReviewCount    = hasStats ? stats.ReviewCount : 0,
+                CompletedJobs  = completedCounts.TryGetValue(t.UserId, out var c) ? c : 0,
+                DistanceKm     = Math.Round(distanceKm, 1),
+                Distance       = $"{distanceKm:F1} km away",
+                HourlyRate     = rate.HourlyRate,
+                // D8: the listed rate is the final consumer price; the flag
+                // drives "Incl. GST" vs "No GST charged" on the client.
+                IsGstRegistered = t.IsGstRegistered,
+                Score          = score,
+                Bio            = t.Bio,
+            };
+        });
+
+        // Server owns ranking (P12-05): "best" = the existing composite score.
+        rows = (query.Sort?.Trim().ToLowerInvariant()) switch
+        {
+            "rating"   => rows.OrderByDescending(r => r.Rating).ThenByDescending(r => r.ReviewCount),
+            "distance" => rows.OrderBy(r => r.DistanceKm),
+            "rate"     => rows.OrderBy(r => r.HourlyRate),
+            _          => rows.OrderByDescending(r => r.Score),
+        };
+
+        return rows.ToList();
+    }
+
     // ── P3-02: Ranking algorithm ──────────────────────────────────────────────
 
     /// <inheritdoc/>
@@ -242,12 +358,30 @@ public class MatchingService : IMatchingService
         var ratingLookup = await GetRatingLookupAsync(tradieIds);
 
         // Fetch schedules for all candidates in one round-trip.
-        var scheduledWeekday = (int)job.ScheduledStartUtc.DayOfWeek; // 0=Sunday … 6=Saturday
-        var scheduledTradieIds = await _context.TradieSchedules
-            .Where(s => tradieIds.Contains(s.TradieProfile.UserId) && s.Weekday == scheduledWeekday)
-            .Select(s => s.TradieProfile.UserId)
-            .ToListAsync();
-        var scheduledSet = scheduledTradieIds.ToHashSet();
+        // v1.7 (P12-03): when the job has no schedule (flexible timing) the
+        // schedule weight is redistributed to distance/rating instead of every
+        // candidate silently scoring 0 on a component they can never satisfy.
+        double wDistance = WeightDistance, wRating = WeightRating, wSchedule = WeightSchedule;
+        int? scheduledWeekday = null;
+        HashSet<string> scheduledSet = new();
+
+        if (job.ScheduledStartUtc.HasValue)
+        {
+            scheduledWeekday = (int)job.ScheduledStartUtc.Value.DayOfWeek; // 0=Sunday … 6=Saturday
+            var scheduledTradieIds = await _context.TradieSchedules
+                .Where(s => tradieIds.Contains(s.TradieProfile.UserId) && s.Weekday == scheduledWeekday.Value)
+                .Select(s => s.TradieProfile.UserId)
+                .ToListAsync();
+            scheduledSet = scheduledTradieIds.ToHashSet();
+        }
+        else
+        {
+            // No schedule → redistribute the schedule weight proportionally.
+            var redistribute = WeightSchedule;
+            wDistance += redistribute * (WeightDistance / (WeightDistance + WeightRating));
+            wRating   += redistribute * (WeightRating   / (WeightDistance + WeightRating));
+            wSchedule  = 0.0;
+        }
 
         // Max distance in metres within the searched radius (for normalisation).
         double maxDistM  = radiusMetres;
@@ -266,9 +400,9 @@ public class MatchingService : IMatchingService
             var normDist = maxDistM > 0 ? distM / maxDistM : 0;
             var normRat  = maxRating > 0 ? rating / maxRating : 0;
 
-            var score = WeightDistance * (1.0 - normDist)
-                      + WeightRating   * normRat
-                      + WeightSchedule * scheduleBonus;
+            var score = wDistance * (1.0 - normDist)
+                      + wRating   * normRat
+                      + wSchedule * scheduleBonus;
 
             return new RankedTradieDto
             {
@@ -313,23 +447,31 @@ public class MatchingService : IMatchingService
 
         // --- Auto stage first ---
         var autoRanked = await RankTradiesAsync(job, broadened: false);
-        var autoNext   = autoRanked.FirstOrDefault(r => !alreadyOfferedIds.Contains(r.TradieId));
+        var rateLookup = await GetRateLookupAsync(job.ServiceId, autoRanked.Select(r => r.TradieId));
+        var autoNext   = autoRanked.FirstOrDefault(r =>
+            !alreadyOfferedIds.Contains(r.TradieId) && rateLookup.ContainsKey(r.TradieId));
 
         if (autoNext != null)
         {
-            await CreateAndDispatchOfferAsync(job, autoNext, OfferStage.Auto, alreadyOfferedIds.Count + 1);
+            await CreateAndDispatchOfferAsync(job, autoNext, OfferStage.Auto, alreadyOfferedIds.Count + 1,
+                rateLookup[autoNext.TradieId]);
             return;
         }
 
         // --- Auto list exhausted → Broadened stage (P3-05) ---
         var broadRanked = await RankTradiesAsync(job, broadened: true);
-        var broadNext   = broadRanked.FirstOrDefault(r => !alreadyOfferedIds.Contains(r.TradieId));
+        var broadRateLookup = await GetRateLookupAsync(job.ServiceId,
+            broadRanked.Where(r => !rateLookup.ContainsKey(r.TradieId)).Select(r => r.TradieId));
+        foreach (var kv in broadRateLookup) rateLookup[kv.Key] = kv.Value;
+        var broadNext   = broadRanked.FirstOrDefault(r =>
+            !alreadyOfferedIds.Contains(r.TradieId) && rateLookup.ContainsKey(r.TradieId));
 
         if (broadNext != null)
         {
             _logger.LogInformation(
                 "SendNextOfferAsync: job {JobId} Auto list exhausted → Broadened stage.", jobId);
-            await CreateAndDispatchOfferAsync(job, broadNext, OfferStage.Broadened, alreadyOfferedIds.Count + 1);
+            await CreateAndDispatchOfferAsync(job, broadNext, OfferStage.Broadened, alreadyOfferedIds.Count + 1,
+                rateLookup[broadNext.TradieId]);
             return;
         }
 
@@ -356,7 +498,8 @@ public class MatchingService : IMatchingService
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task CreateAndDispatchOfferAsync(
-        Job job, RankedTradieDto tradie, OfferStage stage, int offerIndex)
+        Job job, RankedTradieDto tradie, OfferStage stage, int offerIndex,
+        decimal hourlyRateSnapshot)
     {
         var now     = DateTime.UtcNow;
         var expires = now.AddMinutes(_offerWindowMinutes);
@@ -369,6 +512,10 @@ public class MatchingService : IMatchingService
             ExpiresAtUtc = expires,
             Response     = OfferResponse.Pending,
             Stage        = stage,
+            // v1.7 (P12-08): snapshot the tradie's rate for this service at
+            // request time. On accept the value becomes the job's rate.
+            HourlyRateSnapshot = hourlyRateSnapshot,
+            Kind         = OfferKind.Instant,
         };
         _context.JobOffers.Add(offer);
         await _context.SaveChangesAsync(); // flush to get offer.Id
@@ -449,6 +596,24 @@ public class MatchingService : IMatchingService
         return groups.ToDictionary(
             g => g.UserId,
             g => (g.AvgRating, g.ReviewCount));
+    }
+
+    /// <summary>
+    /// v1.7 (P12-05): each tradie's hourly rate for the given service. Only
+    /// tradies WITH a rate for the job's service can receive an offer — the
+    /// homeowner must see a real price before asking someone to accept.
+    /// </summary>
+    private async Task<Dictionary<string, decimal>> GetRateLookupAsync(int serviceId, IEnumerable<string> tradieIds)
+    {
+        var ids = tradieIds.ToList();
+        if (ids.Count == 0) return new Dictionary<string, decimal>();
+
+        var rates = await _context.TradieRates
+            .Where(r => r.ServiceId == serviceId && ids.Contains(r.TradieProfile.UserId))
+            .Select(r => new { r.TradieProfile.UserId, r.HourlyRate })
+            .ToListAsync();
+
+        return rates.ToDictionary(r => r.UserId, r => r.HourlyRate);
     }
 
     private static string GetInitials(string first, string last)

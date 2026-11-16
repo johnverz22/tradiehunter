@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, Receipt, Wallet } from 'lucide-react';
+import { AlarmClock, CheckCircle, Receipt, Wallet } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
 import { Banner } from '../../../components/Banner';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
+import { formatDate } from '../../../utils/format';
 import { usePaymentQueue, usePaymentReview } from '../hooks/usePayments';
 import { PaymentReviewModal, type PaymentActionKind } from '../components/PaymentReviewModal';
 import type { PendingPayment } from '../../../services/adminApi';
@@ -29,7 +30,7 @@ const submittedAgo = (iso?: string) => {
   return hours < 24 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`;
 };
 
-/** P10-27 SLA thresholds — past these a homeowner is still waiting on a booking. */
+/** P10-27 SLA thresholds — past these a tradie is still waiting on their payout. */
 const WARN_MINUTES = 15;
 const URGENT_MINUTES = 30;
 
@@ -129,7 +130,7 @@ function describeReviewError(error: unknown): string {
 function actionSummary(kind: PaymentActionKind, payment: PendingPayment): string {
   const amount = money(payment.amount, payment.currency);
   return kind === 'verify'
-    ? `Verified ${amount} for "${payment.jobTitle}". The tradie is now booked and the homeowner has been notified.`
+    ? `Verified ${amount} for "${payment.jobTitle}". The job is now completed and the tradie's payout is queued. The homeowner has been notified.`
     : `Rejected the ${amount} receipt for "${payment.jobTitle}". The homeowner can re-upload before the deadline.`;
 }
 
@@ -199,6 +200,12 @@ export const PaymentQueue: React.FC = () => {
           <Link to={`/jobs/${payment.jobId}`} className="cell-link">
             {payment.jobTitle}
           </Link>
+          {/* v1.7: rows are finished work — the completion date is the key context. */}
+          {payment.completionSubmittedAtUtc && (
+            <span className="block text-xs cell-muted">
+              Work completed on {formatDate(payment.completionSubmittedAtUtc)}
+            </span>
+          )}
           {payment.reUploadCount > 0 && (
             <span className="block text-xs text-[var(--amber-dark)]">
               {payment.reUploadCount} send-back{payment.reUploadCount === 1 ? '' : 's'}
@@ -222,9 +229,31 @@ export const PaymentQueue: React.FC = () => {
       key: 'amount',
       header: 'Amount',
       priority: 'secondary',
-      cell: (payment) => (
-        <span className="font-mono">{money(payment.amount, payment.currency)}</span>
-      ),
+      cell: (payment) => {
+        const currency = payment.currency || 'NZD';
+        const hasBreakdown = payment.labourAmount != null || payment.adjustmentsTotal != null;
+        if (!hasBreakdown) {
+          return <span className="font-mono">{money(payment.amount, currency)}</span>;
+        }
+        // v1.7 itemised row: labour + approved adjustments = the final total.
+        // Show only the parts the payload actually carries — never invented ones.
+        const parts: string[] = [];
+        if (payment.labourAmount != null) {
+          parts.push(`${money(payment.labourAmount, currency)} labour`);
+        }
+        if (payment.adjustmentsTotal) {
+          parts.push(`${money(payment.adjustmentsTotal, currency)} adjustments`);
+        }
+        if (parts.length === 0) parts.push('no adjustments');
+        return (
+          <div>
+            <span className="font-mono font-semibold">
+              {money(payment.finalAmount ?? payment.amount, currency)}
+            </span>
+            <span className="block text-xs cell-muted font-mono">{parts.join(' + ')}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'reference',
@@ -278,7 +307,7 @@ export const PaymentQueue: React.FC = () => {
       {/* Header */}
       <PageHeader
         title="Payment Queue"
-        description="Manual bank transfers uploaded by homeowners. Check the amount and reference against the bank statement, then verify to book the tradie or reject to ask for a corrected receipt."
+        description="Manual bank transfers for finished work, uploaded by homeowners. Check the amount and reference against the bank statement, then verify to complete the job and queue the tradie's payout, or reject to ask for a corrected receipt."
         meta={
           data && (
             <>
@@ -302,6 +331,10 @@ export const PaymentQueue: React.FC = () => {
                   <strong>{urgentCount}</strong> waiting over {URGENT_MINUTES}m
                 </div>
               )}
+              <Link to="/payments/overdue" className="stat-pill action-link">
+                <AlarmClock size={13} aria-hidden="true" />
+                Overdue payments
+              </Link>
             </>
           )
         }
@@ -310,8 +343,9 @@ export const PaymentQueue: React.FC = () => {
       {urgentCount > 0 && (
         <Banner variant="warn">
           {urgentCount} payment{urgentCount === 1 ? '' : 's'} on this page{' '}
-          {urgentCount === 1 ? 'has' : 'have'} been waiting over {URGENT_MINUTES} minutes — a
-          tradie can't be booked until {urgentCount === 1 ? 'it is' : 'they are'} checked.
+          {urgentCount === 1 ? 'has' : 'have'} been waiting over {URGENT_MINUTES} minutes — the
+          job can't be completed and the tradie can't be paid until{' '}
+          {urgentCount === 1 ? 'it is' : 'they are'} checked.
         </Banner>
       )}
 
@@ -382,7 +416,8 @@ export const PaymentQueue: React.FC = () => {
       <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
         <Receipt size={12} aria-hidden="true" />
         Receipt images are served from a private container; links expire 15 minutes after the queue was
-        loaded. Verifying books the tradie and cannot be undone from this screen.
+        loaded. Verifying completes the job and queues the tradie's payout — it cannot be undone from
+        this screen.
       </p>
 
       {/* Verify / reject with the receipt on screen */}

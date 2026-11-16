@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../models/marketplace.dart';
 import '../../theme/design_tokens.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/address_viewmodel.dart';
@@ -17,14 +17,23 @@ import '../../widgets/fixo_cards.dart';
 import '../../widgets/fixo_states.dart';
 import '../../feedback/fixo_notice.dart';
 
-/// Post a job screen: category/service picker, address resolution,
-/// description, photo upload, date picker, urgency segmented control,
-/// hourly rate selection, live estimate card, and sticky Post Job action.
-/// Wired to [PostJobNotifier] (M2-07). Photos are uploaded to
-/// POST /api/jobs/:id/photos after job creation.
+/// Post a job screen (v1.7 P12-04 / P12-21 / P12-22).
 ///
-/// Role-guarded: tradies are redirected to /tradie — only homeowners
-/// can post jobs.
+/// A segmented control at the top switches between **Quick job (hourly)** and
+/// **Project**; every shared section (service, address, description, photos,
+/// timing, urgency, optional estimated hours) is identical for both types and
+/// switching never loses input. Project-only extras (budget range, materials
+/// responsibility, site-visit welcome, scope notes) are optional.
+///
+/// No tradie or rate picking happens here (v1.7) — after a successful create
+/// the homeowner lands on the Choose-a-Tradie screen (`/jobs/:id/tradies`)
+/// where rates are shown per tradie with their GST label (D8). The
+/// `hourlyRate` wire field is never sent; rates are snapshotted server-side
+/// when a tradie accepts (contract #1).
+///
+/// Wired to [PostJobNotifier]. Photos are uploaded to
+/// POST /api/jobs/:id/photos after job creation. Role-guarded: tradies are
+/// redirected to /tradie — only homeowners can post jobs.
 class PostJobScreen extends ConsumerWidget {
   const PostJobScreen({super.key});
 
@@ -59,6 +68,22 @@ class PostJobScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Job type segmented control (P12-22) ──────────────────────
+                  _JobTypeSegmentedControl(
+                    selected: vm.jobType,
+                    onSelected: notifier.setJobType,
+                  ),
+                  const SizedBox(height: Space.s2),
+                  Text(
+                    vm.isProject
+                        ? 'Project = tradies send you a quote'
+                        : 'Quick job = hourly rate, pay when done',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: Space.s6),
+
                   // ── Service ────────────────────────────────────────────────────
                   const _Section(title: 'What do you need?'),
                   DropdownButtonFormField<int>(
@@ -160,74 +185,15 @@ class PostJobScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: Space.s6),
 
-                  // ── When & Urgency ─────────────────────────────────────────────
+                  // ── Timing (v1.7: Flexible | ASAP | date | range) ─────────────
                   const _Section(title: 'When do you need help?'),
-                  InkWell(
-                    key: const Key('scheduled_start_field'),
-                    onTap: () => _pickScheduledStart(context, ref),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minHeight: DesignTokens.heightInput,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.radiusInput,
-                        ),
-                        border: Border.all(
-                          color: DesignTokens.borderControl(
-                            theme.brightness == Brightness.dark,
-                          ),
-                          width: DesignTokens.borderWidthFor(
-                            theme.brightness == Brightness.dark,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_month_outlined,
-                            size: 20,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: Space.s3),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Scheduled start',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontSize: DesignTokens.fontSizeCaption,
-                                  ),
-                                ),
-                                const SizedBox(height: Space.s0_5),
-                                Text(
-                                  vm.scheduledStartLocal == null
-                                      ? 'Choose a start date and time'
-                                      : '${MaterialLocalizations.of(context).formatFullDate(vm.scheduledStartLocal!)} · '
-                                          '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(vm.scheduledStartLocal!))}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: vm.scheduledStartLocal == null
-                                      ? theme.textTheme.bodyMedium?.copyWith(
-                                          color: theme.hintColor,
-                                        )
-                                      : theme.textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
+                  _TimingSelector(
+                    selected: vm.timingPreference,
+                    onSelected: notifier.setTimingPreference,
+                    onStartPicked: notifier.setScheduledStartLocal,
+                    onEndPicked: notifier.setScheduledEndLocal,
+                    start: vm.scheduledStartLocal,
+                    end: vm.scheduledEndLocal,
                   ),
                   const SizedBox(height: Space.s4),
                   const _Section(title: 'Urgency'),
@@ -237,66 +203,107 @@ class PostJobScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: Space.s6),
 
-                  // ── Hours and hourly rate ──────────────────────────────────────
-                  const _Section(title: 'Hours and hourly rate'),
+                  // ── Optional estimated hours ──────────────────────────────────
+                  const _Section(title: 'Hours (optional)'),
                   TextFormField(
                     key: const Key('hours_field'),
-                    initialValue: vm.hours.toString(),
-                    keyboardType: TextInputType.number,
+                    initialValue:
+                        vm.estimatedHours == null
+                            ? ''
+                            : _formatHours(vm.estimatedHours!),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Estimated hours',
+                      helperText:
+                          'Skip if unsure — total is confirmed when the job is done.',
+                      helperMaxLines: 2,
                     ),
-                    onChanged: notifier.setHours,
+                    onChanged: notifier.setEstimatedHours,
                   ),
-                  const SizedBox(height: Space.s3),
-                  if (vm.isLoadingRates)
-                    const LinearProgressIndicator(
-                      semanticsLabel: 'Finding nearby rates',
-                    )
-                  else if (vm.rateOptions.isEmpty) ...[
-                    Text(
-                      vm.resolvedAddress == null
-                          ? 'Select an address to see nearby rates.'
-                          : 'No available rates loaded for this service and location.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (vm.resolvedAddress != null && vm.selectedService != null) ...[
-                      const SizedBox(height: Space.s2_5),
-                      FixoTonalButton(
-                        label: 'Search nearby rates',
-                        icon: Icons.search,
-                        onPressed: notifier.searchRates,
-                      ),
-                    ],
-                  ] else ...[
-                    ...vm.rateOptions.map(
-                      (rate) => CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        title: Text(
-                          '\$${rate.hourlyRate.toStringAsFixed(2)} / hour',
-                        ),
-                        subtitle: Text(
-                          '${rate.businessName ?? rate.name} · ${rate.distanceKm.toStringAsFixed(1)} km away',
-                        ),
-                        value: vm.selectedRate?.tradieId == rate.tradieId,
-                        onChanged: (_) => notifier.selectRate(rate),
-                      ),
-                    ),
-                    const SizedBox(height: Space.s2),
-                    FixoTonalButton(
-                      label: 'Search nearby rates',
-                      icon: Icons.refresh,
-                      onPressed: notifier.searchRates,
-                    ),
-                  ],
                   const SizedBox(height: Space.s6),
 
-                  // ── Review your job (Live estimate card) ───────────────────────
+                  // ── Project-only extras (P12-22) ──────────────────────────────
+                  if (vm.isProject) ...[
+                    const _Section(title: 'Project details (optional)'),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            key: const Key('budget_min_field'),
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Budget min',
+                              prefixText: '\$',
+                            ),
+                            onChanged: notifier.setBudgetMin,
+                          ),
+                        ),
+                        const SizedBox(width: Space.s3),
+                        Expanded(
+                          child: TextFormField(
+                            key: const Key('budget_max_field'),
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Budget max',
+                              prefixText: '\$',
+                            ),
+                            onChanged: notifier.setBudgetMax,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Space.s4),
+                    Text(
+                      'Who buys the materials?',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FW.semibold),
+                    ),
+                    const SizedBox(height: Space.s2),
+                    Wrap(
+                      spacing: Space.s2,
+                      runSpacing: Space.s2,
+                      children: postJobMaterialsOptions
+                          .map(
+                            (option) => FixoFilterPill(
+                              label: option.$2,
+                              selected: vm.materialsBy == option.$1,
+                              onSelected: (_) =>
+                                  notifier.setMaterialsBy(option.$1),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: Space.s4),
+                    SwitchListTile(
+                      key: const Key('site_visit_switch'),
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Site visit welcome'),
+                      subtitle: const Text(
+                        'Tradies can ask to look at the job before quoting.',
+                      ),
+                      value: vm.siteVisitWelcome,
+                      onChanged: notifier.setSiteVisitWelcome,
+                    ),
+                    const SizedBox(height: Space.s2),
+                    TextField(
+                      key: const Key('scope_notes_field'),
+                      maxLines: 4,
+                      maxLength: 2000,
+                      buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
+                      decoration: const InputDecoration(
+                        labelText: 'Scope notes',
+                        hintText: 'What is in scope, what is not…',
+                      ),
+                      onChanged: notifier.setScopeNotes,
+                    ),
+                    const SizedBox(height: Space.s6),
+                  ],
+
+                  // ── Review your job ───────────────────────────────────────────
                   const _Section(title: 'Review your job'),
-                  _LiveEstimateCard(vm: vm),
+                  _ReviewCard(vm: vm),
 
                   // ── Error banner ────────────────────────────────────────────────
                   if (vm.error != null && !vm.error!.contains('description'))
@@ -354,14 +361,17 @@ class PostJobScreen extends ConsumerWidget {
     if (vm.description.trim().isEmpty) {
       return 'Add a description to post your job';
     }
-    if (vm.scheduledStartLocal == null) {
-      return 'Choose a start date and time to post your job';
+    if (vm.timingPreference == 'SpecificDate' &&
+        vm.scheduledStartLocal == null) {
+      return 'Pick a start date to post your job';
     }
-    if (vm.hours <= 0) {
-      return 'Enter estimated hours to post your job';
-    }
-    if (vm.selectedRate == null) {
-      return 'Choose an hourly rate to post your job';
+    if (vm.timingPreference == 'DateRange') {
+      if (vm.scheduledStartLocal == null) {
+        return 'Pick a start date to post your job';
+      }
+      if (vm.scheduledEndLocal == null) {
+        return 'Pick an end date to post your job';
+      }
     }
     return null;
   }
@@ -391,27 +401,6 @@ class PostJobScreen extends ConsumerWidget {
     notifier.addPhoto(file.path);
   }
 
-  Future<void> _pickScheduledStart(BuildContext context, WidgetRef ref) async {
-    final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-      initialDate: ref.read(postJobProvider).scheduledStartLocal ?? now,
-    );
-    if (date == null || !context.mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time == null) return;
-    ref
-        .read(postJobProvider.notifier)
-        .setScheduledStartLocal(
-          DateTime(date.year, date.month, date.day, time.hour, time.minute),
-        );
-  }
-
   Future<ImageSource?> _showSourceDialog(BuildContext context) async {
     return showModalBottomSheet<ImageSource>(
       context: context,
@@ -435,13 +424,21 @@ class PostJobScreen extends ConsumerWidget {
     );
   }
 
+  /// v1.7: a successful create lands on the Choose-a-Tradie screen — never
+  /// the auto-match screen (P12-04).
   Future<void> _submit(BuildContext context, WidgetRef ref) async {
     final jobId = await ref.read(postJobProvider.notifier).submit();
     if (jobId != null && context.mounted) {
-      context.push('/jobs/$jobId/matching');
+      context.push('/jobs/$jobId/tradies');
     }
   }
 }
+
+/// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
+String _formatHours(double hours) =>
+    hours == hours.roundToDouble()
+        ? hours.round().toString()
+        : hours.toString();
 
 /// Helper counter callback that hides the counter until current length is >= 80% of maxLength.
 InputCounterWidgetBuilder _hideCounterUntilThreshold({double threshold = 0.8}) {
@@ -459,6 +456,360 @@ InputCounterWidgetBuilder _hideCounterUntilThreshold({double threshold = 0.8}) {
       style: Theme.of(context).textTheme.bodySmall,
     );
   };
+}
+
+// ── Job type segmented control (P12-22) ──────────────────────────────────────
+
+class _JobTypeSegmentedControl extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  const _JobTypeSegmentedControl({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: Sizes.buttonSecondary,
+      decoration: BoxDecoration(
+        color: DesignTokens.surfaceTonal(isDark),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+        border: Border.all(color: DesignTokens.borderControl(isDark)),
+      ),
+      child: Row(
+        children: [
+          _segment(context, isDark, Job.jobTypeHourly, 'Quick job (hourly)'),
+          _segment(context, isDark, Job.jobTypeProject, 'Project'),
+        ],
+      ),
+    );
+  }
+
+  Widget _segment(
+    BuildContext context,
+    bool isDark,
+    String value,
+    String label,
+  ) {
+    final isSelected = value == selected;
+    return Expanded(
+      child: InkWell(
+        key: Key('job_type_$value'),
+        onTap: () => onSelected(value),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+        child: AnimatedContainer(
+          duration: FixoDurations.fast,
+          alignment: Alignment.center,
+          margin: const EdgeInsets.all(Space.s1),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? DesignTokens.brand700 : DesignTokens.brand900)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: DesignTokens.fontSizeSecondary,
+              fontWeight: isSelected ? FW.bold : FW.medium,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? DesignTokens.inkDark : DesignTokens.inkLight),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Timing selector (P12-04) ─────────────────────────────────────────────────
+
+class _TimingSelector extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onSelected;
+  final ValueChanged<DateTime> onStartPicked;
+  final ValueChanged<DateTime> onEndPicked;
+  final DateTime? start;
+  final DateTime? end;
+
+  const _TimingSelector({
+    required this.selected,
+    required this.onSelected,
+    required this.onStartPicked,
+    required this.onEndPicked,
+    required this.start,
+    required this.end,
+  });
+
+  Future<void> _pickStart(BuildContext context) async {
+    final picked = await _pickDateTime(context, initial: start);
+    if (picked != null) onStartPicked(picked);
+  }
+
+  Future<void> _pickEnd(BuildContext context) async {
+    final picked = await _pickDateTime(
+      context,
+      initial: end ?? start,
+    );
+    if (picked != null) onEndPicked(picked);
+  }
+
+  Future<DateTime?> _pickDateTime(
+    BuildContext context, {
+    DateTime? initial,
+  }) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      initialDate: initial ?? now,
+    );
+    if (date == null || !context.mounted) return null;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: initial != null
+          ? TimeOfDay.fromDateTime(initial)
+          : TimeOfDay.now(),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  String _format(DateTime value, BuildContext context) =>
+      '${MaterialLocalizations.of(context).formatFullDate(value)} · '
+      '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(value))}';
+
+  static String _helperFor(String wireValue) {
+    for (final option in postJobTimingOptions) {
+      if (option.$1 == wireValue) return option.$3;
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 360 ||
+                MediaQuery.textScalerOf(context)
+                        .scale(DesignTokens.fontSizeStatus) >
+                    15;
+            if (isNarrow) {
+              return Wrap(
+                spacing: Space.s2,
+                runSpacing: Space.s2,
+                children: postJobTimingOptions
+                    .map(
+                      (option) => FixoFilterPill(
+                        label: option.$2,
+                        selected: selected == option.$1,
+                        onSelected: (_) => onSelected(option.$1),
+                      ),
+                    )
+                    .toList(),
+              );
+            }
+            return Container(
+              height: Sizes.buttonSecondary,
+              decoration: BoxDecoration(
+                color: DesignTokens.surfaceTonal(isDark),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
+                border:
+                    Border.all(color: DesignTokens.borderControl(isDark)),
+              ),
+              child: Row(
+                children: postJobTimingOptions
+                    .map(
+                      (option) => Expanded(
+                        child: InkWell(
+                          onTap: () => onSelected(option.$1),
+                          borderRadius: BorderRadius.circular(
+                            DesignTokens.radiusControl,
+                          ),
+                          child: AnimatedContainer(
+                            duration: FixoDurations.fast,
+                            alignment: Alignment.center,
+                            margin: const EdgeInsets.all(Space.s1),
+                            decoration: BoxDecoration(
+                              color: selected == option.$1
+                                  ? (isDark
+                                      ? DesignTokens.brand700
+                                      : DesignTokens.brand900)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                DesignTokens.radiusControl,
+                              ),
+                            ),
+                            child: Text(
+                              option.$2,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: DesignTokens.fontSizeSecondary,
+                                fontWeight: selected == option.$1
+                                    ? FW.bold
+                                    : FW.medium,
+                                color: selected == option.$1
+                                    ? Colors.white
+                                    : (isDark
+                                        ? DesignTokens.inkDark
+                                        : DesignTokens.inkLight),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: Space.s2),
+        // Helper line mirrors the urgency control's explanatory copy.
+        Text(
+          _helperFor(selected),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (selected == 'SpecificDate') ...[
+          const SizedBox(height: Space.s3),
+          _DatePickRow(
+            key: const Key('scheduled_start_field'),
+            icon: Icons.event_outlined,
+            label: 'Start',
+            value: start == null
+                ? 'Choose a start date and time'
+                : _format(start!, context),
+            isPlaceholder: start == null,
+            onTap: () => _pickStart(context),
+          ),
+        ],
+        if (selected == 'DateRange') ...[
+          const SizedBox(height: Space.s3),
+          _DatePickRow(
+            key: const Key('scheduled_start_field'),
+            icon: Icons.event_outlined,
+            label: 'Start',
+            value: start == null
+                ? 'Choose a start date and time'
+                : _format(start!, context),
+            isPlaceholder: start == null,
+            onTap: () => _pickStart(context),
+          ),
+          const SizedBox(height: Space.s2),
+          _DatePickRow(
+            key: const Key('scheduled_end_field'),
+            icon: Icons.event_available_outlined,
+            label: 'End',
+            value: end == null
+                ? 'Choose an end date and time'
+                : _format(end!, context),
+            isPlaceholder: end == null,
+            onTap: () => _pickEnd(context),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Input-styled tappable row hosting a date/time picker value.
+class _DatePickRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isPlaceholder;
+  final VoidCallback onTap;
+
+  const _DatePickRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.isPlaceholder,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
+      child: Container(
+        constraints: const BoxConstraints(
+          minHeight: DesignTokens.heightInput,
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.s4,
+          vertical: Space.s2,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
+          border: Border.all(
+            color: DesignTokens.borderControl(isDark),
+            width: DesignTokens.borderWidthFor(isDark),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: Sizes.iconAction,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: Space.s3),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: DesignTokens.fontSizeCaption,
+                    ),
+                  ),
+                  const SizedBox(height: Space.s0_5),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: isPlaceholder
+                        ? theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.hintColor,
+                          )
+                        : theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_drop_down,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ── Urgency segmented control ────────────────────────────────────────────────
@@ -493,7 +844,7 @@ class _UrgencySegmentedControl extends StatelessWidget {
             final isNarrow = constraints.maxWidth < 360 ||
                 MediaQuery.textScalerOf(context).scale(13) > 15;
             if (isNarrow) {
-              return _buildGrid(context, isDark);
+              return _buildGrid(context);
             }
             return _buildBar(context, isDark);
           },
@@ -511,7 +862,7 @@ class _UrgencySegmentedControl extends StatelessWidget {
 
   Widget _buildBar(BuildContext context, bool isDark) {
     return Container(
-      height: 48,
+      height: Sizes.buttonSecondary,
       decoration: BoxDecoration(
         color: DesignTokens.surfaceTonal(isDark),
         borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
@@ -523,16 +874,17 @@ class _UrgencySegmentedControl extends StatelessWidget {
           return Expanded(
             child: InkWell(
               onTap: () => onSelected(u),
-              borderRadius: BorderRadius.circular(DesignTokens.radiusControl - 2),
+              borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
               child: AnimatedContainer(
                 duration: FixoDurations.fast,
                 alignment: Alignment.center,
-                margin: const EdgeInsets.all(Space.s0_5),
+                margin: const EdgeInsets.all(Space.s1),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (isDark ? DesignTokens.brand700 : DesignTokens.brand900)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusControl - 2),
+                  borderRadius:
+                      BorderRadius.circular(DesignTokens.radiusControl),
                 ),
                 child: Text(
                   u,
@@ -543,7 +895,9 @@ class _UrgencySegmentedControl extends StatelessWidget {
                     fontWeight: isSelected ? FW.bold : FW.medium,
                     color: isSelected
                         ? Colors.white
-                        : (isDark ? DesignTokens.inkDark : DesignTokens.inkLight),
+                        : (isDark
+                            ? DesignTokens.inkDark
+                            : DesignTokens.inkLight),
                   ),
                 ),
               ),
@@ -554,7 +908,7 @@ class _UrgencySegmentedControl extends StatelessWidget {
     );
   }
 
-  Widget _buildGrid(BuildContext context, bool isDark) {
+  Widget _buildGrid(BuildContext context) {
     return Wrap(
       spacing: Space.s2,
       runSpacing: Space.s2,
@@ -570,38 +924,17 @@ class _UrgencySegmentedControl extends StatelessWidget {
   }
 }
 
-// ── Live estimate card ───────────────────────────────────────────────────────
+// ── Review card (v1.7: no rate/estimate dependence) ──────────────────────────
 
-class _LiveEstimateCard extends StatelessWidget {
+class _ReviewCard extends StatelessWidget {
   final PostJobState vm;
 
-  const _LiveEstimateCard({required this.vm});
+  const _ReviewCard({required this.vm});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    final hasExactEstimate = vm.selectedRate != null && vm.hours > 0;
-    final hasRange = !hasExactEstimate && vm.rateOptions.isNotEmpty && vm.hours > 0;
-
-    String? estimateDisplay;
-    String? breakdownText;
-    if (hasExactEstimate) {
-      final total = (vm.selectedRate!.hourlyRate * Decimal.fromInt(vm.hours)).toStringAsFixed(2);
-      estimateDisplay = '\$$total';
-      breakdownText = '${vm.hours} ${vm.hours == 1 ? 'hour' : 'hours'} × \$${vm.selectedRate!.hourlyRate.toStringAsFixed(2)} / hour';
-    } else if (hasRange) {
-      final rates = vm.rateOptions.map((r) => r.hourlyRate).toList()..sort();
-      final minTotal = (rates.first * Decimal.fromInt(vm.hours)).toStringAsFixed(2);
-      final maxTotal = (rates.last * Decimal.fromInt(vm.hours)).toStringAsFixed(2);
-      if (minTotal == maxTotal) {
-        estimateDisplay = '\$$minTotal';
-      } else {
-        estimateDisplay = '\$$minTotal – \$$maxTotal';
-      }
-      breakdownText = '${vm.hours} ${vm.hours == 1 ? 'hour' : 'hours'} · estimated from ${rates.length} nearby rates';
-    }
 
     return FixoCard(
       padding: const EdgeInsets.all(Space.s4),
@@ -616,53 +949,32 @@ class _LiveEstimateCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Estimated labour',
+                      vm.isProject ? 'Project summary' : 'Quick job summary',
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FW.semibold,
                       ),
                     ),
                     const SizedBox(height: Space.s1),
-                    if (estimateDisplay != null) ...[
-                      Text(
-                        estimateDisplay,
-                        key: const Key('job_estimate'),
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FW.bold,
-                          color: isDark ? Colors.white : DesignTokens.brand900,
-                        ),
+                    Text(
+                      vm.isProject
+                          ? 'Tradies will send you quotes to compare.'
+                          : 'You agree the hourly rate, then pay when the job is done.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                      if (breakdownText != null) ...[
-                        const SizedBox(height: Space.s0_5),
-                        Text(
-                          breakdownText,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: Space.s1),
-                        child: Text(
-                          'Choose a rate to see your estimate',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
+                    ),
                   ],
                 ),
               ),
               Icon(
-                Icons.receipt_long_outlined,
+                vm.isProject ? Icons.request_quote_outlined : Icons.receipt_long_outlined,
                 color: DesignTokens.amber,
-                size: 28,
+                size: Sizes.iconLg,
               ),
             ],
           ),
-          const Divider(height: 24),
+          const Divider(height: Space.s6),
           _SummaryRow(
             icon: Icons.work_outline,
             label: 'Job',
@@ -681,13 +993,24 @@ class _LiveEstimateCard extends StatelessWidget {
             _SummaryRow(
               icon: Icons.calendar_today_outlined,
               label: 'When',
-              value: '${MaterialLocalizations.of(context).formatFullDate(vm.scheduledStartLocal!)} · '
+              value:
+                  '${MaterialLocalizations.of(context).formatFullDate(vm.scheduledStartLocal!)} · '
                   '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(vm.scheduledStartLocal!))}',
+            ),
+          ],
+          if (vm.isProject && (vm.budgetMin != null || vm.budgetMax != null)) ...[
+            const SizedBox(height: Space.s2),
+            _SummaryRow(
+              icon: Icons.savings_outlined,
+              label: 'Budget',
+              value: _budgetLabel(vm),
+              isPlaceholder: false,
             ),
           ],
           const SizedBox(height: Space.s3),
           Text(
-            'Materials are not included and are settled directly with the tradie. The server confirms the total when you post.',
+            'Materials are added in-app and need your approval. '
+            'The total is confirmed when the job is done.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: DesignTokens.fontSizeCaption,
@@ -696,6 +1019,15 @@ class _LiveEstimateCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _budgetLabel(PostJobState vm) {
+    final min = vm.budgetMin;
+    final max = vm.budgetMax;
+    if (min != null && max != null) return '\$$min – \$$max';
+    if (min != null) return 'From \$$min';
+    if (max != null) return 'Up to \$$max';
+    return 'Not set';
   }
 }
 
@@ -722,7 +1054,7 @@ class _SummaryRow extends StatelessWidget {
           padding: const EdgeInsets.only(top: Space.s0_5, right: Space.s2),
           child: Icon(
             icon,
-            size: 16,
+            size: Sizes.iconRating,
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
@@ -773,8 +1105,8 @@ class _PhotoGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: Space.s2,
+      runSpacing: Space.s2,
       children: [
         for (final path in paths)
           _PhotoThumbnail(path: path, onRemove: () => onRemove(path)),
@@ -782,8 +1114,8 @@ class _PhotoGrid extends StatelessWidget {
           GestureDetector(
             onTap: onAdd,
             child: Container(
-              width: 80,
-              height: 80,
+              width: Sizes.photoThumb,
+              height: Sizes.photoThumb,
               decoration: BoxDecoration(
                 border: Border.all(
                   style: BorderStyle.solid,
@@ -800,7 +1132,7 @@ class _PhotoGrid extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.add_a_photo_outlined,
-                        size: 24,
+                        size: Sizes.iconLg,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(height: Space.s1),
@@ -834,24 +1166,24 @@ class _PhotoThumbnail extends StatelessWidget {
     final image = _isAsset
         ? Image.asset(
             path,
-            width: 80,
-            height: 80,
+            width: Sizes.photoThumb,
+            height: Sizes.photoThumb,
             fit: BoxFit.cover,
             errorBuilder: (_, error, stackTrace) => Container(
-              width: 80,
-              height: 80,
+              width: Sizes.photoThumb,
+              height: Sizes.photoThumb,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const Icon(Icons.image_outlined),
             ),
           )
         : Image.file(
             File(path),
-            width: 80,
-            height: 80,
+            width: Sizes.photoThumb,
+            height: Sizes.photoThumb,
             fit: BoxFit.cover,
             errorBuilder: (_, error, stackTrace) => Container(
-              width: 80,
-              height: 80,
+              width: Sizes.photoThumb,
+              height: Sizes.photoThumb,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const Icon(Icons.image_outlined),
             ),
@@ -863,13 +1195,16 @@ class _PhotoThumbnail extends StatelessWidget {
           child: image,
         ),
         Positioned(
-          top: 2,
-          right: 2,
+          top: Space.s0_5,
+          right: Space.s0_5,
           child: IconButton.filledTonal(
             onPressed: onRemove,
             tooltip: 'Remove photo',
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            icon: const Icon(Icons.close, size: 20),
+            constraints: const BoxConstraints(
+              minWidth: Sizes.tapMin,
+              minHeight: Sizes.tapMin,
+            ),
+            icon: const Icon(Icons.close, size: Sizes.iconAction),
           ),
         ),
       ],
@@ -965,7 +1300,7 @@ class _AddressFieldState extends ConsumerState<_AddressField> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(address.address),
-            minVerticalPadding: 16,
+            minVerticalPadding: Space.s4,
             onTap: () {
               _userHasEdited = false;
               _controller.text = address.address;

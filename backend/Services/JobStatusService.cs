@@ -26,6 +26,7 @@ public class JobStatusService : IJobStatusService
     private readonly PushNotificationService _push;
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<PaymentOptions> _paymentOptions;
+    private readonly IOptions<JobFlowOptions> _jobFlowOptions;
     private readonly ILogger<JobStatusService> _logger;
     private readonly IAccountFlagService _accountFlagService;
     private readonly IServiceProvider _serviceProvider;
@@ -38,6 +39,7 @@ public class JobStatusService : IJobStatusService
         PushNotificationService push,
         IBackgroundJobClient hangfire,
         IOptions<PaymentOptions> paymentOptions,
+        IOptions<JobFlowOptions> jobFlowOptions,
         ILogger<JobStatusService> logger,
         IAccountFlagService accountFlagService,
         IServiceProvider serviceProvider,
@@ -49,6 +51,7 @@ public class JobStatusService : IJobStatusService
         _push = push;
         _hangfire = hangfire;
         _paymentOptions = paymentOptions;
+        _jobFlowOptions = jobFlowOptions;
         _logger = logger;
         _accountFlagService = accountFlagService;
         _serviceProvider = serviceProvider;
@@ -90,7 +93,7 @@ public class JobStatusService : IJobStatusService
         var from = job.Status;
 
         // Ensure transition is valid based on spec
-        ValidateTransition(from, newStatus, actorRole);
+        ValidateTransition(from, newStatus, actorRole, job.FlowVersion);
 
         // Apply transition
         job.Status = newStatus;
@@ -100,6 +103,9 @@ public class JobStatusService : IJobStatusService
         // clock. Stamp the deadline and arm the expiry job; PaymentExpiryJob
         // re-reads Job.PaymentDueAtUtc rather than trusting its own fire time, so
         // a rejection that pushes this edge re-baselines the window safely (P4-06).
+        // v2 (P12-12): the expiry job no longer cancels finished work — it
+        // switches to overdue reminders + account flag instead, so the same
+        // schedule stays armed on both flow versions.
         if (newStatus == JobStatus.AwaitingPayment)
         {
             job.PaymentDueAtUtc = DateTime.UtcNow.AddHours(PaymentWindowHours());
@@ -111,10 +117,20 @@ public class JobStatusService : IJobStatusService
             job.PaymentDueAtUtc = null;
         }
 
-        // P5-03: Schedule pre-job reminder when job becomes Booked
+        // P5-03: Schedule pre-job reminder when job becomes Booked. v1.7
+        // (P12-03): only when the job actually has a start time — flexible
+        // jobs have no schedule and get no reminder.
         if (newStatus == JobStatus.Booked)
         {
-            SchedulePreJobReminder(jobId, job.ScheduledStartUtc);
+            if (job.ScheduledStartUtc.HasValue)
+            {
+                SchedulePreJobReminder(jobId, job.ScheduledStartUtc.Value);
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Job {JobId} booked without a scheduled start (flexible) — no pre-job reminder.", jobId);
+            }
         }
         // P5-03: Cancel pre-job reminder when leaving Booked status
         else if (from == JobStatus.Booked && !string.IsNullOrEmpty(job.ReminderJobIds))
@@ -185,8 +201,15 @@ public class JobStatusService : IJobStatusService
         if (newStatus == JobStatus.Completed)
         {
             await SendReviewPromptAsync(job);
-            
-            // P10-04: Create payout when job is completed
+        }
+
+        // P10-04 / P12-13: create the payout when the job completes.
+        // v1: the old confirm path (AwaitingConfirmation → Completed by the
+        // homeowner). v2 (P12-13): the hook moved to the staff verify path
+        // (PaymentReview → Completed). Both are transitions to Completed, so a
+        // single hook covers them; FlowVersion only decides which edge is legal.
+        if (newStatus == JobStatus.Completed)
+        {
             using var scope = _serviceProvider.CreateScope();
             var payoutService = scope.ServiceProvider.GetRequiredService<FixoApi.Services.Payout.IPayoutService>();
             try
@@ -204,34 +227,14 @@ public class JobStatusService : IJobStatusService
         return MapToDto(job, isTradieActor);
     }
 
-    private void ValidateTransition(JobStatus from, JobStatus to, UserRole actorRole)
+    private void ValidateTransition(JobStatus from, JobStatus to, UserRole actorRole, int flowVersion)
     {
-        var valid = (from, to) switch
-        {
-            (JobStatus.Requested, JobStatus.AwaitingPayment) => actorRole == UserRole.Tradie,
-            // System cancels Requested jobs when matching is exhausted (no_tradie_found).
-            (JobStatus.Requested, JobStatus.Cancelled) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.AwaitingPayment, JobStatus.PaymentReview) => actorRole == UserRole.Homeowner,
-            (JobStatus.AwaitingPayment, JobStatus.Expired) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.PaymentReview, JobStatus.Booked) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.PaymentReview, JobStatus.AwaitingPayment) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            // A receipt can sit un-reviewed past the payment window, so PaymentReview
-            // expires on the same terms as AwaitingPayment (P4-06).
-            (JobStatus.PaymentReview, JobStatus.Expired) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.Booked, JobStatus.InProgress) => actorRole == UserRole.Tradie,
-            (JobStatus.Booked, JobStatus.Requested) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.Booked, JobStatus.Cancelled) => true,
-            (JobStatus.InProgress, JobStatus.AwaitingConfirmation) => actorRole == UserRole.Tradie,
-            (JobStatus.InProgress, JobStatus.Cancelled) => true,
-            (JobStatus.AwaitingConfirmation, JobStatus.Completed) => actorRole is UserRole.Homeowner or UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.AwaitingConfirmation, JobStatus.Disputed) => actorRole == UserRole.Homeowner,
-            (_, JobStatus.Disputed) => true,
-            (JobStatus.Disputed, JobStatus.Completed) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            (JobStatus.Disputed, JobStatus.Cancelled) => actorRole is UserRole.Staff or UserRole.Superadmin,
-            _ => false
-        };
-
-        if (!valid) throw new InvalidOperationException($"Invalid transition from {from} to {to} by {actorRole}.");
+        // P12-10 / P12-27: the transition table is pure and unit-tested per edge
+        // (JobFlowTransitions). Which table applies is decided by the FLOW
+        // VERSION STORED ON THE JOB, not the global flag — in-flight legacy jobs
+        // finish under the rules they were posted with (P12-27).
+        if (!JobFlowTransitions.IsValid(from, to, actorRole, flowVersion))
+            throw new InvalidOperationException($"Invalid transition from {from} to {to} by {actorRole}.");
     }
 
     private int PaymentWindowHours() => Math.Max(0, _paymentOptions.Value.WindowHours);
@@ -350,8 +353,11 @@ public class JobStatusService : IJobStatusService
     }
 
     /// <summary>
-    /// Homeowner cancellation: cancel the job and create a Pending refund.
-    /// Penalty is applied if work has started (InProgress / AwaitingConfirmation).
+    /// Homeowner cancellation. v1 (legacy): cancel and create a Pending refund;
+    /// penalty applied if work has started. v2 (P12-14 / D4): nothing was paid
+    /// upfront, so there is NO refund — the job simply cancels. Consequences are
+    /// non-monetary (cancellation counters, account flags); the refund path
+    /// remains only for post-payment disputes resolved in the homeowner's favour.
     /// </summary>
     private async Task<JobDto> HandleHomeownerCancellationAsync(Job job, string userId, CancelJobRequest request)
     {
@@ -364,11 +370,14 @@ public class JobStatusService : IJobStatusService
         if (!allowedStatuses.Contains(from))
             throw new InvalidOperationException($"Cannot cancel a job in status '{from}'.");
 
-        // Calculate penalty and refund amounts.
-        var payment = job.Payment;
-        var totalPaid = payment?.Amount ?? job.TotalAmount;
+        var legacyFlow = job.FlowVersion < 2;
 
-        // Determine hours worked (best estimate).
+        // Calculate penalty and refund amounts — legacy flow only. Under v2 the
+        // job is unpaid at this point, so any "refund" would invent money that
+        // never changed hands (P12-14: no orphaned Refund rows).
+        var payment = job.Payment;
+        var totalPaid = payment?.Amount ?? job.EstimatedTotal ?? 0m;
+
         decimal hoursWorked = 0m;
         decimal hoursWorkedAmount = 0m;
         decimal penalty = 0m;
@@ -376,7 +385,7 @@ public class JobStatusService : IJobStatusService
 
         bool workStarted = from is JobStatus.InProgress or JobStatus.AwaitingConfirmation;
 
-        if (workStarted)
+        if (legacyFlow && workStarted)
         {
             // Estimate hours worked from StartedAtUtc → now.
             if (job.StartedAtUtc.HasValue)
@@ -389,7 +398,7 @@ public class JobStatusService : IJobStatusService
             penalty = Math.Min(Math.Round(hoursWorkedAmount + totalPaid * 0.10m, 2), totalPaid);
             suggestedAmount = Math.Max(totalPaid - penalty, 0m);
         }
-        else if (from == JobStatus.Booked)
+        else if (legacyFlow && from == JobStatus.Booked)
         {
             // Cancel before work: flat 10% platform penalty.
             penalty = Math.Round(totalPaid * 0.10m, 2);
@@ -417,8 +426,10 @@ public class JobStatusService : IJobStatusService
         };
         _context.JobStatusHistory.Add(history);
 
-        // Create Pending refund only when payment was collected (totalPaid > 0).
-        if (totalPaid > 0)
+        // Create Pending refund only on the LEGACY flow when payment was
+        // collected (totalPaid > 0). v2 jobs are unpaid pre-completion — no
+        // refund rows, ever (P12-14 / D4).
+        if (legacyFlow && totalPaid > 0)
         {
             var refund = new Refund
             {
@@ -657,10 +668,20 @@ public class JobStatusService : IJobStatusService
             CreatedAtUtc     = job.CreatedAtUtc,
             UpdatedAtUtc     = job.UpdatedAtUtc,
             ServiceId        = job.ServiceId,
+            TimingPreference = job.TimingPreference.ToString(),
             ScheduledStartUtc = job.ScheduledStartUtc,
-            Hours            = job.Hours,
+            ScheduledEndUtc  = job.ScheduledEndUtc,
+            EstimatedHours   = job.EstimatedHours,
             HourlyRate       = job.HourlyRate,
-            TotalAmount      = job.TotalAmount,
+            EstimatedTotal   = job.EstimatedTotal,
+            FinalHours       = job.FinalHours,
+            LabourAmount     = job.LabourAmount,
+            AdjustmentsTotal = job.AdjustmentsTotal,
+            FinalAmount      = job.FinalAmount,
+            CompletionSubmittedAtUtc = job.CompletionSubmittedAtUtc,
+            JobType          = job.JobType.ToString(),
+            AgreedPricingModel = job.AgreedPricingModel?.ToString(),
+            FlowVersion      = job.FlowVersion,
             ReferenceCode    = job.ReferenceCode,
             MatchedTradieId  = job.MatchedTradieId,
             MatchedTradieName = string.IsNullOrWhiteSpace(job.MatchedTradie?.FullName) ? null : job.MatchedTradie.FullName,
@@ -741,20 +762,25 @@ public class JobStatusService : IJobStatusService
             
             if (request.CancelJob)
             {
-                // Full refund if cancelled by homeowner due to tradie no-show
-                var payment = await _context.Payments
-                    .FirstOrDefaultAsync(p => p.JobId == jobId && p.Status == PaymentStatus.Verified);
-                if (payment != null)
+                // v1 legacy: full refund when cancelled by homeowner due to
+                // tradie no-show. v2 (P12-14/D4): nothing was paid, so no
+                // refund — the non-monetary flag above is the consequence.
+                if (job.FlowVersion < 2)
                 {
-                    _context.Refunds.Add(new Refund
+                    var payment = await _context.Payments
+                        .FirstOrDefaultAsync(p => p.JobId == jobId && p.Status == PaymentStatus.Verified);
+                    if (payment != null)
                     {
-                        JobId = jobId,
-                        PaymentId = payment.Id,
-                        SuggestedAmount = payment.Amount,
-                        Status = RefundStatus.Pending,
-                    });
+                        _context.Refunds.Add(new Refund
+                        {
+                            JobId = jobId,
+                            PaymentId = payment.Id,
+                            SuggestedAmount = payment.Amount,
+                            Status = RefundStatus.Pending,
+                        });
+                    }
                 }
-                
+
                 return await TransitionAsync(jobId, JobStatus.Cancelled, userId, actorRole, ReasonCode.tradie_no_show);
             }
             else
@@ -776,19 +802,24 @@ public class JobStatusService : IJobStatusService
             await SendPushToUserAsync(job.HomeownerId, "No-show reported",
                 $"The tradie reported you as a no-show for \"{job.Title}\".");
             
-            // Partial refund: tradie gets 50% for time lost; homeowner receives the remainder
-            var payment = await _context.Payments
-                .FirstOrDefaultAsync(p => p.JobId == jobId && p.Status == PaymentStatus.Verified);
-            if (payment != null)
+            // v1 legacy: partial refund — tradie gets 50% for time lost;
+            // homeowner receives the remainder. v2 (P12-14/D4): non-monetary
+            // consequences only — no invoiced fees, no refunds pre-payment.
+            if (job.FlowVersion < 2)
             {
-                var refundAmount = Math.Round(payment.Amount * 0.5m, 2);
-                _context.Refunds.Add(new Refund
+                var payment = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.JobId == jobId && p.Status == PaymentStatus.Verified);
+                if (payment != null)
                 {
-                    JobId = jobId,
-                    PaymentId = payment.Id,
-                    SuggestedAmount = refundAmount,
-                    Status = RefundStatus.Pending,
-                });
+                    var refundAmount = Math.Round(payment.Amount * 0.5m, 2);
+                    _context.Refunds.Add(new Refund
+                    {
+                        JobId = jobId,
+                        PaymentId = payment.Id,
+                        SuggestedAmount = refundAmount,
+                        Status = RefundStatus.Pending,
+                    });
+                }
             }
             
             return await TransitionAsync(jobId, JobStatus.Cancelled, userId, actorRole, ReasonCode.homeowner_no_show);

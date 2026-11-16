@@ -35,6 +35,8 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserBlock> UserBlocks { get; set; } = null!;
     public DbSet<PayoutBatch> PayoutBatches { get; set; } = null!;
     public DbSet<TradiePayout> TradiePayouts { get; set; } = null!;
+    public DbSet<JobPriceAdjustment> JobPriceAdjustments { get; set; } = null!;
+    public DbSet<Quote> Quotes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -77,8 +79,18 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(j => j.ScheduleStatus).HasConversion<string>();
             entity.Property(j => j.ScheduledTimeSlot).HasConversion<string>();
             entity.Property(j => j.CancelReasonCode).HasConversion<string>();
+            entity.Property(j => j.TimingPreference).HasConversion<string>();
+            entity.Property(j => j.JobType).HasConversion<string>();
+            entity.Property(j => j.MaterialsBy).HasConversion<string>();
+            entity.Property(j => j.AgreedPricingModel).HasConversion<string>();
             entity.Property(j => j.HourlyRate).HasColumnType("decimal(18,2)");
-            entity.Property(j => j.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.EstimatedTotal).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.LabourAmount).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.AdjustmentsTotal).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.FinalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.FinalHours).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.BudgetMin).HasColumnType("decimal(18,2)");
+            entity.Property(j => j.BudgetMax).HasColumnType("decimal(18,2)");
 
             entity.HasIndex(j => j.Location).HasMethod("GIST");
             entity.HasIndex(j => j.ReferenceCode).IsUnique();
@@ -160,6 +172,8 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(o => o.Response).HasConversion<string>();
             entity.Property(o => o.Stage).HasConversion<string>();
+            entity.Property(o => o.Kind).HasConversion<string>();
+            entity.Property(o => o.HourlyRateSnapshot).HasColumnType("decimal(18,2)");
 
             entity.HasIndex(o => o.JobId);
             entity.HasIndex(o => new { o.JobId, o.Response });
@@ -176,6 +190,61 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany()
                   .HasForeignKey(o => o.TradieId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── v1.7 (P12-17): on-demand price adjustments ─────────────────────────
+        builder.Entity<JobPriceAdjustment>(entity =>
+        {
+            entity.Property(a => a.Kind).HasConversion<string>();
+            entity.Property(a => a.Status).HasConversion<string>();
+            entity.Property(a => a.Amount).HasColumnType("decimal(18,2)");
+
+            entity.HasIndex(a => a.JobId);
+            entity.HasIndex(a => new { a.JobId, a.Status });
+
+            entity.HasOne(a => a.Job)
+                  .WithMany(j => j.Adjustments)
+                  .HasForeignKey(a => a.JobId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(a => a.ProposedByTradie)
+                  .WithMany()
+                  .HasForeignKey(a => a.ProposedByTradieId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Amounts must be strictly positive — a zero/negative "extra cost"
+            // is a bug, not a discount.
+            entity.ToTable(t =>
+                t.HasCheckConstraint("CK_Adjustment_Amount", "\"Amount\" > 0"));
+        });
+
+        // ── v1.7 (P12-23): project quotes ──────────────────────────────────────
+        builder.Entity<Quote>(entity =>
+        {
+            entity.Property(q => q.PricingModel).HasConversion<string>();
+            entity.Property(q => q.Status).HasConversion<string>();
+            entity.Property(q => q.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(q => q.MinAmount).HasColumnType("decimal(18,2)");
+            entity.Property(q => q.MaxAmount).HasColumnType("decimal(18,2)");
+            entity.Property(q => q.Cap).HasColumnType("decimal(18,2)");
+
+            entity.HasIndex(q => q.JobId);
+            entity.HasIndex(q => new { q.JobId, q.Status });
+
+            entity.HasOne(q => q.Job)
+                  .WithMany(j => j.Quotes)
+                  .HasForeignKey(q => q.JobId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(q => q.Tradie)
+                  .WithMany()
+                  .HasForeignKey(q => q.TradieId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.Offer)
+                  .WithMany()
+                  .HasForeignKey(q => q.OfferId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<Payment>(entity =>

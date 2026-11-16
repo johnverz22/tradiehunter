@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/marketplace.dart';
 import '../../network/api_error.dart';
 import '../../repositories/chat_reviews_repository.dart';
+import '../../utils/money.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../../theme/design_tokens.dart';
@@ -26,6 +27,22 @@ final _profileProvider = FutureProvider.family<UserProfile?, String>((
 ) async {
   final repo = ref.read(reviewsRepositoryProvider);
   return repo.getProfile(userId);
+});
+
+/// v1.7 P12-07: the viewed tradie's row on the job's Choose-a-Tradie list —
+/// the server-authoritative rate for the job's service plus the D8 GST
+/// status. Null when the tradie isn't on the list (e.g. not available for
+/// this job) — the rate section is then omitted rather than fabricated.
+final _jobTradieProvider = FutureProvider.family<TradieListEntry?, (
+  String,
+  String,
+)>((ref, ids) async {
+  final (jobId, tradieId) = ids;
+  final tradies = await ref.read(jobsRepositoryProvider).getTradieList(jobId);
+  for (final entry in tradies) {
+    if (entry.tradieId == tradieId) return entry;
+  }
+  return null;
 });
 
 /// Paginated reviews state for a user.
@@ -100,14 +117,23 @@ final _reviewsNotifierProvider = StateNotifierProvider.autoDispose
 /// Shared public-profile header + stats + reviews.
 /// Powers mockups 12-profile (tradie) and 15-homeowner-profile.
 /// [isTradie] switches stat copy and enables tradie-specific fields.
+///
+/// v1.7 P12-07: when [jobId] is present the screen renders in job context —
+/// the tradie's rate for the job's service (with the D8 GST label) and a
+/// sticky "Request this tradie" CTA wired to POST /api/jobs/:id/request.
+/// Without [jobId] the screen behaves exactly as before.
 class PublicProfileScreen extends ConsumerWidget {
   final String profileId;
   final bool isTradie;
+
+  /// Optional job context (from `/tradie/:id?jobId=…`).
+  final String? jobId;
 
   const PublicProfileScreen({
     super.key,
     required this.profileId,
     required this.isTradie,
+    this.jobId,
   });
 
   @override
@@ -125,6 +151,10 @@ class PublicProfileScreen extends ConsumerWidget {
     final viewerId = viewer?['id']?.toString();
     final isOwner =
         viewerId != null && viewerId.isNotEmpty && viewerId == profileId;
+
+    // v1.7: with job context the sticky bar becomes the direct-request CTA
+    // and the legacy "pick one of my jobs" chooser is bypassed.
+    final inJobContext = jobId != null && jobId!.isNotEmpty;
 
     return Scaffold(
       appBar: FixoGradientAppBar(
@@ -154,13 +184,19 @@ class PublicProfileScreen extends ConsumerWidget {
       // widget loads eligible jobs itself). The body's mid-list action
       // buttons are retired in favour of this bar.
       bottomNavigationBar: !isOwner && viewerId != null && viewerId.isNotEmpty
-          ? _ContextualActions(
-              profileId: profileId,
-              isTradie: isTradie,
-              viewerRole: viewer?['role'] as int?,
-              ref: ref,
-              sticky: true,
-            )
+          ? (inJobContext
+              ? _JobRequestActions(
+                  key: const Key('job_request_actions'),
+                  profileId: profileId,
+                  jobId: jobId!,
+                )
+              : _ContextualActions(
+                  profileId: profileId,
+                  isTradie: isTradie,
+                  viewerRole: viewer?['role'] as int?,
+                  ref: ref,
+                  sticky: true,
+                ))
           : null,
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -183,6 +219,7 @@ class PublicProfileScreen extends ConsumerWidget {
                 isOwner: isOwner,
                 viewerId: viewerId,
                 viewerRole: viewer?['role'] as int?,
+                jobId: jobId,
               ),
       ),
     );
@@ -202,6 +239,9 @@ class _ProfileBody extends StatelessWidget {
   final String? viewerId;
   final int? viewerRole;
 
+  /// v1.7 P12-07 job context — shows the job-scoped rate card when present.
+  final String? jobId;
+
   const _ProfileBody({
     required this.profileId,
     required this.isTradie,
@@ -214,6 +254,7 @@ class _ProfileBody extends StatelessWidget {
     required this.isOwner,
     required this.viewerId,
     required this.viewerRole,
+    this.jobId,
   });
 
   @override
@@ -421,6 +462,18 @@ class _ProfileBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Space.s5),
+
+          // ── v1.7 P12-07: job-context rate card ──────────────────────────
+          // The tradie's rate for THIS job's service straight off the
+          // Choose-a-Tradie contract, with the D8 GST label. Omitted (never
+          // fabricated) when the tradie isn't listed for the job or no rate
+          // was returned.
+          if (jobId != null && jobId!.isNotEmpty)
+            _JobRateCard(
+              jobId: jobId!,
+              profileId: profileId,
+              isDark: isDark,
+            ),
 
           // ── About section — H17: blurb between stats and actions ──────
           if (hasBio) ...[
@@ -1024,6 +1077,212 @@ class _H17MessageButton extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: Space.s2),
         ),
+      ),
+    );
+  }
+}
+
+// ── v1.7 P12-07: job-context rate + request CTA ──────────────────────────────
+
+/// The tradie's rate for THIS job's service, read from the job's
+/// Choose-a-Tradie payload (contract #2) so the homeowner sees exactly what
+/// the list shows. Renders the D8 GST label ("Incl. GST" / "No GST charged");
+/// the whole card is omitted when the tradie has no listed rate — never a
+/// fabricated figure.
+class _JobRateCard extends ConsumerWidget {
+  final String jobId;
+  final String profileId;
+  final bool isDark;
+
+  const _JobRateCard({
+    required this.jobId,
+    required this.profileId,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final entryAsync = ref.watch(_jobTradieProvider((jobId, profileId)));
+
+    return entryAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (entry) {
+        if (entry == null || entry.hourlyRate == null) {
+          return const SizedBox.shrink();
+        }
+        final gstLabel = gstLabelFor(entry.isGstRegistered);
+        return Container(
+          margin: const EdgeInsets.only(bottom: Space.s5),
+          padding: const EdgeInsets.all(Space.s4),
+          decoration: BoxDecoration(
+            color: theme.extension<THColors>()!.tintBrand,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
+            border: Border.all(
+              color: DesignTokens.borderControl(isDark),
+              width: Sizes.borderWidthThin,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.payments_outlined,
+                size: Sizes.iconAction,
+                color: theme.extension<THColors>()!.textBrand,
+              ),
+              const SizedBox(width: Space.s3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'For this job',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FW.semibold,
+                      ),
+                    ),
+                    const SizedBox(height: Space.s0_5),
+                    Text(
+                      '${formatRate(entry.hourlyRate!)}'
+                      '${gstLabel == null ? '' : ' · $gstLabel'}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FW.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Sticky bar in job context: one primary "Request this tradie" CTA that
+/// opens a small bottom sheet for an optional message (D3 — the only
+/// pre-acceptance contact channel), then POSTs
+/// `/api/jobs/:id/request` (contract #3) and lands on the request-sent
+/// screen. A 409 surfaces the server's own message.
+class _JobRequestActions extends ConsumerStatefulWidget {
+  final String profileId;
+  final String jobId;
+
+  const _JobRequestActions({
+    super.key,
+    required this.profileId,
+    required this.jobId,
+  });
+
+  @override
+  ConsumerState<_JobRequestActions> createState() => _JobRequestActionsState();
+}
+
+class _JobRequestActionsState extends ConsumerState<_JobRequestActions> {
+  bool _sending = false;
+
+  Future<void> _request() async {
+    if (_sending) return;
+    final message = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      ),
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.s6,
+            Space.gutter,
+            MediaQuery.of(ctx).viewInsets.bottom + Space.s6,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Request this tradie',
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                      fontWeight: FW.semibold,
+                    ),
+              ),
+              const SizedBox(height: Space.s2),
+              Text(
+                'Add an optional message — it\'s the only way to reach them '
+                'before they accept.',
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: Space.s4),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  labelText: 'Message (optional)',
+                  hintText: 'e.g. Hi, the job is the flat above — call before '
+                      'you come.',
+                ),
+              ),
+              const SizedBox(height: Space.s4),
+              FixoPrimaryButton(
+                label: 'Send request',
+                onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (message == null || !mounted) return;
+
+    setState(() => _sending = true);
+    try {
+      await ref
+          .read(jobsRepositoryProvider)
+          .requestTradieForJob(
+            widget.jobId,
+            widget.profileId,
+            message: message,
+          );
+      if (!mounted) return;
+      // D8 label rides along so the request-sent screen can show it without
+      // another lookup; null just omits the label.
+      final entry = ref.read(_jobTradieProvider((
+        widget.jobId,
+        widget.profileId,
+      ))).value;
+      final gstLabel = entry == null ? null : gstLabelFor(entry.isGstRegistered);
+      context.push(
+        '/jobs/${widget.jobId}/request',
+        extra: gstLabel,
+      );
+    } on ProfileApiException catch (e) {
+      if (!mounted) return;
+      FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (!mounted) return;
+      FixoNotice.error(context, NoticeCopy.requestFailed);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StickyActionBar(
+      child: FixoPrimaryButton(
+        key: const Key('request_this_tradie_button'),
+        label: 'Request this tradie',
+        isLoading: _sending,
+        onPressed: _request,
       ),
     );
   }

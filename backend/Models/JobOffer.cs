@@ -47,6 +47,27 @@ public class JobOffer
     /// <summary>Matching stage at the time this offer was created.</summary>
     public OfferStage Stage { get; set; } = OfferStage.Auto;
 
+    // ── v1.7 (P12-01 / P12-08 / P12-23) ──────────────────────────────────────
+
+    /// <summary>
+    /// v1.7 (P12-08): the tradie's hourly rate for the job's service, copied at
+    /// request time. On accept the value is copied to <see cref="Job.HourlyRate"/>
+    /// so the rate the homeowner saw is the rate the job bills at.
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal HourlyRateSnapshot { get; set; }
+
+    /// <summary>
+    /// v1.7 (P12-08/D3): the homeowner's optional one-way message with the
+    /// request. The ONLY pre-acceptance contact channel — chat stays gated to
+    /// Booked and later (P5-08 unchanged).
+    /// </summary>
+    [MaxLength(1000)]
+    public string? Message { get; set; }
+
+    /// <summary>v1.7 (P12-23): Instant = hourly accept/decline; QuoteRequest = asks the tradie to submit a quote.</summary>
+    public OfferKind Kind { get; set; } = OfferKind.Instant;
+
     // ── Hangfire integration ──────────────────────────────────────────────────
 
     /// <summary>

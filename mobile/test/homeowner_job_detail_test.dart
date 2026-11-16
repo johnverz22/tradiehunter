@@ -22,9 +22,9 @@ import 'package:google_fonts/google_fonts.dart';
 class _JobsFixture extends JobsRepository {
   Job? job;
   int loads = 0;
-  int confirmCalls = 0;
+  int approveCalls = 0;
   int cancelCalls = 0;
-  bool confirmResult = true;
+  bool approveResult = true;
 
   _JobsFixture(this.job) : super(Dio(), const FlutterSecureStorage());
 
@@ -35,9 +35,11 @@ class _JobsFixture extends JobsRepository {
   }
 
   @override
-  Future<bool> confirmCompletion(String jobId) async {
-    confirmCalls++;
-    return confirmResult;
+  Future<void> approveJob(String jobId, {String? note}) async {
+    approveCalls++;
+    if (!approveResult) {
+      throw const ProfileApiException('Adjustments are still pending.');
+    }
   }
 
   @override
@@ -237,33 +239,37 @@ void main() {
       expect(find.byTooltip('Open chat'), findsNothing);
     });
 
-    testWidgets('AwaitingConfirmation exposes Confirm Completion', (
+    testWidgets('AwaitingConfirmation exposes Approve & pay', (
       tester,
     ) async {
       final jobs = _JobsFixture(_job('AwaitingConfirmation', tradieId: 't-1'));
       await mount(tester, jobs);
-      expect(find.text('Confirm Completion'), findsOneWidget);
-      await tester.tap(find.text('Confirm Completion'));
+      expect(find.byKey(const Key('approve_pay_button')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('approve_pay_button')));
       await tester.pumpAndSettle();
-      expect(jobs.confirmCalls, 1);
+      // v1.7 P12-11: approval books the amount (POST /approve) and then
+      // routes to the payment flow — the homeowner approves first, pays
+      // second.
+      expect(jobs.approveCalls, 1);
+      expect(find.text('Destination /jobs/42/payment'), findsOneWidget);
     });
 
     testWidgets(
-      'AwaitingConfirmation with open dispute disables Confirm Completion',
+      'AwaitingConfirmation with open dispute disables Approve & pay',
       (tester) async {
         final jobs = _JobsFixture(
           _job('AwaitingConfirmation', tradieId: 't-1', disputeStatus: 'Open'),
         );
         await mount(tester, jobs);
-        expect(find.text('Confirm Completion'), findsOneWidget);
+        expect(find.byKey(const Key('approve_pay_button')), findsOneWidget);
         expect(
-          find.textContaining('cannot be confirmed while a dispute is open'),
+          find.textContaining('cannot be approved while a dispute is open'),
           findsOneWidget,
         );
-        // Tapping disabled button does not trigger confirm
-        await tester.tap(find.text('Confirm Completion'));
+        // Tapping the disabled button does not trigger approve
+        await tester.tap(find.byKey(const Key('approve_pay_button')));
         await tester.pumpAndSettle();
-        expect(jobs.confirmCalls, 0);
+        expect(jobs.approveCalls, 0);
       },
     );
 
@@ -280,7 +286,7 @@ void main() {
       await mount(tester, _JobsFixture(_job('Cancelled', tradieId: 't-1')));
       expect(find.text('Open Chat'), findsNothing);
       expect(find.byTooltip('Open chat'), findsNothing);
-      expect(find.text('Confirm Completion'), findsNothing);
+      expect(find.byKey(const Key('approve_pay_button')), findsNothing);
       expect(find.text('Leave a Review'), findsNothing);
       expect(find.text('This job was cancelled.'), findsWidgets);
     });
@@ -470,7 +476,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(jobs.loads, greaterThan(1));
-      expect(find.text('Confirm Completion'), findsOneWidget);
+      expect(find.byKey(const Key('approve_pay_button')), findsOneWidget);
     });
   });
 

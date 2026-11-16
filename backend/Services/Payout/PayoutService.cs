@@ -43,15 +43,26 @@ public class PayoutService : IPayoutService
         if (profile == null)
             throw new InvalidOperationException("Tradie profile not found.");
 
+        // v1.7 (P12-13): gross = FinalAmount (labour + approved adjustments) —
+        // what the homeowner actually pays. Legacy jobs without a FinalAmount
+        // fall back to the stored estimate.
+        var grossAmount = job.FinalAmount
+            ?? job.EstimatedTotal
+            ?? 0m;
+
+        // D5: the commission base is configurable — LabourOnly (default) keeps
+        // pass-through materials out of the commission calculation.
+        var labourBase = job.LabourAmount ?? grossAmount;
         var commissionPercent = _options.CommissionPercent;
-        var commissionAmount = Math.Round(job.TotalAmount * (commissionPercent / 100m), 2);
-        var netAmount = job.TotalAmount - commissionAmount;
+        var commissionAmount = JobMoney.ComputeCommission(
+            grossAmount, labourBase, commissionPercent, _options.CommissionAppliesTo);
+        var netAmount = grossAmount - commissionAmount;
 
         var payout = new TradiePayout
         {
             TradieId = job.MatchedTradieId,
             JobId = job.Id,
-            GrossAmount = job.TotalAmount,
+            GrossAmount = grossAmount,
             CommissionPercent = commissionPercent,
             CommissionAmount = commissionAmount,
             NetAmount = netAmount,
@@ -67,10 +78,10 @@ public class PayoutService : IPayoutService
 
         _context.TradiePayouts.Add(payout);
         await _context.SaveChangesAsync();
-        
+
         // Include commission amounts in push per P10-04
-        await SendPushToUserAsync(job.MatchedTradieId, "Job completed", 
-            $"You'll receive ${netAmount:F2} after the ${commissionAmount:F2} fee, in your next payout.", 
+        await SendPushToUserAsync(job.MatchedTradieId, "Job completed",
+            $"You'll receive ${netAmount:F2} after the ${commissionAmount:F2} fee, in your next payout.",
             job.Id);
     }
 

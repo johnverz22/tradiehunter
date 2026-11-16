@@ -47,6 +47,12 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
   onCancel,
 }) => {
   const isReject = kind === 'reject';
+  const currency = payment.currency || 'NZD';
+  const finalAmount = payment.finalAmount ?? payment.amount;
+  const overEstimate =
+    payment.estimatedTotal != null &&
+    payment.estimatedTotal > 0 &&
+    finalAmount > payment.estimatedTotal;
 
   return (
     <ConfirmModal
@@ -57,7 +63,7 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
       message={
         isReject
           ? `Send "${payment.jobTitle}" back to the homeowner. They can upload a corrected receipt before the deadline.`
-          : `Confirm you found the ${money(payment.amount, payment.currency)} transfer for "${payment.jobTitle}". This books the tradie.`
+          : `Confirm you found the ${money(payment.amount, payment.currency)} transfer for "${payment.jobTitle}". Verifying completes the job and queues the tradie's payout.`
       }
       confirmLabel={confirmLabel}
       confirmDisabled={confirmDisabled || isSubmitting}
@@ -73,6 +79,41 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
               {money(payment.amount, payment.currency)}
             </dd>
           </div>
+          {payment.labourAmount != null && (
+            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
+              <dt className="text-xs text-[var(--ink-soft)]">Labour</dt>
+              <dd className="font-mono text-sm text-[var(--ink)]">
+                {money(payment.labourAmount, currency)}
+              </dd>
+            </div>
+          )}
+          {payment.adjustmentsTotal != null && (
+            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
+              <dt className="text-xs text-[var(--ink-soft)]">Approved adjustments</dt>
+              <dd className="font-mono text-sm text-[var(--ink)]">
+                {money(payment.adjustmentsTotal, currency)}
+              </dd>
+            </div>
+          )}
+          {payment.estimatedTotal != null && (
+            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
+              <dt className="text-xs text-[var(--ink-soft)]">Original estimate</dt>
+              <dd
+                className={`font-mono text-sm ${overEstimate ? 'text-[var(--amber-dark)]' : 'text-[var(--ink)]'}`}
+              >
+                {money(payment.estimatedTotal, currency)}
+                {overEstimate && (
+                  <span className="block text-xs">Final is higher than the estimate</span>
+                )}
+              </dd>
+            </div>
+          )}
+          {payment.completionSubmittedAtUtc && (
+            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
+              <dt className="text-xs text-[var(--ink-soft)]">Work completed</dt>
+              <dd className="text-sm text-[var(--ink)]">{submitted(payment.completionSubmittedAtUtc)}</dd>
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-3 px-3 py-2">
             <dt className="text-xs text-[var(--ink-soft)]">Reference</dt>
             <dd className="font-mono text-sm text-[var(--ink)]">{payment.reference}</dd>

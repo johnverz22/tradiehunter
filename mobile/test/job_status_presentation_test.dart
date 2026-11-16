@@ -310,7 +310,9 @@ void main() {
         category: 'Plumbing',
         suburb: 'Suburb',
         status: entry.key,
-        stage: 0,
+        // v1.7 (contract #6): the server's stage drives card routing for
+        // v2 jobs — derive it from the status the same way the backend does.
+        stage: Job.stageForStatus(entry.key),
       );
       final router = GoRouter(
         routes: [

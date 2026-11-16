@@ -12,6 +12,7 @@ public enum ReasonCode
     emergency,
     no_tradie_found,
     no_payment,
+    overdue_payment,
     system_failure,
     dispute_outcome,
     no_response,

@@ -1,11 +1,13 @@
 using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Models;
+using FixoApi.Options;
 using FixoApi.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using FixoApi.Data;
 using FixoApi.Jobs;
@@ -30,15 +32,23 @@ public class JobsController : ControllerBase
     private readonly IBlobStorageService _blob;
     private readonly FixoDbContext _context;
     private readonly IBackgroundJobClient _hangfire;
+    private readonly OfferService _offerService;
+    private readonly AdjustmentService _adjustmentService;
+    private readonly QuoteService _quoteService;
+    private readonly IOptions<JobFlowOptions> _flowOptions;
     private readonly IValidator<CreateJobRequest> _createValidator;
     private readonly IValidator<UpdateJobRequest> _updateValidator;
     private readonly IValidator<ScheduleJobRequest> _scheduleValidator;
+    private readonly IValidator<CreateAdjustmentRequest> _adjustmentValidator;
+    private readonly IValidator<SubmitQuoteRequest> _quoteValidator;
     private readonly ILogger<JobsController> _logger;
 
     private const int MaxPhotos      = 5;
     private const long MaxPhotoBytes = 10 * 1024 * 1024; // 10 MB
     private static readonly string[] AllowedContentTypes =
         ["image/jpeg", "image/png", "image/heic", "image/heif"];
+    private static readonly string[] AllowedDocumentTypes =
+        ["image/jpeg", "image/png", "image/heic", "image/heif", "application/pdf"];
 
     public JobsController(
         IJobService jobService,
@@ -48,9 +58,15 @@ public class JobsController : ControllerBase
         IBlobStorageService blob,
         FixoDbContext context,
         IBackgroundJobClient hangfire,
+        OfferService offerService,
+        AdjustmentService adjustmentService,
+        QuoteService quoteService,
+        IOptions<JobFlowOptions> flowOptions,
         IValidator<CreateJobRequest> createValidator,
         IValidator<UpdateJobRequest> updateValidator,
         IValidator<ScheduleJobRequest> scheduleValidator,
+        IValidator<CreateAdjustmentRequest> adjustmentValidator,
+        IValidator<SubmitQuoteRequest> quoteValidator,
         ILogger<JobsController> logger)
     {
         _jobService       = jobService;
@@ -60,9 +76,15 @@ public class JobsController : ControllerBase
         _blob             = blob;
         _context          = context;
         _hangfire         = hangfire;
+        _offerService     = offerService;
+        _adjustmentService = adjustmentService;
+        _quoteService     = quoteService;
+        _flowOptions      = flowOptions;
         _createValidator  = createValidator;
         _updateValidator  = updateValidator;
         _scheduleValidator = scheduleValidator;
+        _adjustmentValidator = adjustmentValidator;
+        _quoteValidator   = quoteValidator;
         _logger           = logger;
     }
 
@@ -80,11 +102,17 @@ public class JobsController : ControllerBase
         try
         {
             var job = await _jobService.CreateJobAsync(userId, request);
+            // v1.7 (P12-04): submitting lands on the Choose-a-Tradie screen.
             return CreatedAtAction(nameof(GetJob), new { id = job.Id }, job);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // OverduePayment posting block and other business rules (P12-12).
+            return Conflict(new { message = ex.Message });
         }
     }
 
@@ -188,9 +216,10 @@ public class JobsController : ControllerBase
 
     // ── POST /api/jobs/{id}/photos ────────────────────────────────────────────
     // M2-02: multipart photo upload → Azure Blob → JobPhoto rows.
+    // v1.7 (P12-21): size limit covers the raised project attachment cap too.
 
     [HttpPost("{id:int}/photos")]
-    [RequestSizeLimit(MaxPhotos * MaxPhotoBytes + 4096)]
+    [RequestSizeLimit(MaxPhotoBytes * 12 + 4096)]
     public async Task<IActionResult> UploadPhotos(int id, [FromForm] List<IFormFile> files)
     {
         var userId = GetUserId();
@@ -205,9 +234,15 @@ public class JobsController : ControllerBase
         if (files.Count == 0)
             return BadRequest("No files provided.");
 
-        var remaining = MaxPhotos - job.Photos.Count;
+        // v1.7 (P12-21): project jobs allow more attachments incl. PDFs
+        // (config, default 10); hourly jobs keep the 5-photo cap (P10-14).
+        var isProject = job.JobType == JobType.Project;
+        var maxFiles  = isProject ? Math.Max(MaxPhotos, _flowOptions.Value.ProjectMaxAttachments) : MaxPhotos;
+        var allowedTypes = isProject ? AllowedDocumentTypes : AllowedContentTypes;
+
+        var remaining = maxFiles - job.Photos.Count;
         if (remaining <= 0)
-            return BadRequest($"Maximum {MaxPhotos} photos allowed per job.");
+            return BadRequest($"Maximum {maxFiles} files allowed per {(isProject ? "project" : "hourly")} job.");
 
         var toProcess = files.Take(remaining).ToList();
         var uploaded  = new List<JobPhotoDto>();
@@ -217,8 +252,10 @@ public class JobsController : ControllerBase
             if (file.Length > MaxPhotoBytes)
                 return BadRequest($"File '{file.FileName}' exceeds 10 MB limit.");
 
-            if (!AllowedContentTypes.Contains(file.ContentType.ToLower()))
-                return BadRequest($"File type '{file.ContentType}' is not allowed. Use JPEG, PNG, or HEIC.");
+            if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                return BadRequest(isProject
+                    ? $"File type '{file.ContentType}' is not allowed. Use JPEG, PNG, HEIC, or PDF."
+                    : $"File type '{file.ContentType}' is not allowed. Use JPEG, PNG, or HEIC.");
 
             var ext      = Path.GetExtension(file.FileName).ToLowerInvariant();
             var key      = $"jobs/{id}/{Guid.NewGuid()}{ext}";
@@ -286,17 +323,58 @@ public class JobsController : ControllerBase
         return Ok(result);
     }
 
-    // ── POST /api/jobs/{id}/requests ──────────────────────────────────────────
-    // Homeowner selects a specific tradie.
+    // ── GET /api/jobs/{id}/tradies ────────────────────────────────────────
+    // v1.7 (P12-05): the Choose-a-Tradie screen. One server-ranked list with the
+    // rate for this job's service, rating, distance, availability and GST flag.
+    // Query: sort=best|rating|distance|rate, verified, insured, availableNow.
 
-    [HttpPost("{id:int}/requests")]
-    public async Task<IActionResult> RequestTradie(int id, [FromBody] RequestTradieDto dto)
+    [HttpGet("{id:int}/tradies")]
+    public async Task<IActionResult> GetTradieList(
+        int id, [FromQuery] TradieListQuery query)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var ok = await _jobService.RequestTradieAsync(id, userId, dto.TradieId);
-        return ok ? NoContent() : NotFound();
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null) return NotFound();
+        if (job.HomeownerId != userId) return Forbid();
+
+        var list = await _matching.GetTradieListForJobAsync(job, query);
+        return Ok(list);
+    }
+
+    // ── POST /api/jobs/{id}/request ──────────────────────────────────
+    // v1.7 (P12-08): ask a specific tradie. Creates a JobOffer for exactly that
+    // tradie with the rate snapshotted at request time; urgency-aware expiry (D7);
+    // optional message is the only pre-acceptance channel (D3). Projects create
+    // QuoteRequest offers (up to 3 concurrent, P12-23).
+
+    [HttpPost("{id:int}/request")]
+    public async Task<IActionResult> RequestTradie(int id, [FromBody] RequestTradieRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request?.TradieId))
+            return BadRequest(new { error = "tradieId is required." });
+
+        try
+        {
+            var dto = await _offerService.CreateDirectRequestAsync(id, userId, request);
+            return Accepted(dto);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
     }
 
     // ── POST /api/jobs/{id}/accept ────────────────────────────────────────────
@@ -376,21 +454,110 @@ public class JobsController : ControllerBase
 
     // ── POST /api/jobs/{id}/check-out ─────────────────────────────────────────
     // P5-02: InProgress → AwaitingConfirmation. Tradie only.
+    // v1.7 (P12-11): body { finalHours, notes } — the tradie submits the actual
+    // hours; the server computes LabourAmount/FinalAmount from the rate
+    // snapshot + approved adjustments and returns the itemised summary.
 
     [HttpPost("{id:int}/check-out")]
-    public async Task<IActionResult> CheckOut(int id)
+    public async Task<IActionResult> CheckOut(int id, [FromBody] CheckOutRequest? request)
     {
         if (!User.IsInRole("Tradie")) return Forbid();
 
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var job = await _context.Jobs.FindAsync(id);
+        var job = await _context.Jobs
+            .Include(j => j.Adjustments)
+            .FirstOrDefaultAsync(j => j.Id == id);
         if (job == null || job.MatchedTradieId != userId) return NotFound();
 
         try
         {
-            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.AwaitingConfirmation, userId, UserRole.Tradie);
+            // v2 (P12-11): final hours are part of the completion submission.
+            if (job.FlowVersion >= 2)
+            {
+                var finalHours = request?.FinalHours ?? 0m;
+                if (finalHours <= 0 || finalHours > 500)
+                    return BadRequest(new { error = "finalHours must be between 0.25 and 500." });
+
+                var labour = JobMoney.ComputeLabourAmount(finalHours, job.HourlyRate);
+                var adjustmentsTotal = job.Adjustments
+                    .Where(a => a.Status == AdjustmentStatus.Approved)
+                    .Sum(a => a.Amount);
+                var finalAmount = JobMoney.ComputeFinalAmount(labour, adjustmentsTotal);
+
+                job.FinalHours = finalHours;
+                job.LabourAmount = labour;
+                job.AdjustmentsTotal = Math.Round(adjustmentsTotal, 2);
+                job.FinalAmount = finalAmount;
+                job.CompletionSubmittedAtUtc = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var dto = await _jobStatusService.TransitionAsync(id, JobStatus.AwaitingConfirmation, userId, UserRole.Tradie,
+                    note: string.IsNullOrWhiteSpace(request?.Notes) ? null : request.Notes);
+
+                var exceeds = JobMoney.ExceedsTolerance(finalAmount, job.EstimatedTotal,
+                    _flowOptions.Value.EstimateTolerancePercent, _flowOptions.Value.AutoApproveNoEstimateCap);
+
+                return Ok(new CompletionSummaryDto
+                {
+                    JobId = id,
+                    FinalHours = finalHours,
+                    HourlyRate = job.HourlyRate,
+                    LabourAmount = labour,
+                    AdjustmentsTotal = Math.Round(adjustmentsTotal, 2),
+                    FinalAmount = finalAmount,
+                    EstimatedTotal = job.EstimatedTotal,
+                    ExceedsTolerance = exceeds,
+                    ToleranceNote = exceeds
+                        ? (job.EstimatedTotal.HasValue
+                            ? $"Final amount is more than {_flowOptions.Value.EstimateTolerancePercent:0}% above the ${job.EstimatedTotal:N2} estimate."
+                            : $"No estimate was given and ${finalAmount:N2} is above the ${_flowOptions.Value.AutoApproveNoEstimateCap:N0} review cap.")
+                        : null,
+                    CompletionSubmittedAtUtc = job.CompletionSubmittedAtUtc.Value,
+                });
+            }
+
+            // v1 legacy: plain transition.
+            var legacyDto = await _jobStatusService.TransitionAsync(id, JobStatus.AwaitingConfirmation, userId, UserRole.Tradie);
+            return Ok(legacyDto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    // ── POST /api/jobs/{id}/approve ───────────────────────────────────────────
+    // v1.7 (P12-11): AwaitingConfirmation → AwaitingPayment. The homeowner
+    // reviewed the itemised summary and approves the final amount. Blocked while
+    // any price adjustment is still Pending — every extra needs a decision first.
+
+    [HttpPost("{id:int}/approve")]
+    public async Task<IActionResult> ApproveCompletion(int id, [FromBody] ApproveCompletionRequest? request)
+    {
+        if (User.IsInRole("Tradie")) return Forbid(); // homeowner (or staff) only
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs
+            .Include(j => j.Adjustments)
+            .FirstOrDefaultAsync(j => j.Id == id);
+        if (job == null) return NotFound();
+        if (job.HomeownerId != userId) return Forbid();
+
+        if (job.FlowVersion < 2)
+            return Conflict(new { error = "This job was posted under the legacy flow — use confirm." });
+
+        var pending = job.Adjustments.Any(a => a.Status == AdjustmentStatus.Pending);
+        if (pending)
+            return Conflict(new { error = "Approve is blocked while price adjustments are pending. Decide on every extra cost first." });
+
+        try
+        {
+            var dto = await _jobStatusService.TransitionAsync(id, JobStatus.AwaitingPayment, userId, UserRole.Homeowner,
+                note: string.IsNullOrWhiteSpace(request?.Note) ? "Homeowner approved the final amount." : request.Note);
             return Ok(dto);
         }
         catch (InvalidOperationException ex)
@@ -401,6 +568,7 @@ public class JobsController : ControllerBase
 
     // ── POST /api/jobs/{id}/confirm ───────────────────────────────────────────
     // P5-02: AwaitingConfirmation → Completed. Homeowner only.
+    // v1 legacy edge. v2 jobs must use /approve (work must be paid before Completed).
 
     [HttpPost("{id:int}/confirm")]
     public async Task<IActionResult> ConfirmCompletion(int id)
@@ -412,6 +580,9 @@ public class JobsController : ControllerBase
 
         var job = await _context.Jobs.FindAsync(id);
         if (job == null || job.HomeownerId != userId) return NotFound();
+
+        if (job.FlowVersion >= 2)
+            return Conflict(new { error = "Use 'Approve & pay' — payment completes this job now." });
 
         try
         {
@@ -571,15 +742,182 @@ public class JobsController : ControllerBase
         return NoContent();
     }
 
+    // ── v1.7 (P12-17): price adjustments ──────────────────────────────────────
+
+    /// <summary>Tradie proposes an extra cost (materials, extra labour, travel).</summary>
+    [HttpPost("{id:int}/adjustments")]
+    public async Task<IActionResult> ProposeAdjustment(int id, [FromBody] CreateAdjustmentRequest request)
+    {
+        if (!User.IsInRole("Tradie")) return Forbid();
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var validation = await _adjustmentValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        try
+        {
+            var dto = await _adjustmentService.ProposeAsync(id, userId, request);
+            return CreatedAtAction(nameof(GetJob), new { id }, dto);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    /// <summary>Homeowner approves or declines a proposed extra cost (recorded decision).</summary>
+    [HttpPost("{id:int}/adjustments/{adjustmentId:int}/respond")]
+    public async Task<IActionResult> RespondAdjustment(
+        int id, int adjustmentId, [FromBody] RespondAdjustmentRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var dto = await _adjustmentService.RespondAsync(id, adjustmentId, userId, request);
+            return Ok(dto);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    /// <summary>The proposing tradie withdraws a still-pending extra cost.</summary>
+    [HttpPost("{id:int}/adjustments/{adjustmentId:int}/withdraw")]
+    public async Task<IActionResult> WithdrawAdjustment(int id, int adjustmentId)
+    {
+        if (!User.IsInRole("Tradie")) return Forbid();
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var dto = await _adjustmentService.WithdrawAsync(id, adjustmentId, userId);
+            return Ok(dto);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    /// <summary>Adjustment history for the job (both parties).</summary>
+    [HttpGet("{id:int}/adjustments")]
+    public async Task<IActionResult> GetAdjustments(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var list = await _adjustmentService.ListAsync(id, userId);
+            return Ok(list);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
+    /// Short-lived read URL for an adjustment's evidence document. Evidence
+    /// lives in the private payments container — never a public URL (P12-17).
+    /// Only the job's parties can read it.
+    /// </summary>
+    [HttpGet("{id:int}/adjustments/{adjustmentId:int}/evidence")]
+    public async Task<IActionResult> GetAdjustmentEvidence(int id, int adjustmentId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var job = await _context.Jobs.FindAsync(id);
+        if (job == null) return NotFound();
+        if (job.HomeownerId != userId && job.MatchedTradieId != userId) return Forbid();
+
+        var adjustment = await _context.JobPriceAdjustments
+            .FirstOrDefaultAsync(a => a.Id == adjustmentId && a.JobId == id);
+        if (adjustment?.EvidenceFileKey == null) return NotFound();
+
+        var sas = await _blob.GetReadSasUriAsync(
+            adjustment.EvidenceFileKey, _flowOptions.Value.AdjustmentsContainer, TimeSpan.FromMinutes(15));
+        return Redirect(sas.ToString());
+    }
+
+    // ── v1.7 (P12-23): project quotes ─────────────────────────────────────────
+
+    /// <summary>Tradie submits a structured quote for a project job.</summary>
+    [HttpPost("{id:int}/quotes")]
+    public async Task<IActionResult> SubmitQuote(int id, [FromBody] SubmitQuoteRequest request)
+    {
+        if (!User.IsInRole("Tradie")) return Forbid();
+
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var validation = await _quoteValidator.ValidateAsync(request);
+        if (!validation.IsValid) return BadRequest(validation.Errors);
+
+        try
+        {
+            var dto = await _quoteService.SubmitQuoteAsync(id, userId, request);
+            return CreatedAtAction(nameof(GetJob), new { id }, dto);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
+    /// <summary>Side-by-side quote comparison data for the homeowner.</summary>
+    [HttpGet("{id:int}/quotes")]
+    public async Task<IActionResult> GetQuotes(int id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var list = await _quoteService.ListQuotesAsync(id, userId);
+            return Ok(list);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+
+    /// <summary>
+    /// Accept one quote — declines the others and books the job. Over the
+    /// written-contract threshold the homeowner must confirm a contract exists
+    /// first (P12-25): send confirmWrittenContract=true after the notice.
+    /// </summary>
+    [HttpPost("{id:int}/quotes/{quoteId:int}/accept")]
+    public async Task<IActionResult> AcceptQuote(
+        int id, int quoteId, [FromBody] AcceptQuoteRequest? request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var result = await _quoteService.AcceptQuoteAsync(
+                id, quoteId, userId, request ?? new AcceptQuoteRequest());
+
+            if (result.RequiresContractConfirmation)
+                return Conflict(new
+                {
+                    requiresWrittenContractConfirmation = true,
+                    threshold = result.ThresholdAmount,
+                    message = result.Message,
+                });
+
+            return Ok(result.Quote);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message }); }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private string? GetUserId() => User.FindFirstValue("sub");
-}
-
-/// <summary>Request body for POST /api/jobs/{id}/requests.</summary>
-public class RequestTradieDto
-{
-    public string TradieId { get; set; } = string.Empty;
 }
 
 /// <summary>Request body for POST /api/jobs/{id}/flag.</summary>

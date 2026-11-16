@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +13,10 @@ import '../../utils/money.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';
+import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/fixo_buttons.dart';
 import '../../widgets/fixo_cards.dart';
+import '../widgets/fixo_filter_pill.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../../feedback/fixo_notice.dart';
@@ -29,6 +32,12 @@ import '../../feedback/fixo_notice.dart';
 /// command path — one POST /api/jobs/:id/offers/:offerId/respond per tap,
 /// shared with the dashboard lead cards (V15-14). At zero the actions
 /// disable and the server hands the job to the next ranked tradie.
+///
+/// Quote requests (v1.7 contract #12): a pending offer with kind
+/// `QuoteRequest` replaces the one-tap accept with a "Submit quote" action
+/// that opens the structured quote form — pricing model, amounts,
+/// inclusions/exclusions, materials + GST flags, proposed start and duration
+/// — submitted via POST /api/jobs/:id/quotes.
 class RequestDetailScreen extends ConsumerStatefulWidget {
   final String requestId;
   final bool embedded;
@@ -434,6 +443,32 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
                   color: theme.colorScheme.error,
                 ),
               )
+            // v1.7 contract #12: a QuoteRequest is answered with a structured
+            // quote, never a one-tap accept.
+            : offer.isQuoteRequest
+            ? Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: FixoGhostButton(
+                      label: 'Decline',
+                      onPressed: canRespond
+                          ? () => _respond(accept: false)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: Space.s3),
+                  Expanded(
+                    flex: 2,
+                    child: FixoPrimaryButton(
+                      key: const Key('submit_quote_button'),
+                      label: 'Submit quote',
+                      isLoading: _busy,
+                      onPressed: canRespond ? _submitQuote : null,
+                    ),
+                  ),
+                ],
+              )
             : Row(
                 children: [
                   Expanded(
@@ -466,6 +501,63 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
   /// authoritative timeout; here we just disable the actions.
   void _onCountdownExpired() {
     if (mounted) setState(() {});
+  }
+
+  // ── v1.7 contract #12: structured quote form ────────────────────────────
+
+  /// The tradie's own GST registration from their profile — null when the
+  /// profile data doesn't carry it, in which case the form leaves the flag
+  /// unset with truthful helper copy (the backend validates on submit).
+  bool? _profileGstRegistered() {
+    final raw = ref.read(profileViewModelProvider).profile?['isGstRegistered'];
+    return raw is bool ? raw : null;
+  }
+
+  /// Opens the quote form sheet and POSTs the returned payload through
+  /// POST /api/jobs/:id/quotes. Success pops the screen — the request is
+  /// answered with a quote, not an accept.
+  Future<void> _submitQuote() async {
+    final offer = _offer;
+    if (offer == null || _busy) return;
+
+    final payload = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+      ),
+      builder: (_) => _QuoteFormSheet(
+        gstRegisteredFromProfile: _profileGstRegistered(),
+      ),
+    );
+    if (payload == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(jobsRepositoryProvider)
+          .createQuote(widget.requestId, payload);
+      if (!mounted) return;
+      FixoNotice.success(
+        context,
+        'Quote sent — the homeowner will compare it with the others.',
+      );
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/tradie');
+      }
+    } on ProfileApiException catch (e) {
+      if (mounted) FixoNotice.errorDynamic(context, e.message);
+    } catch (_) {
+      if (mounted) {
+        FixoNotice.error(
+          context,
+          'Could not send your quote. Please try again.',
+        );
+      }
+    }
+    if (mounted) setState(() => _busy = false);
   }
 }
 
@@ -780,4 +872,428 @@ class _RequestNotFoundBody extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── v1.7 contract #12: quote form sheet ──────────────────────────────────────
+
+/// Pricing models a quote can use (contract #12 wire values).
+const _quotePricingOptions = <(String, String)>[
+  (Quote.pricingFixed, 'Fixed price'),
+  (Quote.pricingEstimateRange, 'Estimate range'),
+  (Quote.pricingHourlyWithCap, 'Hourly with cap'),
+];
+
+/// Structured quote form (v1.7 P12-23): pricing model with the matching
+/// amount fields, inclusions/exclusions, materials + GST flags, proposed
+/// start and estimated duration. Pops a ready-to-POST payload map, or null
+/// when dismissed. The GST flag defaults from the tradie's profile when the
+/// profile carries it; otherwise it is an explicit, un-ticked toggle with
+/// truthful helper copy — the backend re-validates either way.
+class _QuoteFormSheet extends StatefulWidget {
+  /// The tradie's profile GST registration, when known.
+  final bool? gstRegisteredFromProfile;
+
+  const _QuoteFormSheet({required this.gstRegisteredFromProfile});
+
+  @override
+  State<_QuoteFormSheet> createState() => _QuoteFormSheetState();
+}
+
+class _QuoteFormSheetState extends State<_QuoteFormSheet> {
+  final _amountController = TextEditingController();
+  final _minController = TextEditingController();
+  final _maxController = TextEditingController();
+  final _rateController = TextEditingController();
+  final _capController = TextEditingController();
+  final _inclusionsController = TextEditingController();
+  final _exclusionsController = TextEditingController();
+  final _durationController = TextEditingController();
+
+  String _pricingModel = Quote.pricingFixed;
+  bool _materialsIncluded = false;
+  late bool _gstIncluded = widget.gstRegisteredFromProfile ?? false;
+  DateTime? _proposedStart;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _minController.dispose();
+    _maxController.dispose();
+    _rateController.dispose();
+    _capController.dispose();
+    _inclusionsController.dispose();
+    _exclusionsController.dispose();
+    _durationController.dispose();
+    super.dispose();
+  }
+
+  Decimal? _amount(String text) {
+    final parsed = Decimal.tryParse(text.trim());
+    return parsed != null && parsed > Decimal.zero ? parsed : null;
+  }
+
+  Decimal? get _fixedAmount => _amount(_amountController.text);
+  Decimal? get _rangeMin => _amount(_minController.text);
+  Decimal? get _rangeMax => _amount(_maxController.text);
+  Decimal? get _hourlyRate => _amount(_rateController.text);
+  Decimal? get _hourlyCap => _amount(_capController.text);
+
+  int? get _durationDays {
+    final parsed = int.tryParse(_durationController.text.trim());
+    return parsed != null && parsed > 0 ? parsed : null;
+  }
+
+  bool get _canSubmit => switch (_pricingModel) {
+        Quote.pricingFixed => _fixedAmount != null,
+        Quote.pricingEstimateRange =>
+          _rangeMin != null &&
+              _rangeMax != null &&
+              _rangeMin! <= _rangeMax!,
+        Quote.pricingHourlyWithCap =>
+          _hourlyRate != null && _hourlyCap != null,
+        _ => false,
+      };
+
+  void _submit(BuildContext context) {
+    if (!_canSubmit) return;
+    Navigator.pop(context, {
+      'pricingModel': _pricingModel,
+      if (_pricingModel == Quote.pricingFixed && _fixedAmount != null)
+        'amount': _fixedAmount.toString(),
+      if (_pricingModel == Quote.pricingEstimateRange &&
+          _rangeMin != null)
+        'minAmount': _rangeMin.toString(),
+      if (_pricingModel == Quote.pricingEstimateRange &&
+          _rangeMax != null)
+        'maxAmount': _rangeMax.toString(),
+      if (_pricingModel == Quote.pricingHourlyWithCap &&
+          _hourlyRate != null)
+        'amount': _hourlyRate.toString(),
+      if (_pricingModel == Quote.pricingHourlyWithCap && _hourlyCap != null)
+        'cap': _hourlyCap.toString(),
+      if (_inclusionsController.text.trim().isNotEmpty)
+        'inclusions': _inclusionsController.text.trim(),
+      if (_exclusionsController.text.trim().isNotEmpty)
+        'exclusions': _exclusionsController.text.trim(),
+      'materialsIncluded': _materialsIncluded,
+      'gstIncluded': _gstIncluded,
+      if (_proposedStart != null)
+        'proposedStartUtc': _proposedStart!.toUtc().toIso8601String(),
+      if (_durationDays != null) 'estimatedDurationDays': _durationDays,
+    });
+  }
+
+  Future<void> _pickStart(BuildContext context) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 2)),
+      initialDate: _proposedStart ?? now,
+    );
+    if (date == null || !context.mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_proposedStart ?? now),
+    );
+    if (time == null) return;
+    setState(() {
+      _proposedStart =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gstKnown = widget.gstRegisteredFromProfile != null;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.s6,
+          Space.gutter,
+          MediaQuery.of(context).viewInsets.bottom + Space.s6,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Submit quote',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FW.bold,
+                ),
+              ),
+              const SizedBox(height: Space.s1),
+              Text(
+                'The homeowner compares quotes side by side — price, scope '
+                'and timing all show on your card.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: Space.s4),
+
+              // ── Pricing model ───────────────────────────────────────────
+              Text(
+                'How do you want to price this job?',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FW.semibold,
+                ),
+              ),
+              const SizedBox(height: Space.s2),
+              Wrap(
+                spacing: Space.s2,
+                runSpacing: Space.s2,
+                children: _quotePricingOptions
+                    .map(
+                      (option) => FixoFilterPill(
+                        pillKey: ValueKey('quote_pricing_${option.$1}'),
+                        label: option.$2,
+                        selected: _pricingModel == option.$1,
+                        onSelected: (_) =>
+                            setState(() => _pricingModel = option.$1),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: Space.s3),
+
+              // ── Amount fields for the selected model ────────────────────
+              if (_pricingModel == Quote.pricingFixed)
+                TextField(
+                  key: const Key('quote_amount_field'),
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Total price',
+                    prefixText: r'$',
+                    hintText: 'The all-up price for the whole job',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              if (_pricingModel == Quote.pricingEstimateRange) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('quote_min_field'),
+                        controller: _minController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Estimate min',
+                          prefixText: r'$',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: Space.s3),
+                    Expanded(
+                      child: TextField(
+                        key: const Key('quote_max_field'),
+                        controller: _maxController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Estimate max',
+                          prefixText: r'$',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_rangeMin != null &&
+                    _rangeMax != null &&
+                    _rangeMin! > _rangeMax!) ...[
+                  const SizedBox(height: Space.s1),
+                  Text(
+                    'The minimum must not exceed the maximum.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+              if (_pricingModel == Quote.pricingHourlyWithCap) ...[
+                TextField(
+                  key: const Key('quote_rate_field'),
+                  controller: _rateController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Hourly rate',
+                    prefixText: r'$',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: Space.s3),
+                TextField(
+                  key: const Key('quote_cap_field'),
+                  controller: _capController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Cap (maximum total)',
+                    prefixText: r'$',
+                    helperText:
+                        'The homeowner pays your rate, never more than the cap.',
+                    helperMaxLines: 2,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+              const SizedBox(height: Space.s3),
+
+              // ── Scope ───────────────────────────────────────────────────
+              TextField(
+                key: const Key('quote_inclusions_field'),
+                controller: _inclusionsController,
+                maxLines: 3,
+                maxLength: 1000,
+                buildCounter:
+                    _hideQuoteCounterUntilThreshold(threshold: 0.8),
+                decoration: const InputDecoration(
+                  labelText: 'Inclusions (optional)',
+                  hintText: 'What the price covers…',
+                ),
+              ),
+              const SizedBox(height: Space.s3),
+              TextField(
+                key: const Key('quote_exclusions_field'),
+                controller: _exclusionsController,
+                maxLines: 3,
+                maxLength: 1000,
+                buildCounter:
+                    _hideQuoteCounterUntilThreshold(threshold: 0.8),
+                decoration: const InputDecoration(
+                  labelText: 'Exclusions (optional)',
+                  hintText: 'What it does not cover…',
+                ),
+              ),
+              const SizedBox(height: Space.s2),
+              SwitchListTile(
+                key: const Key('quote_materials_switch'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Materials included in the price'),
+                value: _materialsIncluded,
+                onChanged: (value) =>
+                    setState(() => _materialsIncluded = value),
+              ),
+              SwitchListTile(
+                key: const Key('quote_gst_switch'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Quote includes GST'),
+                value: _gstIncluded,
+                onChanged: (value) => setState(() => _gstIncluded = value),
+              ),
+              Text(
+                gstKnown
+                    ? (_gstIncluded
+                        ? 'From your profile — you are GST-registered.'
+                        : 'From your profile — you are not GST-registered.')
+                    : 'Tick only if you are GST-registered — the app validates '
+                        'this against your profile.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: Space.s3),
+
+              // ── Timing ──────────────────────────────────────────────────
+              InkWell(
+                key: const Key('quote_start_field'),
+                onTap: () => _pickStart(context),
+                borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minHeight: DesignTokens.heightInput,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Space.s4,
+                    vertical: Space.s2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(DesignTokens.radiusInput),
+                    border: Border.all(
+                      color: DesignTokens.borderControl(
+                        theme.brightness == Brightness.dark,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.event_outlined,
+                        size: Sizes.iconAction,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: Space.s3),
+                      Expanded(
+                        child: Text(
+                          _proposedStart == null
+                              ? 'Proposed start (optional)'
+                              : '${DateFormat('EEE d MMM y').format(_proposedStart!)} · '
+                                  '${DateFormat('h:mm a').format(_proposedStart!)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: _proposedStart == null
+                                ? theme.hintColor
+                                : null,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: Space.s3),
+              TextField(
+                key: const Key('quote_duration_field'),
+                controller: _durationController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Estimated duration in days (optional)',
+                  hintText: 'e.g. 3',
+                ),
+              ),
+              const SizedBox(height: Space.s4),
+
+              FixoPrimaryButton(
+                key: const Key('quote_submit_button'),
+                label: 'Send quote',
+                onPressed: _canSubmit ? () => _submit(context) : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Counter callback that hides the TextField counter until the current
+/// length reaches [threshold] of the max length.
+InputCounterWidgetBuilder _hideQuoteCounterUntilThreshold({
+  double threshold = 0.8,
+}) {
+  return (
+    BuildContext context, {
+    required int currentLength,
+    required bool isFocused,
+    required int? maxLength,
+  }) {
+    if (maxLength == null || currentLength < (maxLength * threshold).ceil()) {
+      return null;
+    }
+    return Text(
+      '$currentLength / $maxLength',
+      style: Theme.of(context).textTheme.bodySmall,
+    );
+  };
 }

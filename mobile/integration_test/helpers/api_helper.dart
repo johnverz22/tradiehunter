@@ -110,6 +110,19 @@ class ApiHelper {
   static Future<void> checkOut(int jobId, String tradieToken) =>
       _post('/jobs/$jobId/check-out', const {}, token: tradieToken);
 
+  /// v1.7 (contract #8): the homeowner approves the itemised completion
+  /// summary — the job moves to AwaitingPayment.
+  static Future<void> approveJob(
+    int jobId,
+    String homeownerToken, {
+    String? note,
+  }) =>
+      _post(
+        '/jobs/$jobId/approve',
+        note == null ? const {} : {'note': note},
+        token: homeownerToken,
+      );
+
   static Future<void> confirmCompletion(int jobId, String homeownerToken) =>
       _post('/jobs/$jobId/confirm', const {}, token: homeownerToken);
 

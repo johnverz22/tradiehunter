@@ -35,10 +35,11 @@ void main() {
       ));
 
       expect(find.text('Booked'), findsWidgets);
-      expect(find.text('Step 2 of 4 · Booked'), findsOneWidget);
+      // v1.7 (P12-15): the v2 stepper has six steps.
+      expect(find.text('Step 2 of 6 · Booked'), findsOneWidget);
       expect(find.text('View all steps'), findsOneWidget);
       // Timeline details should not be shown when collapsed
-      expect(find.text('Tradie matched & booked'), findsNothing);
+      expect(find.text('Tradie booked your job'), findsNothing);
       expect(find.text('Hide steps'), findsNothing);
 
       // Tap target is >= 48px
@@ -57,16 +58,20 @@ void main() {
       await tester.tap(find.text('View all steps'));
       await tester.pumpAndSettle();
 
-      // Now expanded: shows full step titles and descriptions
+      // Now expanded: shows the full v2 step titles and descriptions
       expect(find.text('Hide steps'), findsOneWidget);
       expect(find.text('Requested'), findsWidgets);
       expect(find.text('Booked'), findsWidgets);
       expect(find.text('In progress'), findsWidgets);
-      expect(find.text('Done'), findsWidgets);
+      expect(find.text('Review & approve'), findsWidgets);
+      expect(find.text('Pay'), findsWidgets);
+      expect(find.text('Completed'), findsWidgets);
       expect(find.text('Job request submitted'), findsOneWidget);
-      expect(find.text('Tradie matched & booked'), findsOneWidget);
+      expect(find.text('Tradie booked your job'), findsOneWidget);
       expect(find.text('Work underway on site'), findsOneWidget);
-      expect(find.text('Work complete & verified'), findsOneWidget);
+      expect(find.text('Check the summary & approve'), findsOneWidget);
+      expect(find.text('Payment is due'), findsOneWidget);
+      expect(find.text('All done — thanks!'), findsOneWidget);
 
       // Tapping Hide steps collapses it back
       await tester.tap(find.text('Hide steps'));

@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/design_tokens.dart';
+import 'job_status_presentation.dart';
 
-/// Compact 4-segment progress bar — v1.6 cpb spec.
+/// Compact segmented progress bar — v1.6 cpb spec.
 ///
-/// Track: 6px tall, 4 equal segments separated by 3px gaps.
+/// Track: 6px tall, N equal segments separated by hairline gaps.
 /// Segment colours:
 ///   filled (normal)   → white on dark bands, brand700 on light cards
 ///   empty  (normal)   → rgba(255,255,255,.25) on dark / track on light
 ///   muted variant     → every segment rgba(255,255,255,.55); caption dimmer
-/// Caption below: 'Step X of 4 · Status text', status part in soft color.
+/// Caption below: 'Step X of N · Status text', status part in soft color.
 ///
 /// Accepts the new typed signature while staying backward-compatible
 /// with call sites that still pass [status] alone.
+///
+/// v1.7 (P12-15): the status-only path resolves through [JobStepperFlow] —
+/// 6 segments with the Review & approve / Pay steps for v2 jobs, 4 segments
+/// for flowVersion-1 jobs.
 class CompactProgressBar extends StatelessWidget {
   // ── v1.6 typed signature ────────────────────────────────────────────────
   final int? totalSteps;
@@ -23,6 +28,10 @@ class CompactProgressBar extends StatelessWidget {
 
   // ── Legacy compat ────────────────────────────────────────────────────────
   final String? status;
+
+  /// v1.7 JobDto stage (0..5) under the job's [flowVersion].
+  final int? stage;
+  final int? flowVersion;
   final int? currentStep; // 1-based (1..4)
   final String? stepLabel;
   final bool? isTerminal;
@@ -50,6 +59,8 @@ class CompactProgressBar extends StatelessWidget {
     this.onCaptionTap,
     // legacy API
     this.status,
+    this.stage,
+    this.flowVersion,
     this.currentStep,
     this.stepLabel,
     this.isTerminal,
@@ -58,7 +69,11 @@ class CompactProgressBar extends StatelessWidget {
 
   // ── Derived values ────────────────────────────────────────────────────────
 
-  static const _segmentLabels = ['Requested', 'Booked', 'In progress', 'Done'];
+  JobStepperFlow get _flow => JobStepperFlow.resolve(
+        status ?? '',
+        stage: stage,
+        flowVersion: flowVersion,
+      );
 
   bool get _isTerminal {
     if (isTerminal != null) return isTerminal!;
@@ -72,22 +87,15 @@ class CompactProgressBar extends StatelessWidget {
   int get _stepIndex {
     // v1.6 API takes priority.
     if (completedSteps != null) {
-      return (completedSteps! - 1).clamp(0, (totalSteps ?? 4) - 1);
+      return (completedSteps! - 1)
+          .clamp(0, (totalSteps ?? _flow.totalSteps) - 1);
     }
     if (currentStep != null) return (currentStep! - 1).clamp(0, 3);
-    return switch (status) {
-      'Requested' || 'AwaitingPayment' || 'PaymentReview' => 0,
-      'Booked' => 1,
-      'InProgress' || 'AwaitingConfirmation' => 2,
-      'Completed' => 3,
-      'Cancelled' => 1,
-      'Expired' => 0,
-      'Disputed' => 2,
-      _ => 0,
-    };
+    // v1.7 flow-aware mapping (falls back to legacy for v1/unknown jobs).
+    return _flow.activeIndex;
   }
 
-  int get _total => totalSteps ?? 4;
+  int get _total => totalSteps ?? _flow.totalSteps;
 
   bool get _isMuted {
     if (muted) return true;
@@ -116,8 +124,11 @@ class CompactProgressBar extends StatelessWidget {
   /// detail pages that omit the chip).
   String? get _captionSub {
     if (sublabel != null) return sublabel;
-    if (!_isTerminal && label == null && status != null) {
-      return _segmentLabels[_stepIndex.clamp(0, 3)];
+    if (!_isTerminal &&
+        label == null &&
+        status != null &&
+        _flow.titles.isNotEmpty) {
+      return _flow.titles[_stepIndex.clamp(0, _flow.titles.length - 1)];
     }
     return null;
   }

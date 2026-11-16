@@ -13,17 +13,14 @@ using System.Threading.Tasks;
 namespace FixoApi.Jobs;
 
 /// <summary>
-/// Expires a job whose manual payment was never verified (P4-06).
+/// v1 (P4-06): expires a job whose manual payment was never verified — the
+/// homeowner's window elapsed, so the job drops out of the tradie's pipeline.
 ///
-/// Armed by <see cref="JobStatusService"/> every time a job enters
-/// <c>AwaitingPayment</c>. The job does not trust its own fire time: it re-reads
-/// <c>Job.PaymentDueAtUtc</c>, because rejecting a receipt restarts the
-/// homeowner's payment window and re-arms this job — a request enqueued under the
-/// old deadline must not expire the job early. When that happens it re-schedules
-/// itself for the remaining time and exits.
-///
-/// Safe to run more than once: every path is guarded by the current job status
-/// and the payment's own state.
+/// v2 (P12-12): work is DONE at this point, so expiring/cancelling is wrong.
+/// The job instead becomes OVERDUE: the homeowner is reminded, and if the
+/// window still lapses the account is flagged (OverduePayment — blocks posting
+/// new jobs) and staff are notified for follow-up. The job itself stays in
+/// AwaitingPayment so the payment can still land any time.
 /// </summary>
 public class PaymentExpiryJob
 {
@@ -87,6 +84,14 @@ public class PaymentExpiryJob
             return;
         }
 
+        // ── v2 (P12-12): work is done — no cancelling. Chase the payment. ─────
+        if (job.FlowVersion >= 2)
+        {
+            await HandleOverdueAsync(job, payment);
+            return;
+        }
+
+        // ── v1 legacy: expire the job as before (P4-06) ──────────────────────
         if (payment is not null && payment.Status != PaymentStatus.Expired)
         {
             payment.Status       = PaymentStatus.Expired;
@@ -107,8 +112,67 @@ public class PaymentExpiryJob
         await NotifyAsync(job);
     }
 
-    /// <summary>Tell both parties the job lapsed. Best effort — the job is already closed.</summary>
-    private async Task NotifyAsync(Job job)
+    /// <summary>
+    /// v2 overdue policy (P12-12): flag the homeowner (OverduePayment — blocks
+    /// posting/requesting new jobs), notify staff for follow-up, and tell both
+    /// parties. The job stays in AwaitingPayment — payment can still land.
+    /// </summary>
+    private async Task HandleOverdueAsync(Job job, Payment? payment)
+    {
+        _logger.LogInformation(
+            "PaymentExpiryJob: job {JobId} is overdue (flow v{Flow}) — flagging homeowner, job stays payable.",
+            job.Id, job.FlowVersion);
+
+        if (payment is not null && payment.Status != PaymentStatus.Expired)
+        {
+            payment.Status       = PaymentStatus.Expired;
+            payment.UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        // P12-12: raise the OverduePayment flag. Unlike the strike-based flags,
+        // ONE overdue payment is enough to block posting — the flag is created
+        // with ThresholdHit=true immediately and stays until staff clear it
+        // after the payment is verified.
+        var existingFlag = await _context.AccountFlags.FirstOrDefaultAsync(f =>
+            f.UserId == job.HomeownerId
+            && f.Type == AccountFlagType.OverduePayment
+            && !f.Resolved);
+        if (existingFlag is null)
+        {
+            _context.AccountFlags.Add(new AccountFlag
+            {
+                UserId = job.HomeownerId,
+                Type = AccountFlagType.OverduePayment,
+                Counter = 1,
+                ThresholdHit = true,
+                CreatedBy = SystemUserId,
+                Note = $"Payment for job {job.Id} overdue past the {job.PaymentDueAtUtc:u} window.",
+                CreatedAtUtc = DateTime.UtcNow,
+            });
+        }
+        else
+        {
+            existingFlag.Counter++;
+            existingFlag.ThresholdHit = true;
+            existingFlag.Note = string.IsNullOrEmpty(existingFlag.Note)
+                ? $"Payment for job {job.Id} overdue."
+                : $"{existingFlag.Note}\nPayment for job {job.Id} overdue.";
+        }
+
+        job.UpdatedAtUtc = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        // Notify both sides.
+        await NotifyAsync(job, "Payment overdue",
+            $"\"{job.Title}\" — the payment window has passed. Upload your receipt now to avoid restrictions on your account.");
+
+        _logger.LogInformation(
+            "PaymentExpiryJob: overdue payment for job {JobId} — staff should follow up (amount={Amount}).",
+            job.Id, payment?.Amount ?? job.FinalAmount ?? 0m);
+    }
+
+    /// <summary>Tell both parties. Best effort — never throws.</summary>
+    private async Task NotifyAsync(Job job, string title, string body)
     {
         var recipients = new[] { job.HomeownerId, job.MatchedTradieId }
             .Where(id => !string.IsNullOrEmpty(id))
@@ -126,13 +190,13 @@ public class PaymentExpiryJob
 
                 foreach (var token in tokens)
                 {
-                    await _push.SendAsync(token, "Job expired", $"{job.Title} expired — payment was not completed.",
+                    await _push.SendAsync(token, title, body,
                         new Dictionary<string, string> { ["jobId"] = job.Id.ToString() });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "FCM push to {UserId} about expiring job {JobId} failed.", userId, job.Id);
+                _logger.LogWarning(ex, "FCM push to {UserId} about payment status for job {JobId} failed.", userId, job.Id);
             }
         }
     }
