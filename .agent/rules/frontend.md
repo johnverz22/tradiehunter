@@ -50,7 +50,7 @@ The frontend is organized by functional feature modules with a strict separation
 - **Authentication & Authorization**:
   - Post-login routing is protected and gated by the `admin` role claim in the JWT.
   - Consume the exact same REST API and SignalR hub contracts as the Flutter app; do not fork backend endpoints or logic.
-- **MVP Feature Screens (Tier 3 in `docs/MVP-SPEC.md`)**:
+- **MVP Feature Screens (Tier 3 in `docs/MVP.md`)**:
   - Admin Login.
   - Admin Dashboard (user management with verify/deactivate capabilities, live job list + status monitoring, flagged dispute reviews).
 - **Bundle Isolation**:
@@ -66,7 +66,7 @@ markup* has been checked:
   `scripts/web/render-probe.py --page <module under web/src> --fixture scripts/web/fixtures/<feature>/<case>.json`.
   Keep fixtures beside the feature they cover and assert the interesting states (empty, populated,
   multi-page, null fields, escaped text) — not just the happy path. Details in
-  `docs/ai-tooling.md` → Verification Scripts.
+  `docs/ai/AI-TOOLING.md` → Verification Scripts.
 - The Puppeteer MCP remains the only way to observe real browser behaviour (layout, theme
   switching, console errors); use the probe when it is unavailable.
 

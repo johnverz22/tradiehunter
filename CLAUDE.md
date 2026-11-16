@@ -1,0 +1,35 @@
+# CLAUDE.md — working on TradieHunter
+
+TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tradie) + React admin. It was developed as *Fixo*; user-facing text says **TradieHunter**, while code identifiers keep `Fixo` (`FixoApi`, `Fixo*` widgets, package `fixo`, `nz.co.fixo.fixo`, DB `fixo`, containers `fixo-*`). Do not rename them.
+
+## Read first
+`docs/README.md` is the map. Then, by task:
+- behaviour, state machine, data, money → `docs/SPECS.md`; scope → `docs/MVP.md`; open work → `docs/MILESTONES.md`
+- mobile UI → `docs/DESIGN.md` and `docs/design/html/` frames; tooling → `docs/ai/AI-TOOLING.md`
+- tests → `docs/TESTING.md`, `docs/QA.md`
+
+## Non-negotiables
+1. **Money** is `decimal(18,2)`, never float. **Time** is UTC in storage and on the wire, localised on the client.
+2. **Spatial** queries use EF Core LINQ + NetTopologySuite. Never raw PostGIS SQL.
+3. **Every job status change goes through `IJobStatusService`** (writes history, publishes SignalR). Never set `Job.Status` directly.
+4. Run backend `dotnet` inside the container: `docker compose run --rm --entrypoint /bin/bash api -c "dotnet <cmd>"`.
+5. Respect the job flow version. `JobFlow:Version` is stamped on each job; v1 jobs keep the legacy pay-before-booking rules, v2 pays at completion. Never change one path while fixing the other.
+6. Payment stays manual (bank transfer + receipt + staff verify). No in-app card payments, deposits, milestones or pre-booking chat without an explicit scope decision in `docs/MVP.md`.
+7. Do not invent identity, badges, ratings, earnings, distances, contact details or fee claims in UI. Missing data is shown as unavailable, not zero.
+8. Never commit secrets: `.env`, `appsettings.Development.json`, `firebase-service-account.json`, LINZ key, tokens.
+
+## Mobile UI rules (Flutter)
+- **Tokens only:** colours via `Theme.of(context).extension<THColors>()!`; `Space.*`, `Radii.*`, `Sizes.*`, `FW`, `Alpha`, type from the token set (12 px floor). No `Color(0x…)`, no magic numbers. Missing token → add to `design_tokens.dart`, `docs/design/tokens/tokens.json` and `kit.css` together.
+- **Reuse before create:** `FixoAppBar/BackButton/PrimaryButton/TonalButton/GhostButton/Card/Avatar/Wordmark/EmptyState`, `StatusBadge`, `FixoFilterPill`, `FixoNotice`. New design-system widgets follow the `TH*` contract in `tools/design2flutter/th_components.dart`.
+- **Dark mode is a token swap**; a theme `if` inside a view is a bug. Support light/dark/outdoor, 320 px width, text scale to 2.0, safe-area + keyboard.
+- **Brand budget:** max 2 amber elements per screen (primary CTA + one urgency). Green = verified/done, red = problem/dispute, selection = brand border + tint + check (never amber). 48 dp hit targets.
+- **Feedback:** use `FixoNotice` + `NoticeCopy`; no raw `SnackBar`.
+- Mockup semantics are binding: `.faderow` = scrolling chips with fade, `.badges` = `Wrap`, `.spread` = spaceBetween with `Expanded` text.
+- Generated files (`// GENERATED`) are regenerated, not patched.
+
+## Workflows
+- New or fixed screen: skill `mockup-to-flutter`. Widget extraction: `widget-refactor`. Design audit: `ui-audit`. Mockup defects: `mockup-html-qa`. Run-vs-design: `design-vs-run-crosscheck`.
+- **After any behaviour, scope or status change: skill `docs-sync`**, and update only the owning doc. Do not create versioned spec folders, plans, progress logs or audit notes.
+
+## Before committing
+`dart format` · `flutter analyze` clean · `flutter test` green · backend `dotnet build` + `dotnet test` · for mockup changes `make -C agent audit` green and regenerate variants (`docs/design/build.sh`).

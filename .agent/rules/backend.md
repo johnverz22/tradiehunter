@@ -46,7 +46,7 @@ The backend follows Clean Architecture / N-Tier separation to guarantee decouple
 - **Authentication**:
   - ASP.NET Identity issuing JWTs consumed by both Flutter mobile and React web clients.
 - **Local Dev Runtime**:
-  - Runs in Docker via `docker compose up`. API container exposes port `5000`. Adhere strictly to `docs/MVP-SPEC.md` Tier 1/2/3 scope.
+  - Runs in Docker via `docker compose up`. API container exposes port `5000`. Adhere strictly to `docs/MVP.md` Tier 1/2/3 scope.
 
 ## Tooling & Command Execution
 - **Dotnet CLI Execution:** The `dotnet` CLI tool is **NOT** installed on the host machine (macOS). Local dev runs on OrbStack / Docker Compose. You must ALWAYS execute `dotnet` commands (e.g., `dotnet add package`, `dotnet ef migrations add`, `dotnet test`) inside the API container using `docker compose run`.

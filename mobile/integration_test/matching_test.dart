@@ -3,7 +3,7 @@
 // Self-seeding: every test creates its own job via ApiHelper/FixtureHelper and
 // polls the API for cross-state assertions, so no pre-seeded data is required.
 // Run each persona on its own simulator (stagger launches — see
-// docs/RUNNING-TESTS.md):
+// docs/archive/RUNNING-TESTS.md):
 //
 //   flutter test integration_test/matching_test.dart \
 //     --device-id "iPhone 17 Pro" --dart-define FIXO_PERSONA=homeowner

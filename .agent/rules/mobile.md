@@ -29,7 +29,7 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
 
 ## Design System & Branding
 
-- **Audit-driven UI**: Follow `docs/specs/v1.5/specification.md`, its component contract, implementation plan and tasks. Use `docs/design/design-system.html` for tokens. Existing mockups are excluded from inputs, deliverables and acceptance: do not match, update or replace them. Improve consistency, hierarchy, readability and accessibility against the audit, not legacy geometry.
+- **Audit-driven UI**: Follow `docs/SPECS.md` and `docs/DESIGN.md` for the component contract and design rules. Use `docs/design/design-system.html` for tokens. Existing mockups are excluded from inputs, deliverables and acceptance: do not match, update or replace them. Improve consistency, hierarchy, readability and accessibility against the audit, not legacy geometry.
 - **Functional preservation**: Preserve hourly pricing, manual bank-transfer review, disputes, booking transitions, permissions, role views, existing routes/callbacks, shared ViewModels/repositories, Decimal money, UTC timestamps and SignalR synchronization. Never fabricate identity, ratings, badges, metrics, distances, contact or financial data. Unapproved provider/data/functional decisions remain gated.
 - **Semantic components**: Use semantic card/control/input/tile/sheet radii (20/14/14/16/28), growing 56px primary and 52px secondary minimums, and at least 48px action targets. The legacy 4px radius is compatibility-only. Helpers use regular body type; monospace is reserved for reference codes. Flat operational headers; preserve splash gradient.
 - **Token Usage**:
@@ -63,5 +63,5 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
   - Flutter runs on the host development machine (physical device, iOS Simulator, or Android Emulator), **not** inside Docker.
   - Default API base URL: `http://localhost:5000` (macOS/iOS Simulator) or `http://10.0.2.2:5000` (Android Emulator).
 - **MVP Scope Adherence**:
-  - Deliver Tier 1 and Tier 2 screens defined in `docs/MVP-SPEC.md` (Splash, Onboarding, Auth, Homeowner Home, Post a Job, Matching, Match Result, Tradie Home, Incoming Request, Chat + Job Status, Profile, Rating/Review, Settings).
+  - Deliver Tier 1 and Tier 2 screens defined in `docs/MVP.md` (Splash, Onboarding, Auth, Homeowner Home, Post a Job, Matching, Match Result, Tradie Home, Incoming Request, Chat + Job Status, Profile, Rating/Review, Settings).
   - Out of scope for MVP: In-app payments, automated dispute resolution, ML matching.

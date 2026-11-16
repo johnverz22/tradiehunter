@@ -11,7 +11,7 @@ blueprint-marketplace/
 ├── docs/                  # Product docs, MVP spec, architecture, milestones, design system
 │   ├── PRD.md
 │   ├── UX-RESEARCH.md
-│   ├── MVP-SPEC.md
+│   ├── MVP.md
 │   ├── ARCHITECTURE.md
 │   ├── MILESTONES.md
 │   └── design/design-system.html
@@ -29,7 +29,7 @@ blueprint-marketplace/
 
 ## Quick start
 
-1. Read `docs/PRD.md` and `docs/MVP-SPEC.md` first — every AI tool config below points back to these as the source of truth.
+1. Read `docs/PRD.md` and `docs/MVP.md` first — every AI tool config below points back to these as the source of truth.
 2. Pick a folder (`backend/`, `web/`, `mobile/`) and follow its `STARTER_GUIDE.md` to run the official generator (`dotnet new`, `npm create vite`, `flutter create`).
 3. Open the repo root in whichever AI coding tool you use:
    - **OpenCode** — reads `AGENTS.md` + `opencode.json` automatically.

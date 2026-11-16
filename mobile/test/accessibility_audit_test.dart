@@ -6,7 +6,7 @@
 // 320px / 1.0-2.0 scaling matrix across the shared component layer in both
 // themes. Screen-level overflow coverage stays in the per-screen test files;
 // on-device evidence comes from the capture sweep recorded in
-// docs/specs/v1.5/capture-manifest.csv.
+// docs/archive/ (capture-manifest.csv moved with old specs).
 
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';

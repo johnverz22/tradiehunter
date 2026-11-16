@@ -1,8 +1,8 @@
-// th_components.dart — v1.6.2 design-system contract widgets (TH* family).
+// th_components.dart — v1.7 design-system contract widgets (TH* family).
 //
-// Reference contract: docs/design/v1.6.2/tools/design2flutter/th_components.dart
+// Reference contract: tools/design2flutter/th_components.dart
 // (signatures match exactly what the design2flutter AST transpiler emits).
-// Mapping table: docs/design/v1.6.2/agent/AGENT_GUIDE.md §4.
+// Mapping table: agent/skills/mockup-to-flutter/references/recipes.md §4.
 //
 // Rules honoured here:
 // - Tokens only — every value comes from Space/Radii/Sizes/THType/THColors/

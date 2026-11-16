@@ -5,9 +5,9 @@ inclusion: always
 
 A two-sided marketplace connecting NZ homeowners with verified tradies. Homeowners post a need and get matched with an available, rated tradie in minutes rather than posting-and-waiting on a job board. Tradies get filtered, qualified leads instead of a firehose of irrelevant requests.
 
-Full product context: `docs/PRD.md`, `docs/UX-RESEARCH.md`, `docs/MVP-SPEC.md`.
+Full product context: `docs/PRD.md`, `docs/MVP.md`.
 
-## MVP scope (Must-Have only — see docs/MVP-SPEC.md for full MoSCoW)
+## MVP scope (Must-Have only — see docs/MVP.md for full MoSCoW)
 Registration/login, job request flow, rule-based matching, accept/decline + in-app chat, tradie profiles with ratings, post-job review, basic scheduling with reminders, admin dashboard.
 
 ## Explicitly deferred (do not build without sign-off)

@@ -34,7 +34,7 @@ app/lib/
 3. Push notifications (FCM/APNs) for job-status changes and reminders, since the app won't always be foregrounded.
 4. Port the design tokens from `../docs/design/design-system.html` into a Flutter `ThemeData`/color scheme before building screens.
 
-Read `../docs/MVP-SPEC.md` for the screen list and `../docs/ARCHITECTURE.md` for the API/hub contracts.
+Read `../docs/MVP.md` for the screen list and `../docs/ARCHITECTURE.md` for the API/hub contracts.
 
 ## Environment variables (dart-define)
 

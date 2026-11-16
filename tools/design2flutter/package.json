@@ -1,0 +1,16 @@
+{
+  "name": "design2flutter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTML mockup -> Flutter widget AST transpiler for the TradieHunter design system (parse5-based).",
+  "main": "src/index.js",
+  "scripts": {
+    "transpile": "node src/index.js --design ../../docs/design --out output",
+    "check": "node src/index.js --check output",
+    "smoke": "node test/smoke.js"
+  },
+  "dependencies": {
+    "parse5": "^8.0.0"
+  },
+  "engines": { "node": ">=18" }
+}

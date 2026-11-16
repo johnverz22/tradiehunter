@@ -34,4 +34,4 @@ app/src/
 2. A single SignalR connection shared across chat, job-status, and match-notification listeners — don't open one connection per feature.
 3. Port `../docs/design/design-system.html`'s CSS variables (`--brand-900` through `--brand-100`, `--amber`, spacing scale) into your Tailwind config or a global stylesheet before building screens, so components use tokens from day one.
 
-Read `../docs/MVP-SPEC.md` for the screen list and `../docs/ARCHITECTURE.md` for the API contract this app talks to.
+Read `../docs/MVP.md` for the screen list and `../docs/ARCHITECTURE.md` for the API contract this app talks to.

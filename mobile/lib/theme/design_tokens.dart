@@ -1,13 +1,13 @@
-// v1.6.2 design tokens — mirrors docs/design/v1.6.2/html/kit.css.
+// v1.7 design tokens — mirrors docs/design/html/kit.css.
 //
 // Use via Theme.of(context).extension<THColors>()! for colours.
 // Use Space, Radii, Sizes for layout constants.
-// Use THType for the v1.6.2 type scale, THPalette/THHeroGlass for the
+// Use THType for the type scale, THPalette/THHeroGlass for the
 // documented theme-invariant constants (heroes are navy in every theme).
 //
-// Source of truth: docs/design/v1.6.2/html/kit.css,
-//                  docs/design/v1.6.2/tokens/design_tokens.dart and
-//                  docs/design/v1.6.2/tokens/tokens.json (parity-checked).
+// Source of truth: docs/design/html/kit.css,
+//                  docs/design/tokens/design_tokens.dart and
+//                  docs/design/tokens/tokens.json (parity-checked).
 // v1.6.2 changes folded in: F-106 outdoor line, F-114 hero-glass/on-hero
 // tokens, F-118 avTradie/onAvTradie avatar ink pair.
 library;

@@ -1,18 +1,19 @@
 # AGENTS.md — Fixo Mobile (Flutter)
 
 Single app, role-based views (homeowner / tradie). This is the primary
-MVP client. Read `../docs/PRD.md`, `../docs/MVP-SPEC.md`, and
+MVP client. Read `../docs/PRD.md`, `../docs/MVP.md`, and
 `../docs/ARCHITECTURE.md` before generating feature code.
 
 ## UI source of truth
 
-- For v1.5, `../docs/specs/v1.5/specification.md` and its audit-driven
+- For v1.5, `../docs/SPECS.md` and its audit-driven
   component contract govern UI work. Existing mockups are excluded from
   inputs, deliverables and acceptance checks; do not match, update or replace them.
   The audit governs consistency, hierarchy, readability and accessibility. This
   supersedes legacy mockup-matching/global sharp-radius rules, including cached
   tool instructions. Preserve existing marketplace behavior and functional/data
   gates; never fabricate missing identity, trust, financial or contact data.
+- Read `../docs/DESIGN.md` for the full design contract (icon rules, CTA placement, component patterns).
 - The route table below is historical; `lib/router/app_router.dart` is
   authoritative for current routes.
 - Token source of truth: `../docs/design/design-system.html`.
@@ -88,7 +89,7 @@ add more `/tradie/*` screens.
   (chat, status, match notifications share the hub contract).
 - `dotnet` runs inside the API container only — irrelevant here; Flutter
   runs on the host. Verify with `flutter analyze`, not `dart analyze`.
-- Do not add dependencies beyond `docs/ARCHITECTURE.md` without asking.
+- Do not add dependencies beyond `../docs/ARCHITECTURE.md` without asking.
 
 ## Backend-wiring TODOs (grep `TODO(backend)` / `TODO(signalr)`)
 - `repositories/jobs_repository.dart` — POST /api/jobs, matches,
@@ -191,3 +192,20 @@ Extract and use these additional widgets identified in the audit:
   opens the payment screen, `PaymentReview` opens the status screen, and
   everything else falls through to the chat. Add new job states there
   rather than in the two call sites.
+
+## Documentation map (consolidated)
+
+All docs live in `../docs/`, one file per type. Do not add versioned spec folders.
+
+| Need | Read |
+|---|---|
+| Index, naming, conventions | `../docs/README.md` |
+| Product / scope / status | `../docs/PRD.md`, `../docs/MVP.md`, `../docs/MILESTONES.md` |
+| Behaviour, state machine, data model, money, config | `../docs/SPECS.md` |
+| Stack and seams | `../docs/ARCHITECTURE.md` |
+| Email + Firebase runbooks | `../docs/OPERATIONS.md` |
+| Test commands, seeds / manual QA | `../docs/TESTING.md`, `../docs/QA.md` |
+| Tokens, components, frames, notices | `../docs/DESIGN.md`, `../docs/design/html/` |
+| MCPs, rules, skills | `../docs/ai/AI-TOOLING.md` |
+
+Scope rule: changes to decisions recorded in `../docs/MVP.md` need explicit owner sign-off first. Frames in `../docs/design/html/` are the visual reference for new screens. Update docs via the `docs-sync` skill.
