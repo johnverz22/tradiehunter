@@ -4,7 +4,7 @@
 **Date:** 2026-11-16
 **References:** [Specification](specification.md) · [README](README.md)
 
-Unchecked tasks are not started. A task is complete only when its acceptance criteria in [specification.md](specification.md) and the relevant tests pass. Priorities follow the specification's build order (§12): **P0** = foundation and pay-at-completion rewiring (highest risk, ships behind the `JobFlow:Version` feature flag); **P1** = tradie browse/request and price adjustments; **P2** = project jobs; **P3** = stretch (deferred unless D2 = yes). Dependencies are task IDs; priorities do not override dependencies. Status values: `NOT STARTED` → `IN PROGRESS` → `COMPLETE`.
+Unchecked tasks are not started. A task is complete only when its acceptance criteria in [specification.md](specification.md) and the relevant tests pass. Priorities follow the specification's build order (§12): **P0** = foundation and pay-at-completion rewiring (highest risk, ships behind the `JobFlow:Version` feature flag); **P1** = tradie browse/request and price adjustments; **P2** = project jobs; **P3** = stretch (deferred — D2 resolved, not in Phase 12). Dependencies are task IDs; priorities do not override dependencies. Status values: `NOT STARTED` → `IN PROGRESS` → `COMPLETE`.
 
 ## Task summary
 
@@ -57,7 +57,7 @@ Unchecked tasks are not started. A task is complete only when its acceptance cri
 | 23 | P12-23 Quote requests & `Quote` entity | NOT STARTED | P2 | P12-21, P12-08 | §9 |
 | 24 | P12-24 Quote UIs | NOT STARTED | P2 | P12-23, P12-06 | §9 |
 | 25 | P12-25 Large-job guardrails (NZ context) | NOT STARTED | P2 | P12-23 | §9 |
-| 26 | P12-26 Milestone payments (stretch / Phase C2) | NOT STARTED | P3 | P12-23 | §9 |
+| 26 | P12-26 Milestone payments (deferred / Phase C2) | NOT STARTED | P3 | P12-23 | §9 |
 
 ### Workstream F — Rollout & quality (spec §10)
 
@@ -96,7 +96,7 @@ P12-01 (data model)
 P12-23 (quotes) ← P12-21, P12-08
 ├── P12-24 (quote UIs) ← P12-06
 ├── P12-25 (large-job guardrails)
-└── P12-26 (milestones — stretch, only if D2 = yes)
+└── P12-26 (milestones — deferred, D2 resolved)
 
 P12-28 (tests & docs) — runs across all workstreams
 ```
@@ -107,7 +107,7 @@ P12-28 (tests & docs) — runs across all workstreams
 2. **P12-10 → P12-16** — pay-at-completion, behind the flag. Highest risk; build and test first end-to-end.
 3. **P12-04 → P12-09** — Post Job simplification, tradie list, profile, direct request. Fixes the "chosen tradie is ignored" bug (spec §3, row 4b).
 4. **P12-17 → P12-20** — price adjustments.
-5. **P12-21 → P12-25** — project jobs, then **P12-26** if D2 = yes.
+5. **P12-21 → P12-25** — project jobs (**P12-26** milestones deferred — D2 resolved, not in Phase 12).
 6. **P12-27 → P12-28** — throughout; flip the `JobFlow:Version` flag after QA.
 
 ---
@@ -182,17 +182,19 @@ P12-28 (tests & docs) — runs across all workstreams
 
 ### [ ] P12-05 — Tradie list API
 
-**Priority:** P1 · **Depends:** P12-02 · **Platform:** Backend
+**Priority:** P1 · **Depends:** P12-02 · **Platform:** Backend + Mobile (small)
 **References:** `Services/MatchingService.cs`, `DTOs/JobDTOs.cs` (`TradieMatchDto`, `ServiceSearchResultDto`), `GET /api/jobs/{id}/matches`
-**Objective:** One endpoint feeds the Choose-a-Tradie screen: everything needed to compare tradies for this job, server-ranked.
+**Objective:** One endpoint feeds the Choose-a-Tradie screen: everything needed to compare tradies for this job, server-ranked — including GST status for final-price display (D8).
 
 **Checklist:**
 - [ ] One endpoint returns, per tradie: id, name/business, initials/avatar, verified, insured, rating, review count, distance, availability, **`HourlyRate` for the job's service**, completed-jobs count.
+- [ ] `TradieProfile` gains `IsGstRegistered` (migration + profile DTOs; onboarding wizard & profile-edit toggle) — introduced here as the first consumer (D8).
+- [ ] Each row carries `IsGstRegistered`; the listed `HourlyRate` is the final consumer price (GST-inclusive when registered) for "Incl. GST" / "No GST charged" labels (D8).
 - [ ] Supports `sort` (`best`, `rating`, `distance`, `rate`) and filters (`verified`, `insured`, `availableNow`).
 - [ ] Reuses EF Core spatial LINQ + `Geo` helpers (no raw PostGIS). Licence-gating (P10-08) still applies.
 - [ ] Server owns ranking; "best" = existing score.
 
-**Acceptance:** Sorted/filtered results are correct and stable; licence-gated tradies never appear for regulated services; no raw SQL introduced.
+**Acceptance:** Sorted/filtered results are correct and stable; licence-gated tradies never appear for regulated services; no raw SQL introduced. Rates shown to homeowners are final consumer prices with correct GST labels (D8).
 
 ---
 
@@ -204,6 +206,7 @@ P12-28 (tests & docs) — runs across all workstreams
 
 **Checklist:**
 - [ ] Route `/jobs/:jobId/tradies`; shows list per spec §4.1 with sort/filter bar (reuse `fixo_filter_bar`/`fixo_filter_pill`).
+- [ ] Rate display carries the GST label (D8): "Incl. GST" / "No GST charged".
 - [ ] Card tap opens profile; "Quick match for me" starts the existing auto-match.
 - [ ] Empty / loading / error states via `fixo_states`.
 - [ ] Light and dark themes (AGENTS.md).
@@ -222,9 +225,10 @@ P12-28 (tests & docs) — runs across all workstreams
 - [ ] Route accepts optional `jobId`; when present shows the **rate for this job's service** and a sticky **Request this tradie** CTA.
 - [ ] Shows verified/insured badges, services & rates, rating + paginated reviews (already built).
 - [ ] Profile API returns the tradie's rate for the service (add to existing profile DTO).
+- [ ] The rate displays as a final consumer price with the GST label — "Incl. GST" / "No GST charged" (D8; `IsGstRegistered` surfaced via the profile DTO).
 - [ ] Without `jobId` the screen behaves exactly as today.
 
-**Acceptance:** Opening `/tradie/:id?jobId=…` shows the service rate + CTA; opening `/tradie/:id` is byte-for-byte the current behavior; no PII or unauthorised fields added to the DTO.
+**Acceptance:** Opening `/tradie/:id?jobId=…` shows the service rate + CTA; opening `/tradie/:id` is byte-for-byte the current behavior; no PII or unauthorised fields added to the DTO. GST label correct for registered and unregistered tradies (D8).
 
 ---
 
@@ -239,9 +243,11 @@ P12-28 (tests & docs) — runs across all workstreams
 - [ ] Tradie accept → job `Requested → Booked`, `MatchedTradieId` + `Job.HourlyRate` copied from the snapshot.
 - [ ] Decline / timeout → job stays `Requested`; homeowner is returned to the list (no auto-broaden unless they chose Quick match).
 - [ ] Hourly jobs: one pending request at a time (existing invariant). Quick match path unchanged.
+- [ ] The optional `message` is the only pre-acceptance contact channel — no chat thread before `Booked` (D3; P5-08 gating unchanged).
+- [ ] Offer expiry is urgency-aware and configurable (D7): ~15–30 minutes for ASAP, ~2–4 hours for flexible.
 - [ ] Status changes go through `IJobStatusService` and the SignalR hub (AGENTS.md).
 
-**Acceptance:** Requesting a specific tradie produces an offer to exactly that tradie with the correct rate snapshot; decline/timeout returns the job to requestable state; all transitions emit SignalR events.
+**Acceptance:** Requesting a specific tradie produces an offer to exactly that tradie with the correct rate snapshot; decline/timeout returns the job to requestable state; all transitions emit SignalR events. No pre-booking chat path exists (D3).
 
 ---
 
@@ -306,6 +312,8 @@ P12-28 (tests & docs) — runs across all workstreams
 
 **Acceptance:** High bills escalate to staff, never silently approve; overdue flow reminds → flags → blocks posting; the pending-adjustment guard is wired when P12-17 lands (it ships later in build order — until then the no-adjustments condition is vacuously true).
 
+> **D1 (resolved):** no deposit/hold mechanism in Phase 12 — manual bank-transfer deposits would double admin verification; revisit only once an automated payment gateway (BNZ/Stripe) exists.
+
 ---
 
 ### [ ] P12-13 — Payment & payout on FinalAmount
@@ -317,7 +325,7 @@ P12-28 (tests & docs) — runs across all workstreams
 **Checklist:**
 - [ ] `Payment.Amount` = `Job.FinalAmount`; instructions/ref code unchanged.
 - [ ] `PaymentReview→Completed` triggers `CreatePayoutAsync` (hook moves from the old confirm path); `GrossAmount = FinalAmount`.
-- [ ] Commission base is configurable: `PayoutOptions:CommissionAppliesTo = LabourOnly | LabourAndAdjustments` (see D5 — recommended default `LabourOnly`).
+- [ ] Commission base is configurable: `PayoutOptions:CommissionAppliesTo = LabourOnly | LabourAndAdjustments` (D5 resolved: **`LabourOnly`** default; toggle retained in config).
 - [ ] Receipt hash / re-upload / SLA behaviour (P4, P10-16) unchanged.
 
 **Acceptance:** Verify→Completed creates exactly one payout with `GrossAmount = FinalAmount`; commission computed on the configured base only; receipt verification flows unchanged.
@@ -332,7 +340,7 @@ P12-28 (tests & docs) — runs across all workstreams
 
 **Checklist:**
 - [ ] Pre-completion cancellations create **no refund** (nothing was paid).
-- [ ] Existing monetary penalties/partial refunds (e.g. 50% on tradie no-show) are replaced by non-monetary consequences for now: cancellation counters, account flags, reputation (D4 decides whether a cancellation fee is invoiced later).
+- [ ] Existing monetary penalties/partial refunds (e.g. 50% on tradie no-show) are replaced by non-monetary consequences only: strike/cancellation counters, `RepeatCanceller`/`RepeatNoShow` account flags, temporary suspension, visible reliability score (D4 resolved: invoiced cancellation fees are ruled out for Phase 12 — no enforcement without a card on file).
 - [ ] Refund path remains only for post-payment disputes resolved in the homeowner's favour.
 - [ ] No orphaned `Refund` rows for in-flight legacy jobs (see P12-27).
 
@@ -429,9 +437,9 @@ P12-28 (tests & docs) — runs across all workstreams
 **Checklist:**
 - [ ] Push deep-links to a sheet: what, how much, receipt, running total vs estimate, **Approve / Decline (+ note)**.
 - [ ] Job detail shows an "Adjustments" section with history.
-- [ ] Optional (stretch): "Pre-approve up to \$\_\_ for materials" on Post Job → adjustments within the allowance auto-approve (flagged in the audit log). See D6.
+- Pre-approved materials allowance is **cut from Phase 12** (D6): explicit one-tap Approve/Decline is the only path — auto-approval caps invite disputes over receipt validity.
 
-**Acceptance:** Approve/decline updates the running total immediately (SignalR); history section shows all adjustments with statuses; stretch pre-approval only ships if D6 is approved.
+**Acceptance:** Approve/decline updates the running total immediately (SignalR); history section shows all adjustments with statuses; no pre-approval/auto-approval path ships (D6 — cut).
 
 ---
 
@@ -476,6 +484,7 @@ P12-28 (tests & docs) — runs across all workstreams
 **Checklist:**
 - [ ] `JobOffer.Kind` (`Instant`, `QuoteRequest`). For projects the homeowner may request quotes from **up to 3 tradies concurrently** (mirrors Builderscrack's cap); instant jobs stay single-pending.
 - [ ] Quote fields: `PricingModel (Fixed | EstimateRange | HourlyWithCap)`, `Amount` or `Min/Max`, `Cap?`, `Inclusions`, `Exclusions`, `MaterialsIncluded bool`, `GstIncluded bool`, `ProposedStartUtc?`, `EstimatedDurationDays?`, `ValidUntilUtc`, `Status (Submitted | Accepted | Declined | Withdrawn | Expired)`.
+- [ ] D8: quote prices are final consumer prices — GST-inclusive when the tradie is `IsGstRegistered` (`GstIncluded` required `true` for registered tradies; unregistered tradies cannot charge GST).
 - [ ] Quote window configurable (default 72h). Accepting one quote declines the others and moves the job to `Booked` with the agreed `PricingModel` snapshotted on the job.
 - [ ] `FinalAmount` for `Fixed` = agreed price + approved adjustments; for `EstimateRange` / `HourlyWithCap` = actual, validated against the range/cap (above cap requires an approved adjustment).
 
@@ -492,6 +501,7 @@ P12-28 (tests & docs) — runs across all workstreams
 **Checklist:**
 - [ ] Tradie: project request detail has a **Submit quote** form (fields above) instead of a one-tap accept.
 - [ ] Homeowner: `/jobs/:id/quotes` compares quotes side by side (price, inclusions, start date, rating) with profile links; **Accept quote**.
+- [ ] Quote prices display with the GST label (D8): "Incl. GST" / "No GST charged".
 - [ ] Payment still happens at completion (same flow as spec §4.2).
 
 **Acceptance:** Full quote submit→compare→accept loop works; accepting books the job with the agreed pricing model; no payment UI before completion.
@@ -512,11 +522,11 @@ P12-28 (tests & docs) — runs across all workstreams
 
 ---
 
-### [ ] P12-26 — Milestone payments (stretch / Phase C2)
+### [ ] P12-26 — Milestone payments (deferred / Phase C2)
 
 **Priority:** P3 · **Depends:** P12-23 · **Platform:** Backend + Mobile + Web
 **Rationale:** NZ implied terms default to monthly progress payments; large projects realistically need staged payment. `PRD.md` already lists milestone payments as a goal.
-**Deferred unless D2 = yes.** Projects can ship first with payment-at-completion only.
+**Deferred (D2 resolved 2026-11-16) — not in Phase 12.** Projects ship with payment-at-completion only; interim staging via progress terms in the quote or sequential jobs.
 
 **Checklist:**
 - [ ] Quote may include milestones (`Title, Amount, DueOn`). Tradie marks a milestone done → homeowner approves → pays via the same receipt/verify flow → per-milestone payout.
@@ -555,6 +565,6 @@ P12-28 (tests & docs) — runs across all workstreams
 
 ---
 
-## Open decisions affecting tasks
+## Resolved decisions (owner, 2026-11-16)
 
-Tracked in [specification.md](specification.md) §11. Current defaults while implementing: D1 pay-at-end with platform safeguards (per owner brief) · D2 milestones deferred (P12-26 stays P3) · D3 request + optional message only until decided · D4 non-monetary consequences (P12-14) · D5 commission on labour only by default (P12-13) · D6 pre-approval stretch only (P12-20) · D7 no parallel hourly requests (P12-08) · D8 `GstIncluded` on quotes, display decision pending.
+All eight decisions are resolved — resolutions and rationale in [specification.md](specification.md) §11. Outcomes wired into the tasks above: **D1** pay-at-end with platform safeguards, no deposits (P12-12) · **D2** milestones deferred — not in Phase 12 (P12-26) · **D3** request + optional message only, chat stays gated to `Booked`+ (P12-08) · **D4** non-monetary consequences only, no invoiced fees (P12-14) · **D5** commission `LabourOnly` by default, toggle retained (P12-13) · **D6** pre-approved materials allowance cut (P12-20) · **D7** single pending request with urgency-aware expiry — ~15–30 min ASAP / ~2–4 h flexible, configurable (P12-08) · **D8** GST-inclusive consumer pricing: `IsGstRegistered` on the tradie profile, introduced in P12-05, surfaced in P12-05/P12-07/P12-23, labels in P12-06/P12-24.
