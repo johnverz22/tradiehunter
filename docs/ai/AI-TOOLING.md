@@ -11,39 +11,34 @@ How AI coding agents work in this repo: rules, skills, MCP servers and the desig
 | `agent/skills/` | Skills (below). Claude Code users can symlink `.claude/skills` → `agent/skills` |
 | `agent/Makefile`, `agent/setup.sh`, `package.json` | Toolchain entry points |
 | `tools/design2flutter/` | HTML mockup → Flutter AST transpiler (Node + parse5), `th_components.dart` widget contract |
-| `docs/design/` | Mockup frames, `kit.css`, tokens, assets, audit/build scripts |
+| `docs/design/` | v2 design system: tokens (`tokens.json` master source), AST screens, Flutter widgets, generated mockups. Build with `node docs/design/tools/build.mjs` |
 | `scripts/` | Verification scripts ([TESTING.md](../TESTING.md)) |
 
 ## 2. Rules in one paragraph
 
-Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobStatusService`, respect the job flow version, no unapproved scope (in-app payments, deposits, milestones, pre-booking chat), no invented UI data, no secrets in git. Mobile: tokens only, reuse `Fixo*` widgets, dark mode is a token swap, ≤ 2 amber elements, 48 dp targets, 12 px floor, `FixoNotice` for feedback. Full text: `CLAUDE.md`.
+Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobStatusService`, respect the job flow version, no unapproved scope (in-app payments, deposits, milestones, pre-booking chat), no invented UI data, no secrets in git. Mobile: tokens only (`THColors`, `THType`, `Space`, `Radii`, `Sizes` via `context.th.*`), reuse `TH*` widgets, dark mode is a token swap, one gold CTA per screen, 44 dp min targets, `THNotice` for feedback. Full text: `CLAUDE.md`.
 
 ## 3. Skills
 
 | Skill | Use when |
 |---|---|
-| `mockup-to-flutter` | Building or fixing a screen from a frame (includes the scaffold script and CSS → Flutter references) |
+| `mockup-to-flutter` | Building or fixing a screen from a v2 screen stub (see `docs/design/flutter/screens/`) |
 | `widget-refactor` | A build method passes ~100 lines, a structure repeats twice, or a lint flags hard-coded values |
-| `ui-audit` | Before committing mockup changes; runs the design gates ([DESIGN §8](../DESIGN.md#8-regression-gates-design-changes-must-pass)) |
-| `mockup-html-qa` | Checking frames for missing icons, back-button geometry, pill overflow, sub-12 px text before porting to Flutter |
-| `design-vs-run-crosscheck` | Comparing rendered frames with run screenshots into a discrepancy table |
+| `ui-audit` | Before committing UI changes; runs the v2 design gate (`node docs/design/tools/build.mjs --check`) |
 | `docs-sync` | **After any behaviour, scope, schema, config or status change**: routes the edit to the single owning doc |
 
 ## 4. Toolchain commands
 
 ```bash
-./agent/setup.sh          # installs Node + Python deps, runs audit, transpile, lint, smoke
-make -C agent audit       # design audit gates on docs/design
-make -C agent transpile   # regenerate Flutter scaffolds into tools/design2flutter/output (not committed)
-make -C agent check       # structural lint of generated Dart
-make -C agent smoke       # end-to-end pipeline proof
-make -C agent flutter     # dart format + flutter analyze + flutter test
-npm run verify            # audit + transpile + check + smoke
+node docs/design/tools/build.mjs          # regenerate tokens, Flutter stubs, HTML mockups
+node docs/design/tools/build.mjs --check  # CI gate: contrast + stale-output + unknown nodes
+make -C agent flutter                      # dart format + flutter analyze + flutter test
+npm run verify                            # build check + flutter
 ```
 
-Requires Node ≥ 18, Python 3, `beautifulsoup4`, Playwright + Chromium. `tools/design2flutter/output/` is generated and gitignored; regenerate it instead of committing it.
+Requires Node ≥ 18. No Python dependencies for the v2 design pipeline.
 
-New screen: `bash agent/skills/mockup-to-flutter/scripts/new-screen.sh H13 chat` (finds the frame, scaffolds into `mobile/lib/views/chat/`). Then wire view models, swap `TH*` scaffolding for `Fixo*` widgets, stress-test (long text, 1.3× scale, 360 dp, three themes).
+New screen: edit `docs/design/ast/screens.mjs`, rebuild, review `docs/design/mockups/index.html`, copy the generated stub into `mobile/lib/views/`, bind data, run `flutter analyze`.
 
 ## 5. MCP servers
 

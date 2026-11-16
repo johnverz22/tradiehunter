@@ -5,7 +5,7 @@ TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tr
 ## Read first
 `docs/README.md` is the map. Then, by task:
 - behaviour, state machine, data, money → `docs/SPECS.md`; scope → `docs/MVP.md`; open work → `docs/MILESTONES.md`
-- mobile UI → `docs/DESIGN.md` and `docs/design/html/` frames; tooling → `docs/ai/AI-TOOLING.md`
+- mobile UI → `docs/DESIGN.md` and `docs/design/DESIGN_GUIDE.md`; visual reference → `docs/design/mockups/index.html`; tooling → `docs/ai/AI-TOOLING.md`
 - tests → `docs/TESTING.md`, `docs/QA.md`
 
 ## Non-negotiables
@@ -19,17 +19,15 @@ TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tr
 8. Never commit secrets: `.env`, `appsettings.Development.json`, `firebase-service-account.json`, LINZ key, tokens.
 
 ## Mobile UI rules (Flutter)
-- **Tokens only:** colours via `Theme.of(context).extension<THColors>()!`; `Space.*`, `Radii.*`, `Sizes.*`, `FW`, `Alpha`, type from the token set (12 px floor). No `Color(0x…)`, no magic numbers. Missing token → add to `design_tokens.dart`, `docs/design/tokens/tokens.json` and `kit.css` together.
-- **Reuse before create:** `FixoAppBar/BackButton/PrimaryButton/TonalButton/GhostButton/Card/Avatar/Wordmark/EmptyState`, `StatusBadge`, `FixoFilterPill`, `FixoNotice`. New design-system widgets follow the `TH*` contract in `tools/design2flutter/th_components.dart`.
-- **Dark mode is a token swap**; a theme `if` inside a view is a bug. Support light/dark/outdoor, 320 px width, text scale to 2.0, safe-area + keyboard.
-- **Brand budget:** max 2 amber elements per screen (primary CTA + one urgency). Green = verified/done, red = problem/dispute, selection = brand border + tint + check (never amber). 48 dp hit targets.
-- **Feedback:** use `FixoNotice` + `NoticeCopy`; no raw `SnackBar`.
-- Mockup semantics are binding: `.faderow` = scrolling chips with fade, `.badges` = `Wrap`, `.spread` = spaceBetween with `Expanded` text.
-- Generated files (`// GENERATED`) are regenerated, not patched.
+- **Tokens only:** colours via `context.th.<name>` (`THColors`); `Space.*`, `Radii.*`, `Sizes.*`, `THType.*` for type. No `Color(0x…)`, no magic numbers. Missing token → add to `design_tokens.dart` and `docs/design/tokens/tokens.json`.
+- **Reuse before create:** `THAppBar`, `THButton`, `THCard`, `THHero`, `THDock`, `THStickyBar`, `THBadge`, `THAvatar`, `THNotice`. New widgets follow the `TH*` contract in `docs/design/flutter/th_widgets.dart`.
+- **Dark mode is a token swap**; a theme `if` inside a view is a bug. Support light/dark, 320 px width, text scale to 2.0, safe-area + keyboard. No outdoor variant.
+- **Brand budget:** one gold (`accent`) action per screen. `brand` (navy) for secondary filled actions. Green = verified/done, red = problem/dispute.
+- **Feedback:** use `THNotice` + `NoticeCopy`; no raw `SnackBar`.
 
 ## Workflows
-- New or fixed screen: skill `mockup-to-flutter`. Widget extraction: `widget-refactor`. Design audit: `ui-audit`. Mockup defects: `mockup-html-qa`. Run-vs-design: `design-vs-run-crosscheck`.
+- New or fixed screen: start from `docs/design/flutter/screens/<id>_screen.dart` stub, bind data, run `flutter analyze`. Widget extraction: `widget-refactor`. Design gate: `node docs/design/tools/build.mjs --check`.
 - **After any behaviour, scope or status change: skill `docs-sync`**, and update only the owning doc. Do not create versioned spec folders, plans, progress logs or audit notes.
 
 ## Before committing
-`dart format` · `flutter analyze` clean · `flutter test` green · backend `dotnet build` + `dotnet test` · for mockup changes `make -C agent audit` green and regenerate variants (`docs/design/build.sh`).
+`dart format` · `flutter analyze` clean · `flutter test` green · backend `dotnet build` + `dotnet test` · for design changes `node docs/design/tools/build.mjs --check`.

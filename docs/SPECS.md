@@ -139,8 +139,8 @@ Single Flutter app, role-based. Source of visual truth is [DESIGN.md](DESIGN.md)
 - **Four-stage homeowner presentation** mapped from server states (display only, never used for permissions): Requested (1/4), Booked (2/4), In progress (3/4), Done (4/4). Under v2 the stepper reads Requested → Booked → In progress → Review & approve → Pay → Completed. Cancelled/Expired/Disputed never appear as Done; unknown states show "Status unavailable".
 - **Truthful trust and money:** badges only with server evidence; real name and photo or initials; amounts from snapshotted rate; no invented surcharge, estimate range, net/paid claim or escrow guarantee; "Receipt uploaded" is not "Payment verified"; materials/extras copy comes from config.
 - **Leads:** price, distance, schedule and a countdown driven by server `expiresAtUtc` (never extended client-side); direct Accept/Decline share one command; stale/expired offers refresh with a clear outcome.
-- **Components and rules:** 20 px cards, 14 px controls, 28 px sheets, 48 dp minimum targets, 12 px type floor, one amber primary per screen, sticky bottom action bar respecting safe area and keyboard, 1.0–2.0 text scale and 320 px width without clipping, light/dark/outdoor by token swap, iPad master-detail ≥ 744 pt and rail ≥ 1024 pt.
-- **Feedback:** all transient messages use `FixoNotice` (info/success/warning/error/push); no raw `SnackBar`. See [DESIGN.md](DESIGN.md#7-feedback-notices).
+- **Components and rules:** control 16 px, card 20 px, sheet 32 px radii; 44 dp minimum tap targets, 54 dp buttons; one gold (`accent`) CTA per screen, sticky bottom action bar respecting safe area and keyboard, 1.0–2.0 text scale and 320 px width without clipping, light/dark themes by token swap, iPad master-detail ≥ 744 pt and rail ≥ 1024 pt.
+- **Feedback:** all transient messages use `THNotice` (info/success/warning/error/push); no raw `SnackBar`. See [DESIGN.md](DESIGN.md#7-feedback-notices).
 - **Address:** service → address search → coordinates hidden; editing the address invalidates prior coordinates and rate results.
 
 ## 11. v1.7 job-flow revision (Phase 12)

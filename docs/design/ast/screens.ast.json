@@ -1,0 +1,4262 @@
+{
+ "version": "2.0.0",
+ "screens": [
+  {
+   "id": "splash",
+   "title": "Splash",
+   "route": "/",
+   "role": "shared",
+   "bg": "hero",
+   "body": [
+    {
+     "t": "spacer"
+    },
+    {
+     "t": "col",
+     "align": "center",
+     "gap": 16,
+     "c": [
+      {
+       "t": "wordmark",
+       "sz": "lg"
+      },
+      {
+       "t": "text",
+       "v": "Trusted tradies, sorted fast.",
+       "s": "body",
+       "tone": "onHero"
+      }
+     ]
+    },
+    {
+     "t": "spacer"
+    }
+   ]
+  },
+  {
+   "id": "onboarding",
+   "title": "Onboarding",
+   "route": "/onboarding",
+   "role": "shared",
+   "body": [
+    {
+     "t": "illus",
+     "ic": "search"
+    },
+    {
+     "t": "gap",
+     "n": 24
+    },
+    {
+     "t": "text",
+     "v": "Post a job in minutes",
+     "s": "h1"
+    },
+    {
+     "t": "gap",
+     "n": 8
+    },
+    {
+     "t": "text",
+     "v": "Describe what you need, choose a local tradie, and pay only when the work is approved.",
+     "s": "body",
+     "tone": "soft"
+    },
+    {
+     "t": "spacer"
+    },
+    {
+     "t": "dots",
+     "count": 3,
+     "on": 0,
+     "align": "center"
+    },
+    {
+     "t": "gap",
+     "n": 20
+    },
+    {
+     "t": "btn",
+     "v": "Next",
+     "k": "primary"
+    },
+    {
+     "t": "btn",
+     "v": "Skip",
+     "k": "ghost"
+    }
+   ]
+  },
+  {
+   "id": "role_select",
+   "title": "Choose your role",
+   "route": "/role-select",
+   "role": "shared",
+   "body": [
+    {
+     "t": "gap",
+     "n": 24
+    },
+    {
+     "t": "text",
+     "v": "How will you use TradieHunter?",
+     "s": "h1"
+    },
+    {
+     "t": "gap",
+     "n": 6
+    },
+    {
+     "t": "text",
+     "v": "You can switch later in settings.",
+     "s": "body",
+     "tone": "soft"
+    },
+    {
+     "t": "gap",
+     "n": 20
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 18,
+     "c": [
+      {
+       "t": "row",
+       "gap": 14,
+       "c": [
+        {
+         "t": "tile",
+         "ic": "home",
+         "v": "",
+         "big": true
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "I need a tradie",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Post jobs, compare rates, pay after approval.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "icon",
+         "n": "check",
+         "tone": "accent"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 12
+    },
+    {
+     "t": "card",
+     "pad": 18,
+     "c": [
+      {
+       "t": "row",
+       "gap": 14,
+       "c": [
+        {
+         "t": "tile",
+         "ic": "ham",
+         "v": "",
+         "big": true
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "I’m a tradie",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Get leads, set your rate, get paid.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "spacer"
+    },
+    {
+     "t": "btn",
+     "v": "Continue",
+     "k": "primary"
+    }
+   ]
+  },
+  {
+   "id": "sign_in",
+   "title": "Sign in",
+   "route": "/login",
+   "role": "shared",
+   "body": [
+    {
+     "t": "gap",
+     "n": 12
+    },
+    {
+     "t": "wordmark",
+     "sz": "sm"
+    },
+    {
+     "t": "gap",
+     "n": 28
+    },
+    {
+     "t": "text",
+     "v": "Welcome back",
+     "s": "h1"
+    },
+    {
+     "t": "gap",
+     "n": 4
+    },
+    {
+     "t": "text",
+     "v": "Sign in to manage your jobs.",
+     "s": "body",
+     "tone": "soft"
+    },
+    {
+     "t": "gap",
+     "n": 20
+    },
+    {
+     "t": "field",
+     "l": "EMAIL",
+     "v": "mere@example.co.nz",
+     "ic": "mail"
+    },
+    {
+     "t": "field",
+     "l": "PASSWORD",
+     "v": "••••••••••",
+     "ic": "lock",
+     "tr": "eye"
+    },
+    {
+     "t": "text",
+     "v": "Forgot password?",
+     "s": "title",
+     "tone": "brand",
+     "size": 13,
+     "align": "end"
+    },
+    {
+     "t": "gap",
+     "n": 8
+    },
+    {
+     "t": "btn",
+     "v": "Sign in",
+     "k": "primary"
+    },
+    {
+     "t": "divider",
+     "v": "or"
+    },
+    {
+     "t": "btn",
+     "v": "Continue with Google",
+     "k": "secondary",
+     "ic": "globe"
+    },
+    {
+     "t": "spacer"
+    },
+    {
+     "t": "row",
+     "gap": 4,
+     "justify": "center",
+     "c": [
+      {
+       "t": "text",
+       "v": "New here?",
+       "s": "body",
+       "tone": "soft"
+      },
+      {
+       "t": "text",
+       "v": "Create account",
+       "s": "title",
+       "tone": "brand",
+       "size": 15
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "verify_otp",
+   "title": "Verify email",
+   "route": "/verify-email",
+   "role": "shared",
+   "bar": {
+    "t": "bar",
+    "v": "Verify your email"
+   },
+   "body": [
+    {
+     "t": "gap",
+     "n": 16
+    },
+    {
+     "t": "text",
+     "v": "Enter the 6-digit code",
+     "s": "h1"
+    },
+    {
+     "t": "gap",
+     "n": 6
+    },
+    {
+     "t": "text",
+     "v": "We sent a code to mere@example.co.nz.",
+     "s": "body",
+     "tone": "soft"
+    },
+    {
+     "t": "gap",
+     "n": 24
+    },
+    {
+     "t": "otp",
+     "count": 6,
+     "v": "482"
+    },
+    {
+     "t": "gap",
+     "n": 16
+    },
+    {
+     "t": "text",
+     "v": "Resend code in 0:42",
+     "s": "meta",
+     "tone": "soft",
+     "align": "center"
+    },
+    {
+     "t": "spacer"
+    },
+    {
+     "t": "btn",
+     "v": "Verify",
+     "k": "primary"
+    }
+   ]
+  },
+  {
+   "id": "ho_home",
+   "title": "Home",
+   "route": "/home",
+   "role": "homeowner",
+   "nav": "home",
+   "dock": "homeowner",
+   "body": [
+    {
+     "t": "row",
+     "gap": 12,
+     "c": [
+      {
+       "t": "col",
+       "x": true,
+       "c": [
+        {
+         "t": "text",
+         "v": "Kia ora,",
+         "s": "meta",
+         "tone": "soft"
+        },
+        {
+         "t": "text",
+         "v": "Mere",
+         "s": "h1"
+        }
+       ]
+      },
+      {
+       "t": "ibtn",
+       "ic": "bell",
+       "k": "secondary",
+       "dot": true
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 16
+    },
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "text",
+       "v": "NEEDS YOUR ATTENTION",
+       "s": "label",
+       "tone": "gold"
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "text",
+       "v": "Approve final amount",
+       "s": "h2",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "Leaking kitchen tap · Aroha Plumbing",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      },
+      {
+       "t": "gap",
+       "n": 16
+      },
+      {
+       "t": "row",
+       "align": "end",
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "$261.00",
+           "s": "moneyLg",
+           "tone": "onHero"
+          },
+          {
+           "t": "text",
+           "v": "Incl. GST · 2.5 h + 1 extra",
+           "s": "meta",
+           "tone": "onHeroSoft",
+           "size": 11.5
+          }
+         ]
+        },
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "inverse",
+         "sz": "sm",
+         "w": "auto"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 16
+    },
+    {
+     "t": "field",
+     "l": "",
+     "v": "What needs doing?",
+     "ic": "search",
+     "ph": true
+    },
+    {
+     "t": "grid",
+     "cols": 4,
+     "gap": 10,
+     "c": [
+      {
+       "t": "tile",
+       "ic": "drop",
+       "v": "Plumbing"
+      },
+      {
+       "t": "tile",
+       "ic": "bolt",
+       "v": "Electrical"
+      },
+      {
+       "t": "tile",
+       "ic": "ham",
+       "v": "Carpentry"
+      },
+      {
+       "t": "tile",
+       "ic": "brush",
+       "v": "Painting"
+      },
+      {
+       "t": "tile",
+       "ic": "leaf",
+       "v": "Gardening"
+      },
+      {
+       "t": "tile",
+       "ic": "spark",
+       "v": "Cleaning"
+      },
+      {
+       "t": "tile",
+       "ic": "home",
+       "v": "Roofing"
+      },
+      {
+       "t": "tile",
+       "ic": "dots",
+       "v": "More"
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 16
+    },
+    {
+     "t": "row",
+     "c": [
+      {
+       "t": "text",
+       "v": "Active jobs",
+       "s": "title",
+       "x": true
+      },
+      {
+       "t": "text",
+       "v": "See all",
+       "s": "title",
+       "tone": "brand",
+       "size": 13
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 8
+    },
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Repaint hallway",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Waiting for Kiri Painters",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Requested",
+         "k": "accent"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 1,
+       "cur": 1
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 4
+    },
+    {
+     "t": "row",
+     "c": [
+      {
+       "t": "text",
+       "v": "Top rated near you",
+       "s": "title",
+       "x": true
+      },
+      {
+       "t": "text",
+       "v": "See all",
+       "s": "title",
+       "tone": "brand",
+       "size": 13
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "AP",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Aroha Plumbing",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.9",
+             "s": "meta",
+             "bold": true
+            },
+            {
+             "t": "text",
+             "v": "(128) · 2.4 km",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$85",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "/hr incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        },
+        {
+         "t": "badge",
+         "v": "Insured",
+         "k": "brand"
+        },
+        {
+         "t": "badge",
+         "v": "Available now",
+         "k": "accent",
+         "ic": "dot"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "KP",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Kiri Painters",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.8",
+             "s": "meta",
+             "bold": true
+            },
+            {
+             "t": "text",
+             "v": "(73) · 4.0 km",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$70",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "/hr incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        },
+        {
+         "t": "badge",
+         "v": "Insured",
+         "k": "brand"
+        },
+        {
+         "t": "badge",
+         "v": "Available now",
+         "k": "accent",
+         "ic": "dot"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "Pay only after you approve the final amount. Rates always include GST.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_post_quick",
+   "title": "Post a job · quick",
+   "route": "/jobs/new",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Post a Job",
+    "sub": "Describe it. No price needed yet."
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Choose a tradie",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "seg",
+     "items": [
+      "Quick job · hourly",
+      "Project"
+     ],
+     "on": 0
+    },
+    {
+     "t": "field",
+     "l": "JOB TITLE",
+     "v": "Leaking kitchen tap"
+    },
+    {
+     "t": "field",
+     "l": "SERVICE",
+     "v": "Plumbing",
+     "tr": "chev"
+    },
+    {
+     "t": "field",
+     "l": "DESCRIPTION",
+     "v": "Drips constantly, worse when hot water is on.",
+     "h": 78
+    },
+    {
+     "t": "text",
+     "v": "WHEN",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "Flexible",
+       "on": true
+      },
+      {
+       "v": "ASAP"
+      },
+      {
+       "v": "Pick a date",
+       "ic": "cal"
+      },
+      {
+       "v": "Date range"
+      }
+     ]
+    },
+    {
+     "t": "field",
+     "l": "ESTIMATED HOURS · OPTIONAL",
+     "v": "Blank means total is confirmed on completion",
+     "ph": true
+    },
+    {
+     "t": "field",
+     "l": "JOB ADDRESS",
+     "v": "14 Marine Parade, Mt Maunganui",
+     "ic": "pin"
+    },
+    {
+     "t": "dash",
+     "ic": "cam",
+     "v": "Add photos",
+     "sub": null
+    }
+   ]
+  },
+  {
+   "id": "ho_post_project",
+   "title": "Post a job · project",
+   "route": "/jobs/new (project)",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Post a Job",
+    "sub": "Get up to 3 quotes"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Request up to 3 quotes",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "seg",
+     "items": [
+      "Quick job · hourly",
+      "Project"
+     ],
+     "on": 1
+    },
+    {
+     "t": "field",
+     "l": "PROJECT SUMMARY",
+     "v": "Kitchen renovation"
+    },
+    {
+     "t": "field",
+     "l": "SERVICE",
+     "v": "Carpentry",
+     "tr": "chev"
+    },
+    {
+     "t": "field",
+     "l": "SCOPE",
+     "v": "Replace cabinets, benchtop and splashback. Plumbing stays.",
+     "h": 78
+    },
+    {
+     "t": "row",
+     "gap": 10,
+     "c": [
+      {
+       "t": "col",
+       "x": true,
+       "c": [
+        {
+         "t": "field",
+         "l": "BUDGET MIN",
+         "v": "$15,000"
+        }
+       ]
+      },
+      {
+       "t": "col",
+       "x": true,
+       "c": [
+        {
+         "t": "field",
+         "l": "BUDGET MAX",
+         "v": "$25,000"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "WHEN",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "Flexible",
+       "on": true
+      },
+      {
+       "v": "Pick a date",
+       "ic": "cal"
+      },
+      {
+       "v": "Date range"
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 4
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "accent"
+        },
+        {
+         "t": "text",
+         "v": "Jobs over $30,000 need a written contract. Milestone payments are not available yet.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_quotes",
+   "title": "Project quotes",
+   "route": "/jobs/:id/quotes",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Quotes",
+    "sub": "Kitchen renovation · 2 of 3 received"
+   },
+   "body": [
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "BB",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Bay Builders",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.9 · 6 weeks",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$18,400",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "fixed · incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "btn",
+         "v": "View quote",
+         "k": "secondary",
+         "sz": "sm",
+         "x": true
+        },
+        {
+         "t": "btn",
+         "v": "Accept",
+         "k": "primary",
+         "sz": "sm",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "KC",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Kauri Carpentry",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.7 · 8 weeks",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$21,250",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "fixed · incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "btn",
+         "v": "View quote",
+         "k": "secondary",
+         "sz": "sm",
+         "x": true
+        },
+        {
+         "t": "btn",
+         "v": "Accept",
+         "k": "primary",
+         "sz": "sm",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "RB",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Rata Builders",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Preparing a quote…",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Pending",
+         "k": "accent"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_choose_tradie",
+   "title": "Choose a tradie",
+   "route": "/jobs/:id/tradies",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Choose a Tradie",
+    "sub": "Leaking kitchen tap · Plumbing"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Quick match for me",
+     "k": "accent",
+     "ic": "bolt"
+    }
+   ],
+   "body": [
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "Sort",
+       "on": true,
+       "ic": "sliders"
+      },
+      {
+       "v": "Rating"
+      },
+      {
+       "v": "Distance"
+      },
+      {
+       "v": "Rate"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "AP",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Aroha Plumbing",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.9",
+             "s": "meta",
+             "bold": true
+            },
+            {
+             "t": "text",
+             "v": "(128) · 2.4 km",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$85",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "/hr incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        },
+        {
+         "t": "badge",
+         "v": "Insured",
+         "k": "brand"
+        },
+        {
+         "t": "badge",
+         "v": "Available now",
+         "k": "accent",
+         "ic": "dot"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "JW",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Jake’s Plumbing",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.8",
+             "s": "meta",
+             "bold": true
+            },
+            {
+             "t": "text",
+             "v": "(94) · 3.1 km",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$79",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "/hr incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        },
+        {
+         "t": "badge",
+         "v": "Insured",
+         "k": "brand"
+        },
+        {
+         "t": "badge",
+         "v": "Available now",
+         "k": "accent",
+         "ic": "dot"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "HS",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Hemi & Sons",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.7",
+             "s": "meta",
+             "bold": true
+            },
+            {
+             "t": "text",
+             "v": "(61) · 5.6 km",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "end",
+         "c": [
+          {
+           "t": "text",
+           "v": "$90",
+           "s": "money"
+          },
+          {
+           "t": "text",
+           "v": "/hr incl. GST",
+           "s": "meta",
+           "tone": "soft",
+           "size": 11
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        },
+        {
+         "t": "badge",
+         "v": "Insured",
+         "k": "brand"
+        },
+        {
+         "t": "badge",
+         "v": "Available now",
+         "k": "accent",
+         "ic": "dot"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_tradie_profile",
+   "title": "Tradie profile",
+   "route": "/tradie/:id?jobId=",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Profile"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Back",
+     "k": "secondary",
+     "w": "auto"
+    },
+    {
+     "t": "btn",
+     "v": "Request this tradie",
+     "k": "accent",
+     "x": true
+    }
+   ],
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "row",
+       "gap": 14,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "AP",
+         "sz": "lg",
+         "inv": true
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 6,
+         "c": [
+          {
+           "t": "text",
+           "v": "Aroha Plumbing",
+           "s": "h2",
+           "tone": "onHero"
+          },
+          {
+           "t": "row",
+           "gap": 6,
+           "c": [
+            {
+             "t": "badge",
+             "v": "Verified",
+             "k": "glass",
+             "ic": "shield"
+            },
+            {
+             "t": "badge",
+             "v": "Insured",
+             "k": "glass"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 16
+      },
+      {
+       "t": "row",
+       "justify": "between",
+       "c": [
+        {
+         "t": "col",
+         "align": "center",
+         "c": [
+          {
+           "t": "text",
+           "v": "4.9",
+           "s": "money",
+           "tone": "onHero"
+          },
+          {
+           "t": "text",
+           "v": "128 reviews",
+           "s": "meta",
+           "tone": "onHeroSoft",
+           "size": 11.5
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "center",
+         "c": [
+          {
+           "t": "text",
+           "v": "2.4 km",
+           "s": "money",
+           "tone": "onHero"
+          },
+          {
+           "t": "text",
+           "v": "Away",
+           "s": "meta",
+           "tone": "onHeroSoft",
+           "size": 11.5
+          }
+         ]
+        },
+        {
+         "t": "col",
+         "align": "center",
+         "c": [
+          {
+           "t": "text",
+           "v": "6 yrs",
+           "s": "money",
+           "tone": "onHero"
+          },
+          {
+           "t": "text",
+           "v": "Experience",
+           "s": "meta",
+           "tone": "onHeroSoft",
+           "size": 11.5
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Services and rates",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Plumbing",
+       "v": "$85/hr",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Gas fitting",
+       "v": "$95/hr",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Rate is locked when you request",
+       "v": "Incl. GST",
+       "badge": true
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Licences and insurance",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Plumbers licence",
+       "v": "Verified",
+       "badge": "ok"
+      },
+      {
+       "t": "kv",
+       "l": "Public liability",
+       "v": "Current",
+       "badge": "ok"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_request_sent",
+   "title": "Request sent",
+   "route": "/jobs/:id/request",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Request sent"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Cancel request",
+     "k": "secondary"
+    }
+   ],
+   "body": [
+    {
+     "t": "ring",
+     "v": "14:32",
+     "sub": "left to respond",
+     "pct": 62
+    },
+    {
+     "t": "text",
+     "v": "Waiting for Aroha Plumbing",
+     "s": "h1",
+     "align": "center"
+    },
+    {
+     "t": "text",
+     "v": "If they decline or time runs out, you’ll go back to the list. No charge until the job is approved.",
+     "s": "body",
+     "tone": "soft",
+     "align": "center"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Rate locked",
+       "v": "$85/hr incl. GST",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "When",
+       "v": "Flexible",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Total",
+       "v": "Confirmed on completion",
+       "b": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_job_booked",
+   "title": "Job booked",
+   "route": "/jobs/:id/detail",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Leaking kitchen tap",
+    "sub": "Booked"
+   },
+   "nav": "jobs",
+   "dock": "homeowner",
+   "body": [
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 2,
+       "cur": true
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "Booked for Tue, 10:00 am",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Aroha Plumbing will check in on arrival.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Booked",
+         "k": "ok"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "AP",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Aroha Plumbing",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "$85/hr incl. GST · locked",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "ibtn",
+         "ic": "chat",
+         "k": "secondary"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Service",
+       "v": "Plumbing"
+      },
+      {
+       "t": "kv",
+       "l": "Address",
+       "v": "14 Marine Parade"
+      },
+      {
+       "t": "kv",
+       "l": "Timing",
+       "v": "Flexible"
+      },
+      {
+       "t": "kv",
+       "l": "Estimate",
+       "v": "Confirmed on completion"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "timeline",
+       "items": [
+        {
+         "v": "Request accepted",
+         "sub": "Aroha Plumbing · yesterday 4:12 pm",
+         "s": "done"
+        },
+        {
+         "v": "Booked",
+         "sub": "Tue 10:00 am",
+         "s": "cur"
+        },
+        {
+         "v": "Check-in on site",
+         "s": "todo"
+        },
+        {
+         "v": "Work complete and hours entered",
+         "s": "todo"
+        },
+        {
+         "v": "Approve final amount and pay",
+         "s": "todo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "btn",
+     "v": "Message Aroha",
+     "k": "primary",
+     "ic": "chat"
+    },
+    {
+     "t": "btn",
+     "v": "Cancel job",
+     "k": "ghost"
+    }
+   ]
+  },
+  {
+   "id": "ho_extra_cost",
+   "title": "Extra cost approval",
+   "route": "/jobs/:id/detail (adjustment)",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Leaking kitchen tap",
+    "sub": "In progress with Aroha Plumbing"
+   },
+   "nav": "jobs",
+   "dock": "homeowner",
+   "body": [
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 2,
+       "cur": true
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "Checked in 9:02 am",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "1 h 40 min on site",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "In progress",
+         "k": "accent"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "c": [
+        {
+         "t": "badge",
+         "v": "Extra cost request",
+         "k": "accent"
+        },
+        {
+         "t": "text",
+         "v": "22 h left",
+         "s": "meta",
+         "tone": "soft"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "text",
+       "v": "$48.50",
+       "s": "moneyLg"
+      },
+      {
+       "t": "text",
+       "v": "Incl. GST · Materials",
+       "s": "meta",
+       "tone": "soft"
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "text",
+       "v": "Replacement tap cartridge. The old one is worn through.",
+       "s": "body"
+      },
+      {
+       "t": "gap",
+       "n": 14
+      },
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "btn",
+         "v": "Decline",
+         "k": "secondary",
+         "sz": "sm",
+         "x": true
+        },
+        {
+         "t": "btn",
+         "v": "Approve",
+         "k": "primary",
+         "sz": "sm",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Nothing is billed until you approve it. Approvals are recorded against the job.",
+     "s": "meta",
+     "tone": "soft"
+    }
+   ]
+  },
+  {
+   "id": "ho_review_completion",
+   "title": "Approve final amount",
+   "route": "/jobs/:id/detail (awaiting confirmation)",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Job complete?",
+    "sub": "Aroha Plumbing finished the work"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Dispute",
+     "k": "secondary",
+     "w": "auto"
+    },
+    {
+     "t": "btn",
+     "v": "Approve $261.00",
+     "k": "accent",
+     "x": true
+    }
+   ],
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "text",
+       "v": "FINAL AMOUNT",
+       "s": "label",
+       "tone": "gold"
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "$261.00",
+       "s": "moneyLg",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "NZD · incl. GST",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "text",
+       "v": "How it adds up",
+       "s": "title"
+      },
+      {
+       "t": "gap",
+       "n": 4
+      },
+      {
+       "t": "kv",
+       "l": "Labour · 2.5 h × $85",
+       "v": "$212.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Approved extras (1)",
+       "v": "$48.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Total",
+       "v": "$261.00",
+       "b": true,
+       "strong": true
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "icon",
+         "n": "clock",
+         "tone": "brand"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "On site 9:02 am to 11:34 am",
+           "s": "body"
+          },
+          {
+           "t": "text",
+           "v": "Hours entered by your tradie. Dispute if this looks wrong.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_payment",
+   "title": "Payment",
+   "route": "/jobs/:id/payment",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Payment"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Upload bank receipt",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "text",
+       "v": "AMOUNT TO PAY",
+       "s": "label",
+       "tone": "gold"
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "$261.00",
+       "s": "moneyLg",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "NZD · incl. GST",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Labour · 2.5 h × $85",
+       "v": "$212.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Approved extras",
+       "v": "$48.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Job total",
+       "v": "$261.00",
+       "b": true,
+       "strong": true
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Account name",
+       "v": "TradieHunter Ltd",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Account number",
+       "v": "02-0000-0000000-00",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Reference",
+       "v": "TH-4821",
+       "b": true,
+       "copy": true
+      }
+     ]
+    },
+    {
+     "t": "dash",
+     "ic": "up",
+     "v": "Upload your receipt",
+     "sub": "Staff verify it, then the job completes"
+    }
+   ]
+  },
+  {
+   "id": "ho_payment_status",
+   "title": "Payment status",
+   "route": "/jobs/:id/payment/status",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Payment status"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Back to job",
+     "k": "secondary"
+    }
+   ],
+   "body": [
+    {
+     "t": "gap",
+     "n": 12
+    },
+    {
+     "t": "col",
+     "align": "center",
+     "gap": 14,
+     "c": [
+      {
+       "t": "tile",
+       "ic": "check",
+       "v": "",
+       "big": true,
+       "tone": "ok"
+      },
+      {
+       "t": "text",
+       "v": "Receipt sent for review",
+       "s": "h1",
+       "align": "center"
+      },
+      {
+       "t": "text",
+       "v": "We usually verify within one business day. You’ll get a notification as soon as it’s done.",
+       "s": "body",
+       "tone": "soft",
+       "align": "center"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Amount",
+       "v": "$261.00",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Reference",
+       "v": "TH-4821",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Status",
+       "v": "In review",
+       "badge": "accent"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ho_review",
+   "title": "Leave a review",
+   "route": "/jobs/:id/detail (completed)",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "How did it go?",
+    "sub": "Aroha Plumbing"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Submit review",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "gap",
+     "n": 8
+    },
+    {
+     "t": "col",
+     "align": "center",
+     "gap": 14,
+     "c": [
+      {
+       "t": "avatar",
+       "v": "AP",
+       "sz": "lg"
+      },
+      {
+       "t": "text",
+       "v": "Job completed",
+       "s": "h2",
+       "align": "center"
+      },
+      {
+       "t": "stars",
+       "v": 5,
+       "size": 36
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "WHAT STOOD OUT",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "On time",
+       "on": true
+      },
+      {
+       "v": "Fair price",
+       "on": true
+      },
+      {
+       "v": "Tidy"
+      },
+      {
+       "v": "Clear updates"
+      },
+      {
+       "v": "Quality work"
+      }
+     ]
+    },
+    {
+     "t": "field",
+     "l": "COMMENT",
+     "v": "Arrived on time, quote matched the final bill. Would book again.",
+     "h": 96
+    }
+   ]
+  },
+  {
+   "id": "ho_dispute",
+   "title": "Dispute amount",
+   "route": "/jobs/:id/dispute",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Dispute amount",
+    "sub": "Leaking kitchen tap"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Submit dispute",
+     "k": "danger"
+    }
+   ],
+   "body": [
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "accent"
+        },
+        {
+         "t": "text",
+         "v": "Payment is paused while we review. Our team replies within 2 business days.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "WHAT’S WRONG",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "Hours too high",
+       "on": true
+      },
+      {
+       "v": "Work incomplete"
+      },
+      {
+       "v": "Unapproved extra"
+      },
+      {
+       "v": "Other"
+      }
+     ]
+    },
+    {
+     "t": "field",
+     "l": "DETAILS",
+     "v": "Tradie was on site about 1.5 hours, not 2.5.",
+     "h": 90
+    },
+    {
+     "t": "field",
+     "l": "WHAT WOULD BE FAIR?",
+     "v": "1.5 h × $85 = $127.50"
+    },
+    {
+     "t": "dash",
+     "ic": "cam",
+     "v": "Add evidence",
+     "sub": null
+    }
+   ]
+  },
+  {
+   "id": "ho_jobs",
+   "title": "My jobs",
+   "route": "/jobs",
+   "role": "homeowner",
+   "nav": "jobs",
+   "dock": "homeowner",
+   "body": [
+    {
+     "t": "text",
+     "v": "My jobs",
+     "s": "h1"
+    },
+    {
+     "t": "seg",
+     "items": [
+      "Active",
+      "Completed"
+     ],
+     "on": 0
+    },
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Leaking kitchen tap",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Aroha Plumbing",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Pay now",
+         "k": "accent"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 4,
+       "cur": 4
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Repaint hallway",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Waiting for Kiri Painters",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Requested",
+         "k": "brand"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 1,
+       "cur": 1
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Kitchen renovation",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "2 of 3 quotes in",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Quotes",
+         "k": "ok"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 1,
+       "cur": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "chat",
+   "title": "Chat",
+   "route": "/chat/:jobId",
+   "role": "shared",
+   "bar": {
+    "t": "bar",
+    "v": "Aroha Plumbing",
+    "sub": "Leaking kitchen tap"
+   },
+   "sticky": [
+    {
+     "t": "field",
+     "l": "",
+     "v": "Message",
+     "ph": true,
+     "x": true
+    },
+    {
+     "t": "ibtn",
+     "ic": "send",
+     "k": "primary"
+    }
+   ],
+   "body": [
+    {
+     "t": "bubble",
+     "v": "Kia ora Mere, I’ll be there around 10.",
+     "mine": false,
+     "time": "8:41 am"
+    },
+    {
+     "t": "bubble",
+     "v": "Perfect, the gate code is 4471.",
+     "mine": true,
+     "time": "8:44 am"
+    },
+    {
+     "t": "bubble",
+     "v": "Thanks. Found a worn cartridge, sending an extra cost request now.",
+     "mine": false,
+     "time": "9:20 am"
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 12,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "icon",
+         "n": "check",
+         "tone": "ok"
+        },
+        {
+         "t": "text",
+         "v": "Extra cost $48.50 approved by Mere",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "bubble",
+     "v": "Approved, thanks!",
+     "mine": true,
+     "time": "9:24 am"
+    }
+   ]
+  },
+  {
+   "id": "notifications",
+   "title": "Notifications",
+   "route": "/notifications",
+   "role": "shared",
+   "bar": {
+    "t": "bar",
+    "v": "Notifications"
+   },
+   "body": [
+    {
+     "t": "listrow",
+     "ic": "dollar",
+     "v": "Approve final amount",
+     "sub": "Aroha Plumbing finished · $261.00 · 2m",
+     "dot": true
+    },
+    {
+     "t": "listrow",
+     "ic": "plus",
+     "v": "Extra cost request",
+     "sub": "$48.50 materials · 1h",
+     "dot": true
+    },
+    {
+     "t": "listrow",
+     "ic": "check",
+     "v": "Aroha Plumbing accepted",
+     "sub": "Leaking kitchen tap · Yesterday"
+    },
+    {
+     "t": "listrow",
+     "ic": "doc",
+     "v": "Quote received",
+     "sub": "Bay Builders · $18,400 · Yesterday"
+    },
+    {
+     "t": "listrow",
+     "ic": "shield",
+     "v": "Licence verified",
+     "sub": "Your profile is now live · 2d"
+    }
+   ]
+  },
+  {
+   "id": "profile",
+   "title": "Profile & settings",
+   "route": "/profile",
+   "role": "shared",
+   "nav": "profile",
+   "dock": "homeowner",
+   "body": [
+    {
+     "t": "col",
+     "align": "center",
+     "gap": 6,
+     "c": [
+      {
+       "t": "avatar",
+       "v": "MR",
+       "sz": "lg"
+      },
+      {
+       "t": "text",
+       "v": "Mere Rangi",
+       "s": "h2"
+      },
+      {
+       "t": "text",
+       "v": "mere@example.co.nz",
+       "s": "meta",
+       "tone": "soft"
+      }
+     ]
+    },
+    {
+     "t": "gap",
+     "n": 8
+    },
+    {
+     "t": "card",
+     "pad": 4,
+     "c": [
+      {
+       "t": "listrow",
+       "ic": "user",
+       "v": "Personal details",
+       "sub": null,
+       "flat": true
+      },
+      {
+       "t": "listrow",
+       "ic": "card",
+       "v": "Payments and receipts",
+       "sub": null,
+       "flat": true
+      },
+      {
+       "t": "listrow",
+       "ic": "bell",
+       "v": "Notifications",
+       "sub": null,
+       "flat": true
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 4,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "pad": 12,
+       "c": [
+        {
+         "t": "tile",
+         "ic": "moon",
+         "v": ""
+        },
+        {
+         "t": "text",
+         "v": "Dark mode",
+         "s": "body",
+         "x": true
+        },
+        {
+         "t": "sw",
+         "on": true
+        }
+       ]
+      },
+      {
+       "t": "listrow",
+       "ic": "help",
+       "v": "Help and support",
+       "sub": null,
+       "flat": true
+      }
+     ]
+    },
+    {
+     "t": "btn",
+     "v": "Sign out",
+     "k": "ghost"
+    }
+   ]
+  },
+  {
+   "id": "tr_home",
+   "title": "Tradie home",
+   "route": "/tradie",
+   "role": "tradie",
+   "nav": "home",
+   "dock": "tradie",
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "KIA ORA, AROHA",
+           "s": "label",
+           "tone": "gold"
+          },
+          {
+           "t": "text",
+           "v": "You’re online",
+           "s": "h2",
+           "tone": "onHero"
+          }
+         ]
+        },
+        {
+         "t": "sw",
+         "on": true
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 16
+      },
+      {
+       "t": "row",
+       "align": "end",
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "Net this week",
+           "s": "meta",
+           "tone": "onHeroSoft"
+          },
+          {
+           "t": "text",
+           "v": "$1,284.50",
+           "s": "moneyLg",
+           "tone": "onHero"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "4.9 · 128",
+         "k": "glass",
+         "ic": "star"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "row",
+     "gap": 10,
+     "c": [
+      {
+       "t": "card",
+       "x": true,
+       "pad": 12,
+       "c": [
+        {
+         "t": "text",
+         "v": "3",
+         "s": "money"
+        },
+        {
+         "t": "text",
+         "v": "Jobs this week",
+         "s": "meta",
+         "tone": "soft",
+         "size": 12
+        }
+       ]
+      },
+      {
+       "t": "card",
+       "x": true,
+       "pad": 12,
+       "c": [
+        {
+         "t": "text",
+         "v": "96%",
+         "s": "money"
+        },
+        {
+         "t": "text",
+         "v": "Response rate",
+         "s": "meta",
+         "tone": "soft",
+         "size": 12
+        }
+       ]
+      },
+      {
+       "t": "card",
+       "x": true,
+       "pad": 12,
+       "c": [
+        {
+         "t": "text",
+         "v": "4.9",
+         "s": "money"
+        },
+        {
+         "t": "text",
+         "v": "Rating",
+         "s": "meta",
+         "tone": "soft",
+         "size": 12
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "row",
+     "c": [
+      {
+       "t": "text",
+       "v": "New leads",
+       "s": "title",
+       "x": true
+      },
+      {
+       "t": "badge",
+       "v": "1 new",
+       "k": "accent"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Leaking kitchen tap",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Plumbing · 2.4 km · Flexible",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "09:41 left",
+         "k": "accent",
+         "ic": "clock"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "kv",
+       "l": "Your rate",
+       "v": "$85/hr",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Photos",
+       "v": "3 attached",
+       "b": true
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "btn",
+       "v": "View full request",
+       "k": "accent",
+       "sz": "sm"
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Today",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 4,
+     "c": [
+      {
+       "t": "listrow",
+       "ic": "job",
+       "v": "Gas hob install · Tauranga",
+       "sub": "1:30 pm · Booked",
+       "flat": true
+      },
+      {
+       "t": "listrow",
+       "ic": "clock",
+       "v": "Quote visit · Papamoa",
+       "sub": "4:00 pm · Booked",
+       "flat": true
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Needs attention",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "MR",
+         "sz": "sm"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "Repaint hallway",
+           "s": "title",
+           "size": 14.5
+          },
+          {
+           "t": "text",
+           "v": "Awaiting homeowner payment",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "icon",
+         "n": "chev",
+         "tone": "soft"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_lead",
+   "title": "New lead · full request",
+   "route": "/tradie/requests/:requestId",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "New request",
+    "sub": "Received 2 min ago · Job #TH-4821"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Decline",
+     "k": "secondary",
+     "w": "auto"
+    },
+    {
+     "t": "btn",
+     "v": "Accept job",
+     "k": "accent",
+     "x": true
+    }
+   ],
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "row",
+       "c": [
+        {
+         "t": "text",
+         "v": "OFFER EXPIRES IN",
+         "s": "label",
+         "tone": "gold",
+         "x": true
+        },
+        {
+         "t": "badge",
+         "v": "Quick job",
+         "k": "glass"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "09:41",
+       "s": "moneyLg",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "Online tradies get offers first. If you don’t respond, it goes to the next tradie.",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Plumbing",
+         "k": "brand",
+         "ic": "drop"
+        },
+        {
+         "t": "badge",
+         "v": "Flexible timing",
+         "k": "accent",
+         "ic": "cal"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "text",
+       "v": "Leaking kitchen tap",
+       "s": "h2"
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "Drips constantly, worse when the hot water is on. Water pools under the sink after a few hours. Isolation valve is in the cupboard on the left. Dog is friendly.",
+       "s": "body",
+       "tone": "soft"
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Photos from the homeowner",
+     "s": "title"
+    },
+    {
+     "t": "photos",
+     "count": 3
+    },
+    {
+     "t": "text",
+     "v": "Location",
+     "s": "title"
+    },
+    {
+     "t": "map"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Area",
+       "v": "Mt Maunganui, Tauranga",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Distance",
+       "v": "2.4 km · about 6 min drive",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Exact address",
+       "v": "Shared after you accept",
+       "badge": true
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Timing and scope",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Preferred time",
+       "v": "Flexible",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Estimated hours",
+       "v": "Not set by homeowner",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Job type",
+       "v": "Hourly · quick job",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Access",
+       "v": "Homeowner home all day",
+       "b": true
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Homeowner",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "MR",
+         "sz": "sm"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Mere R.",
+           "s": "title"
+          },
+          {
+           "t": "row",
+           "gap": 4,
+           "c": [
+            {
+             "t": "icon",
+             "n": "star",
+             "size": 14,
+             "tone": "accent"
+            },
+            {
+             "t": "text",
+             "v": "4.8 · 12 jobs posted",
+             "s": "meta",
+             "tone": "soft"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Email verified",
+         "k": "ok",
+         "ic": "check"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "What you’ll earn",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Your rate (locked)",
+       "v": "$85/hr incl. GST",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Commission (sample 10%, labour only)",
+       "v": "−$8.50/hr",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "You keep",
+       "v": "$76.50/hr",
+       "b": true,
+       "strong": true
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "text",
+       "v": "Final amount = confirmed hours × your rate + approved extras. Paid by bank transfer after the homeowner approves.",
+       "s": "meta",
+       "tone": "soft"
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "What happens next",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "timeline",
+       "items": [
+        {
+         "v": "Accept this job",
+         "sub": "Rate and timing are locked for both sides",
+         "s": "cur"
+        },
+        {
+         "v": "Agree a time in chat",
+         "sub": "Exact address is shared",
+         "s": "todo"
+        },
+        {
+         "v": "Check in on site",
+         "sub": "Hours are recorded as a reference",
+         "s": "todo"
+        },
+        {
+         "v": "Complete and enter final hours",
+         "sub": "Request any extra costs first",
+         "s": "todo"
+        },
+        {
+         "v": "Homeowner approves and pays",
+         "sub": "You are paid after staff verify the receipt",
+         "s": "todo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "Declining does not affect your rating. You can turn off leads any time with the online switch.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_job",
+   "title": "Job · check in",
+   "route": "/tradie/jobs/:jobId",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Leaking kitchen tap",
+    "sub": "Booked · Tue, 10:00 am"
+   },
+   "nav": "jobs",
+   "dock": "tradie",
+   "body": [
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "prog",
+       "steps": 5,
+       "done": 2,
+       "cur": true
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "row",
+       "gap": 8,
+       "c": [
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "Ready to start?",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Check in when you arrive on site.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Booked",
+         "k": "ok"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "MR",
+         "sz": "sm"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Mere Rangi",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "14 Marine Parade, Mt Maunganui",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "ibtn",
+         "ic": "chat",
+         "k": "secondary"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "map"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Service",
+       "v": "Plumbing"
+      },
+      {
+       "t": "kv",
+       "l": "Rate",
+       "v": "$85/hr incl. GST"
+      },
+      {
+       "t": "kv",
+       "l": "Estimate",
+       "v": "Confirmed on completion"
+      },
+      {
+       "t": "kv",
+       "l": "Access",
+       "v": "Homeowner home all day"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "timeline",
+       "items": [
+        {
+         "v": "Accepted",
+         "sub": "Yesterday 4:12 pm",
+         "s": "done"
+        },
+        {
+         "v": "Booked",
+         "sub": "Tue 10:00 am",
+         "s": "cur"
+        },
+        {
+         "v": "Check in",
+         "s": "todo"
+        },
+        {
+         "v": "Complete and enter hours",
+         "s": "todo"
+        },
+        {
+         "v": "Paid",
+         "s": "todo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "btn",
+     "v": "Check in",
+     "k": "accent",
+     "ic": "pin"
+    },
+    {
+     "t": "btn",
+     "v": "Request extra cost",
+     "k": "secondary",
+     "ic": "plus"
+    }
+   ]
+  },
+  {
+   "id": "tr_extra_cost",
+   "title": "Request extra cost",
+   "route": "/tradie/jobs/:jobId (adjustment)",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Request extra cost",
+    "sub": "Mere must approve before billing"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Send request",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "text",
+     "v": "TYPE",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "pills",
+     "items": [
+      {
+       "v": "Materials",
+       "on": true
+      },
+      {
+       "v": "Extra work"
+      },
+      {
+       "v": "Travel"
+      }
+     ]
+    },
+    {
+     "t": "field",
+     "l": "AMOUNT · INCL. GST",
+     "v": "$48.50",
+     "ic": "dollar"
+    },
+    {
+     "t": "field",
+     "l": "WHAT IS IT FOR?",
+     "v": "Replacement tap cartridge. The old one is worn through.",
+     "h": 90
+    },
+    {
+     "t": "dash",
+     "ic": "cam",
+     "v": "Attach receipt or photo",
+     "sub": null
+    },
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "Requests expire after 24 hours. Commission applies to labour only.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_complete",
+   "title": "Complete job",
+   "route": "/tradie/jobs/:jobId (check-out)",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Complete job",
+    "sub": "Leaking kitchen tap"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Send for approval",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "c": [
+        {
+         "t": "icon",
+         "n": "clock",
+         "tone": "brand"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "c": [
+          {
+           "t": "text",
+           "v": "On site 9:02 am to 11:34 am",
+           "s": "body"
+          },
+          {
+           "t": "text",
+           "v": "2 h 32 min, shown as reference",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "text",
+       "v": "FINAL HOURS",
+       "s": "label",
+       "tone": "soft"
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "row",
+       "gap": 14,
+       "justify": "center",
+       "c": [
+        {
+         "t": "ibtn",
+         "ic": "minus",
+         "k": "secondary"
+        },
+        {
+         "t": "text",
+         "v": "2.5 h",
+         "s": "moneyLg"
+        },
+        {
+         "t": "ibtn",
+         "ic": "plus",
+         "k": "secondary"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Labour · 2.5 h × $85",
+       "v": "$212.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Approved extras",
+       "v": "$48.50",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Homeowner pays",
+       "v": "$261.00",
+       "b": true,
+       "strong": true
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "accent",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Commission (sample 10%, labour only)",
+       "v": "−$21.25",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "You receive",
+       "v": "$239.75",
+       "b": true,
+       "strong": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_earnings",
+   "title": "Earnings",
+   "route": "/tradie (earnings)",
+   "role": "tradie",
+   "nav": "profile",
+   "dock": "tradie",
+   "body": [
+    {
+     "t": "text",
+     "v": "Earnings",
+     "s": "h1"
+    },
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "text",
+       "v": "NET THIS WEEK",
+       "s": "label",
+       "tone": "gold"
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "$1,284.50",
+       "s": "moneyLg",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "3 jobs · paid on completion",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "bars",
+       "vals": [
+        40,
+        65,
+        30,
+        90,
+        55,
+        100,
+        20
+       ],
+       "labels": [
+        "M",
+        "T",
+        "W",
+        "T",
+        "F",
+        "S",
+        "S"
+       ]
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Recent payouts",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 4,
+     "c": [
+      {
+       "t": "listrow",
+       "ic": "dollar",
+       "v": "Leaking kitchen tap",
+       "sub": "Paid · $239.75",
+       "flat": true
+      },
+      {
+       "t": "listrow",
+       "ic": "dollar",
+       "v": "Gas hob install",
+       "sub": "Paid · $412.00",
+       "flat": true
+      },
+      {
+       "t": "listrow",
+       "ic": "clock",
+       "v": "Repaint hallway",
+       "sub": "Awaiting payment · $380.00",
+       "flat": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_onboarding",
+   "title": "Tradie onboarding",
+   "route": "/tradie/onboarding",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Set up your profile",
+    "sub": "Step 2 of 4 · Credentials"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Continue",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "prog",
+     "steps": 4,
+     "done": 1,
+     "cur": true
+    },
+    {
+     "t": "field",
+     "l": "LICENCE NUMBER",
+     "v": "PG-482913",
+     "ic": "shield"
+    },
+    {
+     "t": "field",
+     "l": "SERVICES AND HOURLY RATE",
+     "v": "Plumbing · $85/hr",
+     "tr": "chev"
+    },
+    {
+     "t": "text",
+     "v": "DOCUMENTS",
+     "s": "label",
+     "tone": "soft"
+    },
+    {
+     "t": "card",
+     "pad": 4,
+     "c": [
+      {
+       "t": "listrow",
+       "ic": "doc",
+       "v": "Plumbers licence",
+       "sub": "Verified",
+       "flat": true,
+       "badge": "Verified"
+      },
+      {
+       "t": "listrow",
+       "ic": "doc",
+       "v": "Public liability insurance",
+       "sub": "Under review",
+       "flat": true,
+       "badge": "Pending"
+      }
+     ]
+    },
+    {
+     "t": "dash",
+     "ic": "up",
+     "v": "Add another document",
+     "sub": "PDF or photo, up to 10 MB"
+    },
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "No call-out fee is charged by TradieHunter. Your rate is shown to homeowners including GST if you are registered.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

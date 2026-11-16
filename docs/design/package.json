@@ -1,0 +1,12 @@
+{
+  "name": "tradiehunter-design-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Trust Navy + Gold design system: tokens + screen AST -> Flutter + HTML mockups",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/build.mjs --check"
+  },
+  "engines": { "node": ">=18" }
+}

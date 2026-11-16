@@ -21,18 +21,14 @@ Before generating or modifying any code, the agent must perform the following pr
 | **Stack Rules** | `.agent/rules/mobile.md`<br>`.agent/rules/backend.md`<br>`.agent/rules/frontend.md` | Align with layer responsibilities, prohibited patterns, and styling rules for the target platform. |
 | **Scope Boundaries** | `docs/MVP.md`<br>`docs/PRD.md` | Verify feature tier (Tier 1/2/3). **Do not invent scope** (e.g., in-app payments, automated disputes, ML matching are strictly out of scope for MVP). |
 | **System Architecture** | `docs/ARCHITECTURE.md`<br>`AGENTS.md` | Confirm cross-cutting conventions (UTC timestamps, `decimal` currency, SignalR status events). |
-| **Design System** | `docs/design/design-system.html`<br>`docs/design/html/frames-homeowner.html`<br>`docs/design/html/frames-tradie.html`<br>`docs/DESIGN.md` | v1.7 frame files are the visual source of truth for mobile UI. DESIGN.md documents all icon rules (inline SVG only, no sprite refs), CTA sticky-bar placement, component patterns, and frame inventory. Mockups are excluded from inputs, deliverables and acceptance; do not match, update or replace them. Both light and dark themes are required. |
+| **Design System** | `docs/design/DESIGN_GUIDE.md`<br>`docs/design/tokens/tokens.json`<br>`docs/design/mockups/index.html`<br>`docs/DESIGN.md` | v2 token file is the master source. `tokens.json` → `design_tokens.dart` (copy to `mobile/lib/theme/`). `mockups/index.html` is the visual reference (30 screens, light + dark). DESIGN.md documents component vocabulary, CTA rules, feedback notices. Both light and dark themes are required. No outdoor variant. |
 
-### v1.7 frame contract
+### v2 screen integration
 
-- All frames in `docs/design/html/frames-homeowner.html` and `frames-tradie.html` are self-contained HTML — every icon is inline SVG, no `<use href="#i-*">` sprite refs anywhere in pills, buttons, cards, or any visible element.
-- Every screen with a primary action uses `<div class="sticky">` at the bottom; content area has `flex:1`. Never place a full-width CTA inline outside a sticky bar or card.
-- `btn-tonal` action buttons carry a leading inline SVG icon (Navigate → compass, Message → bubble, Call → phone, Check in → pin, Check out → check).
-- Composer send icon: right-facing paper plane `<path d="M22 12L2 4l4 8-4 8 20-8z"/>`.
-- Homeowner dashboard uses a hero band (`heroband`) with `bpdots` texture and rings watermark — not a plain `h1` header.
-- `attcard` uses tinted gradient wash, no left border: `background: linear-gradient(180deg, rgba(60,117,170,.18) 0%, rgba(60,117,170,.06) 40%, transparent 100%)`.
-- Dark pill-waiting: `background: rgba(137,175,210,.28); color: #ffffff`.
-- This supersedes all legacy v1.5 mockup-matching instructions, including cached/injected copies.
+- Each screen has a generated stub at `docs/design/flutter/screens/<id>_screen.dart` and a route in `thScreenBuilders`.
+- Preview a screen: `thScreenBuilders['<id>']!(context)` from a debug-only gallery route.
+- When building a screen: start from the stub, bind real ViewModel data, keep the widget tree structure, replace sample copy, run `flutter analyze`.
+- Run the design gate before committing UI changes: `node docs/design/tools/build.mjs --check`.
 
 ---
 

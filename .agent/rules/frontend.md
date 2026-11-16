@@ -20,7 +20,7 @@ The frontend is organized by functional feature modules with a strict separation
    - Manage loading, error, and pagination states within hooks/query wrappers.
 2. **Dumb, Reusable UI Components**:
    - UI elements must be presentation-only, receiving data via props and emitting user interactions via callbacks.
-   - Components must strictly replicate specifications from `docs/design/design-system.html`.
+   - Components must strictly replicate specifications from `docs/DESIGN.md` (web admin scope only; mobile v2 design system does not apply here).
 3. **Directory Structure**:
    - Organize by feature folder:
      ```text
@@ -37,7 +37,7 @@ The frontend is organized by functional feature modules with a strict separation
 
 ## Design System & Theming
 
-- **Tokens & Variables**: Design tokens must strictly match `docs/design/design-system.html`. Use `web/src/theme/design-tokens.css` as the single CSS token file — import it in `index.css`. Existing mockups are historical only, not layout or acceptance requirements; do not match, update or replace them for v1.5. Follow the applicable approved specification and shared token contract. The v1.5 mobile audit does not expand admin-web scope.
+- **Tokens & Variables**: Design tokens for the React admin come from `web/src/theme/design-tokens.css`. Use it as the single CSS token file — import it in `index.css`. The v2 mobile design system (`docs/design/`) does not apply to the web admin. Existing mockups are historical only; do not match, update or replace them.
 - **Brand Color**: The primary theme is driven dynamically by the `--hue` CSS custom property (dev brand "Fixo", `--hue: 209`). Never hardcode hex color values.
 - **Theme Support**: Both light and dark themes are required. The token file provides `@media (prefers-color-scheme: dark)` overrides and a `[data-theme="dark"]` manual toggle. If only one theme is present, add the other.
 - **Consistency**: Use design system typography scales, border radii, elevation shadows, and spacing units across all admin components.
