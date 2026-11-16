@@ -34,6 +34,8 @@ jobs:
       with:
         flutter-version: '3.x'
         channel: 'stable'
+    - name: UI import boundary (v1/v2 side-by-side guard)
+      run: python3 scripts/check_ui_boundary.py
     - name: Install dependencies
       run: flutter pub get
       working-directory: ./mobile
@@ -43,6 +45,17 @@ jobs:
     - name: Run tests
       run: flutter test
       working-directory: ./mobile
+
+  design-system-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Design tokens, screens and WCAG contrast gate
+      run: node docs/design/tools/build.mjs --check
 
   web-build-test:
     runs-on: ubuntu-latest
