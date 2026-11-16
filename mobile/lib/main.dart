@@ -13,7 +13,7 @@ import 'theme/fixo_theme.dart';
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
 import 'widgets/notification_center.dart'; // notificationCenterProvider (H20)
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
-import 'views/settings_screen.dart'; // themeModeProvider
+import 'viewmodels/theme_mode_viewmodel.dart'; // themeModeProvider
 
 // ─── FCM background handler ─────────────────────────────────────────────────
 // Must be a top-level function — it runs in a separate Dart isolate when the
