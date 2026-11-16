@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ui/gallery/screen_gallery.dart' show ScreenGalleryPage;
 import '../views/main_layout.dart';
 import '../views/splash_screen.dart';
 import '../views/onboarding/onboarding_view.dart';
@@ -65,6 +66,15 @@ final GoRouter appRouter = GoRouter(
         path: '/debug/notice-gallery',
         builder: (context, state) =>
             maybeNoticeGallery() ?? const SizedBox.shrink(),
+      ),
+    // v2 design gallery (migration plan 2.6) — debug only.
+    if (kDebugMode)
+      GoRoute(
+        path: '/debug/screen-gallery',
+        builder: (context, state) => ScreenGalleryPage(
+          initialScreen: state.uri.queryParameters['screen'],
+          initialDark: state.uri.queryParameters['theme'] == 'dark',
+        ),
       ),
     // 01-splash
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
