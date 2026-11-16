@@ -84,6 +84,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddSignInManager<SignInManager<ApplicationUser>>()
 .AddDefaultTokenProviders();
 
+// Q4 (EMAIL-TEMPLATE-REVISION-PLAN §9): staff-invite tokens are valid for
+// 24 hours — the invite email's copy states this, so the token must honour it.
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(24);
+});
+
 var jwtConfig = builder.Configuration.GetSection("Jwt");
 var secret = jwtConfig["Secret"];
 if (string.IsNullOrEmpty(secret))
@@ -262,6 +269,10 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
 builder.Services.AddScoped<IAccountFlagService, AccountFlagService>();
 
+// ── Email templates & sending (EMAIL-TEMPLATE-REVISION-PLAN §4/§5) ───────────
+builder.Services.Configure<FixoApi.Options.EmailSenderOptions>(builder.Configuration.GetSection("EmailSender"));
+builder.Services.AddSingleton<FixoApi.Email.EmailTemplateRenderer>();
+builder.Services.AddSingleton<FixoApi.Email.IEmailMetrics, FixoApi.Email.EmailMetrics>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -361,5 +372,12 @@ RecurringJob.AddOrUpdate<FixoApi.Jobs.PaymentSlaJob>(
     "payment-sla-job",
     j => j.ExecuteAsync(),
     "*/15 * * * *"); // Every 15 minutes
+
+// §5.4: weekly bounce + send-metrics report (Mondays 06:00 UTC).
+builder.Services.AddScoped<FixoApi.Jobs.EmailBounceReportJob>();
+RecurringJob.AddOrUpdate<FixoApi.Jobs.EmailBounceReportJob>(
+    "email-bounce-report-job",
+    j => j.ExecuteAsync(CancellationToken.None),
+    "0 6 * * 1");
 
 app.Run();

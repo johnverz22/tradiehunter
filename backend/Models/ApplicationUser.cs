@@ -25,6 +25,13 @@ public class ApplicationUser : IdentityUser
     public string? RegistrationToken { get; set; }
     public DateTime? RegistrationTokenExpiresAtUtc { get; set; }
 
+    /// <summary>
+    /// §5.4 list hygiene: set once when the SMTP relay reports a permanent
+    /// (5xx) failure for this address; the email sender short-circuits and a
+    /// weekly report logs the affected accounts. Additive, nullable, safe.
+    /// </summary>
+    public DateTime? EmailBouncedAtUtc { get; set; }
+
     /// <summary>Display name used in chat bubbles and FCM push copy.</summary>
     public string FullName => $"{FirstName} {LastName}".Trim();
 }

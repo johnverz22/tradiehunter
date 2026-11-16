@@ -1,0 +1,11 @@
+@model FixoApi.Email.PaymentRejectedModel
+@* E4 — receipt rejected (§4.2): reason + hero panel with the NEW deadline in NZT
+    (NzTime formatting — not server-local time), then "Upload new receipt" CTA. *@
+<h1 class="th-h1" style="margin:0 0 6px 0; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; line-height:1.3; color:#193957;">@Model.TextHeading</h1>
+<p style="margin:0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:14px; color:#5B6570;">Action needed to keep this booking.</p>
+<div style="height:1px; background-color:#E4E0D4; margin:20px 0;"></div>
+@{ await IncludeAsync("Email.Partials._HeroPanel", new FixoApi.Email.HeroPanelModel(Model.DeadlineDisplay, "Upload a corrected receipt by this deadline")); }
+<p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;">Our team couldn't accept the receipt you uploaded for <strong style="color:#1D2226;">"@Model.JobTitle"</strong>.</p>
+<p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;"><strong style="color:#1D2226;">Reason:</strong> @Model.Reason</p>
+<p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;">Please upload a corrected receipt by <strong style="color:#1D2226;">@Model.DeadlineDisplay</strong> so we can confirm your tradie.</p>
+@{ await IncludeAsync("Email.Partials._CtaButton", new FixoApi.Email.CtaButtonModel(Model.TextCtaLabel ?? string.Empty, Model.TextCtaUrl)); }

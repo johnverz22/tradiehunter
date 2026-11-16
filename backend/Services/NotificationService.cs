@@ -1,4 +1,5 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using Microsoft.EntityFrameworkCore;
 
 namespace FixoApi.Services;
@@ -21,6 +22,20 @@ public interface INotificationService
         bool critical = false,
         string? emailSubject = null,
         string? emailBody = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// E5 structured variant (§4.2 of EMAIL-TEMPLATE-REVISION-PLAN): the email
+    /// fallback renders through the CriticalNotice template with sections and
+    /// a CTA instead of pre-flattened strings. Push behaviour identical.
+    /// </summary>
+    Task SendToUserAsync(
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data,
+        CriticalNoticeModel emailNotice,
+        bool critical = false,
         CancellationToken ct = default);
 }
 
@@ -62,6 +77,53 @@ public class NotificationService : INotificationService
         string? emailBody = null,
         CancellationToken ct = default)
     {
+        var (tokens, email) = await LoadTargetsAsync(userId, ct);
+
+        var pushOk = await SendPushAsync(tokens, title, body, data);
+
+        // Fallback: no tokens (push disabled), all pushes failed, or critical event.
+        if ((!pushOk || critical) && !string.IsNullOrWhiteSpace(email))
+        {
+            try
+            {
+                await _email.SendCriticalAsync(
+                    email!, emailSubject ?? title, emailBody ?? body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Fallback email to {Email} failed.", email);
+            }
+        }
+    }
+
+    public async Task SendToUserAsync(
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data,
+        CriticalNoticeModel emailNotice,
+        bool critical = false,
+        CancellationToken ct = default)
+    {
+        var (tokens, email) = await LoadTargetsAsync(userId, ct);
+
+        var pushOk = await SendPushAsync(tokens, title, body, data);
+
+        if ((!pushOk || critical) && !string.IsNullOrWhiteSpace(email))
+        {
+            try
+            {
+                await _email.SendCriticalNoticeAsync(email!, emailNotice);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Fallback email to {Email} failed.", email);
+            }
+        }
+    }
+
+    private async Task<(List<string> Tokens, string? Email)> LoadTargetsAsync(string userId, CancellationToken ct)
+    {
         var tokens = new List<string>();
         string? email = null;
         try
@@ -79,7 +141,12 @@ public class NotificationService : INotificationService
         {
             _logger.LogWarning(ex, "Could not load tokens/email for user {UserId}.", userId);
         }
+        return (tokens, email);
+    }
 
+    private async Task<bool> SendPushAsync(
+        IReadOnlyList<string> tokens, string title, string body, Dictionary<string, string>? data)
+    {
         var pushOk = false;
         foreach (var token in tokens)
         {
@@ -90,22 +157,9 @@ public class NotificationService : INotificationService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", userId);
+                _logger.LogWarning(ex, "FCM push to token for user failed.");
             }
         }
-
-        // Fallback: no tokens (push disabled), all pushes failed, or critical event.
-        if ((!pushOk || critical) && !string.IsNullOrWhiteSpace(email))
-        {
-            try
-            {
-                await _email.SendCriticalAsync(
-                    email!, emailSubject ?? title, emailBody ?? body);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Fallback email to {Email} failed.", email);
-            }
-        }
+        return pushOk;
     }
 }

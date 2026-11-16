@@ -300,7 +300,7 @@ public class JobService : IJobService
 
             var staleTokens = await _push.SendMulticastAsync(
                 tokens,
-                title: "New Job Match",
+                title: "New job match",
                 body:  $"{job.Category}: {job.Title}",
                 data: new Dictionary<string, string>
                 {

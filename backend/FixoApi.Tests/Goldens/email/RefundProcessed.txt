@@ -1,0 +1,23 @@
+YOUR REFUND IS ON ITS WAY
+=========================
+
+    456.00 NZD
+
+The refund for "Gib stopping" has been processed from our account.
+
+Your bank will show the money within 1–2 business days.
+
+  Job       Gib stopping
+  Amount    456.00 NZD
+  Reference TH-RF-207
+  Expected  1–2 business days
+
+View payment:
+https://app.tradiehunter.nz/jobs/1044/payment
+
+------------------------------------------------------------------------
+You received this because a refund was processed for your TradieHunter
+job.
+
+TradieHunter · support@tradiehunter.nz · 8am - 6pm NZT, Mon-Fri
+Auckland, New Zealand

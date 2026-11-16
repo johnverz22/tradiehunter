@@ -1,0 +1,22 @@
+YOUR PAYMENT IS CONFIRMED
+=========================
+
+    456.00 NZD
+
+We matched your transfer. Wiremu Kereopa will be in touch to confirm the
+visit time.
+
+  Job       Fence repair
+  Amount    456.00 NZD
+  Paid to   Wiremu Kereopa
+  Reference TH-1042
+
+View job:
+https://app.tradiehunter.nz/jobs/1042
+
+------------------------------------------------------------------------
+You received this because a payment on your TradieHunter job was
+verified.
+
+TradieHunter · support@tradiehunter.nz · 8am - 6pm NZT, Mon-Fri
+Auckland, New Zealand

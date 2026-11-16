@@ -415,8 +415,8 @@ public class MatchingService : IMatchingService
             foreach (var token in deviceTokens)
             {
                 await _push.SendAsync(token,
-                    title: "New Job Request",
-                    body:  $"{job.Title} — respond within {_offerWindowMinutes} minutes.",
+                    title: "New job request",
+                    body:  $"{job.Title} — respond in {_offerWindowMinutes} minutes.",
                     data:  new Dictionary<string, string>
                     {
                         ["jobId"]   = job.Id.ToString(),

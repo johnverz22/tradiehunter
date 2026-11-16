@@ -98,6 +98,8 @@ services:
       EmailSender__Host: "mailhog"
       EmailSender__Port: "1025"
       EmailSender__FromEmail: "noreply@fixo.nz"
+      EmailSender__SandboxMode: "true"
+      EmailSender__UseTemplates: "true"
     depends_on:
       db:
         condition: service_healthy

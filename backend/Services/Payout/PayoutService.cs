@@ -69,8 +69,8 @@ public class PayoutService : IPayoutService
         await _context.SaveChangesAsync();
         
         // Include commission amounts in push per P10-04
-        await SendPushToUserAsync(job.MatchedTradieId, "Job completed!", 
-            $"You'll receive ${netAmount:F2} (after ${commissionAmount:F2} platform fee) in the next payout cycle.", 
+        await SendPushToUserAsync(job.MatchedTradieId, "Job completed", 
+            $"You'll receive ${netAmount:F2} after the ${commissionAmount:F2} fee, in your next payout.", 
             job.Id);
     }
 
@@ -128,8 +128,8 @@ public class PayoutService : IPayoutService
 
         await _context.SaveChangesAsync();
 
-        await SendPushToUserAsync(payout.TradieId, "Payout Processed", 
-            $"Your payout of ${payout.NetAmount:F2} has been processed. Ref: {transferReference}", payout.JobId);
+        await SendPushToUserAsync(payout.TradieId, "Payout processed", 
+            $"Your payout of ${payout.NetAmount:F2} has been processed. Ref: {transferReference}.", payout.JobId);
 
         // Check if batch is complete
         if (payout.PayoutBatchId.HasValue)

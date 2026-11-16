@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- RazorLight runtime-compiles email templates — needs the app's
+         compilation context at runtime. -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +32,27 @@
     <PackageReference Include="Hangfire.Core" Version="1.8.15" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.15" />
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.9.3" />
+    <!-- MailKit: modern SMTP client (System.Net.Mail.SmtpClient is obsolete-flagged
+         by Microsoft and negotiates TLS poorly — see EMAIL-TEMPLATE-REVISION-PLAN §4). -->
+    <PackageReference Include="MailKit" Version="5.0.0" />
+    <!-- RazorLight: runtime Razor rendering for email templates (MIT) —
+         see EMAIL-TEMPLATE-REVISION-PLAN §4. -->
+    <PackageReference Include="RazorLight" Version="2.1.0" />
+    <!-- Direct reference overrides MailKit's vulnerable transitive Pkcs 9.0.0 (GHSA-846f-f764-76mx). -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" ExcludeAssets="analyzers" />
+  </ItemGroup>
+
+  <!-- Email templates are embedded so rendering works everywhere the API runs
+       (container, published output) without on-disk content copies. -->
+  <ItemGroup>
+    <None Remove="Email\**\*.cshtml" />
+    <Content Remove="Email\**\*.cshtml" />
+    <EmbeddedResource Include="Email\**\*.cshtml" />
+  </ItemGroup>
+
+  <!-- The test project lives under backend/ but must not compile into the API. -->
+  <ItemGroup>
+    <Compile Remove="FixoApi.Tests/**/*.cs" />
   </ItemGroup>
 
 </Project>

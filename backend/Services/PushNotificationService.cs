@@ -21,12 +21,7 @@ public class PushNotificationService
     public async Task SendAsync(string deviceToken, string title, string body,
         Dictionary<string, string>? data = null)
     {
-        var finalTitle = string.IsNullOrWhiteSpace(title) ? _brand.AppName : title;
-        // Spec implies we might want to just prepend or use the AppName. I will prepend.
-        if (!finalTitle.Contains(_brand.AppName))
-        {
-            finalTitle = $"{_brand.AppName}: {finalTitle}";
-        }
+        var finalTitle = BrandTitle(title);
 
         var message = new Message
         {
@@ -76,11 +71,7 @@ public class PushNotificationService
         var tokens = deviceTokens.ToList();
         if (tokens.Count == 0) return Array.Empty<string>();
 
-        var finalTitle = string.IsNullOrWhiteSpace(title) ? _brand.AppName : title;
-        if (!finalTitle.Contains(_brand.AppName))
-        {
-            finalTitle = $"{_brand.AppName}: {finalTitle}";
-        }
+        var finalTitle = BrandTitle(title);
 
         var message = new MulticastMessage
         {
@@ -110,5 +101,21 @@ public class PushNotificationService
             response.SuccessCount, tokens.Count, staleTokens.Count);
 
         return staleTokens;
+    }
+
+    /// <summary>
+    /// Double-brand guard (EMAIL-TEMPLATE-REVISION-PLAN §4.3): the OS already
+    /// labels the app in the tray, so — brand a title only when it does not
+    /// start with the brand name (StartsWith, not Contains — a title like
+    /// "New TradieHunter job" must not be double-branded) and skip the prefix
+    /// on short titles entirely ("Job cancelled" + brand would exceed the
+    /// 30-char title rule and duplicate the tray label).
+    /// </summary>
+    private string BrandTitle(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return _brand.AppName;
+        if (title.StartsWith(_brand.AppName, StringComparison.OrdinalIgnoreCase)) return title;
+        if (title.Length <= 16) return title; // tray already shows the app name
+        return $"{_brand.AppName}: {title}";
     }
 }

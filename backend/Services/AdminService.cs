@@ -1063,8 +1063,8 @@ public class AdminService : IAdminService
                 {
                     await _pushNotifications.SendAsync(
                         token,
-                        "Your refund has been processed",
-                        $"${amountStr} {currency} has been transferred. Reference: {request.TransferReference}",
+                        "Refund processed",
+                        $"${amountStr} {currency} has been transferred. Ref: {request.TransferReference}.",
                         new Dictionary<string, string>
                         {
                             ["jobId"]    = refund.JobId.ToString(),

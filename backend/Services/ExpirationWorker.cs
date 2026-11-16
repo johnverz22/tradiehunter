@@ -1,7 +1,10 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using FixoApi.Enums;
+using FixoApi.Options;
 using FixoApi.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FixoApi.Services;
 
@@ -18,15 +21,18 @@ public class ExpirationWorker : BackgroundService
 
     private readonly IServiceProvider _services;
     private readonly IConfiguration _config;
+    private readonly BrandOptions _brand;
     private readonly ILogger<ExpirationWorker> _logger;
 
     public ExpirationWorker(
         IServiceProvider services,
         IConfiguration config,
+        IOptions<BrandOptions> brandOptions,
         ILogger<ExpirationWorker> logger)
     {
         _services = services;
         _config = config;
+        _brand = brandOptions.Value;
         _logger = logger;
     }
 
@@ -98,18 +104,38 @@ public class ExpirationWorker : BackgroundService
                 await audit.LogAsync(SystemUserId, "job.expire", "Job", job.Id.ToString(),
                     before, new { job.Id, Status = "Cancelled", Reason = "system_expired" });
 
+                // E8 wired (§4.2): the email fallback renders through the
+                // JobCancelled template — reason + "post it again" CTA — instead
+                // of duplicating the copy here.
                 await notify.SendToUserAsync(
                     job.HomeownerId,
-                    "Your job request expired",
-                    $"\"{job.Title}\" got no tradie response in time. Try posting again — we're here to help.",
+                    "Job request expired",
+                    $"\"{job.Title}\" expired with no tradie response. Post it again any time.",
                     new Dictionary<string, string>
                     {
                         ["jobId"] = job.Id.ToString(),
                         ["type"] = CriticalNotificationTypes.JobExpired,
                     },
+                    new CriticalNoticeModel
+                    {
+                        Heading = $"Your job \"{job.Title}\" has been closed",
+                        Preheader = $"Reason: No tradie response within {ThresholdHours:0}h — auto-expired.",
+                        Sections =
+                        [
+                            new EmailSection(
+                                "What happened",
+                                $"Your job \"{job.Title}\" received no tradie response within the request window and was closed."),
+                            new EmailSection(
+                                "What you can do",
+                                "Your job details are saved — post it again any time from the app."),
+                        ],
+                        CtaLabel = string.IsNullOrWhiteSpace(_brand.FrontendBaseUrl) ? null : "Post a job again",
+                        CtaUrl = string.IsNullOrWhiteSpace(_brand.FrontendBaseUrl)
+                            ? null
+                            : _brand.FrontendBaseUrl.TrimEnd('/') + "/jobs/new",
+                        Brand = _brand,
+                    },
                     critical: true,
-                    emailSubject: "Your TradieHunter job request expired",
-                    emailBody: $"Your job \"{job.Title}\" received no tradie response within the request window and was closed. Post it again from the app any time.",
                     ct);
 
                 expired++;

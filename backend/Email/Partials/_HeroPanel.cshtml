@@ -1,0 +1,14 @@
+@model FixoApi.Email.HeroPanelModel
+@* Amber-top urgent panel (§3.3): OTP code, amount or deadline — used sparingly,
+    one per email max (design token rule: max 2 orange elements per screen). *@
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
+    <tr>
+        <td bgcolor="#E1EBF4" style="background-color:#E1EBF4; border-top:2px solid #E38B29; border-radius:0 0 4px 4px; padding:16px 20px; text-align:center;">
+            <span style="display:block; font-family:'IBM Plex Mono','Courier New',monospace; font-size:32px; font-weight:600; letter-spacing:6px; color:#193957; white-space:nowrap;">@Model.Text</span>
+            @if (!string.IsNullOrWhiteSpace(Model.SubText))
+            {
+                <span style="display:block; margin-top:6px; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:13px; color:#5B6570;">@Model.SubText</span>
+            }
+        </td>
+    </tr>
+</table>

@@ -1,6 +1,8 @@
 using FixoApi.Data;
 using FixoApi.DTOs;
+using FixoApi.Email;
 using FixoApi.Enums;
+using FixoApi.Options;
 using FixoApi.Hubs;
 using FixoApi.Jobs;
 using FixoApi.Models;
@@ -27,6 +29,8 @@ public class JobStatusService : IJobStatusService
     private readonly ILogger<JobStatusService> _logger;
     private readonly IAccountFlagService _accountFlagService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly INotificationService _notifications;
+    private readonly BrandOptions _brand;
 
     public JobStatusService(
         FixoDbContext context,
@@ -36,7 +40,9 @@ public class JobStatusService : IJobStatusService
         IOptions<PaymentOptions> paymentOptions,
         ILogger<JobStatusService> logger,
         IAccountFlagService accountFlagService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        INotificationService notifications,
+        IOptions<BrandOptions> brandOptions)
     {
         _context = context;
         _jobHub = jobHub;
@@ -46,6 +52,30 @@ public class JobStatusService : IJobStatusService
         _logger = logger;
         _accountFlagService = accountFlagService;
         _serviceProvider = serviceProvider;
+        _notifications = notifications;
+        _brand = brandOptions.Value;
+    }
+
+    /// <summary>E8 email notice for a closed job (§4.2) — reason + "post it again" CTA
+    /// when a web host exists. CTA omitted while FrontendBaseUrl is empty (§9 Q1).</summary>
+    private CriticalNoticeModel JobClosedNotice(Job job, string reason)
+    {
+        var postAgainUrl = string.IsNullOrWhiteSpace(_brand.FrontendBaseUrl)
+            ? null
+            : _brand.FrontendBaseUrl.TrimEnd('/') + "/jobs/new";
+        return new CriticalNoticeModel
+        {
+            Heading = $"Your job \"{job.Title}\" has been closed",
+            Preheader = $"Reason: {reason}",
+            Sections =
+            [
+                new EmailSection("What happened", $"Reason: {reason}"),
+                new EmailSection("What you can do", "Your job details are saved — post it again any time from the app."),
+            ],
+            CtaLabel = postAgainUrl == null ? null : "Post a job again",
+            CtaUrl = postAgainUrl,
+            Brand = _brand,
+        };
     }
 
     public async Task<JobDto> TransitionAsync(
@@ -426,13 +456,27 @@ public class JobStatusService : IJobStatusService
             await SendPushToUserAsync(
                 job.MatchedTradieId,
                 "Job cancelled",
-                $"The homeowner cancelled \"{job.Title}\". Your schedule has been freed up.",
+                $"The homeowner cancelled \"{job.Title}\" — your schedule is free.",
                 new Dictionary<string, string>
                 {
                     ["jobId"] = job.Id.ToString(),
                     ["type"]  = "job_cancelled_by_homeowner"
                 });
         }
+
+        // E8 wired (§4.2): the homeowner's own job is closed — email fallback
+        // through the JobCancelled template ("post it again" CTA fits them).
+        await _notifications.SendToUserAsync(
+            job.HomeownerId,
+            "Job cancelled",
+            $"You cancelled \"{job.Title}\". Your job details are saved.",
+            new Dictionary<string, string>
+            {
+                ["jobId"] = job.Id.ToString(),
+                ["type"]  = CriticalNotificationTypes.JobCancelled,
+            },
+            JobClosedNotice(job, request.ReasonCode.ToString()),
+            critical: true);
 
         return MapToDto(job);
     }
@@ -493,14 +537,30 @@ public class JobStatusService : IJobStatusService
         });
 
         // P6-06: Notify homeowner that the tradie cancelled; job is being reassigned.
-        await SendPushToUserAsync(
+        // E5 structured email fallback (§4.2): sections, not flattened strings.
+        await _notifications.SendToUserAsync(
             job.HomeownerId,
             "Your tradie cancelled",
-            $"Don't worry — we're finding you a new tradie for \"{job.Title}\".",
+            $"We're finding you a new tradie for \"{job.Title}\".",
             new Dictionary<string, string>
             {
                 ["jobId"] = job.Id.ToString(),
                 ["type"]  = "job_cancelled_by_tradie"
+            },
+            new CriticalNoticeModel
+            {
+                Heading = $"Update on your job \"{job.Title}\"",
+                Preheader = "Your tradie cancelled — we're finding you a new one.",
+                Sections =
+                [
+                    new EmailSection(
+                        "What's happening",
+                        $"Your tradie cancelled \"{job.Title}\". We're finding you a new tradie now — you'll get a notification when someone accepts."),
+                    new EmailSection(
+                        "Your payment",
+                        "No money has been confirmed for this job yet. Nothing to do until we match a new tradie."),
+                ],
+                Brand = _brand,
             });
 
         // Re-dispatch the next offer, excluding the cancelling tradie.
@@ -630,7 +690,7 @@ public class JobStatusService : IJobStatusService
                     .ToListAsync();
 
                 var role = userId == job.HomeownerId ? "homeowner" : "tradie";
-                var title = "Job completed!";
+                var title = "Job completed";
                 var body = $"How did it go with \"{job.Title}\"? Leave a review.";
 
                 foreach (var token in tokens)
@@ -676,8 +736,8 @@ public class JobStatusService : IJobStatusService
             
             // Notify tradie
             if (job.MatchedTradieId != null)
-                await SendPushToUserAsync(job.MatchedTradieId, "No-Show Reported",
-                    $"The homeowner has reported you as a no-show for job {job.Title}.");
+                await SendPushToUserAsync(job.MatchedTradieId, "No-show reported",
+                    $"The homeowner reported you as a no-show for \"{job.Title}\".");
             
             if (request.CancelJob)
             {
@@ -713,8 +773,8 @@ public class JobStatusService : IJobStatusService
                 $"Reported by tradie for job {jobId}", userId);
             
             // Notify homeowner
-            await SendPushToUserAsync(job.HomeownerId, "No-Show Reported",
-                $"The tradie has reported you as a no-show for job {job.Title}.");
+            await SendPushToUserAsync(job.HomeownerId, "No-show reported",
+                $"The tradie reported you as a no-show for \"{job.Title}\".");
             
             // Partial refund: tradie gets 50% for time lost; homeowner receives the remainder
             var payment = await _context.Payments

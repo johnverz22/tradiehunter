@@ -1,4 +1,5 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Models;
@@ -180,6 +181,7 @@ public class PaymentService : IPaymentService
     {
         var payment = await _db.Payments
             .Include(p => p.Job).ThenInclude(j => j.Homeowner)
+            .Include(p => p.Job).ThenInclude(j => j.MatchedTradie)
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
 
         if (payment is null) return new PaymentActionResult { NotFound = true };
@@ -229,6 +231,7 @@ public class PaymentService : IPaymentService
 
         var payment = await _db.Payments
             .Include(p => p.Job).ThenInclude(j => j.Homeowner)
+            .Include(p => p.Job).ThenInclude(j => j.MatchedTradie)
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
 
         if (payment is null) return new PaymentActionResult { NotFound = true };
@@ -263,8 +266,9 @@ public class PaymentService : IPaymentService
             new { payment.Id, Status = payment.Status.ToString(), payment.RejectReason });
 
         await NotifyHomeownerAsync(
-            payment, "Payment receipt needs fixing",
-            $"We couldn't accept the receipt for {payment.Job.Title}. {payment.RejectReason}",
+            payment, "Receipt needs another look",
+            $"Upload a corrected receipt for \"{payment.Job.Title}\" by " +
+            $"{NzTime.Short(payment.Job.PaymentDueAtUtc ?? DateTime.UtcNow.AddHours(WindowHours(_paymentOptions.Value)))}.",
             ct);
 
         return new PaymentActionResult { Succeeded = true, Payment = MapToDto(payment.Job, payment) };
@@ -463,12 +467,16 @@ public class PaymentService : IPaymentService
         {
             if (payment.Status == PaymentStatus.Verified)
                 await _email.SendPaymentVerifiedAsync(
-                    homeowner.Email, payment.Job.Title, payment.Amount, payment.Currency);
+                    homeowner.Email, payment.Job.Title, payment.Amount, payment.Currency,
+                    tradieName: payment.Job.MatchedTradie?.FullName,
+                    reference: payment.Job.ReferenceCode,
+                    jobId: payment.JobId);
             else if (payment.Status == PaymentStatus.Rejected)
                 await _email.SendPaymentRejectedAsync(
                     homeowner.Email, payment.Job.Title, payment.RejectReason ?? string.Empty,
                     payment.Job.PaymentDueAtUtc ?? DateTime.UtcNow.AddHours(
-                        WindowHours(_paymentOptions.Value)));
+                        WindowHours(_paymentOptions.Value)),
+                    jobId: payment.JobId);
         }
         catch (Exception ex)
         {

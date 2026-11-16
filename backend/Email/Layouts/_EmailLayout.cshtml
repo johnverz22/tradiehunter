@@ -1,0 +1,98 @@
+@model FixoApi.Email.EmailLayoutModel
+@{
+    var brand = Model.Brand;
+    var appName = string.IsNullOrWhiteSpace(brand.AppName) ? "TradieHunter" : brand.AppName;
+    var support = string.IsNullOrWhiteSpace(brand.SupportEmail) ? "support@tradiehunter.nz" : brand.SupportEmail;
+    var hours = string.IsNullOrWhiteSpace(brand.SupportHoursDisplay) ? "8am - 6pm NZT, Mon-Fri" : brand.SupportHoursDisplay;
+    var address = string.IsNullOrWhiteSpace(brand.PostalAddress) ? "Auckland, New Zealand" : brand.PostalAddress;
+    var logoUrl = string.IsNullOrWhiteSpace(brand.EmailLogoUrl)
+        ? "https://cdn.tradiehunter.nz/email/wordmark-on-light@2x.png"
+        : brand.EmailLogoUrl;
+}<!DOCTYPE html>
+<html lang="en-NZ" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>@appName</title>
+    <!--[if mso]>
+    <noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+    <style>
+        table, td, p, a, h1, h2, span { font-family: Arial, Helvetica, sans-serif !important; }
+    </style>
+    <![endif]-->
+    <style>
+        /* Progressive enhancement only — everything critical is inline.
+           Dark-mode overrides (§3.1): Apple Mail / Gmail iOS; tested there only.
+           Author !important rules beat the inline styles in dark clients. */
+        @@media (prefers-color-scheme: dark) {
+            .th-page { background-color: #14181B !important; }
+            .th-card { background-color: #1E2328 !important; }
+            .th-card td, .th-card p, .th-card h1, .th-card h2, .th-card span { color: #ECEAE3 !important; }
+            .th-soft, .th-card .th-soft { color: #9AA4AC !important; }
+            .th-card a { color: #89AFD2 !important; }
+            .th-footer td, .th-footer p, .th-footer span { color: #9AA4AC !important; }
+        }
+        [data-ogsc] .th-page { background-color: #14181B !important; }
+        [data-ogsc] .th-card { background-color: #1E2328 !important; }
+        [data-ogsc] .th-card td, [data-ogsc] .th-card p, [data-ogsc] .th-card h1, [data-ogsc] .th-card h2, [data-ogsc] .th-card span { color: #ECEAE3 !important; }
+        [data-ogsc] .th-soft { color: #9AA4AC !important; }
+        [data-ogsc] .th-card a { color: #89AFD2 !important; }
+        [data-ogsc] .th-footer td, [data-ogsc] .th-footer p, [data-ogsc] .th-footer span { color: #9AA4AC !important; }
+        /* Mobile clamp — 56% of opens (§3.2). */
+        @@media only screen and (max-width: 620px) {
+            .th-card { width: 100% !important; border-radius: 0 !important; }
+            .th-gutter { padding-left: 16px !important; padding-right: 16px !important; }
+            .th-h1 { font-size: 21px !important; }
+        }
+    </style>
+</head>
+<body class="th-page" style="margin:0; padding:0; width:100%; background-color:#F6F4EE; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+    @* Inbox preheader — hidden preview line under the subject (§3.4). *@
+    @if (!string.IsNullOrWhiteSpace(Model.Preheader))
+    {
+        <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">@Model.Preheader</div>
+    }
+
+    <table role="presentation" class="th-page" width="100%" bgcolor="#F6F4EE" cellpadding="0" cellspacing="0" border="0" style="background-color:#F6F4EE;">
+        <tr>
+            <td align="center" style="padding:24px 12px;">
+
+                <!--[if mso]><table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+                <table role="presentation" class="th-card" width="640" bgcolor="#FFFFFF" cellpadding="0" cellspacing="0" border="0" style="width:640px; max-width:640px; background-color:#FFFFFF; border-radius:8px;">
+
+                    @* ── HEADER BAND — navy, wordmark (§3.3) ──────────────────────── *@
+                    <tr>
+                        <td class="th-header" bgcolor="#193957" style="background-color:#193957; padding:20px; border-radius:8px 8px 0 0;" align="left">
+                            <img src="@logoUrl" alt="@appName" width="140" height="28" style="display:block; width:140px; height:28px; border:0; outline:none; text-decoration:none;" />
+                        </td>
+                    </tr>
+
+                    @* ── CARD BODY (template content) ─────────────────────────────── *@
+                    <tr>
+                        <td class="th-gutter" style="padding:24px 20px 8px 20px;">
+                            @* RawString — the body is trusted template output; a plain
+                               @expression would HTML-encode the entire card body. *@
+                            @(new RazorLight.Text.RawString(Model.BodyHtml))
+                        </td>
+                    </tr>
+
+                    @* ── FOOTER — cream, hairline top, why + support (§3.3) ───────── *@
+                    <tr>
+                        <td class="th-footer" bgcolor="#F6F4EE" style="background-color:#F6F4EE; border-top:1px solid #E4E0D4; padding:16px 20px 20px 20px; border-radius:0 0 8px 8px;">
+                            @{ await IncludeAsync("Email.Partials._FooterNote", new FixoApi.Email.FooterModel(Model.FooterNote, brand)); }
+                        </td>
+                    </tr>
+
+                </table>
+                <!--[if mso]></td></tr></table><![endif]-->
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -95,6 +95,9 @@ namespace FixoApi.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<DateTime?>("EmailBouncedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 

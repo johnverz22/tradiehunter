@@ -1,0 +1,17 @@
+SET UP YOUR STAFF ACCOUNT
+=========================
+
+An administrator invited you to TradieHunter's staff console. Use the
+button below to choose a password and activate your account.
+
+The invitation is valid for 24 hours.
+
+Set your password:
+https://app.tradiehunter.nz/staff/activate?token=CfDJ8NGx8k-EXAMPLE
+
+------------------------------------------------------------------------
+You received this because an administrator invited you to TradieHunter's
+staff console.
+
+TradieHunter · support@tradiehunter.nz · 8am - 6pm NZT, Mon-Fri
+Auckland, New Zealand

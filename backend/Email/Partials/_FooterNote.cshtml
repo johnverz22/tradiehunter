@@ -1,0 +1,18 @@
+@model FixoApi.Email.FooterModel
+@* Footer note (§3.3): "why you received this" line + support path + address.
+    Caption/legal size 12px ink-soft (§3.2). Transactional mail needs no
+    unsubscribe link, but a support path is professional (§2.3 #8). *@
+@{
+    var brand = Model.Brand;
+    var appName = string.IsNullOrWhiteSpace(brand.AppName) ? "TradieHunter" : brand.AppName;
+    var support = string.IsNullOrWhiteSpace(brand.SupportEmail) ? "support@tradiehunter.nz" : brand.SupportEmail;
+    var hours = string.IsNullOrWhiteSpace(brand.SupportHoursDisplay) ? "8am - 6pm NZT, Mon-Fri" : brand.SupportHoursDisplay;
+    var address = string.IsNullOrWhiteSpace(brand.PostalAddress) ? "Auckland, New Zealand" : brand.PostalAddress;
+}
+<p style="margin:0 0 8px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#5B6570;">
+    @(Model.Note ?? $"You received this because you have a {appName} account.")
+</p>
+<p style="margin:0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#5B6570;">
+    @appName &middot; <a href="mailto:@support" style="color:#3C75AA; text-decoration:none;">@support</a> &middot; @hours<br />
+    @address
+</p>
