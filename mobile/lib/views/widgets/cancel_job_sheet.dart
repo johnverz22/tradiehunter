@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../theme/design_tokens.dart';
 import '../widgets/fixo_feedback.dart';
 
-
 /// Shared "Cancel Job" bottom sheet (P6-03), used by both the homeowner
 /// and tradie job detail screens.
 ///
@@ -55,152 +54,170 @@ class CancelJobSheetState extends State<CancelJobSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            // Handle
-            Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: Space.s3),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? DesignTokens.paperLineDark
-                      : DesignTokens.paperLineLight,
-                  borderRadius: BorderRadius.circular(Radii.micro),
+              // Handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: Space.s3),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? DesignTokens.paperLineDark
+                        : DesignTokens.paperLineLight,
+                    borderRadius: BorderRadius.circular(Radii.micro),
+                  ),
                 ),
               ),
-            ),
 
-            // Title + warning
-            Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s6, 0, Space.s6, Space.s1),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Cancel this job',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FW.bold,
+              // Title + warning
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.s6,
+                  0,
+                  Space.s6,
+                  Space.s1,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cancel this job',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FW.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: Space.s2),
-                  FixoInfoBanner(
+                    const SizedBox(height: Space.s2),
+                    FixoInfoBanner(
                       icon: Icons.warning_amber_outlined,
                       color: errorColor,
-                      message: widget.warning ??
+                      message:
+                          widget.warning ??
                           (widget.isTradie
                               ? 'Repeated cancellations will flag your account and may affect your ranking.'
                               : 'Cancellation fees may apply depending on how far along the job is.'),
                     ),
-                  const SizedBox(height: Space.s4),
+                    const SizedBox(height: Space.s4),
 
-                  // Reason selector
-                  Text(
-                    'Reason',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FW.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: Space.s2),
-                ],
-              ),
-            ),
-
-            // Reason list
-            RadioGroup<String>(
-              groupValue: _selectedReason,
-              onChanged: (v) => setState(() => _selectedReason = v),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...widget.reasons.map(((String, String) r) {
-                    final code = r.$1;
-                    final label = r.$2;
-                    return RadioListTile<String>(
-                      value: code,
-                      title: Text(label, style: const TextStyle(fontSize: DesignTokens.fontSizeSm)),
-                      dense: true,
-                      activeColor: DesignTokens.brand500,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: Space.s6),
-                    );
-                  }),
-                ],
-              ),
-            ),
-
-            // Optional notes
-            Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s6, Space.s3, Space.s6, Space.s4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Additional notes (optional)',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FW.semibold,
-                    ),
-                  ),
-                  const SizedBox(height: Space.s1_5),
-                  TextField(
-                    controller: _notesController,
-                    maxLines: 3,
-                    maxLength: 500,
-                    decoration: InputDecoration(
-                      hintText: 'Any additional context…',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.radiusInput,
-                        ),
+                    // Reason selector
+                    Text(
+                      'Reason',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FW.semibold,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: Space.s4),
+                    const SizedBox(height: Space.s2),
+                  ],
+                ),
+              ),
 
-                  // Confirm button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      key: const Key('cancel_confirm_button'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: errorColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
+              // Reason list
+              RadioGroup<String>(
+                groupValue: _selectedReason,
+                onChanged: (v) => setState(() => _selectedReason = v),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...widget.reasons.map(((String, String) r) {
+                      final code = r.$1;
+                      final label = r.$2;
+                      return RadioListTile<String>(
+                        value: code,
+                        title: Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: DesignTokens.fontSizeSm,
+                          ),
+                        ),
+                        dense: true,
+                        activeColor: DesignTokens.brand500,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Space.s6,
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              // Optional notes
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.s6,
+                  Space.s3,
+                  Space.s6,
+                  Space.s4,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Additional notes (optional)',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FW.semibold,
+                      ),
+                    ),
+                    const SizedBox(height: Space.s1_5),
+                    TextField(
+                      controller: _notesController,
+                      maxLines: 3,
+                      maxLength: 500,
+                      decoration: InputDecoration(
+                        hintText: 'Any additional context…',
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
-                            DesignTokens.radiusControl,
+                            DesignTokens.radiusInput,
                           ),
                         ),
                       ),
-                      onPressed: _selectedReason == null
-                          ? null
-                          : () => Navigator.of(context).pop((
-                              reasonCode: _selectedReason!,
-                              notes: _notesController.text.trim().isEmpty
-                                  ? null
-                                  : _notesController.text.trim(),
-                            )),
-                      child: const Text('Confirm Cancellation'),
                     ),
-                  ),
-                  const SizedBox(height: Space.s2),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      key: const Key('cancel_dismiss_button'),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(
-                          double.infinity,
-                          DesignTokens.targetMinimum,
+                    const SizedBox(height: Space.s4),
+
+                    // Confirm button
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: const Key('cancel_confirm_button'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: errorColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              DesignTokens.radiusControl,
+                            ),
+                          ),
                         ),
+                        onPressed: _selectedReason == null
+                            ? null
+                            : () => Navigator.of(context).pop((
+                                reasonCode: _selectedReason!,
+                                notes: _notesController.text.trim().isEmpty
+                                    ? null
+                                    : _notesController.text.trim(),
+                              )),
+                        child: const Text('Confirm Cancellation'),
                       ),
-                      onPressed: () => Navigator.of(context).pop(null),
-                      child: const Text('Keep Job'),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: Space.s2),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        key: const Key('cancel_dismiss_button'),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(
+                            double.infinity,
+                            DesignTokens.targetMinimum,
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(null),
+                        child: const Text('Keep Job'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );

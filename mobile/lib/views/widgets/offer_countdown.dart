@@ -231,7 +231,9 @@ class _OfferCountdownState extends State<OfferCountdown> {
                     ),
                   ),
                   Text(
-                    expired ? 'Expired' : OfferCountdown.formatClock(_remaining),
+                    expired
+                        ? 'Expired'
+                        : OfferCountdown.formatClock(_remaining),
                     style: TextStyle(
                       fontFamily: DesignTokens.fontBody,
                       fontSize: DesignTokens.fontSizeBody,

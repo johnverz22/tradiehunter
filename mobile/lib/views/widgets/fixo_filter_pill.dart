@@ -35,9 +35,7 @@ class FixoFilterPill extends StatelessWidget {
         ? (isDark ? DesignTokens.brand700 : DesignTokens.brand900)
         : th.surface;
 
-    final Color fgColor = selected
-        ? Colors.white
-        : th.text;
+    final Color fgColor = selected ? Colors.white : th.text;
 
     final Border border = selected
         ? Border.all(
@@ -54,9 +52,7 @@ class FixoFilterPill extends StatelessWidget {
       selected: selected,
       label: label,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: Sizes.filterPillMinH,
-        ),
+        constraints: const BoxConstraints(minHeight: Sizes.filterPillMinH),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -65,9 +61,7 @@ class FixoFilterPill extends StatelessWidget {
             borderRadius: BorderRadius.circular(Radii.pill),
             child: Center(
               child: Container(
-                constraints: const BoxConstraints(
-                  minHeight: Sizes.filterPillH,
-                ),
+                constraints: const BoxConstraints(minHeight: Sizes.filterPillH),
                 padding: const EdgeInsets.symmetric(
                   horizontal: Space.s3_5,
                   vertical: Space.s1_5,

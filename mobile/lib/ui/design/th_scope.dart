@@ -9,7 +9,11 @@ import 'th_tokens.dart';
 /// the caller passes it in so `lib/ui/**` never imports `views/**` (plan 2.4).
 /// `ThemeMode.system` follows the platform brightness.
 class ThScope extends StatelessWidget {
-  const ThScope({super.key, required this.child, this.themeMode = ThemeMode.system});
+  const ThScope({
+    super.key,
+    required this.child,
+    this.themeMode = ThemeMode.system,
+  });
 
   final Widget child;
   final ThemeMode themeMode;
@@ -32,7 +36,10 @@ class ThScope extends StatelessWidget {
     final theme = dark ? THTheme.dark : THTheme.light;
     return Theme(
       data: theme,
-      child: DefaultTextStyle(style: THType.body.copyWith(color: theme.extension<THColors>()!.text), child: child),
+      child: DefaultTextStyle(
+        style: THType.body.copyWith(color: theme.extension<THColors>()!.text),
+        child: child,
+      ),
     );
   }
 }

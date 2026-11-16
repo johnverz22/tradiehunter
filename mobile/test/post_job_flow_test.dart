@@ -18,8 +18,16 @@ import 'package:go_router/go_router.dart';
 
 // ── Test Fixtures ─────────────────────────────────────────────────────────────
 
-const testServicePlumbing = ServiceOption(id: 1, name: 'Plumbing', category: 'Plumber');
-const testServiceElectrical = ServiceOption(id: 2, name: 'Electrical', category: 'Electrician');
+const testServicePlumbing = ServiceOption(
+  id: 1,
+  name: 'Plumbing',
+  category: 'Plumber',
+);
+const testServiceElectrical = ServiceOption(
+  id: 2,
+  name: 'Electrical',
+  category: 'Electrician',
+);
 
 const testAddress = AddressCandidate(
   id: 'linz:101',
@@ -74,7 +82,10 @@ class FakeJobsRepo extends JobsRepository {
   }
 
   @override
-  Future<List<String>> uploadPhotos(String jobId, List<String> filePaths) async => [];
+  Future<List<String>> uploadPhotos(
+    String jobId,
+    List<String> filePaths,
+  ) async => [];
 }
 
 // ── Harness Helper ────────────────────────────────────────────────────────────
@@ -86,17 +97,22 @@ Widget buildPostJobHarness({
   GoRouter? router,
   bool isDark = false,
 }) {
-  final effectiveRouter = router ??
+  final effectiveRouter =
+      router ??
       GoRouter(
         initialLocation: '/post',
         routes: [
           GoRoute(path: '/post', builder: (_, _) => const PostJobScreen()),
-          GoRoute(path: '/tradie', builder: (_, _) => Scaffold(body: Text('Tradie Dashboard'))),
+          GoRoute(
+            path: '/tradie',
+            builder: (_, _) => Scaffold(body: Text('Tradie Dashboard')),
+          ),
           // v1.7 P12-04: a successful create lands on Choose-a-Tradie.
           GoRoute(
             path: '/jobs/:id/tradies',
-            builder: (_, state) =>
-                Scaffold(body: Text('Choose a Tradie ${state.pathParameters['id']}')),
+            builder: (_, state) => Scaffold(
+              body: Text('Choose a Tradie ${state.pathParameters['id']}'),
+            ),
           ),
         ],
       );
@@ -132,7 +148,10 @@ void main() {
         initialLocation: '/post',
         routes: [
           GoRoute(path: '/post', builder: (_, _) => const PostJobScreen()),
-          GoRoute(path: '/tradie', builder: (_, _) => Scaffold(body: Text('Tradie Dashboard'))),
+          GoRoute(
+            path: '/tradie',
+            builder: (_, _) => Scaffold(body: Text('Tradie Dashboard')),
+          ),
         ],
       );
 
@@ -150,7 +169,9 @@ void main() {
       expect(find.text('Post a Job'), findsNothing);
     });
 
-    testWidgets('Homeowner role allows viewing Post Job screen', (tester) async {
+    testWidgets('Homeowner role allows viewing Post Job screen', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildPostJobHarness(
           jobsRepo: jobsRepo,
@@ -199,7 +220,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now asks for address
-      expect(find.text('Select a job address to post your job'), findsOneWidget);
+      expect(
+        find.text('Select a job address to post your job'),
+        findsOneWidget,
+      );
 
       // Select address
       await notifier.selectAddress(testAddress, 'LINZ Data Service');
@@ -216,7 +240,9 @@ void main() {
       expect(find.text('Add a description to post your job'), findsOneWidget);
 
       // Enter description
-      notifier.setDescription('The pipe under the kitchen sink is leaking heavily.');
+      notifier.setDescription(
+        'The pipe under the kitchen sink is leaking heavily.',
+      );
       await tester.pumpAndSettle();
 
       // v1.7: Flexible timing is the default and there is no rate step
@@ -228,11 +254,10 @@ void main() {
       // A date-backed timing preference still gates the submission.
       notifier.setTimingPreference('SpecificDate');
       await tester.pumpAndSettle();
-      expect(
-        find.text('Pick a start date to post your job'),
-        findsOneWidget,
+      expect(find.text('Pick a start date to post your job'), findsOneWidget);
+      notifier.setScheduledStartLocal(
+        DateTime.now().add(const Duration(days: 1)),
       );
-      notifier.setScheduledStartLocal(DateTime.now().add(const Duration(days: 1)));
       await tester.pumpAndSettle();
       final finalButton = tester.widget<FixoPrimaryButton>(postButtonFinder);
       expect(finalButton.onPressed, isNotNull);
@@ -240,7 +265,9 @@ void main() {
   });
 
   group('PostJobScreen review card & submission', () {
-    testWidgets('renders review card without any rate dependence', (tester) async {
+    testWidgets('renders review card without any rate dependence', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -262,7 +289,9 @@ void main() {
       await notifier.selectService(testServicePlumbing);
       await notifier.selectAddress(testAddress, 'LINZ');
       notifier.setTitle('Leaking sink pipe');
-      notifier.setDescription('The pipe under the kitchen sink is leaking heavily.');
+      notifier.setDescription(
+        'The pipe under the kitchen sink is leaking heavily.',
+      );
       // v1.7: hours are an optional estimate; no rate is ever picked (P12-04).
       notifier.setEstimatedHours('3');
       await tester.pumpAndSettle();
@@ -271,53 +300,58 @@ void main() {
       expect(find.textContaining('pay when the job is done'), findsOneWidget);
     });
 
-    testWidgets('submitting valid form posts to repo and lands on Choose-a-Tradie', (tester) async {
-      tester.view.physicalSize = const Size(390, 1400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'submitting valid form posts to repo and lands on Choose-a-Tradie',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        buildPostJobHarness(
-          jobsRepo: jobsRepo,
-          addressRepo: addressRepo,
-          profileRepo: profileRepo,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildPostJobHarness(
+            jobsRepo: jobsRepo,
+            addressRepo: addressRepo,
+            profileRepo: profileRepo,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      final element = tester.element(find.byType(PostJobScreen));
-      final container = ProviderScope.containerOf(element);
-      final notifier = container.read(postJobProvider.notifier);
+        final element = tester.element(find.byType(PostJobScreen));
+        final container = ProviderScope.containerOf(element);
+        final notifier = container.read(postJobProvider.notifier);
 
-      await notifier.selectService(testServicePlumbing);
-      await notifier.selectAddress(testAddress, 'LINZ');
-      notifier.setTitle('Emergency Leak Fix');
-      notifier.setDescription('Water flooding the floor from under kitchen basin.');
-      notifier.setUrgency('Emergency');
-      notifier.setEstimatedHours('2');
-      notifier.setScheduledStartLocal(DateTime.utc(2026, 11, 10, 14, 0));
-      await tester.pumpAndSettle();
+        await notifier.selectService(testServicePlumbing);
+        await notifier.selectAddress(testAddress, 'LINZ');
+        notifier.setTitle('Emergency Leak Fix');
+        notifier.setDescription(
+          'Water flooding the floor from under kitchen basin.',
+        );
+        notifier.setUrgency('Emergency');
+        notifier.setEstimatedHours('2');
+        notifier.setScheduledStartLocal(DateTime.utc(2026, 11, 10, 14, 0));
+        await tester.pumpAndSettle();
 
-      // Tap Post Job button
-      final postButtonFinder = find.byKey(const Key('post_job_button'));
-      await tester.tap(postButtonFinder);
-      await tester.pumpAndSettle();
+        // Tap Post Job button
+        final postButtonFinder = find.byKey(const Key('post_job_button'));
+        await tester.tap(postButtonFinder);
+        await tester.pumpAndSettle();
 
-      // Verify repository was called with the v1.7 payload fields
-      expect(jobsRepo.lastPostedData, isNotNull);
-      expect(jobsRepo.lastPostedData!['title'], 'Emergency Leak Fix');
-      expect(jobsRepo.lastPostedData!['urgency'], 'Emergency');
-      expect(jobsRepo.lastPostedData!['serviceId'], 1);
-      expect(jobsRepo.lastPostedData!['estimatedHours'], 2.0);
-      expect(jobsRepo.lastPostedData!['jobType'], 'Hourly');
-      // v1.7: hourlyRate is never sent — rates are snapshotted server-side
-      // when a tradie accepts (contract #1).
-      expect(jobsRepo.lastPostedData!.containsKey('hourlyRate'), isFalse);
+        // Verify repository was called with the v1.7 payload fields
+        expect(jobsRepo.lastPostedData, isNotNull);
+        expect(jobsRepo.lastPostedData!['title'], 'Emergency Leak Fix');
+        expect(jobsRepo.lastPostedData!['urgency'], 'Emergency');
+        expect(jobsRepo.lastPostedData!['serviceId'], 1);
+        expect(jobsRepo.lastPostedData!['estimatedHours'], 2.0);
+        expect(jobsRepo.lastPostedData!['jobType'], 'Hourly');
+        // v1.7: hourlyRate is never sent — rates are snapshotted server-side
+        // when a tradie accepts (contract #1).
+        expect(jobsRepo.lastPostedData!.containsKey('hourlyRate'), isFalse);
 
-      // Verify routed to the Choose-a-Tradie screen (not matching)
-      expect(find.text('Choose a Tradie job-789'), findsOneWidget);
-    });
+        // Verify routed to the Choose-a-Tradie screen (not matching)
+        expect(find.text('Choose a Tradie job-789'), findsOneWidget);
+      },
+    );
 
     testWidgets('surfaces error banner on post failure', (tester) async {
       tester.view.physicalSize = const Size(390, 1400);

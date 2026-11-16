@@ -23,7 +23,12 @@ class StickyActionBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        minimum: const EdgeInsets.fromLTRB(Space.gutter, Space.s3, Space.gutter, Space.s4),
+        minimum: const EdgeInsets.fromLTRB(
+          Space.gutter,
+          Space.s3,
+          Space.gutter,
+          Space.s4,
+        ),
         child: child,
       ),
     ),

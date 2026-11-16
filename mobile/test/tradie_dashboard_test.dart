@@ -601,7 +601,10 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('Awaiting payment'),
         100,
-        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+        scrollable: find.descendant(
+          of: find.byKey(const Key('tradie_filter_row')),
+          matching: find.byType(Scrollable),
+        ),
       );
       await tester.tap(find.text('Awaiting payment'));
       await tester.pumpAndSettle();
@@ -610,7 +613,10 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('Done'),
         100,
-        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+        scrollable: find.descendant(
+          of: find.byKey(const Key('tradie_filter_row')),
+          matching: find.byType(Scrollable),
+        ),
       );
       await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
@@ -625,7 +631,10 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('All'),
         100,
-        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+        scrollable: find.descendant(
+          of: find.byKey(const Key('tradie_filter_row')),
+          matching: find.byType(Scrollable),
+        ),
       );
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
@@ -657,7 +666,10 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('All'),
         100,
-        scrollable: find.descendant(of: find.byKey(const Key('tradie_filter_row')), matching: find.byType(Scrollable)),
+        scrollable: find.descendant(
+          of: find.byKey(const Key('tradie_filter_row')),
+          matching: find.byType(Scrollable),
+        ),
       );
       await tester.tap(find.text('All'));
       await tester.pumpAndSettle();

@@ -14,7 +14,13 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 
 /// Preset empty / error situations, mirroring v1 `DesignedStateVariant`.
-enum ThStatePreset { noMessages, emptyLeads, jobNotFound, jobUnavailable, requestExpired }
+enum ThStatePreset {
+  noMessages,
+  emptyLeads,
+  jobNotFound,
+  jobUnavailable,
+  requestExpired,
+}
 
 class ThStateView extends StatelessWidget {
   const ThStateView._({
@@ -32,7 +38,7 @@ class ThStateView extends StatelessWidget {
 
   /// Skeleton placeholder while data loads. [label] is read by screen readers.
   const ThStateView.loading({Key? key, String? label, int rows = 3})
-      : this._(key: key, kind: _Kind.loading, title: label, rows: rows);
+    : this._(key: key, kind: _Kind.loading, title: label, rows: rows);
 
   /// Generic empty state.
   const ThStateView.empty({
@@ -43,25 +49,28 @@ class ThStateView extends StatelessWidget {
     String? actionLabel,
     VoidCallback? onAction,
   }) : this._(
-          key: key,
-          kind: _Kind.empty,
-          icon: icon,
-          title: title,
-          body: body,
-          actionLabel: actionLabel,
-          onAction: onAction,
-        );
+         key: key,
+         kind: _Kind.empty,
+         icon: icon,
+         title: title,
+         body: body,
+         actionLabel: actionLabel,
+         onAction: onAction,
+       );
 
   /// Generic error state with an optional retry.
-  const ThStateView.error({Key? key, required String message, VoidCallback? onRetry})
-      : this._(
-          key: key,
-          kind: _Kind.error,
-          icon: Icons.error_outline_rounded,
-          title: message,
-          actionLabel: onRetry == null ? null : 'Try again',
-          onAction: onRetry,
-        );
+  const ThStateView.error({
+    Key? key,
+    required String message,
+    VoidCallback? onRetry,
+  }) : this._(
+         key: key,
+         kind: _Kind.error,
+         icon: Icons.error_outline_rounded,
+         title: message,
+         actionLabel: onRetry == null ? null : 'Try again',
+         onAction: onRetry,
+       );
 
   /// One of the designed states from the v1 mockups. [area] personalises
   /// [ThStatePreset.emptyLeads]. [actionLabel] overrides the default CTA label.
@@ -75,40 +84,40 @@ class ThStateView extends StatelessWidget {
   }) {
     final (icon, title, body, cta, secondary) = switch (preset) {
       ThStatePreset.noMessages => (
-          Icons.chat_bubble_outline_rounded,
-          'No messages yet',
-          "When you're matched with a tradie, your chat will show up here.",
-          null,
-          null,
-        ),
+        Icons.chat_bubble_outline_rounded,
+        'No messages yet',
+        "When you're matched with a tradie, your chat will show up here.",
+        null,
+        null,
+      ),
       ThStatePreset.emptyLeads => (
-          Icons.travel_explore_rounded,
-          'No new leads right now',
-          "We'll ping you when a job near ${area ?? 'you'} matches your services.",
-          null,
-          null,
-        ),
+        Icons.travel_explore_rounded,
+        'No new leads right now',
+        "We'll ping you when a job near ${area ?? 'you'} matches your services.",
+        null,
+        null,
+      ),
       ThStatePreset.jobNotFound => (
-          Icons.search_off_rounded,
-          "We couldn't find this job",
-          'It may have been removed or the link is old.',
-          'Back to my jobs',
-          'Contact support',
-        ),
+        Icons.search_off_rounded,
+        "We couldn't find this job",
+        'It may have been removed or the link is old.',
+        'Back to my jobs',
+        'Contact support',
+      ),
       ThStatePreset.jobUnavailable => (
-          Icons.block_rounded,
-          'This job is no longer available',
-          'The homeowner cancelled it or it was filled by someone else.',
-          'Back to my jobs',
-          null,
-        ),
+        Icons.block_rounded,
+        'This job is no longer available',
+        'The homeowner cancelled it or it was filled by someone else.',
+        'Back to my jobs',
+        null,
+      ),
       ThStatePreset.requestExpired => (
-          Icons.hourglass_disabled_rounded,
-          'This request expired',
-          'Another tradie may have accepted this job. New leads arrive all the time.',
-          'Back to leads',
-          null,
-        ),
+        Icons.hourglass_disabled_rounded,
+        'This request expired',
+        'Another tradie may have accepted this job. New leads arrive all the time.',
+        'Back to leads',
+        null,
+      ),
     };
     return ThStateView._(
       key: key,
@@ -123,6 +132,7 @@ class ThStateView extends StatelessWidget {
     );
   }
 
+  // ignore: library_private_types_in_public_api
   final _Kind kind;
   final IconData? icon;
   final String? title;
@@ -144,7 +154,9 @@ class ThStateView extends StatelessWidget {
       builder: (context, constraints) => SingleChildScrollView(
         primary: false,
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0),
+          constraints: BoxConstraints(
+            minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
+          ),
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(Sizes.gutter),
@@ -159,26 +171,47 @@ class ThStateView extends StatelessWidget {
                       Container(
                         width: Sizes.avatarLg + Space.s4,
                         height: Sizes.avatarLg + Space.s4,
-                        decoration: BoxDecoration(color: tile, borderRadius: BorderRadius.circular(Radii.hero)),
-                        child: Icon(icon, size: Sizes.iconLg + Space.s4, color: tone),
+                        decoration: BoxDecoration(
+                          color: tile,
+                          borderRadius: BorderRadius.circular(Radii.hero),
+                        ),
+                        child: Icon(
+                          icon,
+                          size: Sizes.iconLg + Space.s4,
+                          color: tone,
+                        ),
                       ),
                       const SizedBox(height: Space.s5),
-                      THText(title ?? '', style: THTextStyle.h2, align: TextAlign.center),
+                      THText(
+                        title ?? '',
+                        style: THTextStyle.h2,
+                        align: TextAlign.center,
+                      ),
                       if (body != null) ...[
                         const SizedBox(height: Space.s2),
-                        THText(body!, tone: THTone.soft, align: TextAlign.center),
+                        THText(
+                          body!,
+                          tone: THTone.soft,
+                          align: TextAlign.center,
+                        ),
                       ],
                       if (actionLabel != null && onAction != null) ...[
                         const SizedBox(height: Space.s6),
                         THButton(
                           label: actionLabel!,
-                          kind: isError ? THButtonKind.secondary : THButtonKind.primary,
+                          kind: isError
+                              ? THButtonKind.secondary
+                              : THButtonKind.primary,
                           onPressed: onAction,
                         ),
                       ],
                       if (secondaryLabel != null && onSecondary != null) ...[
                         const SizedBox(height: Space.s3),
-                        THButton(label: secondaryLabel!, kind: THButtonKind.ghost, onPressed: onSecondary),
+                        THButton(
+                          label: secondaryLabel!,
+                          kind: THButtonKind.ghost,
+                          onPressed: onSecondary,
+                        ),
                       ],
                     ],
                   ),
@@ -204,8 +237,12 @@ class _Loading extends StatefulWidget {
   State<_Loading> createState() => _LoadingState();
 }
 
-class _LoadingState extends State<_Loading> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(vsync: this, duration: THDurations.slow * 4);
+class _LoadingState extends State<_Loading>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: THDurations.slow * 4,
+  );
 
   @override
   void didChangeDependencies() {
@@ -234,7 +271,8 @@ class _LoadingState extends State<_Loading> with SingleTickerProviderStateMixin 
         child: AnimatedBuilder(
           animation: _pulse,
           builder: (context, _) {
-            final opacity = 1.0 - 0.45 * Curves.easeInOut.transform(_pulse.value);
+            final opacity =
+                1.0 - 0.45 * Curves.easeInOut.transform(_pulse.value);
             return Opacity(
               opacity: opacity,
               child: ListView(
@@ -243,13 +281,22 @@ class _LoadingState extends State<_Loading> with SingleTickerProviderStateMixin 
                 padding: const EdgeInsets.all(Sizes.gutter),
                 children: [
                   for (var i = 0; i < widget.rows; i++) ...[
-                    _SkeletonCard(color: c.track, surface: c.surface, line: c.line),
+                    _SkeletonCard(
+                      color: c.track,
+                      surface: c.surface,
+                      line: c.line,
+                    ),
                     const SizedBox(height: Space.s3),
                   ],
                   if (widget.label != null)
                     Padding(
                       padding: const EdgeInsets.only(top: Space.s2),
-                      child: THText(widget.label!, style: THTextStyle.meta, tone: THTone.soft, align: TextAlign.center),
+                      child: THText(
+                        widget.label!,
+                        style: THTextStyle.meta,
+                        tone: THTone.soft,
+                        align: TextAlign.center,
+                      ),
                     ),
                 ],
               ),
@@ -262,17 +309,24 @@ class _LoadingState extends State<_Loading> with SingleTickerProviderStateMixin 
 }
 
 class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard({required this.color, required this.surface, required this.line});
+  const _SkeletonCard({
+    required this.color,
+    required this.surface,
+    required this.line,
+  });
 
   final Color color;
   final Color surface;
   final Color line;
 
   Widget _bar(double height, {double? width}) => Container(
-        height: height,
-        width: width,
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(Radii.small)),
-      );
+    height: height,
+    width: width,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(Radii.small),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +339,11 @@ class _SkeletonCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(width: Sizes.avatar, height: Sizes.avatar, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: Sizes.avatar,
+            height: Sizes.avatar,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: Space.s3),
           Expanded(
             child: Column(

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../repositories/auth_repository.dart';
 import '../repositories/profile_repository.dart';
 import '../network/auth_interceptor.dart';
@@ -59,17 +60,19 @@ final dioProvider = Provider<Dio>((ref) {
   // Transparently rewrite so a single .env.json works for both simulators.
   final baseUrl = (!kIsWeb && Platform.isAndroid)
       ? configuredUrl
-          .replaceFirst('localhost', '10.0.2.2')
-          .replaceFirst('127.0.0.1', '10.0.2.2')
+            .replaceFirst('localhost', '10.0.2.2')
+            .replaceFirst('127.0.0.1', '10.0.2.2')
       : configuredUrl;
 
   debugPrint('[Dio] baseUrl: $baseUrl');
 
-  final dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-  ));
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+    ),
+  );
   final storage = ref.watch(secureStorageProvider);
   dio.interceptors.add(AuthInterceptor(dio, storage, appRouter));
   return dio;
@@ -105,7 +108,9 @@ Future<String> getRoleRoute(ProfileRepository profileRepo) async {
     final role = profile['role'];
     return role == 1 ? '/tradie' : '/home';
   } catch (e) {
-    debugPrint('[getRoleRoute] Could not fetch profile, defaulting to /home: $e');
+    debugPrint(
+      '[getRoleRoute] Could not fetch profile, defaulting to /home: $e',
+    );
     return '/home';
   }
 }
@@ -118,10 +123,8 @@ class AuthState {
 
   const AuthState({this.isLoading = false, this.error});
 
-  AuthState copyWith({bool? isLoading, String? error}) => AuthState(
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-      );
+  AuthState copyWith({bool? isLoading, String? error}) =>
+      AuthState(isLoading: isLoading ?? this.isLoading, error: error);
 }
 
 // ─── Notifier ─────────────────────────────────────────────────────────────────
@@ -169,12 +172,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// P1-03: registration never signs the user in — the backend emails an OTP
   /// and returns no tokens, so this yields [AuthNeedsEmailVerification] on
   /// success and null on failure (reason in [AuthState.error]).
-  Future<AuthOutcome?> register(String firstName, String lastName, String email,
-      String password, int role) async {
+  Future<AuthOutcome?> register(
+    String firstName,
+    String lastName,
+    String email,
+    String password,
+    int role,
+  ) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final outcome = await _repository.register(
-          firstName, lastName, email, password, role);
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+      );
       state = state.copyWith(isLoading: false);
       return outcome;
     } catch (e) {
@@ -216,7 +229,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Called from RoleSelectScreen. Sends role + P9-02 registration token to
   /// backend, stores JWT.
   Future<bool> completeRegistration(
-      String userId, String registrationToken, int role) async {
+    String userId,
+    String registrationToken,
+    int role,
+  ) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _repository.completeRegistration(userId, registrationToken, role);
@@ -236,7 +252,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _postLoginHook() async {
-    const disablePush = bool.fromEnvironment('FIXO_DISABLE_PUSH', defaultValue: false);
+    const disablePush = bool.fromEnvironment(
+      'FIXO_DISABLE_PUSH',
+      defaultValue: false,
+    );
     if (disablePush) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -255,7 +274,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authViewModelProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authViewModelProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   return AuthNotifier(ref.watch(authRepositoryProvider));
 });

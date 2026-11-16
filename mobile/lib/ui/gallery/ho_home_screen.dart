@@ -16,43 +16,75 @@ class HoHomeScreen extends StatelessWidget {
       dock: THDock(role: THDockRole.homeowner, active: THDockTab.home),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: Space.s3,
             children: [
               Expanded(
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  THText('Kia ora,', style: THTextStyle.meta, tone: THTone.soft),
-                  THText('Mere', style: THTextStyle.h1),
-                ],
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    THText(
+                      'Kia ora,',
+                      style: THTextStyle.meta,
+                      tone: THTone.soft,
+                    ),
+                    THText('Mere', style: THTextStyle.h1),
+                  ],
+                ),
               ),
+              THIconButton(
+                icon: Icons.notifications_rounded,
+                kind: THButtonKind.secondary,
+                dot: true,
+                semanticLabel: 'bell',
+                onPressed: () {},
               ),
-              THIconButton(icon: Icons.notifications_rounded, kind: THButtonKind.secondary, dot: true, semanticLabel: 'bell', onPressed: () {}),
             ],
           ),
           const SizedBox(height: 16.0),
           THHero(
             children: [
-              THText('NEEDS YOUR ATTENTION', style: THTextStyle.label, tone: THTone.gold),
+              THText(
+                'NEEDS YOUR ATTENTION',
+                style: THTextStyle.label,
+                tone: THTone.gold,
+              ),
               const SizedBox(height: 8.0),
-              THText('Approve final amount', style: THTextStyle.h2, tone: THTone.onHero),
-              THText('Leaking kitchen tap · Aroha Plumbing', style: THTextStyle.meta, tone: THTone.onHeroSoft),
+              THText(
+                'Approve final amount',
+                style: THTextStyle.h2,
+                tone: THTone.onHero,
+              ),
+              THText(
+                'Leaking kitchen tap · Aroha Plumbing',
+                style: THTextStyle.meta,
+                tone: THTone.onHeroSoft,
+              ),
               const SizedBox(height: 16.0),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      THText('\$261.00', style: THTextStyle.moneyLg, tone: THTone.onHero),
-                      THText('Incl. GST · 2.5 h + 1 extra', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        THText(
+                          '\$261.00',
+                          style: THTextStyle.moneyLg,
+                          tone: THTone.onHero,
+                        ),
+                        THText(
+                          'Incl. GST · 2.5 h + 1 extra',
+                          style: THTextStyle.meta,
+                          tone: THTone.onHeroSoft,
+                          size: 11.5,
+                        ),
+                      ],
+                    ),
                   ),
                   THButton(
                     label: 'Review',
@@ -66,7 +98,11 @@ class HoHomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16.0),
-          THField(value: 'What needs doing?', icon: Icons.search_rounded, placeholder: true),
+          THField(
+            value: 'What needs doing?',
+            icon: Icons.search_rounded,
+            placeholder: true,
+          ),
           THGrid(
             columns: 4,
             spacing: Space.s2_5,
@@ -85,27 +121,35 @@ class HoHomeScreen extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: THText('Active jobs', style: THTextStyle.title),
+              Expanded(child: THText('Active jobs', style: THTextStyle.title)),
+              THText(
+                'See all',
+                style: THTextStyle.title,
+                tone: THTone.brand,
+                size: 13.0,
               ),
-              THText('See all', style: THTextStyle.title, tone: THTone.brand, size: 13.0),
             ],
           ),
           const SizedBox(height: 8.0),
           THCard(
-            
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s2,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s2,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Repaint hallway', style: THTextStyle.title),
-                      THText('Waiting for Kiri Painters', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Repaint hallway', style: THTextStyle.title),
+                        THText(
+                          'Waiting for Kiri Painters',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
                   THBadge('Requested', kind: THBadgeKind.accent),
                 ],
@@ -121,46 +165,74 @@ class HoHomeScreen extends StatelessWidget {
               Expanded(
                 child: THText('Top rated near you', style: THTextStyle.title),
               ),
-              THText('See all', style: THTextStyle.title, tone: THTone.brand, size: 13.0),
+              THText(
+                'See all',
+                style: THTextStyle.title,
+                tone: THTone.brand,
+                size: 13.0,
+              ),
             ],
           ),
           THCard(
             padding: Space.s3_5,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3,
                 children: [
                   THAvatar('AP', size: THAvatarSize.md),
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Aroha Plumbing', style: THTextStyle.title),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1,
-                        children: [
-                          THIcon(Icons.star_rounded, size: 14.0, tone: THTone.accent),
-                          THText('4.9', style: THTextStyle.meta, bold: true),
-                          THText('(128) · 2.4 km', style: THTextStyle.meta, tone: THTone.soft),
-                        ],
-                      ),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Aroha Plumbing', style: THTextStyle.title),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: Space.s1,
+                          children: [
+                            THIcon(
+                              Icons.star_rounded,
+                              size: 14.0,
+                              tone: THTone.accent,
+                            ),
+                            THText('4.9', style: THTextStyle.meta, bold: true),
+                            Flexible(
+                              child: THText(
+                                '(128) · 2.4 km',
+                                style: THTextStyle.meta,
+                                tone: THTone.soft,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       THText('\$85', style: THTextStyle.money),
-                      THText('/hr incl. GST', style: THTextStyle.meta, tone: THTone.soft, size: 11.0),
+                      THText(
+                        '/hr incl. GST',
+                        style: THTextStyle.meta,
+                        tone: THTone.soft,
+                        size: 11.0,
+                      ),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 10.0),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1_5,
+              Wrap(
+                spacing: Space.s1_5,
+                runSpacing: Space.s1_5,
                 children: [
-                  THBadge('Verified', kind: THBadgeKind.ok, icon: Icons.verified_user_rounded),
+                  THBadge(
+                    'Verified',
+                    kind: THBadgeKind.ok,
+                    icon: Icons.verified_user_rounded,
+                  ),
                   THBadge('Insured', kind: THBadgeKind.brand),
                   THBadge('Available now', kind: THBadgeKind.accent, dot: true),
                 ],
@@ -171,39 +243,62 @@ class HoHomeScreen extends StatelessWidget {
             padding: Space.s3_5,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3,
                 children: [
                   THAvatar('KP', size: THAvatarSize.md),
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Kiri Painters', style: THTextStyle.title),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1,
-                        children: [
-                          THIcon(Icons.star_rounded, size: 14.0, tone: THTone.accent),
-                          THText('4.8', style: THTextStyle.meta, bold: true),
-                          THText('(73) · 4.0 km', style: THTextStyle.meta, tone: THTone.soft),
-                        ],
-                      ),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Kiri Painters', style: THTextStyle.title),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: Space.s1,
+                          children: [
+                            THIcon(
+                              Icons.star_rounded,
+                              size: 14.0,
+                              tone: THTone.accent,
+                            ),
+                            THText('4.8', style: THTextStyle.meta, bold: true),
+                            Flexible(
+                              child: THText(
+                                '(73) · 4.0 km',
+                                style: THTextStyle.meta,
+                                tone: THTone.soft,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       THText('\$70', style: THTextStyle.money),
-                      THText('/hr incl. GST', style: THTextStyle.meta, tone: THTone.soft, size: 11.0),
+                      THText(
+                        '/hr incl. GST',
+                        style: THTextStyle.meta,
+                        tone: THTone.soft,
+                        size: 11.0,
+                      ),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 10.0),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1_5,
+              Wrap(
+                spacing: Space.s1_5,
+                runSpacing: Space.s1_5,
                 children: [
-                  THBadge('Verified', kind: THBadgeKind.ok, icon: Icons.verified_user_rounded),
+                  THBadge(
+                    'Verified',
+                    kind: THBadgeKind.ok,
+                    icon: Icons.verified_user_rounded,
+                  ),
                   THBadge('Insured', kind: THBadgeKind.brand),
                   THBadge('Available now', kind: THBadgeKind.accent, dot: true),
                 ],
@@ -214,18 +309,26 @@ class HoHomeScreen extends StatelessWidget {
             padding: Space.s3_5,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start, spacing: Space.s2_5,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: Space.s2_5,
                 children: [
-                  THIcon(Icons.info_outline_rounded, size: 18.0, tone: THTone.brand),
+                  THIcon(
+                    Icons.info_outline_rounded,
+                    size: 18.0,
+                    tone: THTone.brand,
+                  ),
                   Expanded(
-                    child: THText('Pay only after you approve the final amount. Rates always include GST.', style: THTextStyle.meta),
+                    child: THText(
+                      'Pay only after you approve the final amount. Rates always include GST.',
+                      style: THTextStyle.meta,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

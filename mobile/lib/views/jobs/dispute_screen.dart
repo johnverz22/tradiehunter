@@ -13,7 +13,6 @@ import '../widgets/sticky_action_bar.dart';
 import '../widgets/fixo_feedback.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// Dispute form (P7-01).
 ///
 /// Both parties reach this from the job detail overflow. Reason is a small
@@ -76,7 +75,9 @@ class DisputeScreen extends ConsumerWidget {
                       title: Text(reason),
                       value: reason,
                       activeColor: DesignTokens.brand500,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: Space.s3),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: Space.s3,
+                      ),
                     ),
                 ],
               ),
@@ -137,7 +138,10 @@ class DisputeScreen extends ConsumerWidget {
           const SizedBox(height: Space.s2),
           Text(
             'Up to $maxPhotos photos.',
-            style: TextStyle(fontSize: DesignTokens.fontSizeCaption, color: DesignTokens.inkSoft(isDark)),
+            style: TextStyle(
+              fontSize: DesignTokens.fontSizeCaption,
+              color: DesignTokens.inkSoft(isDark),
+            ),
           ),
 
           // ── What happens next — factual, no SLA promises ──────────────

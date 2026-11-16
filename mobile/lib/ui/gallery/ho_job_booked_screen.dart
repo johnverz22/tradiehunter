@@ -17,25 +17,32 @@ class HoJobBookedScreen extends StatelessWidget {
       dock: THDock(role: THDockRole.homeowner, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           THCard(
-            
             children: [
               THProgress(steps: 5, done: 2, current: true),
               const SizedBox(height: 12.0),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s2,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s2,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      THText('Booked for Tue, 10:00 am', style: THTextStyle.title),
-                      THText('Aroha Plumbing will check in on arrival.', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        THText(
+                          'Booked for Tue, 10:00 am',
+                          style: THTextStyle.title,
+                        ),
+                        THText(
+                          'Aroha Plumbing will check in on arrival.',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
                   THBadge('Booked', kind: THBadgeKind.ok),
                 ],
@@ -43,22 +50,32 @@ class HoJobBookedScreen extends StatelessWidget {
             ],
           ),
           THCard(
-            
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3,
                 children: [
                   THAvatar('AP', size: THAvatarSize.md),
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Aroha Plumbing', style: THTextStyle.title),
-                      THText('\$85/hr incl. GST · locked', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Aroha Plumbing', style: THTextStyle.title),
+                        THText(
+                          '\$85/hr incl. GST · locked',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
+                  THIconButton(
+                    icon: Icons.chat_bubble_rounded,
+                    kind: THButtonKind.secondary,
+                    semanticLabel: 'chat',
+                    onPressed: () {},
                   ),
-                  THIconButton(icon: Icons.chat_bubble_rounded, kind: THButtonKind.secondary, semanticLabel: 'chat', onPressed: () {}),
                 ],
               ),
             ],
@@ -75,7 +92,32 @@ class HoJobBookedScreen extends StatelessWidget {
           THCard(
             padding: Space.s4,
             children: [
-              THTimeline(items: [THTimelineItem('Request accepted', state: THTimelineState.done, subtitle: 'Aroha Plumbing · yesterday 4:12 pm'), THTimelineItem('Booked', state: THTimelineState.cur, subtitle: 'Tue 10:00 am'), THTimelineItem('Check-in on site', state: THTimelineState.todo), THTimelineItem('Work complete and hours entered', state: THTimelineState.todo), THTimelineItem('Approve final amount and pay', state: THTimelineState.todo)]),
+              THTimeline(
+                items: [
+                  THTimelineItem(
+                    'Request accepted',
+                    state: THTimelineState.done,
+                    subtitle: 'Aroha Plumbing · yesterday 4:12 pm',
+                  ),
+                  THTimelineItem(
+                    'Booked',
+                    state: THTimelineState.cur,
+                    subtitle: 'Tue 10:00 am',
+                  ),
+                  THTimelineItem(
+                    'Check-in on site',
+                    state: THTimelineState.todo,
+                  ),
+                  THTimelineItem(
+                    'Work complete and hours entered',
+                    state: THTimelineState.todo,
+                  ),
+                  THTimelineItem(
+                    'Approve final amount and pay',
+                    state: THTimelineState.todo,
+                  ),
+                ],
+              ),
             ],
           ),
           THButton(
@@ -89,8 +131,8 @@ class HoJobBookedScreen extends StatelessWidget {
             kind: THButtonKind.ghost,
             onPressed: () {},
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

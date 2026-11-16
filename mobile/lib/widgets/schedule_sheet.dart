@@ -120,10 +120,17 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
     final dateFormat = DateFormat('EEE, d MMM yyyy');
 
     return Container(
-      padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, MediaQuery.of(context).viewInsets.bottom + 32),
+      padding: EdgeInsets.fromLTRB(
+        Space.s6,
+        Space.s4,
+        Space.s6,
+        MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
       decoration: BoxDecoration(
         color: DesignTokens.surfaceCard(isDark),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(Radii.tile)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(Radii.tile),
+        ),
       ),
       child: _loadingExisting
           ? const SizedBox(
@@ -209,7 +216,10 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                     ),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.s4,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: isDark
@@ -262,10 +272,15 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
                             ),
                             child: AnimatedContainer(
                               duration: FixoDurations.fast,
-                              padding: const EdgeInsets.symmetric(vertical: Space.s3, horizontal: Space.s2),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: Space.s3,
+                                horizontal: Space.s2,
+                              ),
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? DesignTokens.amber.withValues(alpha: Alpha.tintAccent)
+                                    ? DesignTokens.amber.withValues(
+                                        alpha: Alpha.tintAccent,
+                                      )
                                     : (isDark
                                           ? DesignTokens.brand100Dark
                                           : DesignTokens.brand100Light),
@@ -366,4 +381,3 @@ class _ScheduleSheetState extends ConsumerState<ScheduleSheet> {
 }
 
 // ── Status pill ───────────────────────────────────────────────────────────────
-

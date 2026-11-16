@@ -13,7 +13,6 @@ import '../widgets/auth_controls.dart';
 import '../widgets/fixo_feedback.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// P1-08: email OTP entry. Reached from signup (registration always leaves
 /// the account unverified) and from login when the backend answers
 /// 403 `{ requiresVerification: true }`.
@@ -129,7 +128,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       key: const Key('otp_screen'),
       body: SafeArea(
         child: AuthScrollView(
-          padding: const EdgeInsets.fromLTRB(Space.s6, Space.s9, Space.s6, Space.s6),
+          padding: const EdgeInsets.fromLTRB(
+            Space.s6,
+            Space.s9,
+            Space.s6,
+            Space.s6,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -184,7 +188,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 ),
               const Text(
                 'Verification code',
-                style: TextStyle(fontSize: DesignTokens.fontSizeSm, fontWeight: FW.medium),
+                style: TextStyle(
+                  fontSize: DesignTokens.fontSizeSm,
+                  fontWeight: FW.medium,
+                ),
               ),
               const SizedBox(height: Space.s2),
               Center(
@@ -269,4 +276,3 @@ class _DigitsRemaining extends StatelessWidget {
     );
   }
 }
-

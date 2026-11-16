@@ -10,9 +10,7 @@ void main() {
     double textScale = 1.0,
   }) {
     return MaterialApp(
-      theme: ThemeData(
-        brightness: isDark ? Brightness.dark : Brightness.light,
-      ),
+      theme: ThemeData(brightness: isDark ? Brightness.dark : Brightness.light),
       home: MediaQuery(
         data: MediaQueryData(
           size: Size(width, 800),
@@ -29,10 +27,12 @@ void main() {
   }
 
   group('JobTimeline collapsed & expanded behavior', () {
-    testWidgets('collapsed by default: shows View all steps and compact bar', (tester) async {
-      await tester.pumpWidget(wrapTimeline(
-        child: const JobTimeline(status: 'Booked'),
-      ));
+    testWidgets('collapsed by default: shows View all steps and compact bar', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapTimeline(child: const JobTimeline(status: 'Booked')),
+      );
 
       expect(find.text('Booked'), findsWidgets);
       // v1.7 (P12-15): the v2 stepper has six steps.
@@ -43,14 +43,16 @@ void main() {
       expect(find.text('Hide steps'), findsNothing);
 
       // Tap target is >= 48px
-      final buttonSize = tester.getSize(find.widgetWithText(InkWell, 'View all steps'));
+      final buttonSize = tester.getSize(
+        find.widgetWithText(InkWell, 'View all steps'),
+      );
       expect(buttonSize.height, greaterThanOrEqualTo(48.0));
     });
 
     testWidgets('expands inline when View all steps tapped', (tester) async {
-      await tester.pumpWidget(wrapTimeline(
-        child: const JobTimeline(status: 'InProgress'),
-      ));
+      await tester.pumpWidget(
+        wrapTimeline(child: const JobTimeline(status: 'InProgress')),
+      );
 
       expect(find.text('View all steps'), findsOneWidget);
       expect(find.text('Hide steps'), findsNothing);
@@ -82,20 +84,24 @@ void main() {
       expect(find.text('Job request submitted'), findsNothing);
     });
 
-    testWidgets('custom step dates format properly when provided', (tester) async {
+    testWidgets('custom step dates format properly when provided', (
+      tester,
+    ) async {
       final now = DateTime(2026, 10, 30, 9, 30);
-      await tester.pumpWidget(wrapTimeline(
-        child: JobTimeline(
-          status: 'Completed',
-          initialExpanded: true,
-          stepDates: {
-            0: now.subtract(const Duration(hours: 3)),
-            1: now.subtract(const Duration(hours: 2)),
-            2: now.subtract(const Duration(hours: 1)),
-            3: now,
-          },
+      await tester.pumpWidget(
+        wrapTimeline(
+          child: JobTimeline(
+            status: 'Completed',
+            initialExpanded: true,
+            stepDates: {
+              0: now.subtract(const Duration(hours: 3)),
+              1: now.subtract(const Duration(hours: 2)),
+              2: now.subtract(const Duration(hours: 1)),
+              3: now,
+            },
+          ),
         ),
-      ));
+      );
 
       expect(find.text('Oct 30, 9:30 AM'), findsOneWidget);
       expect(find.text('Oct 30, 8:30 AM'), findsOneWidget);
@@ -103,47 +109,62 @@ void main() {
       expect(find.text('Oct 30, 6:30 AM'), findsOneWidget);
     });
 
-    testWidgets('terminal state Cancelled renders friendly cancel label', (tester) async {
-      await tester.pumpWidget(wrapTimeline(
-        child: const JobTimeline(
-          status: 'Cancelled',
-          initialExpanded: true,
+    testWidgets('terminal state Cancelled renders friendly cancel label', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapTimeline(
+          child: const JobTimeline(status: 'Cancelled', initialExpanded: true),
         ),
-      ));
+      );
 
       expect(find.text('Cancelled'), findsWidgets);
       expect(find.text('Job was cancelled'), findsOneWidget);
       expect(find.byIcon(Icons.close_rounded), findsWidgets);
     });
 
-    testWidgets('status unavailable shows recovery message and refresh button', (tester) async {
-      var refreshed = false;
-      await tester.pumpWidget(wrapTimeline(
-        child: JobTimeline(
-          status: 'UnknownState',
-          onRefresh: () => refreshed = true,
-        ),
-      ));
+    testWidgets(
+      'status unavailable shows recovery message and refresh button',
+      (tester) async {
+        var refreshed = false;
+        await tester.pumpWidget(
+          wrapTimeline(
+            child: JobTimeline(
+              status: 'UnknownState',
+              onRefresh: () => refreshed = true,
+            ),
+          ),
+        );
 
-      expect(find.text('Status unavailable'), findsOneWidget);
-      expect(find.text('Job progress is unavailable. Refresh to check the latest status.'), findsOneWidget);
-      expect(find.text('Refresh status'), findsOneWidget);
+        expect(find.text('Status unavailable'), findsOneWidget);
+        expect(
+          find.text(
+            'Job progress is unavailable. Refresh to check the latest status.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Refresh status'), findsOneWidget);
 
-      await tester.tap(find.text('Refresh status'));
-      expect(refreshed, isTrue);
-    });
+        await tester.tap(find.text('Refresh status'));
+        expect(refreshed, isTrue);
+      },
+    );
   });
 
   group('JobTimeline responsiveness & theme safety', () {
     for (final dark in [false, true]) {
       for (final scale in [1.0, 1.3, 2.0]) {
-        testWidgets('no overflow at 320px scale $scale in dark=$dark', (tester) async {
-          await tester.pumpWidget(wrapTimeline(
-            child: const JobTimeline(status: 'AwaitingConfirmation'),
-            isDark: dark,
-            width: 320,
-            textScale: scale,
-          ));
+        testWidgets('no overflow at 320px scale $scale in dark=$dark', (
+          tester,
+        ) async {
+          await tester.pumpWidget(
+            wrapTimeline(
+              child: const JobTimeline(status: 'AwaitingConfirmation'),
+              isDark: dark,
+              width: 320,
+              textScale: scale,
+            ),
+          );
           expect(tester.takeException(), isNull);
         });
       }

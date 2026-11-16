@@ -55,270 +55,271 @@ class PostJobScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     final missingHelper = _getMissingFieldHelper(vm);
-    final canSubmit = !vm.isSubmitting && (vm.submittedJobId != null || vm.isValid);
+    final canSubmit =
+        !vm.isSubmitting && (vm.submittedJobId != null || vm.isValid);
 
     return Scaffold(
       key: const Key('post_job_screen'),
       appBar: const FixoGradientAppBar(title: 'Post a Job'),
       body: ResponsiveContainer(
         child: SingleChildScrollView(
-            padding: FixoPadding.page,
-            child: AbsorbPointer(
-              absorbing: vm.isSubmitting || vm.submittedJobId != null,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Job type segmented control (P12-22) ──────────────────────
-                  _JobTypeSegmentedControl(
-                    selected: vm.jobType,
-                    onSelected: notifier.setJobType,
+          padding: FixoPadding.page,
+          child: AbsorbPointer(
+            absorbing: vm.isSubmitting || vm.submittedJobId != null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Job type segmented control (P12-22) ──────────────────────
+                _JobTypeSegmentedControl(
+                  selected: vm.jobType,
+                  onSelected: notifier.setJobType,
+                ),
+                const SizedBox(height: Space.s2),
+                Text(
+                  vm.isProject
+                      ? 'Project = tradies send you a quote'
+                      : 'Quick job = hourly rate, pay when done',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: Space.s6),
+
+                // ── Service ────────────────────────────────────────────────────
+                const _Section(title: 'What do you need?'),
+                DropdownButtonFormField<int>(
+                  key: const Key('service_dropdown'),
+                  initialValue: vm.selectedService?.id,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Service',
+                    hintText: 'Choose a service',
+                  ),
+                  items: vm.services
+                      .map(
+                        (service) => DropdownMenuItem(
+                          value: service.id,
+                          child: Text(
+                            service.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (id) {
+                    if (id == null) return;
+                    notifier.selectService(
+                      vm.services.firstWhere((s) => s.id == id),
+                    );
+                  },
+                ),
+                if (vm.isLoadingServices)
+                  const LinearProgressIndicator(
+                    semanticsLabel: 'Loading services',
+                  ),
+                if (!vm.isLoadingServices && vm.services.isEmpty)
+                  TextButton(
+                    onPressed: notifier.loadServices,
+                    child: const Text('Retry loading services'),
+                  ),
+                const SizedBox(height: Space.s6),
+
+                // ── Where is the job? ──────────────────────────────────────────
+                const _Section(title: 'Where is the job?'),
+                const _AddressField(),
+                const SizedBox(height: Space.s6),
+
+                // ── Description ────────────────────────────────────────────────
+                const _Section(title: 'Describe the job'),
+                TextField(
+                  key: const Key('title_field'),
+                  maxLength: 200,
+                  buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
+                  decoration: const InputDecoration(
+                    labelText: 'Job title',
+                    hintText: 'e.g. Fix a leaking kitchen tap',
+                  ),
+                  onChanged: notifier.setTitle,
+                ),
+                const SizedBox(height: Space.s3),
+                TextField(
+                  key: const Key('description_field'),
+                  maxLines: 5,
+                  maxLength: 2000,
+                  buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'e.g. Leaking kitchen tap, drips constantly…',
+                  ),
+                  onChanged: notifier.setDescription,
+                ),
+                if (vm.error != null && vm.error!.contains('description'))
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.s1),
+                    child: Text(
+                      vm.error!,
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontSize: DesignTokens.fontSizeCaption,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: Space.s6),
+
+                // ── Photos (moved up right after Description) ─────────────────
+                const _Section(title: 'Photos (up to 5)'),
+                Text(
+                  '${vm.photoPaths.length}/5 photos added',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: vm.photoPaths.length >= 5
+                        ? DesignTokens.amber
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FW.medium,
+                  ),
+                ),
+                const SizedBox(height: Space.s2),
+                _PhotoGrid(
+                  paths: vm.photoPaths,
+                  onAdd: () => _pickPhoto(context, ref),
+                  onRemove: (path) => notifier.removePhoto(path),
+                ),
+                const SizedBox(height: Space.s6),
+
+                // ── Timing (v1.7: Flexible | ASAP | date | range) ─────────────
+                const _Section(title: 'When do you need help?'),
+                _TimingSelector(
+                  selected: vm.timingPreference,
+                  onSelected: notifier.setTimingPreference,
+                  onStartPicked: notifier.setScheduledStartLocal,
+                  onEndPicked: notifier.setScheduledEndLocal,
+                  start: vm.scheduledStartLocal,
+                  end: vm.scheduledEndLocal,
+                ),
+                const SizedBox(height: Space.s4),
+                const _Section(title: 'Urgency'),
+                _UrgencySegmentedControl(
+                  selected: vm.urgency,
+                  onSelected: notifier.setUrgency,
+                ),
+                const SizedBox(height: Space.s6),
+
+                // ── Optional estimated hours ──────────────────────────────────
+                const _Section(title: 'Hours (optional)'),
+                TextFormField(
+                  key: const Key('hours_field'),
+                  initialValue: vm.estimatedHours == null
+                      ? ''
+                      : _formatHours(vm.estimatedHours!),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Estimated hours',
+                    helperText: 'Skip if unsure — total is confirmed when the job is done.',
+                    helperMaxLines: 2,
+                  ),
+                  onChanged: notifier.setEstimatedHours,
+                ),
+                const SizedBox(height: Space.s6),
+
+                // ── Project-only extras (P12-22) ──────────────────────────────
+                if (vm.isProject) ...[
+                  const _Section(title: 'Project details (optional)'),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: const Key('budget_min_field'),
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Budget min',
+                            prefixText: '\$',
+                          ),
+                          onChanged: notifier.setBudgetMin,
+                        ),
+                      ),
+                      const SizedBox(width: Space.s3),
+                      Expanded(
+                        child: TextFormField(
+                          key: const Key('budget_max_field'),
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Budget max',
+                            prefixText: '\$',
+                          ),
+                          onChanged: notifier.setBudgetMax,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Space.s4),
+                  Text(
+                    'Who buys the materials?',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FW.semibold,
+                    ),
                   ),
                   const SizedBox(height: Space.s2),
-                  Text(
-                    vm.isProject
-                        ? 'Project = tradies send you a quote'
-                        : 'Quick job = hourly rate, pay when done',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Service ────────────────────────────────────────────────────
-                  const _Section(title: 'What do you need?'),
-                  DropdownButtonFormField<int>(
-                    key: const Key('service_dropdown'),
-                    initialValue: vm.selectedService?.id,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Service',
-                      hintText: 'Choose a service',
-                    ),
-                    items: vm.services
+                  Wrap(
+                    spacing: Space.s2,
+                    runSpacing: Space.s2,
+                    children: postJobMaterialsOptions
                         .map(
-                          (service) => DropdownMenuItem(
-                            value: service.id,
-                            child: Text(
-                              service.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          (option) => FixoFilterPill(
+                            label: option.$2,
+                            selected: vm.materialsBy == option.$1,
+                            onSelected: (_) =>
+                                notifier.setMaterialsBy(option.$1),
                           ),
                         )
                         .toList(),
-                    onChanged: (id) {
-                      if (id == null) return;
-                      notifier.selectService(
-                        vm.services.firstWhere((s) => s.id == id),
-                      );
-                    },
                   ),
-                  if (vm.isLoadingServices)
-                    const LinearProgressIndicator(
-                      semanticsLabel: 'Loading services',
+                  const SizedBox(height: Space.s4),
+                  SwitchListTile(
+                    key: const Key('site_visit_switch'),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Site visit welcome'),
+                    subtitle: const Text(
+                      'Tradies can ask to look at the job before quoting.',
                     ),
-                  if (!vm.isLoadingServices && vm.services.isEmpty)
-                    TextButton(
-                      onPressed: notifier.loadServices,
-                      child: const Text('Retry loading services'),
-                    ),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Where is the job? ──────────────────────────────────────────
-                  const _Section(title: 'Where is the job?'),
-                  const _AddressField(),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Description ────────────────────────────────────────────────
-                  const _Section(title: 'Describe the job'),
-                  TextField(
-                    key: const Key('title_field'),
-                    maxLength: 200,
-                    buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
-                    decoration: const InputDecoration(
-                      labelText: 'Job title',
-                      hintText: 'e.g. Fix a leaking kitchen tap',
-                    ),
-                    onChanged: notifier.setTitle,
+                    value: vm.siteVisitWelcome,
+                    onChanged: notifier.setSiteVisitWelcome,
                   ),
-                  const SizedBox(height: Space.s3),
+                  const SizedBox(height: Space.s2),
                   TextField(
-                    key: const Key('description_field'),
-                    maxLines: 5,
+                    key: const Key('scope_notes_field'),
+                    maxLines: 4,
                     maxLength: 2000,
                     buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
                     decoration: const InputDecoration(
-                      labelText: 'Description',
-                      hintText: 'e.g. Leaking kitchen tap, drips constantly…',
+                      labelText: 'Scope notes',
+                      hintText: 'What is in scope, what is not…',
                     ),
-                    onChanged: notifier.setDescription,
-                  ),
-                  if (vm.error != null && vm.error!.contains('description'))
-                    Padding(
-                      padding: const EdgeInsets.only(top: Space.s1),
-                      child: Text(
-                        vm.error!,
-                        style: TextStyle(
-                          color: theme.colorScheme.error,
-                          fontSize: DesignTokens.fontSizeCaption,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Photos (moved up right after Description) ─────────────────
-                  const _Section(title: 'Photos (up to 5)'),
-                  Text(
-                    '${vm.photoPaths.length}/5 photos added',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: vm.photoPaths.length >= 5
-                          ? DesignTokens.amber
-                          : theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FW.medium,
-                    ),
-                  ),
-                  const SizedBox(height: Space.s2),
-                  _PhotoGrid(
-                    paths: vm.photoPaths,
-                    onAdd: () => _pickPhoto(context, ref),
-                    onRemove: (path) => notifier.removePhoto(path),
+                    onChanged: notifier.setScopeNotes,
                   ),
                   const SizedBox(height: Space.s6),
-
-                  // ── Timing (v1.7: Flexible | ASAP | date | range) ─────────────
-                  const _Section(title: 'When do you need help?'),
-                  _TimingSelector(
-                    selected: vm.timingPreference,
-                    onSelected: notifier.setTimingPreference,
-                    onStartPicked: notifier.setScheduledStartLocal,
-                    onEndPicked: notifier.setScheduledEndLocal,
-                    start: vm.scheduledStartLocal,
-                    end: vm.scheduledEndLocal,
-                  ),
-                  const SizedBox(height: Space.s4),
-                  const _Section(title: 'Urgency'),
-                  _UrgencySegmentedControl(
-                    selected: vm.urgency,
-                    onSelected: notifier.setUrgency,
-                  ),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Optional estimated hours ──────────────────────────────────
-                  const _Section(title: 'Hours (optional)'),
-                  TextFormField(
-                    key: const Key('hours_field'),
-                    initialValue:
-                        vm.estimatedHours == null
-                            ? ''
-                            : _formatHours(vm.estimatedHours!),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Estimated hours',
-                      helperText:
-                          'Skip if unsure — total is confirmed when the job is done.',
-                      helperMaxLines: 2,
-                    ),
-                    onChanged: notifier.setEstimatedHours,
-                  ),
-                  const SizedBox(height: Space.s6),
-
-                  // ── Project-only extras (P12-22) ──────────────────────────────
-                  if (vm.isProject) ...[
-                    const _Section(title: 'Project details (optional)'),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: const Key('budget_min_field'),
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Budget min',
-                              prefixText: '\$',
-                            ),
-                            onChanged: notifier.setBudgetMin,
-                          ),
-                        ),
-                        const SizedBox(width: Space.s3),
-                        Expanded(
-                          child: TextFormField(
-                            key: const Key('budget_max_field'),
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Budget max',
-                              prefixText: '\$',
-                            ),
-                            onChanged: notifier.setBudgetMax,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Space.s4),
-                    Text(
-                      'Who buys the materials?',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FW.semibold),
-                    ),
-                    const SizedBox(height: Space.s2),
-                    Wrap(
-                      spacing: Space.s2,
-                      runSpacing: Space.s2,
-                      children: postJobMaterialsOptions
-                          .map(
-                            (option) => FixoFilterPill(
-                              label: option.$2,
-                              selected: vm.materialsBy == option.$1,
-                              onSelected: (_) =>
-                                  notifier.setMaterialsBy(option.$1),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: Space.s4),
-                    SwitchListTile(
-                      key: const Key('site_visit_switch'),
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Site visit welcome'),
-                      subtitle: const Text(
-                        'Tradies can ask to look at the job before quoting.',
-                      ),
-                      value: vm.siteVisitWelcome,
-                      onChanged: notifier.setSiteVisitWelcome,
-                    ),
-                    const SizedBox(height: Space.s2),
-                    TextField(
-                      key: const Key('scope_notes_field'),
-                      maxLines: 4,
-                      maxLength: 2000,
-                      buildCounter: _hideCounterUntilThreshold(threshold: 0.8),
-                      decoration: const InputDecoration(
-                        labelText: 'Scope notes',
-                        hintText: 'What is in scope, what is not…',
-                      ),
-                      onChanged: notifier.setScopeNotes,
-                    ),
-                    const SizedBox(height: Space.s6),
-                  ],
-
-                  // ── Review your job ───────────────────────────────────────────
-                  const _Section(title: 'Review your job'),
-                  _ReviewCard(vm: vm),
-
-                  // ── Error banner ────────────────────────────────────────────────
-                  if (vm.error != null && !vm.error!.contains('description'))
-                    Padding(
-                      padding: const EdgeInsets.only(top: Space.s4),
-                      child: Text(
-                        vm.error!,
-                        style: TextStyle(color: theme.colorScheme.error),
-                      ),
-                    ),
                 ],
-              ),
+
+                // ── Review your job ───────────────────────────────────────────
+                const _Section(title: 'Review your job'),
+                _ReviewCard(vm: vm),
+
+                // ── Error banner ────────────────────────────────────────────────
+                if (vm.error != null && !vm.error!.contains('description'))
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.s4),
+                    child: Text(
+                      vm.error!,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
+      ),
       bottomNavigationBar: StickyActionBar(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -326,7 +327,9 @@ class PostJobScreen extends ConsumerWidget {
           children: [
             FixoPrimaryButton(
               key: const Key('post_job_button'),
-              label: vm.submittedJobId == null ? 'Post Job' : 'Retry photo upload',
+              label: vm.submittedJobId == null
+                  ? 'Post Job'
+                  : 'Retry photo upload',
               isLoading: vm.isSubmitting,
               onPressed: canSubmit ? () => _submit(context, ref) : null,
             ),
@@ -393,7 +396,10 @@ class PostJobScreen extends ConsumerWidget {
     final fileSize = await File(file.path).length();
     if (fileSize > maxBytes) {
       if (context.mounted) {
-        FixoNotice.warning(context, 'Photo exceeds 10 MB. Please choose a smaller image.');
+        FixoNotice.warning(
+          context,
+          'Photo exceeds 10 MB. Please choose a smaller image.',
+        );
       }
       return;
     }
@@ -435,10 +441,9 @@ class PostJobScreen extends ConsumerWidget {
 }
 
 /// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
-String _formatHours(double hours) =>
-    hours == hours.roundToDouble()
-        ? hours.round().toString()
-        : hours.toString();
+String _formatHours(double hours) => hours == hours.roundToDouble()
+    ? hours.round().toString()
+    : hours.toString();
 
 /// Helper counter callback that hides the counter until current length is >= 80% of maxLength.
 InputCounterWidgetBuilder _hideCounterUntilThreshold({double threshold = 0.8}) {
@@ -553,10 +558,7 @@ class _TimingSelector extends StatelessWidget {
   }
 
   Future<void> _pickEnd(BuildContext context) async {
-    final picked = await _pickDateTime(
-      context,
-      initial: end ?? start,
-    );
+    final picked = await _pickDateTime(context, initial: end ?? start);
     if (picked != null) onEndPicked(picked);
   }
 
@@ -603,7 +605,8 @@ class _TimingSelector extends StatelessWidget {
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final isNarrow = constraints.maxWidth < 360 ||
+            final isNarrow =
+                constraints.maxWidth < 360 ||
                 MediaQuery.textScalerOf(context)
                         .scale(DesignTokens.fontSizeStatus) >
                     15;
@@ -627,8 +630,7 @@ class _TimingSelector extends StatelessWidget {
               decoration: BoxDecoration(
                 color: DesignTokens.surfaceTonal(isDark),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
-                border:
-                    Border.all(color: DesignTokens.borderControl(isDark)),
+                border: Border.all(color: DesignTokens.borderControl(isDark)),
               ),
               child: Row(
                 children: postJobTimingOptions
@@ -646,8 +648,8 @@ class _TimingSelector extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: selected == option.$1
                                   ? (isDark
-                                      ? DesignTokens.brand700
-                                      : DesignTokens.brand900)
+                                        ? DesignTokens.brand700
+                                        : DesignTokens.brand900)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(
                                 DesignTokens.radiusControl,
@@ -665,8 +667,8 @@ class _TimingSelector extends StatelessWidget {
                                 color: selected == option.$1
                                     ? Colors.white
                                     : (isDark
-                                        ? DesignTokens.inkDark
-                                        : DesignTokens.inkLight),
+                                          ? DesignTokens.inkDark
+                                          : DesignTokens.inkLight),
                               ),
                             ),
                           ),
@@ -753,9 +755,7 @@ class _DatePickRow extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
       child: Container(
-        constraints: const BoxConstraints(
-          minHeight: DesignTokens.heightInput,
-        ),
+        constraints: const BoxConstraints(minHeight: DesignTokens.heightInput),
         padding: const EdgeInsets.symmetric(
           horizontal: Space.s4,
           vertical: Space.s2,
@@ -841,7 +841,8 @@ class _UrgencySegmentedControl extends StatelessWidget {
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final isNarrow = constraints.maxWidth < 360 ||
+            final isNarrow =
+                constraints.maxWidth < 360 ||
                 MediaQuery.textScalerOf(context).scale(13) > 15;
             if (isNarrow) {
               return _buildGrid(context);
@@ -883,8 +884,9 @@ class _UrgencySegmentedControl extends StatelessWidget {
                   color: isSelected
                       ? (isDark ? DesignTokens.brand700 : DesignTokens.brand900)
                       : Colors.transparent,
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.radiusControl),
+                  borderRadius: BorderRadius.circular(
+                    DesignTokens.radiusControl,
+                  ),
                 ),
                 child: Text(
                   u,
@@ -896,8 +898,8 @@ class _UrgencySegmentedControl extends StatelessWidget {
                     color: isSelected
                         ? Colors.white
                         : (isDark
-                            ? DesignTokens.inkDark
-                            : DesignTokens.inkLight),
+                              ? DesignTokens.inkDark
+                              : DesignTokens.inkLight),
                   ),
                 ),
               ),
@@ -967,7 +969,9 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                vm.isProject ? Icons.request_quote_outlined : Icons.receipt_long_outlined,
+                vm.isProject
+                    ? Icons.request_quote_outlined
+                    : Icons.receipt_long_outlined,
                 color: DesignTokens.amber,
                 size: Sizes.iconLg,
               ),
@@ -984,7 +988,8 @@ class _ReviewCard extends StatelessWidget {
           _SummaryRow(
             icon: Icons.location_on_outlined,
             label: 'Location',
-            value: vm.resolvedAddress?.address ?? 'Choose an address result above',
+            value:
+                vm.resolvedAddress?.address ?? 'Choose an address result above',
             isPlaceholder: vm.resolvedAddress == null,
           ),
           if (vm.scheduledStartLocal != null) ...[
@@ -997,7 +1002,8 @@ class _ReviewCard extends StatelessWidget {
                   '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(vm.scheduledStartLocal!))}',
             ),
           ],
-          if (vm.isProject && (vm.budgetMin != null || vm.budgetMax != null)) ...[
+          if (vm.isProject &&
+              (vm.budgetMin != null || vm.budgetMax != null)) ...[
             const SizedBox(height: Space.s2),
             _SummaryRow(
               icon: Icons.savings_outlined,
@@ -1074,8 +1080,9 @@ class _SummaryRow extends StatelessWidget {
                     color: isPlaceholder
                         ? theme.hintColor
                         : theme.colorScheme.onSurface,
-                    fontStyle:
-                        isPlaceholder ? FontStyle.italic : FontStyle.normal,
+                    fontStyle: isPlaceholder
+                        ? FontStyle.italic
+                        : FontStyle.normal,
                   ),
                 ),
               ],

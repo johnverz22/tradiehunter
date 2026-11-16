@@ -19,7 +19,8 @@ import 'package:fixo/widgets/fixo_states.dart';
 
 class _FakeProfileRepo extends ProfileRepository {
   final int role;
-  _FakeProfileRepo({this.role = 0}) : super(Dio(), const FlutterSecureStorage());
+  _FakeProfileRepo({this.role = 0})
+    : super(Dio(), const FlutterSecureStorage());
 
   @override
   Future<Map<String, dynamic>> getCurrentProfile() async {
@@ -79,7 +80,9 @@ class _FakeChatRepo extends ChatRepository {
 
 void main() {
   group('iPad Responsive Layout (V16-18)', () {
-    testWidgets('MasterDetailLayout switches at 744pt breakpoint', (tester) async {
+    testWidgets('MasterDetailLayout switches at 744pt breakpoint', (
+      tester,
+    ) async {
       Widget buildTest(double width) {
         return MediaQuery(
           data: MediaQueryData(size: Size(width, 1000)),
@@ -110,37 +113,44 @@ void main() {
       expect(find.text('Master Panel'), findsOneWidget);
       expect(find.text('Detail Panel'), findsOneWidget);
 
-      final masterBox = tester.renderObject<RenderBox>(find.text('Master Panel'));
+      final masterBox = tester.renderObject<RenderBox>(
+        find.text('Master Panel'),
+      );
       expect(masterBox.size.width, lessThanOrEqualTo(360.0));
     });
 
-    testWidgets('MasterDetailLayout renders emptyDetail when detailVisible is false', (tester) async {
-      tester.view.physicalSize = const Size(820, 1000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'MasterDetailLayout renders emptyDetail when detailVisible is false',
+      (tester) async {
+        tester.view.physicalSize = const Size(820, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        const MediaQuery(
-          data: MediaQueryData(size: Size(820, 1000)),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: MasterDetailLayout(
-              master: Text('Master Panel'),
-              detail: Text('Detail Panel'),
-              emptyDetail: Text('Select an item'),
-              detailVisible: false,
+        await tester.pumpWidget(
+          const MediaQuery(
+            data: MediaQueryData(size: Size(820, 1000)),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: MasterDetailLayout(
+                master: Text('Master Panel'),
+                detail: Text('Detail Panel'),
+                emptyDetail: Text('Select an item'),
+                detailVisible: false,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Master Panel'), findsOneWidget);
-      expect(find.text('Select an item'), findsOneWidget);
-      expect(find.text('Detail Panel'), findsNothing);
-    });
+        expect(find.text('Master Panel'), findsOneWidget);
+        expect(find.text('Select an item'), findsOneWidget);
+        expect(find.text('Detail Panel'), findsNothing);
+      },
+    );
 
-    testWidgets('MainLayout switches to left rail navigation at 1024pt', (tester) async {
+    testWidgets('MainLayout switches to left rail navigation at 1024pt', (
+      tester,
+    ) async {
       Widget buildShell(double width) {
         final router = GoRouter(
           initialLocation: '/home',
@@ -159,7 +169,9 @@ void main() {
 
         return ProviderScope(
           overrides: [
-            profileRepositoryProvider.overrideWithValue(_FakeProfileRepo(role: 0)),
+            profileRepositoryProvider.overrideWithValue(
+              _FakeProfileRepo(role: 0),
+            ),
           ],
           child: MaterialApp.router(routerConfig: router),
         );
@@ -184,41 +196,44 @@ void main() {
       expect(find.text('Home Screen'), findsOneWidget);
     });
 
-    testWidgets('MessagesListScreen renders master-detail at 744pt and selects chat', (tester) async {
-      tester.view.physicalSize = const Size(820, 1000);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'MessagesListScreen renders master-detail at 744pt and selects chat',
+      (tester) async {
+        tester.view.physicalSize = const Size(820, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final chatRepo = _FakeChatRepo();
+        final chatRepo = _FakeChatRepo();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            chatRepositoryProvider.overrideWithValue(chatRepo),
-            profileRepositoryProvider.overrideWithValue(_FakeProfileRepo(role: 0)),
-          ],
-          child: const MaterialApp(
-            home: MessagesListScreen(),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatRepositoryProvider.overrideWithValue(chatRepo),
+              profileRepositoryProvider.overrideWithValue(
+                _FakeProfileRepo(role: 0),
+              ),
+            ],
+            child: const MaterialApp(home: MessagesListScreen()),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Master list has the conversation
-      expect(find.text('Alex'), findsOneWidget);
-      expect(find.text('Fix Leaking Tap'), findsOneWidget);
+        // Master list has the conversation
+        expect(find.text('Alex'), findsOneWidget);
+        expect(find.text('Fix Leaking Tap'), findsOneWidget);
 
-      // Detail panel has placeholder before selection
-      expect(find.text('Select a conversation'), findsOneWidget);
+        // Detail panel has placeholder before selection
+        expect(find.text('Select a conversation'), findsOneWidget);
 
-      // Tap conversation to select it in wide layout
-      await tester.tap(find.text('Alex'));
-      await tester.pumpAndSettle();
+        // Tap conversation to select it in wide layout
+        await tester.tap(find.text('Alex'));
+        await tester.pumpAndSettle();
 
-      // Detail pane now shows the chat
-      expect(find.text('Select a conversation'), findsNothing);
-      expect(find.text('On my way!'), findsWidgets);
-    });
+        // Detail pane now shows the chat
+        expect(find.text('Select a conversation'), findsNothing);
+        expect(find.text('On my way!'), findsWidgets);
+      },
+    );
   });
 }

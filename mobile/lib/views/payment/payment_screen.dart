@@ -267,7 +267,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             final hasLabourRow = job != null && job.labourAmount != null;
             final hasLegacyLabourRow =
                 job != null && job.hours > 0 && job.hourlyRate != null;
-            final hasExtrasRow = job != null &&
+            final hasExtrasRow =
+                job != null &&
                 job.adjustmentsTotal != null &&
                 job.adjustmentsTotal! > Decimal.zero;
             return FixoCard(
@@ -281,8 +282,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   else if (hasLegacyLabourRow)
                     FixoSummaryRow(
                       label: 'Labour',
-                      value:
-                          '${job.hours} h × ${formatRate(job.hourlyRate!)}',
+                      value: '${job.hours} h × ${formatRate(job.hourlyRate!)}',
                     ),
                   if (hasLabourRow || hasLegacyLabourRow)
                     const FixoListDivider(),
@@ -523,8 +523,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             // v1.7: paying settles the completed work — never a booking
             // deposit or a match window.
             'Pay within ${payment.dueAtUtc.difference(DateTime.now()).inHours < 0 ? 0 : _windowHours(payment)} h. '
-                'Your money goes straight to the tradie — this payment '
-                'settles the completed work.',
+            'Your money goes straight to the tradie — this payment '
+            'settles the completed work.',
             key: const Key('payment_window_note'),
             textAlign: TextAlign.center,
             style: TextStyle(

@@ -63,15 +63,17 @@ class PaymentsRepository {
       );
       return PaymentStatus.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw PaymentAccessException(friendlyDioError(
-        e,
-        tag: 'Payment',
-        // 409 is the "job is not payable / this receipt was already used"
-        // case, and the server's message is the useful one.
-        statusOverrides: const {
-          404: 'This job is no longer available for payment.',
-        },
-      ));
+      throw PaymentAccessException(
+        friendlyDioError(
+          e,
+          tag: 'Payment',
+          // 409 is the "job is not payable / this receipt was already used"
+          // case, and the server's message is the useful one.
+          statusOverrides: const {
+            404: 'This job is no longer available for payment.',
+          },
+        ),
+      );
     }
   }
 }

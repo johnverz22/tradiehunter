@@ -42,12 +42,8 @@ void main() {
       theme: dark ? FixoTheme.dark() : FixoTheme.light(),
       home: Scaffold(
         body: MediaQuery(
-          data: MediaQueryData(
-              textScaler: TextScaler.linear(textScale)),
-          child: Padding(
-            padding: const EdgeInsets.all(Space.s4),
-            child: child,
-          ),
+          data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+          child: Padding(padding: const EdgeInsets.all(Space.s4), child: child),
         ),
       ),
     );
@@ -70,21 +66,21 @@ void main() {
     for (final status in allStatuses) {
       for (final dark in [false, true]) {
         for (final scale in [1.0, 1.3]) {
-          testWidgets(
-            'status=$status dark=$dark scale=$scale',
-            (tester) async {
-              await tester.pumpWidget(wrap(
+          testWidgets('status=$status dark=$dark scale=$scale', (tester) async {
+            await tester.pumpWidget(
+              wrap(
                 TradieJobCard(
-                    job: buildJob(status: status), onTap: () {}),
+                  job: buildJob(status: status),
+                  onTap: () {},
+                ),
                 dark: dark,
                 textScale: scale,
-              ));
-              expect(find.text('Repair bathroom leaking pipe'),
-                  findsOneWidget);
-              expect(find.byType(StatusChip), findsOneWidget);
-              expect(tester.takeException(), isNull);
-            },
-          );
+              ),
+            );
+            expect(find.text('Repair bathroom leaking pipe'), findsOneWidget);
+            expect(find.byType(StatusChip), findsOneWidget);
+            expect(tester.takeException(), isNull);
+          });
         }
       }
     }
@@ -94,80 +90,100 @@ void main() {
 
   group('reference code', () {
     testWidgets('uses job.referenceCode when present', (tester) async {
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(status: 'Booked', referenceCode: '188'),
-          onTap: () {},
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked', referenceCode: '188'),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('188'), findsOneWidget);
       final refText = tester.widget<Text>(find.text('188'));
-      expect(refText.style?.fontFamily, DesignTokens.fontMono,
-          reason: 'reference code uses mono font');
+      expect(
+        refText.style?.fontFamily,
+        DesignTokens.fontMono,
+        reason: 'reference code uses mono font',
+      );
     });
 
-    testWidgets('falls back to job.id when referenceCode is null and id ≤12',
-        (tester) async {
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(status: 'Booked', id: 'SHORT-01'),
-          onTap: () {},
+    testWidgets('falls back to job.id when referenceCode is null and id ≤12', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked', id: 'SHORT-01'),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('SHORT-01'), findsOneWidget);
     });
 
     testWidgets('omits ref when id is a full GUID (>12 chars)', (tester) async {
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(
               status: 'Booked',
-              id: '550e8400-e29b-41d4-a716-446655440000'),
-          onTap: () {},
+              id: '550e8400-e29b-41d4-a716-446655440000',
+            ),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       // The long GUID should NOT appear as text in the card.
-      expect(
-          find.text('550e8400-e29b-41d4-a716-446655440000'), findsNothing);
+      expect(find.text('550e8400-e29b-41d4-a716-446655440000'), findsNothing);
     });
 
-    testWidgets('reference on trailing edge of meta row — not own line',
-        (tester) async {
+    testWidgets('reference on trailing edge of meta row — not own line', (
+      tester,
+    ) async {
       // Ref code must share the same Row as trade · suburb.
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(
               status: 'Booked',
               referenceCode: '188',
               category: 'Plumbing',
-              suburb: 'Ponsonby'),
-          onTap: () {},
+              suburb: 'Ponsonby',
+            ),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       // Both meta text and ref text exist.
       expect(find.text('Plumbing · Ponsonby'), findsOneWidget);
       expect(find.text('188'), findsOneWidget);
 
       // They must be in the same Row widget (same dy within 1pt).
       final metaY = tester.getCenter(find.text('Plumbing · Ponsonby')).dy;
-      final refY  = tester.getCenter(find.text('188')).dy;
-      expect(metaY, closeTo(refY, 4.0),
-          reason: 'trade·suburb and ref are on the same line');
+      final refY = tester.getCenter(find.text('188')).dy;
+      expect(
+        metaY,
+        closeTo(refY, 4.0),
+        reason: 'trade·suburb and ref are on the same line',
+      );
     });
   });
 
   // ── Overdue treatment ─────────────────────────────────────────────────────
 
   group('overdue treatment', () {
-    testWidgets('past Booked job shows Overdue chip + amber border',
-        (tester) async {
+    testWidgets('past Booked job shows Overdue chip + amber border', (
+      tester,
+    ) async {
       final past = DateTime.now().subtract(const Duration(days: 2));
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(status: 'Booked', scheduledStartUtc: past),
-          onTap: () {},
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked', scheduledStartUtc: past),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('Overdue'), findsOneWidget);
       final container = tester
           .widgetList<Container>(
@@ -183,54 +199,68 @@ void main() {
           );
       final border =
           ((container.decoration as BoxDecoration).border as Border).top;
-      expect(border.color, DesignTokens.amber,
-          reason: 'overdue card has amber border');
+      expect(
+        border.color,
+        DesignTokens.amber,
+        reason: 'overdue card has amber border',
+      );
     });
 
     testWidgets('price text is NOT amber for overdue card', (tester) async {
       final past = DateTime.now().subtract(const Duration(days: 2));
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(
               status: 'Booked',
               scheduledStartUtc: past,
-              totalAmount: Decimal.parse('1200.00')),
-          onTap: () {},
+              totalAmount: Decimal.parse('1200.00'),
+            ),
+            onTap: () {},
+          ),
         ),
-      ));
-      final priceText = tester.widget<Text>(
-        find.textContaining('\$1,200'),
       );
+      final priceText = tester.widget<Text>(find.textContaining('\$1,200'));
       // Price must not use amber / inkAccent — it must use th.text (ink colour).
-      expect(priceText.style?.color,
-          isNot(DesignTokens.amber),
-          reason: 'price text must not be amber on overdue card');
-      expect(priceText.style?.color,
-          isNot(const Color(0xFF8F4F08)),
-          reason: 'price text must not use inkAccent');
+      expect(
+        priceText.style?.color,
+        isNot(DesignTokens.amber),
+        reason: 'price text must not be amber on overdue card',
+      );
+      expect(
+        priceText.style?.color,
+        isNot(const Color(0xFF8F4F08)),
+        reason: 'price text must not use inkAccent',
+      );
     });
 
     testWidgets('future Booked job shows normal Booked chip', (tester) async {
       final future = DateTime.now().add(const Duration(days: 3));
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(status: 'Booked', scheduledStartUtc: future),
-          onTap: () {},
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked', scheduledStartUtc: future),
+            onTap: () {},
+          ),
         ),
-      ));
+      );
       expect(find.text('Booked'), findsOneWidget);
       expect(find.text('Overdue'), findsNothing);
     });
 
-    testWidgets('isOverdueOverride=true forces overdue treatment', (tester) async {
+    testWidgets('isOverdueOverride=true forces overdue treatment', (
+      tester,
+    ) async {
       final future = DateTime.now().add(const Duration(days: 3));
-      await tester.pumpWidget(wrap(
-        TradieJobCard(
-          job: buildJob(status: 'Booked', scheduledStartUtc: future),
-          onTap: () {},
-          isOverdueOverride: true,
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked', scheduledStartUtc: future),
+            onTap: () {},
+            isOverdueOverride: true,
+          ),
         ),
-      ));
+      );
       expect(find.text('Overdue'), findsOneWidget);
     });
   });
@@ -247,29 +277,28 @@ void main() {
         'Replace all bathroom taps fittings pipes and shower rose '
         'throughout the entire three-bedroom house in Ponsonby Auckland';
 
-    await tester.pumpWidget(wrap(
-      TradieJobCard(
-        job: buildJob(status: 'Booked', title: longTitle),
-        onTap: () {},
+    await tester.pumpWidget(
+      wrap(
+        TradieJobCard(
+          job: buildJob(status: 'Booked', title: longTitle),
+          onTap: () {},
+        ),
       ),
-    ));
+    );
 
     final titleWidget = tester.widget<Text>(
-      find.text(
-        longTitle,
-        findRichText: false,
-      ).evaluate().isEmpty
+      find.text(longTitle, findRichText: false).evaluate().isEmpty
           ? find.byWidgetPredicate(
-              (w) =>
-                  w is Text &&
-                  w.data?.startsWith('Replace') == true,
+              (w) => w is Text && w.data?.startsWith('Replace') == true,
             )
           : find.text(longTitle),
     );
-    expect(titleWidget.maxLines, 2,
-        reason: 'title maxLines must be 2');
-    expect(titleWidget.overflow, TextOverflow.ellipsis,
-        reason: 'title overflow must be ellipsis');
+    expect(titleWidget.maxLines, 2, reason: 'title maxLines must be 2');
+    expect(
+      titleWidget.overflow,
+      TextOverflow.ellipsis,
+      reason: 'title overflow must be ellipsis',
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -277,15 +306,27 @@ void main() {
 
   group('CTA and chevron', () {
     testWidgets('Booked shows Check in CTA', (tester) async {
-      await tester.pumpWidget(wrap(
-          TradieJobCard(job: buildJob(status: 'Booked'), onTap: () {})));
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Booked'),
+            onTap: () {},
+          ),
+        ),
+      );
       expect(find.byKey(const Key('today_card_cta')), findsOneWidget);
       expect(find.text('Check in'), findsOneWidget);
     });
 
     testWidgets('Completed shows chevron only (no CTA)', (tester) async {
-      await tester.pumpWidget(wrap(
-          TradieJobCard(job: buildJob(status: 'Completed'), onTap: () {})));
+      await tester.pumpWidget(
+        wrap(
+          TradieJobCard(
+            job: buildJob(status: 'Completed'),
+            onTap: () {},
+          ),
+        ),
+      );
       expect(find.byKey(const Key('today_card_cta')), findsNothing);
       expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
     });
@@ -294,7 +335,7 @@ void main() {
   // ── Widget type consistency ───────────────────────────────────────────────
 
   testWidgets('Home and Jobs build the same widget type', (tester) async {
-    final job  = buildJob(status: 'Booked');
+    final job = buildJob(status: 'Booked');
     final card = TradieJobCard(job: job, onTap: () {});
     expect(card, isA<TradieJobCard>());
   });

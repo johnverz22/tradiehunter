@@ -3,10 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Supported external navigation applications.
-enum MapApp {
-  appleMaps,
-  googleMaps,
-}
+enum MapApp { appleMaps, googleMaps }
 
 extension MapAppX on MapApp {
   String get displayName {
@@ -111,7 +108,8 @@ class ExternalLauncher {
     );
     if (dest == null) return null;
 
-    final targetApp = app ??
+    final targetApp =
+        app ??
         (defaultTargetPlatform == TargetPlatform.iOS
             ? MapApp.appleMaps
             : MapApp.googleMaps);

@@ -25,10 +25,7 @@ void main() {
         parseApiTimeOfDay('08:15:00.0000000'),
         const TimeOfDay(hour: 8, minute: 15),
       );
-      expect(
-        parseApiTimeOfDay('08:15'),
-        const TimeOfDay(hour: 8, minute: 15),
-      );
+      expect(parseApiTimeOfDay('08:15'), const TimeOfDay(hour: 8, minute: 15));
     });
 
     test('strips a .NET day prefix', () {
@@ -146,11 +143,11 @@ void main() {
   group('TradieCredential', () {
     test('reads status case-insensitively', () {
       TradieCredential withStatus(String status) => TradieCredential.fromJson({
-            'id': 1,
-            'type': 'License',
-            'originalFileName': 'licence.pdf',
-            'status': status,
-          });
+        'id': 1,
+        'type': 'License',
+        'originalFileName': 'licence.pdf',
+        'status': status,
+      });
 
       expect(withStatus('Pending').isPending, isTrue);
       expect(withStatus('approved').isApproved, isTrue);

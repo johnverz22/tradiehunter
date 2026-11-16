@@ -14,72 +14,113 @@ class HoTradieProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return THScaffold(
       appBar: THAppBar(title: 'Profile'),
-      stickyBar: THStickyBar(children: [
-        THButton(
-          label: 'Back',
-          kind: THButtonKind.secondary,
-          fullWidth: false,
-          onPressed: () {},
-        ),
-        Expanded(
-          child: THButton(
-          label: 'Request this tradie',
-          kind: THButtonKind.accent,
-          onPressed: () {},
-        ),
-        ),
-      ]),
+      stickyBar: THStickyBar(
+        children: [
+          THButton(
+            label: 'Back',
+            kind: THButtonKind.secondary,
+            fullWidth: false,
+            onPressed: () {},
+          ),
+          Expanded(
+            child: THButton(
+              label: 'Request this tradie',
+              kind: THButtonKind.accent,
+              onPressed: () {},
+            ),
+          ),
+        ],
+      ),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           THHero(
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3_5,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3_5,
                 children: [
                   THAvatar('AP', size: THAvatarSize.lg, inverse: true),
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: Space.s1_5,
-                    children: [
-                      THText('Aroha Plumbing', style: THTextStyle.h2, tone: THTone.onHero),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1_5,
-                        children: [
-                          THBadge('Verified', kind: THBadgeKind.glass, icon: Icons.verified_user_rounded),
-                          THBadge('Insured', kind: THBadgeKind.glass),
-                        ],
-                      ),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: Space.s1_5,
+                      children: [
+                        THText(
+                          'Aroha Plumbing',
+                          style: THTextStyle.h2,
+                          tone: THTone.onHero,
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: Space.s1_5,
+                          children: [
+                            THBadge(
+                              'Verified',
+                              kind: THBadgeKind.glass,
+                              icon: Icons.verified_user_rounded,
+                            ),
+                            THBadge('Insured', kind: THBadgeKind.glass),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16.0),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      THText('4.9', style: THTextStyle.money, tone: THTone.onHero),
-                      THText('128 reviews', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
+                      THText(
+                        '4.9',
+                        style: THTextStyle.money,
+                        tone: THTone.onHero,
+                      ),
+                      THText(
+                        '128 reviews',
+                        style: THTextStyle.meta,
+                        tone: THTone.onHeroSoft,
+                        size: 11.5,
+                      ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      THText('2.4 km', style: THTextStyle.money, tone: THTone.onHero),
-                      THText('Away', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
+                      THText(
+                        '2.4 km',
+                        style: THTextStyle.money,
+                        tone: THTone.onHero,
+                      ),
+                      THText(
+                        'Away',
+                        style: THTextStyle.meta,
+                        tone: THTone.onHeroSoft,
+                        size: 11.5,
+                      ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      THText('6 yrs', style: THTextStyle.money, tone: THTone.onHero),
-                      THText('Experience', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
+                      THText(
+                        '6 yrs',
+                        style: THTextStyle.money,
+                        tone: THTone.onHero,
+                      ),
+                      THText(
+                        'Experience',
+                        style: THTextStyle.meta,
+                        tone: THTone.onHeroSoft,
+                        size: 11.5,
+                      ),
                     ],
                   ),
                 ],
@@ -92,7 +133,12 @@ class HoTradieProfileScreen extends StatelessWidget {
             children: [
               THKeyValue('Plumbing', '\$85/hr', bold: true),
               THKeyValue('Gas fitting', '\$95/hr', bold: true, divider: true),
-              THKeyValue('Rate is locked when you request', 'Incl. GST', badge: THBadgeKind.brand, divider: true),
+              THKeyValue(
+                'Rate is locked when you request',
+                'Incl. GST',
+                badge: THBadgeKind.brand,
+                divider: true,
+              ),
             ],
           ),
           THText('Licences and insurance', style: THTextStyle.title),
@@ -100,11 +146,16 @@ class HoTradieProfileScreen extends StatelessWidget {
             padding: Space.s4,
             children: [
               THKeyValue('Plumbers licence', 'Verified', badge: THBadgeKind.ok),
-              THKeyValue('Public liability', 'Current', badge: THBadgeKind.ok, divider: true),
+              THKeyValue(
+                'Public liability',
+                'Current',
+                badge: THBadgeKind.ok,
+                divider: true,
+              ),
             ],
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

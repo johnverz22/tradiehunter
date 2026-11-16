@@ -43,7 +43,7 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
     // differs, never data.
     final isV2Flow =
         ref.watch(paymentJobProvider(widget.jobId)).valueOrNull?.usesV2Flow ??
-            true;
+        true;
 
     return Scaffold(
       key: const Key('payment_status_screen'),
@@ -59,11 +59,7 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
 
   // ── CTA per state ──────────────────────────────────────────────────────────
 
-  Widget _cta(
-    BuildContext context,
-    PaymentStatus payment,
-    bool isV2Flow,
-  ) {
+  Widget _cta(BuildContext context, PaymentStatus payment, bool isV2Flow) {
     switch (payment.stage) {
       case PaymentStage.rejected:
         return FixoCtaStack(
@@ -180,18 +176,18 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
 
     final body = isExpired
         ? (isV2Flow
-            // v1.7: this payment was settling completed work — there is no
-            // match to release and nothing to re-post.
-            ? 'The payment window closed without a receipt. Contact support '
-                'to sort out the payment for this job.'
-            : 'This match has been released. Start again to find another tradie — your job details are saved.')
+              // v1.7: this payment was settling completed work — there is no
+              // match to release and nothing to re-post.
+              ? 'The payment window closed without a receipt. Contact support '
+                    'to sort out the payment for this job.'
+              : 'This match has been released. Start again to find another tradie — your job details are saved.')
         : isConfirmed
         ? (isV2Flow
-            // v1.7: the payment confirms the completed work — it is not a
-            // booking.
-            ? 'Your payment has been verified — the completed work is now '
-                'settled. Thanks for paying through Fixo.'
-            : "Your payment has been verified. The job is booked with your tradie.")
+              // v1.7: the payment confirms the completed work — it is not a
+              // booking.
+              ? 'Your payment has been verified — the completed work is now '
+                    'settled. Thanks for paying through Fixo.'
+              : "Your payment has been verified. The job is booked with your tradie.")
         : isRejected
         ? (payment.rejectReason ??
               'The receipt was unclear — please upload a clearer photo or screenshot of the transfer.')

@@ -70,10 +70,10 @@ class CompactProgressBar extends StatelessWidget {
   // ── Derived values ────────────────────────────────────────────────────────
 
   JobStepperFlow get _flow => JobStepperFlow.resolve(
-        status ?? '',
-        stage: stage,
-        flowVersion: flowVersion,
-      );
+    status ?? '',
+    stage: stage,
+    flowVersion: flowVersion,
+  );
 
   bool get _isTerminal {
     if (isTerminal != null) return isTerminal!;
@@ -87,8 +87,10 @@ class CompactProgressBar extends StatelessWidget {
   int get _stepIndex {
     // v1.6 API takes priority.
     if (completedSteps != null) {
-      return (completedSteps! - 1)
-          .clamp(0, (totalSteps ?? _flow.totalSteps) - 1);
+      return (completedSteps! - 1).clamp(
+        0,
+        (totalSteps ?? _flow.totalSteps) - 1,
+      );
     }
     if (currentStep != null) return (currentStep! - 1).clamp(0, 3);
     // v1.7 flow-aware mapping (falls back to legacy for v1/unknown jobs).
@@ -164,22 +166,28 @@ class CompactProgressBar extends StatelessWidget {
 
     final captionMainStyle = TextStyle(
       fontFamily: DesignTokens.fontBody,
-      fontSize: onDark ? DesignTokens.fontSizeStep : DesignTokens.fontSizeCaption,
+      fontSize: onDark
+          ? DesignTokens.fontSizeStep
+          : DesignTokens.fontSizeCaption,
       fontWeight: FW.semibold,
       color: _isMuted
           ? (treatAsDark
-              ? Colors.white.withValues(alpha: Alpha.outlineDark)
-              : DesignTokens.inkSoftLight.withValues(alpha: Alpha.fillDark))
-          : (treatAsDark ? Colors.white.withValues(alpha: Alpha.iconOnGradientStrong) : DesignTokens.brand900),
+                ? Colors.white.withValues(alpha: Alpha.outlineDark)
+                : DesignTokens.inkSoftLight.withValues(alpha: Alpha.fillDark))
+          : (treatAsDark
+                ? Colors.white.withValues(alpha: Alpha.iconOnGradientStrong)
+                : DesignTokens.brand900),
       height: 1.2,
     );
     final captionSubStyle = captionMainStyle.copyWith(
       fontWeight: FW.regular,
       color: _isMuted
           ? (treatAsDark
-              ? Colors.white.withValues(alpha: Alpha.borderStrong)
-              : DesignTokens.inkSoftLight.withValues(alpha: Alpha.shadow))
-          : (treatAsDark ? Colors.white.withValues(alpha: Alpha.iconOnGradientSoft) : DesignTokens.inkSoft(isDark)),
+                ? Colors.white.withValues(alpha: Alpha.borderStrong)
+                : DesignTokens.inkSoftLight.withValues(alpha: Alpha.shadow))
+          : (treatAsDark
+                ? Colors.white.withValues(alpha: Alpha.iconOnGradientSoft)
+                : DesignTokens.inkSoft(isDark)),
     );
 
     return Semantics(
@@ -197,7 +205,9 @@ class CompactProgressBar extends StatelessWidget {
                 // For terminal: fill up to _stepIndex but not if it equals Done.
                 final shouldFill = _isMuted
                     ? false
-                    : (_isTerminal ? (index <= _stepIndex && index < 3) : filled);
+                    : (_isTerminal
+                          ? (index <= _stepIndex && index < 3)
+                          : filled);
 
                 return Expanded(
                   child: Container(
@@ -227,47 +237,47 @@ class CompactProgressBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                  Flexible(
-                    child: Stack(
-                      children: [
-                        if (_captionSub != null)
-                          Opacity(
-                            opacity: 0,
-                            child: Text(
-                              '$_captionMain · $_captionSub',
-                              style: const TextStyle(fontSize: 1),
-                            ),
-                          ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
+                    Flexible(
+                      child: Stack(
+                        children: [
+                          if (_captionSub != null)
+                            Opacity(
+                              opacity: 0,
                               child: Text(
-                                _captionMain,
-                                style: captionMainStyle,
-                                overflow: TextOverflow.ellipsis,
+                                '$_captionMain · $_captionSub',
+                                style: const TextStyle(fontSize: 1),
                               ),
                             ),
-                            if (_captionSub != null) ...[
-                              Text(' · ', style: captionSubStyle),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Flexible(
                                 child: Text(
-                                  _captionSub!,
-                                  style: captionSubStyle,
+                                  _captionMain,
+                                  style: captionMainStyle,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (_captionSub != null) ...[
+                                Text(' · ', style: captionSubStyle),
+                                Flexible(
+                                  child: Text(
+                                    _captionSub!,
+                                    style: captionSubStyle,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  ?trailing,
-                ],
+                    ?trailing,
+                  ],
+                ),
               ),
             ),
-          ),
           ],
         ),
       ),
@@ -292,7 +302,9 @@ class CompactProgressBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: fillColor.withValues(alpha: isDark ? 0.2 : 0.1),
           borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
-          border: Border.all(color: fillColor.withValues(alpha: Alpha.borderMid)),
+          border: Border.all(
+            color: fillColor.withValues(alpha: Alpha.borderMid),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -301,7 +313,10 @@ class CompactProgressBar extends StatelessWidget {
             Container(
               width: 6,
               height: 6,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: fillColor),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: fillColor,
+              ),
             ),
             const SizedBox(width: Space.s1_5),
             Flexible(

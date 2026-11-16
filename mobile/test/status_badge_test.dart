@@ -5,74 +5,66 @@ import 'package:fixo/widgets/fixo_cards.dart';
 
 void main() {
   group('StatusBadge widget tests', () {
-    testWidgets('all 6 variants render distinct icon, label and colors in light mode', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData.light(),
-          home: const Scaffold(
-            body: Column(
-              children: [
-                StatusBadge(
-                  label: 'Pay now',
-                  kind: FixoBadgeKind.actionNeeded,
-                ),
-                StatusBadge(
-                  label: 'In progress',
-                  kind: FixoBadgeKind.active,
-                ),
-                StatusBadge(
-                  label: 'Under review',
-                  kind: FixoBadgeKind.waiting,
-                ),
-                StatusBadge(
-                  label: 'Completed',
-                  kind: FixoBadgeKind.done,
-                ),
-                StatusBadge(
-                  label: 'Cancelled',
-                  kind: FixoBadgeKind.cancelled,
-                ),
-                StatusBadge(
-                  label: 'Disputed',
-                  kind: FixoBadgeKind.problem,
-                ),
-              ],
+    testWidgets(
+      'all 6 variants render distinct icon, label and colors in light mode',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData.light(),
+            home: const Scaffold(
+              body: Column(
+                children: [
+                  StatusBadge(
+                    label: 'Pay now',
+                    kind: FixoBadgeKind.actionNeeded,
+                  ),
+                  StatusBadge(label: 'In progress', kind: FixoBadgeKind.active),
+                  StatusBadge(
+                    label: 'Under review',
+                    kind: FixoBadgeKind.waiting,
+                  ),
+                  StatusBadge(label: 'Completed', kind: FixoBadgeKind.done),
+                  StatusBadge(
+                    label: 'Cancelled',
+                    kind: FixoBadgeKind.cancelled,
+                  ),
+                  StatusBadge(label: 'Disputed', kind: FixoBadgeKind.problem),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Pay now'), findsOneWidget);
-      expect(find.text('In progress'), findsOneWidget);
-      expect(find.text('Under review'), findsOneWidget);
-      expect(find.text('Completed'), findsOneWidget);
-      expect(find.text('Cancelled'), findsOneWidget);
-      expect(find.text('Disputed'), findsOneWidget);
+        expect(find.text('Pay now'), findsOneWidget);
+        expect(find.text('In progress'), findsOneWidget);
+        expect(find.text('Under review'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
+        expect(find.text('Cancelled'), findsOneWidget);
+        expect(find.text('Disputed'), findsOneWidget);
 
-      // Verify icons
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+        // Verify icons
+        expect(find.byIcon(Icons.error_outline), findsOneWidget);
+        expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
 
-      // Verify each badge container has 28px height
-      final containers = tester.widgetList<Container>(
-        find.descendant(
-          of: find.byType(StatusBadge),
-          matching: find.byType(Container),
-        ),
-      );
-      expect(containers.length, 6);
-      for (final container in containers) {
-        expect(container.constraints?.minHeight, 28.0);
-        expect(container.constraints?.maxHeight, 28.0);
-      }
-    });
+        // Verify each badge container has 28px height
+        final containers = tester.widgetList<Container>(
+          find.descendant(
+            of: find.byType(StatusBadge),
+            matching: find.byType(Container),
+          ),
+        );
+        expect(containers.length, 6);
+        for (final container in containers) {
+          expect(container.constraints?.minHeight, 28.0);
+          expect(container.constraints?.maxHeight, 28.0);
+        }
+      },
+    );
 
     testWidgets('cancelled and completed are visually distinct', (
       tester,
@@ -83,14 +75,8 @@ void main() {
           home: const Scaffold(
             body: Column(
               children: [
-                StatusBadge(
-                  label: 'Completed',
-                  kind: FixoBadgeKind.done,
-                ),
-                StatusBadge(
-                  label: 'Cancelled',
-                  kind: FixoBadgeKind.cancelled,
-                ),
+                StatusBadge(label: 'Completed', kind: FixoBadgeKind.done),
+                StatusBadge(label: 'Cancelled', kind: FixoBadgeKind.cancelled),
               ],
             ),
           ),
@@ -149,10 +135,7 @@ void main() {
           home: Scaffold(
             body: ListView(
               children: const [
-                StatusBadge(
-                  label: 'Pay now',
-                  kind: FixoBadgeKind.actionNeeded,
-                ),
+                StatusBadge(label: 'Pay now', kind: FixoBadgeKind.actionNeeded),
               ],
             ),
           ),
@@ -199,30 +182,12 @@ void main() {
           home: const Scaffold(
             body: Column(
               children: [
-                StatusBadge(
-                  label: 'Pay now',
-                  kind: FixoBadgeKind.actionNeeded,
-                ),
-                StatusBadge(
-                  label: 'In progress',
-                  kind: FixoBadgeKind.active,
-                ),
-                StatusBadge(
-                  label: 'Under review',
-                  kind: FixoBadgeKind.waiting,
-                ),
-                StatusBadge(
-                  label: 'Completed',
-                  kind: FixoBadgeKind.done,
-                ),
-                StatusBadge(
-                  label: 'Cancelled',
-                  kind: FixoBadgeKind.cancelled,
-                ),
-                StatusBadge(
-                  label: 'Disputed',
-                  kind: FixoBadgeKind.problem,
-                ),
+                StatusBadge(label: 'Pay now', kind: FixoBadgeKind.actionNeeded),
+                StatusBadge(label: 'In progress', kind: FixoBadgeKind.active),
+                StatusBadge(label: 'Under review', kind: FixoBadgeKind.waiting),
+                StatusBadge(label: 'Completed', kind: FixoBadgeKind.done),
+                StatusBadge(label: 'Cancelled', kind: FixoBadgeKind.cancelled),
+                StatusBadge(label: 'Disputed', kind: FixoBadgeKind.problem),
               ],
             ),
           ),

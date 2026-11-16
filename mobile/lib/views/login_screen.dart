@@ -10,7 +10,6 @@ import 'widgets/auth_controls.dart';
 import 'widgets/fixo_feedback.dart';
 import '../feedback/fixo_notice.dart';
 
-
 /// Mockup 03-login: wordmark + "Welcome back", labeled 48h inputs,
 /// amber Sign in, "or continue with" divider, Google button, footer link.
 /// Auth wiring (email/password + Google + error state) is unchanged.
@@ -101,7 +100,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       key: const Key('login_screen'),
       body: SafeArea(
         child: AuthScrollView(
-          padding: const EdgeInsets.fromLTRB(Space.s6, Space.s9, Space.s6, Space.s6),
+          padding: const EdgeInsets.fromLTRB(
+            Space.s6,
+            Space.s9,
+            Space.s6,
+            Space.s6,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
@@ -211,7 +215,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       const Expanded(child: Divider()),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.s4,
+                        ),
                         child: Text(
                           'or',
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -268,4 +274,3 @@ class _GoogleG extends StatelessWidget {
     );
   }
 }
-

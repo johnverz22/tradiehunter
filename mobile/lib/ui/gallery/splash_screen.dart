@@ -16,20 +16,25 @@ class SplashScreen extends StatelessWidget {
       heroBackground: true,
       scrollable: false,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s4,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: Space.s4,
             children: [
               THWordmark(large: true),
-              THText('Trusted tradies, sorted fast.', style: THTextStyle.body, tone: THTone.onHero),
+              THText(
+                'Trusted tradies, sorted fast.',
+                style: THTextStyle.body,
+                tone: THTone.onHero,
+              ),
             ],
           ),
           const Spacer(),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

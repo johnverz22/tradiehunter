@@ -96,8 +96,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
   /// The pending-offer fetch finished in requestSent mode.
   bool _requestChecked = false;
 
-  bool get _isRequestSent =>
-      widget.mode == MatchingScreenMode.requestSent;
+  bool get _isRequestSent => widget.mode == MatchingScreenMode.requestSent;
 
   @override
   void initState() {
@@ -155,9 +154,7 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
           _goToBookedDetail();
         case OfferEventType.declined:
         case OfferEventType.expired:
-          _returnToList(
-            'Your request wasn\'t taken up — pick another tradie.',
-          );
+          _returnToList('Your request wasn\'t taken up — pick another tradie.');
         case OfferEventType.created:
         case OfferEventType.unknown:
           break;
@@ -394,190 +391,188 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
           .copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
         body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(flex: 2),
-            if (searching) ...[
-              if (_animationsEnabled)
-                AnimatedBuilder(
-                  key: const ValueKey('matching-radar'),
-                  animation: _ctrl,
-                  builder: (context, child) =>
-                      _RadarRipple(progress: _ctrl.value),
-                )
-              else
-                const _StaticSearchBadge(),
-              const SizedBox(height: Space.s8),
-              // Sequential offer progress — "Contacting Tradie 2…" (P3-09).
-              Semantics(
-                liveRegion: true,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: Sizes.matchingTextBlock,
-                  ),
-                  child: AnimatedSwitcher(
-                    duration: FixoDurations.toggle,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: KeyedSubtree(
-                      key: ValueKey(progress.headline),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            progress.headline,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FW.bold,
-                            ),
-                          ),
-                          const SizedBox(height: Space.s2),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Space.s6,
-                            ),
-                            child: Text(
-                              progress.subhead,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
+              if (searching) ...[
+                if (_animationsEnabled)
+                  AnimatedBuilder(
+                    key: const ValueKey('matching-radar'),
+                    animation: _ctrl,
+                    builder: (context, child) =>
+                        _RadarRipple(progress: _ctrl.value),
+                  )
+                else
+                  const _StaticSearchBadge(),
+                const SizedBox(height: Space.s8),
+                // Sequential offer progress — "Contacting Tradie 2…" (P3-09).
+                Semantics(
+                  liveRegion: true,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: Sizes.matchingTextBlock,
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: FixoDurations.toggle,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: KeyedSubtree(
+                        key: ValueKey(progress.headline),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              progress.headline,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FW.bold,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: Space.s2),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Space.s6,
+                              ),
+                              child: Text(
+                                progress.subhead,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (_reconnecting) ...[
-                const SizedBox(height: Space.s4),
+                if (_reconnecting) ...[
+                  const SizedBox(height: Space.s4),
+                  Text(
+                    'Connection lost — reconnecting…',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (_stalled) ...[
+                  const SizedBox(height: Space.s4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Space.s6),
+                    child: Text(
+                      'This is taking longer than usual.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+                if (progress.phase == MatchingPhase.contactingTradie &&
+                    progress.offerIndex > 0) ...[
+                  const SizedBox(height: Space.s6),
+                  Semantics(
+                    label: 'Contacting tradie ${progress.offerIndex}',
+                    child: _OfferProgressDots(index: progress.offerIndex),
+                  ),
+                ],
+              ] else if (matched) ...[
+                const Icon(
+                  Icons.check_circle,
+                  size: Sizes.iconHero,
+                  color: DesignTokens.green,
+                ),
+                const SizedBox(height: Space.s6),
                 Text(
-                  'Connection lost — reconnecting…',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  progress.headline,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FW.bold,
                   ),
                 ),
-              ],
-              if (_stalled) ...[
-                const SizedBox(height: Space.s4),
+              ] else ...[
+                Icon(
+                  Icons.search_off,
+                  size: Sizes.iconHero,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(height: Space.s6),
+                Text(
+                  progress.headline,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FW.bold,
+                  ),
+                ),
+                const SizedBox(height: Space.s2),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Space.s6),
                   child: Text(
-                    'This is taking longer than usual.',
+                    progress.subhead,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
               ],
-              if (progress.phase == MatchingPhase.contactingTradie &&
-                  progress.offerIndex > 0) ...[
-                const SizedBox(height: Space.s6),
-                Semantics(
-                  label: 'Contacting tradie ${progress.offerIndex}',
-                  child: _OfferProgressDots(index: progress.offerIndex),
-                ),
-              ],
-            ] else if (matched) ...[
-              const Icon(
-                Icons.check_circle,
-                size: Sizes.iconHero,
-                color: DesignTokens.green,
-              ),
-              const SizedBox(height: Space.s6),
-              Text(
-                progress.headline,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FW.bold,
-                ),
-              ),
-            ] else ...[
-              Icon(
-                Icons.search_off,
-                size: Sizes.iconHero,
-                color: theme.colorScheme.error,
-              ),
-              const SizedBox(height: Space.s6),
-              Text(
-                progress.headline,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FW.bold,
-                ),
-              ),
-              const SizedBox(height: Space.s2),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Space.s6),
-                child: Text(
-                  progress.subhead,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
+              const Spacer(flex: 2),
             ],
-            const Spacer(flex: 2),
-          ],
+          ),
         ),
-      ),
-      bottomNavigationBar: StickyActionBar(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_dispatchFailed)
-              Padding(
-                padding: const EdgeInsets.only(bottom: Space.s2),
-                child: Text(
-                  'Could not start matching for this job.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
+        bottomNavigationBar: StickyActionBar(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_dispatchFailed)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Space.s2),
+                  child: Text(
+                    'Could not start matching for this job.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
                 ),
-              ),
-            if (_dispatchFailed || _stalled)
+              if (_dispatchFailed || _stalled)
+                TextButton(
+                  onPressed: _busy ? null : _dispatch,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size.fromHeight(Sizes.tapMin),
+                  ),
+                  child: const Text('Try again'),
+                ),
               TextButton(
-                onPressed: _busy ? null : _dispatch,
+                onPressed: () async {
+                  // Factual cancel: DELETE /api/jobs/:id, then back to the
+                  // tradie list — the run itself is server-owned.
+                  _stallTimer?.cancel();
+                  await _leave();
+                  await ref
+                      .read(jobsRepositoryProvider)
+                      .cancelJob(widget.jobId);
+                  if (context.mounted) {
+                    context.pushReplacement('/jobs/${widget.jobId}/tradies');
+                  }
+                },
                 style: TextButton.styleFrom(
                   minimumSize: const Size.fromHeight(Sizes.tapMin),
                 ),
-                child: const Text('Try again'),
+                child: Text(done ? 'Go Back' : 'Cancel'),
               ),
-            TextButton(
-              onPressed: () async {
-                // Factual cancel: DELETE /api/jobs/:id, then back to the
-                // tradie list — the run itself is server-owned.
-                _stallTimer?.cancel();
-                await _leave();
-                await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
-                if (context.mounted) {
-                  context.pushReplacement('/jobs/${widget.jobId}/tradies');
-                }
-              },
-              style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(Sizes.tapMin),
-              ),
-              child: Text(done ? 'Go Back' : 'Cancel'),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    ), // Scaffold
+      ), // Scaffold
     ); // AnnotatedRegion
   }
 
   // ── Request-sent UI (v1.7 P12-09) ───────────────────────────────────────────
 
-  Widget _buildRequestSent(
-    BuildContext context,
-    ThemeData theme,
-    bool isDark,
-  ) {
+  Widget _buildRequestSent(BuildContext context, ThemeData theme, bool isDark) {
     final request = _request;
     final expired = request != null && request.remaining().isNegative;
 
@@ -589,116 +584,115 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         body: !_requestChecked
             ? const Center(child: CircularProgressIndicator())
             : request == null
-                ? SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(Space.gutter),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.timer_off_outlined,
-                            size: Sizes.iconHero,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: Space.s6),
-                          Text(
-                            'This request is no longer open',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FW.bold,
-                            ),
-                          ),
-                          const SizedBox(height: Space.s2),
-                          Text(
-                            'It may have expired or been answered. '
-                            'Pick another tradie to keep going.',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+            ? SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.gutter),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.timer_off_outlined,
+                        size: Sizes.iconHero,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: Space.s6),
+                      Text(
+                        'This request is no longer open',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FW.bold,
+                        ),
+                      ),
+                      const SizedBox(height: Space.s2),
+                      Text(
+                        'It may have expired or been answered. '
+                        'Pick another tradie to keep going.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : SafeArea(
+                child: ListView(
+                  padding: FixoPadding.page,
+                  children: [
+                    const SizedBox(height: Space.s5),
+                    Icon(
+                      Icons.mark_email_read_outlined,
+                      size: Sizes.iconHero,
+                      color: isDark
+                          ? DesignTokens.brand300
+                          : DesignTokens.brand700,
+                    ),
+                    const SizedBox(height: Space.s5),
+                    Text(
+                      'You asked ${_displayName(request)}',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FW.bold,
                       ),
                     ),
-                  )
-                : SafeArea(
-                    child: ListView(
-                      padding: FixoPadding.page,
-                      children: [
-                        const SizedBox(height: Space.s5),
-                        Icon(
-                          Icons.mark_email_read_outlined,
-                          size: Sizes.iconHero,
-                          color: isDark
-                              ? DesignTokens.brand300
-                              : DesignTokens.brand700,
-                        ),
-                        const SizedBox(height: Space.s5),
-                        Text(
-                          'You asked ${_displayName(request)}',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FW.bold,
-                          ),
-                        ),
-                        const SizedBox(height: Space.s2),
-                        Text(
-                          'We\'ll let you know the moment they reply — '
-                          'usually well before the timer runs out.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: Space.s6),
-                        // Rate + GST label (D8): snapshot rate shown only
-                        // when the server supplied one.
-                        if (request.hourlyRateSnapshot != null)
-                          _RateCard(
-                            rate: request.hourlyRateSnapshot!,
-                            gstLabel: widget.gstLabel,
-                            name: _displayName(request),
-                            isDark: isDark,
-                          ),
-                        const SizedBox(height: Space.s4),
-                        if (_reconnecting)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: Space.s3),
-                            child: Text(
-                              'Connection lost — reconnecting…',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        OfferCountdown(
-                          offer: request,
-                          onExpired: () {
-                            if (mounted) setState(() {});
-                          },
-                        ),
-                        if (request.message?.trim().isNotEmpty ?? false) ...[
-                          const SizedBox(height: Space.s4),
-                          _MessageCard(message: request.message!.trim()),
-                        ],
-                        const SizedBox(height: Space.s6),
-                        Text(
-                          expired
-                              ? 'The request has run out of time. '
-                                  'Pick another tradie — the job stays open.'
-                              : 'If they can\'t take it, the job stays open '
-                                  'and nothing is charged.',
+                    const SizedBox(height: Space.s2),
+                    Text(
+                      'We\'ll let you know the moment they reply — '
+                      'usually well before the timer runs out.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: Space.s6),
+                    // Rate + GST label (D8): snapshot rate shown only
+                    // when the server supplied one.
+                    if (request.hourlyRateSnapshot != null)
+                      _RateCard(
+                        rate: request.hourlyRateSnapshot!,
+                        gstLabel: widget.gstLabel,
+                        name: _displayName(request),
+                        isDark: isDark,
+                      ),
+                    const SizedBox(height: Space.s4),
+                    if (_reconnecting)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: Space.s3),
+                        child: Text(
+                          'Connection lost — reconnecting…',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: Space.stickyBarClearance),
-                      ],
+                      ),
+                    OfferCountdown(
+                      offer: request,
+                      onExpired: () {
+                        if (mounted) setState(() {});
+                      },
                     ),
-                  ),
+                    if (request.message?.trim().isNotEmpty ?? false) ...[
+                      const SizedBox(height: Space.s4),
+                      _MessageCard(message: request.message!.trim()),
+                    ],
+                    const SizedBox(height: Space.s6),
+                    Text(
+                      expired
+                          ? 'The request has run out of time. '
+                                'Pick another tradie — the job stays open.'
+                          : 'If they can\'t take it, the job stays open '
+                                'and nothing is charged.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: Space.stickyBarClearance),
+                  ],
+                ),
+              ),
         bottomNavigationBar: StickyActionBar(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -880,44 +874,45 @@ class _RadarRipple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
-        child: SizedBox(
-          width: Sizes.radarMaxDiameter,
-          height: Sizes.radarMaxDiameter,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              for (var i = 0; i < Sizes.radarRingCount; i++)
-                Builder(
-                  builder: (context) {
-                    final cycleProgress =
-                        (progress + i / Sizes.radarRingCount) % 1;
-                    final scale = 0.5 + (cycleProgress * 0.5);
-                    final fadeValue =
-                        (Alpha.divider * (1 - cycleProgress)).clamp(0.0, 1.0);
-                    return Opacity(
-                      opacity: fadeValue,
-                      child: Transform.scale(
-                        scale: scale,
-                        child: Container(
-                          width: Sizes.radarMaxDiameter,
-                          height: Sizes.radarMaxDiameter,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: DesignTokens.brand500,
-                              width: Sizes.borderWidthThick,
-                            ),
-                          ),
+    child: SizedBox(
+      width: Sizes.radarMaxDiameter,
+      height: Sizes.radarMaxDiameter,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          for (var i = 0; i < Sizes.radarRingCount; i++)
+            Builder(
+              builder: (context) {
+                final cycleProgress = (progress + i / Sizes.radarRingCount) % 1;
+                final scale = 0.5 + (cycleProgress * 0.5);
+                final fadeValue = (Alpha.divider * (1 - cycleProgress)).clamp(
+                  0.0,
+                  1.0,
+                );
+                return Opacity(
+                  opacity: fadeValue,
+                  child: Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      width: Sizes.radarMaxDiameter,
+                      height: Sizes.radarMaxDiameter,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: DesignTokens.brand500,
+                          width: Sizes.borderWidthThick,
                         ),
                       ),
-                    );
-                  },
-                ),
-              const _StaticSearchBadge(),
-            ],
-          ),
-        ),
-      );
+                    ),
+                  ),
+                );
+              },
+            ),
+          const _StaticSearchBadge(),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Reduced-motion alternative to [_RadarRipple]: same centre badge without
@@ -927,24 +922,24 @@ class _StaticSearchBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: Sizes.radarMaxDiameter,
-        height: Sizes.radarMaxDiameter,
-        child: Center(
-          child: Container(
-            width: Sizes.radarCenter,
-            height: Sizes.radarCenter,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: DesignTokens.brand500,
-            ),
-            child: const Icon(
-              Icons.search,
-              size: Sizes.radarIcon,
-              color: Colors.white,
-            ),
-          ),
+    width: Sizes.radarMaxDiameter,
+    height: Sizes.radarMaxDiameter,
+    child: Center(
+      child: Container(
+        width: Sizes.radarCenter,
+        height: Sizes.radarCenter,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: DesignTokens.brand500,
         ),
-      );
+        child: const Icon(
+          Icons.search,
+          size: Sizes.radarIcon,
+          color: Colors.white,
+        ),
+      ),
+    ),
+  );
 }
 
 /// Three dots that fill as more tradies are contacted — one dot per offer the

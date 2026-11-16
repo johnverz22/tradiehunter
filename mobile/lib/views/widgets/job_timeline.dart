@@ -64,10 +64,10 @@ class _JobTimelineState extends State<JobTimeline> {
   }
 
   JobStepperFlow get _flow => JobStepperFlow.resolve(
-        widget.status,
-        stage: widget.stage,
-        flowVersion: widget.flowVersion,
-      );
+    widget.status,
+    stage: widget.stage,
+    flowVersion: widget.flowVersion,
+  );
 
   bool get _isTerminal => _flow.isTerminal;
 
@@ -187,8 +187,8 @@ class _JobTimelineState extends State<JobTimeline> {
         final state = index < activeIndex
             ? 'complete'
             : (index == activeIndex
-                ? (_isTerminal ? 'terminal' : 'current')
-                : 'upcoming');
+                  ? (_isTerminal ? 'terminal' : 'current')
+                  : 'upcoming');
         return '${flow.titles[index]}: $state';
       }).join(', '),
       child: ExcludeSemantics(
@@ -204,13 +204,13 @@ class _JobTimelineState extends State<JobTimeline> {
             final subtitleText = stepDate != null
                 ? DateFormat('MMM d, h:mm a').format(stepDate)
                 : (_isTerminal && isCurrent
-                    ? switch (widget.status) {
-                        'Cancelled' => 'Job was cancelled',
-                        'Expired' => 'Job request expired',
-                        'Disputed' => 'Dispute raised; awaiting resolution',
-                        _ => flow.subtitles[index],
-                      }
-                    : flow.subtitles[index]);
+                      ? switch (widget.status) {
+                          'Cancelled' => 'Job was cancelled',
+                          'Expired' => 'Job request expired',
+                          'Disputed' => 'Dispute raised; awaiting resolution',
+                          _ => flow.subtitles[index],
+                        }
+                      : flow.subtitles[index]);
 
             return IntrinsicHeight(
               child: Row(
@@ -258,16 +258,16 @@ class _JobTimelineState extends State<JobTimeline> {
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: isCurrent
                                   ? FW.bold
-                                  : (isCompleted
-                                      ? FW.semibold
-                                      : FW.regular),
+                                  : (isCompleted ? FW.semibold : FW.regular),
                               color: isUpcoming
                                   ? (isDark
-                                      ? Colors.white.withValues(alpha: Alpha.ghost)
-                                      : DesignTokens.inkSoft(isDark))
+                                        ? Colors.white.withValues(
+                                            alpha: Alpha.ghost,
+                                          )
+                                        : DesignTokens.inkSoft(isDark))
                                   : (isDark
-                                      ? Colors.white
-                                      : DesignTokens.brand900),
+                                        ? Colors.white
+                                        : DesignTokens.brand900),
                             ),
                           ),
                           const SizedBox(height: Space.s0_5),
@@ -276,11 +276,17 @@ class _JobTimelineState extends State<JobTimeline> {
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: isUpcoming
                                   ? (isDark
-                                      ? Colors.white.withValues(alpha: Alpha.border)
-                                      : DesignTokens.inkSoftLight.withValues(alpha: Alpha.divider))
+                                        ? Colors.white.withValues(
+                                            alpha: Alpha.border,
+                                          )
+                                        : DesignTokens.inkSoftLight.withValues(
+                                            alpha: Alpha.divider,
+                                          ))
                                   : (isDark
-                                      ? Colors.white.withValues(alpha: Alpha.iconOnGradientSoft)
-                                      : DesignTokens.inkSoftLight),
+                                        ? Colors.white.withValues(
+                                            alpha: Alpha.iconOnGradientSoft,
+                                          )
+                                        : DesignTokens.inkSoftLight),
                             ),
                           ),
                         ],
@@ -340,14 +346,13 @@ class _JobTimelineState extends State<JobTimeline> {
         );
       }
 
-      final currentColor = isDark ? DesignTokens.brand300 : DesignTokens.brand700;
+      final currentColor = isDark
+          ? DesignTokens.brand300
+          : DesignTokens.brand700;
       return Container(
         width: Sizes.stepNode,
         height: Sizes.stepNode,
-        decoration: BoxDecoration(
-          color: currentColor,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: currentColor, shape: BoxShape.circle),
         child: Center(
           child: Text(
             '${index + 1}',

@@ -10,13 +10,41 @@ import 'package:fixo/ui/design/th_scope.dart';
 import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:fixo/ui/gallery/screens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _size = Size(393, 852);
 
-bool _hasBaseline(String name) => File('test/ui/goldens/$name.png').existsSync();
+Future<void> _loadFont(String family, List<String> paths) async {
+  final loader = FontLoader(family);
+  for (final path in paths) {
+    final file = File(path);
+    if (!file.existsSync()) continue;
+    final bytes = file.readAsBytesSync();
+    loader.addFont(Future.value(bytes.buffer.asByteData()));
+  }
+  await loader.load();
+}
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const base = 'assets/fonts/v2';
+    await _loadFont('Lexend', [
+      '$base/Lexend-Regular.ttf',
+      '$base/Lexend-Medium.ttf',
+      '$base/Lexend-SemiBold.ttf',
+      '$base/Lexend-Bold.ttf',
+      '$base/Lexend-ExtraBold.ttf',
+    ]);
+    await _loadFont('Source Sans 3', [
+      '$base/SourceSans3-Regular.ttf',
+      '$base/SourceSans3-Medium.ttf',
+      '$base/SourceSans3-SemiBold.ttf',
+      '$base/SourceSans3-Bold.ttf',
+    ]);
+  });
+
   test('gallery exposes all 30 screens', () {
     expect(thScreenBuilders.length, 30);
   });
@@ -47,9 +75,10 @@ void main() {
         await tester.pump(const Duration(milliseconds: 500));
 
         expect(tester.takeException(), isNull);
-        if (_hasBaseline(name)) {
-          await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
-        }
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/$name.png'),
+        );
       });
     }
   }

@@ -195,8 +195,10 @@ class FixoCopyButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(Radii.control),
         child: Container(
-          constraints:
-              const BoxConstraints(minHeight: Sizes.tapMin, minWidth: Sizes.tapMin),
+          constraints: const BoxConstraints(
+            minHeight: Sizes.tapMin,
+            minWidth: Sizes.tapMin,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: Space.s3),
           child: Row(
             mainAxisSize: MainAxisSize.min,

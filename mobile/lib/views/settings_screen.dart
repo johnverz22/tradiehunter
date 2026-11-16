@@ -56,7 +56,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       appBar: const FixoGradientAppBar(title: 'Settings'),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Space.s6, Space.s2, Space.s6, Space.s7),
+        padding: const EdgeInsets.fromLTRB(
+          Space.s6,
+          Space.s2,
+          Space.s6,
+          Space.s7,
+        ),
         children: [
           FixoSectionLabel(label: 'Account', uppercase: true),
           FixoCard(
@@ -93,9 +98,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               children: [
                 SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Space.s4,
+                  ),
                   minTileHeight: 56,
-                  title: const Text('Notifications', style: TextStyle(fontSize: DesignTokens.fontSizeH3)),
+                  title: const Text(
+                    'Notifications',
+                    style: TextStyle(fontSize: DesignTokens.fontSizeH3),
+                  ),
                   subtitle: const Text(
                     'On this device only',
                     style: TextStyle(fontSize: DesignTokens.fontSizeCaption),
@@ -110,17 +120,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   loading: () => const ListTile(
                     contentPadding: EdgeInsets.symmetric(horizontal: Space.s4),
                     minTileHeight: 56,
-                    title: Text('Region', style: TextStyle(fontSize: DesignTokens.fontSizeH3)),
+                    title: Text(
+                      'Region',
+                      style: TextStyle(fontSize: DesignTokens.fontSizeH3),
+                    ),
                     subtitle: Text('Loading…'),
                   ),
                   error: (_, _) => ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Space.s4,
+                    ),
                     minTileHeight: 56,
-                    title: const Text('Region', style: TextStyle(fontSize: DesignTokens.fontSizeH3)),
+                    title: const Text(
+                      'Region',
+                      style: TextStyle(fontSize: DesignTokens.fontSizeH3),
+                    ),
                     subtitle: const Text('Unavailable offline'),
                     trailing: Icon(
                       Icons.chevron_right,
-                      color: theme.colorScheme.onSurface.withValues(alpha: Alpha.borderMid),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: Alpha.borderMid,
+                      ),
                     ),
                     onTap: () => _stub('Region'),
                   ),
@@ -132,13 +152,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ? '$currency · $tz · $unit'
                         : currency;
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: Space.s4,
+                      ),
                       minTileHeight: 56,
-                      title: const Text('Region', style: TextStyle(fontSize: DesignTokens.fontSizeH3)),
+                      title: const Text(
+                        'Region',
+                        style: TextStyle(fontSize: DesignTokens.fontSizeH3),
+                      ),
                       subtitle: Text(subtitle),
                       trailing: Icon(
                         Icons.chevron_right,
-                        color: theme.colorScheme.onSurface.withValues(alpha: Alpha.borderMid),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: Alpha.borderMid,
+                        ),
                       ),
                       onTap: () => _showLocaleSheet(context, locale),
                     );
@@ -146,15 +173,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 _divider(isDark),
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Space.s4,
+                  ),
                   minTileHeight: 56,
-                  title: const Text('Theme', style: TextStyle(fontSize: DesignTokens.fontSizeH3)),
+                  title: const Text(
+                    'Theme',
+                    style: TextStyle(fontSize: DesignTokens.fontSizeH3),
+                  ),
                   subtitle: Text(
-                    themeMode.name[0].toUpperCase() + themeMode.name.substring(1),
+                    themeMode.name[0].toUpperCase() +
+                        themeMode.name.substring(1),
                   ),
                   trailing: Icon(
                     Icons.chevron_right,
-                    color: theme.colorScheme.onSurface.withValues(alpha: Alpha.borderMid),
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: Alpha.borderMid,
+                    ),
                   ),
                   onTap: () => _showThemeSheet(context, ref, themeMode),
                 ),
@@ -194,7 +229,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
               style: TextButton.styleFrom(
                 backgroundColor: isDark
-                    ? DesignTokens.inkDanger(isDark).withValues(alpha: Alpha.tintAccent)
+                    ? DesignTokens.inkDanger(isDark)
+                          .withValues(alpha: Alpha.tintAccent)
                     : DesignTokens.red.withValues(alpha: Alpha.tintStandard),
                 foregroundColor: DesignTokens.inkDanger(isDark),
                 shape: RoundedRectangleBorder(
@@ -220,14 +256,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 return Text(
                   '$appName v1.0.0',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: Alpha.shadow),
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: Alpha.shadow,
+                    ),
                   ),
                 );
               },
               orElse: () => Text(
                 'TradieHunter v1.0.0',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: Alpha.shadow),
+                  color: theme.colorScheme.onSurface.withValues(
+                    alpha: Alpha.shadow,
+                  ),
                 ),
               ),
             ),
@@ -247,7 +287,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s2),
+              padding: const EdgeInsets.fromLTRB(
+                Space.s6,
+                Space.s4,
+                Space.s6,
+                Space.s2,
+              ),
               child: Text(
                 'Theme',
                 style: Theme.of(ctx).textTheme.titleMedium
@@ -296,9 +341,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const SizedBox(height: Space.s3),
               FixoSummaryRow(label: 'Region', value: regionLabel(locale)),
-              FixoSummaryRow(label: 'Phone code', value: '${locale?['phoneCountryCode'] ?? '+64'}'),
-              FixoSummaryRow(label: 'Timezone', value: '${locale?['defaultTimezone'] ?? 'Pacific/Auckland'}'),
-              FixoSummaryRow(label: 'Distance', value: '${locale?['distanceUnit'] ?? 'km'}'),
+              FixoSummaryRow(
+                label: 'Phone code',
+                value: '${locale?['phoneCountryCode'] ?? '+64'}',
+              ),
+              FixoSummaryRow(
+                label: 'Timezone',
+                value: '${locale?['defaultTimezone'] ?? 'Pacific/Auckland'}',
+              ),
+              FixoSummaryRow(
+                label: 'Distance',
+                value: '${locale?['distanceUnit'] ?? 'km'}',
+              ),
               const SizedBox(height: Space.s2),
               Text(
                 'Set by GET /api/config/locale — read-only.',
@@ -312,9 +366,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
-
 }
-
 
 class _Tile extends StatelessWidget {
   final String label;
@@ -335,10 +387,15 @@ class _Tile extends StatelessWidget {
         ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4),
           minTileHeight: 56,
-          title: Text(label, style: const TextStyle(fontSize: DesignTokens.fontSizeH3)),
+          title: Text(
+            label,
+            style: const TextStyle(fontSize: DesignTokens.fontSizeH3),
+          ),
           trailing: Icon(
             Icons.chevron_right,
-            color: theme.colorScheme.onSurface.withValues(alpha: Alpha.borderMid),
+            color: theme.colorScheme.onSurface.withValues(
+              alpha: Alpha.borderMid,
+            ),
           ),
           onTap: onTap,
         ),

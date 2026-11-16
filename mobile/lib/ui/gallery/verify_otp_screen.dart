@@ -16,25 +16,34 @@ class VerifyOtpScreen extends StatelessWidget {
       appBar: THAppBar(title: 'Verify your email'),
       scrollable: false,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           const SizedBox(height: 16.0),
           THText('Enter the 6-digit code', style: THTextStyle.h1),
           const SizedBox(height: 6.0),
-          THText('We sent a code to mere@example.co.nz.', style: THTextStyle.body, tone: THTone.soft),
+          THText(
+            'We sent a code to mere@example.co.nz.',
+            style: THTextStyle.body,
+            tone: THTone.soft,
+          ),
           const SizedBox(height: 24.0),
           THOtp(count: 6, value: '482'),
           const SizedBox(height: 16.0),
-          THText('Resend code in 0:42', style: THTextStyle.meta, tone: THTone.soft, align: TextAlign.center),
+          THText(
+            'Resend code in 0:42',
+            style: THTextStyle.meta,
+            tone: THTone.soft,
+            align: TextAlign.center,
+          ),
           const Spacer(),
           THButton(
             label: 'Verify',
             kind: THButtonKind.primary,
             onPressed: () {},
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

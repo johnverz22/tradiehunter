@@ -26,10 +26,7 @@ void main() {
         ),
         child: Scaffold(
           body: Center(
-            child: SizedBox(
-              width: width,
-              child: child,
-            ),
+            child: SizedBox(width: width, child: child),
           ),
         ),
       ),
@@ -37,34 +34,39 @@ void main() {
   }
 
   group('FixoTonalButton', () {
-    testWidgets('renders icon and label in light theme with >=48px touch target', (tester) async {
-      var tapped = false;
-      await tester.pumpWidget(
-        buildApp(
-          isDark: false,
-          child: FixoTonalButton(
-            key: const Key('tonal_btn'),
-            icon: Icons.directions_outlined,
-            label: 'Navigate',
-            onPressed: () => tapped = true,
+    testWidgets(
+      'renders icon and label in light theme with >=48px touch target',
+      (tester) async {
+        var tapped = false;
+        await tester.pumpWidget(
+          buildApp(
+            isDark: false,
+            child: FixoTonalButton(
+              key: const Key('tonal_btn'),
+              icon: Icons.directions_outlined,
+              label: 'Navigate',
+              onPressed: () => tapped = true,
+            ),
           ),
-        ),
-      );
+        );
 
-      final buttonFinder = find.byKey(const Key('tonal_btn'));
-      expect(buttonFinder, findsOneWidget);
-      expect(find.text('Navigate'), findsOneWidget);
-      expect(find.byIcon(Icons.directions_outlined), findsOneWidget);
+        final buttonFinder = find.byKey(const Key('tonal_btn'));
+        expect(buttonFinder, findsOneWidget);
+        expect(find.text('Navigate'), findsOneWidget);
+        expect(find.byIcon(Icons.directions_outlined), findsOneWidget);
 
-      final size = tester.getSize(buttonFinder);
-      expect(size.height, greaterThanOrEqualTo(DesignTokens.targetMinimum));
-      expect(size.width, greaterThanOrEqualTo(DesignTokens.targetMinimum));
+        final size = tester.getSize(buttonFinder);
+        expect(size.height, greaterThanOrEqualTo(DesignTokens.targetMinimum));
+        expect(size.width, greaterThanOrEqualTo(DesignTokens.targetMinimum));
 
-      await tester.tap(buttonFinder);
-      expect(tapped, isTrue);
-    });
+        await tester.tap(buttonFinder);
+        expect(tapped, isTrue);
+      },
+    );
 
-    testWidgets('renders in dark theme with >=48px touch target', (tester) async {
+    testWidgets('renders in dark theme with >=48px touch target', (
+      tester,
+    ) async {
       var tapped = false;
       await tester.pumpWidget(
         buildApp(
@@ -106,105 +108,114 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('loading state displays progress indicator and suppresses callback', (tester) async {
-      var tapped = false;
-      await tester.pumpWidget(
-        buildApp(
-          child: FixoTonalButton(
-            key: const Key('loading_btn'),
-            label: 'Loading',
-            isLoading: true,
-            onPressed: () => tapped = true,
+    testWidgets(
+      'loading state displays progress indicator and suppresses callback',
+      (tester) async {
+        var tapped = false;
+        await tester.pumpWidget(
+          buildApp(
+            child: FixoTonalButton(
+              key: const Key('loading_btn'),
+              label: 'Loading',
+              isLoading: true,
+              onPressed: () => tapped = true,
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Loading'), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text('Loading'), findsNothing);
 
-      await tester.tap(find.byKey(const Key('loading_btn')));
-      expect(tapped, isFalse);
-    });
+        await tester.tap(find.byKey(const Key('loading_btn')));
+        expect(tapped, isFalse);
+      },
+    );
 
-    testWidgets('2-up row layout with 8px gap maintains >=48px height without overflow', (tester) async {
-      await tester.pumpWidget(
-        buildApp(
-          width: 320,
-          scale: 1.0,
-          child: Row(
-            children: [
-              Expanded(
-                child: FixoTonalButton(
-                  key: const Key('btn_1'),
-                  icon: Icons.chat_bubble_outline,
-                  label: 'Message',
-                  onPressed: () {},
+    testWidgets(
+      '2-up row layout with 8px gap maintains >=48px height without overflow',
+      (tester) async {
+        await tester.pumpWidget(
+          buildApp(
+            width: 320,
+            scale: 1.0,
+            child: Row(
+              children: [
+                Expanded(
+                  child: FixoTonalButton(
+                    key: const Key('btn_1'),
+                    icon: Icons.chat_bubble_outline,
+                    label: 'Message',
+                    onPressed: () {},
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FixoTonalButton(
-                  key: const Key('btn_2'),
-                  icon: Icons.phone_outlined,
-                  label: 'Call',
-                  onPressed: () {},
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FixoTonalButton(
+                    key: const Key('btn_2'),
+                    icon: Icons.phone_outlined,
+                    label: 'Call',
+                    onPressed: () {},
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(tester.takeException(), isNull);
-      final size1 = tester.getSize(find.byKey(const Key('btn_1')));
-      final size2 = tester.getSize(find.byKey(const Key('btn_2')));
-      expect(size1.height, greaterThanOrEqualTo(48.0));
-      expect(size2.height, greaterThanOrEqualTo(48.0));
-    });
+        expect(tester.takeException(), isNull);
+        final size1 = tester.getSize(find.byKey(const Key('btn_1')));
+        final size2 = tester.getSize(find.byKey(const Key('btn_2')));
+        expect(size1.height, greaterThanOrEqualTo(48.0));
+        expect(size2.height, greaterThanOrEqualTo(48.0));
+      },
+    );
 
-    testWidgets('3-up row layout with 8px gap maintains >=48px height without overflow', (tester) async {
-      await tester.pumpWidget(
-        buildApp(
-          width: 393,
-          scale: 1.0,
-          child: Row(
-            children: [
-              Expanded(
-                child: FixoTonalButton(
-                  key: const Key('btn_chat'),
-                  icon: Icons.chat_bubble_outline,
-                  label: 'Chat',
-                  onPressed: () {},
+    testWidgets(
+      '3-up row layout with 8px gap maintains >=48px height without overflow',
+      (tester) async {
+        await tester.pumpWidget(
+          buildApp(
+            width: 393,
+            scale: 1.0,
+            child: Row(
+              children: [
+                Expanded(
+                  child: FixoTonalButton(
+                    key: const Key('btn_chat'),
+                    icon: Icons.chat_bubble_outline,
+                    label: 'Chat',
+                    onPressed: () {},
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FixoTonalButton(
-                  key: const Key('btn_call'),
-                  icon: Icons.phone_outlined,
-                  label: 'Call',
-                  onPressed: () {},
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FixoTonalButton(
+                    key: const Key('btn_call'),
+                    icon: Icons.phone_outlined,
+                    label: 'Call',
+                    onPressed: () {},
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FixoTonalButton(
-                  key: const Key('btn_nav'),
-                  icon: Icons.directions_outlined,
-                  label: 'Navigate',
-                  onPressed: () {},
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FixoTonalButton(
+                    key: const Key('btn_nav'),
+                    icon: Icons.directions_outlined,
+                    label: 'Navigate',
+                    onPressed: () {},
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(tester.takeException(), isNull);
-      for (final key in ['btn_chat', 'btn_call', 'btn_nav']) {
-        final size = tester.getSize(find.byKey(Key(key)));
-        expect(size.height, greaterThanOrEqualTo(48.0));
-      }
-    });
+        expect(tester.takeException(), isNull);
+        for (final key in ['btn_chat', 'btn_call', 'btn_nav']) {
+          final size = tester.getSize(find.byKey(Key(key)));
+          expect(size.height, greaterThanOrEqualTo(48.0));
+        }
+      },
+    );
   });
 }

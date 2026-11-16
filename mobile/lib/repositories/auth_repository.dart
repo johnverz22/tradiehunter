@@ -80,10 +80,10 @@ class AuthRepository {
   /// `requiresVerification` — P1-03 gates login on `EmailVerified`.
   Future<AuthOutcome> login(String email, String password) async {
     try {
-      final response = await _dio.post('/api/auth/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final response = await _dio.post(
+        '/api/auth/login',
+        data: {'email': email, 'password': password},
+      );
       await _storeTokens(response.data);
       return const AuthSignedIn();
     } on DioException catch (e) {
@@ -102,16 +102,24 @@ class AuthRepository {
   /// P1-03: registration always leaves the account unverified — the backend
   /// mails a 6-digit code and returns no tokens, so the outcome is
   /// [AuthNeedsEmailVerification] unless the call itself fails.
-  Future<AuthOutcome> register(String firstName, String lastName, String email,
-      String password, int role) async {
+  Future<AuthOutcome> register(
+    String firstName,
+    String lastName,
+    String email,
+    String password,
+    int role,
+  ) async {
     try {
-      final response = await _dio.post('/api/auth/register', data: {
-        'firstName': firstName,
-        'lastName': lastName,
-        'email': email,
-        'password': password,
-        'role': role, // 0 = Homeowner, 1 = Tradie (backend UserRole enum)
-      });
+      final response = await _dio.post(
+        '/api/auth/register',
+        data: {
+          'firstName': firstName,
+          'lastName': lastName,
+          'email': email,
+          'password': password,
+          'role': role, // 0 = Homeowner, 1 = Tradie (backend UserRole enum)
+        },
+      );
       return AuthNeedsEmailVerification(
         response.data['email'] as String? ?? email,
       );
@@ -130,10 +138,10 @@ class AuthRepository {
   /// Throws a friendly [Exception] on invalid / expired / over-attempted codes.
   Future<void> verifyEmail(String email, String code) async {
     try {
-      final response = await _dio.post('/api/auth/verify-email', data: {
-        'email': email,
-        'code': code,
-      });
+      final response = await _dio.post(
+        '/api/auth/verify-email',
+        data: {'email': email, 'code': code},
+      );
       await _storeTokens(response.data);
     } on DioException catch (e) {
       debugPrint('[AuthRepository] verifyEmail error: $e');
@@ -167,8 +175,10 @@ class AuthRepository {
       final String? idToken = googleUser.authentication.idToken;
       if (idToken == null) throw Exception('Google ID Token is null');
 
-      final response =
-          await _dio.post('/api/auth/google', data: {'idToken': idToken});
+      final response = await _dio.post(
+        '/api/auth/google',
+        data: {'idToken': idToken},
+      );
 
       if (response.data['requiresRegistration'] == true) {
         return GoogleLoginRequiresRegistration(
@@ -204,7 +214,10 @@ class AuthRepository {
   /// P9-02: [registrationToken] is the one-time token issued by
   /// POST /api/auth/google — the backend rejects the call without it.
   Future<void> completeRegistration(
-      String userId, String registrationToken, int role) async {
+    String userId,
+    String registrationToken,
+    int role,
+  ) async {
     try {
       final response = await _dio.patch(
         '/api/auth/complete-registration',
@@ -271,7 +284,9 @@ class AuthRepository {
   Future<void> _storeTokens(Map<String, dynamic> data) async {
     await _storage.write(key: 'jwt_token', value: data['token'] as String);
     await _storage.write(
-        key: 'refresh_token', value: data['refreshToken'] as String);
+      key: 'refresh_token',
+      value: data['refreshToken'] as String,
+    );
   }
 
   /// P1-03 / P1-04: the backend signals "unverified account" with
@@ -291,13 +306,13 @@ class AuthRepository {
   /// overrides below keep auth-specific copy (wrong password, unverified
   /// account, duplicate email) intact.
   String _friendlyDioError(DioException e) => friendlyDioError(
-        e,
-        tag: 'AuthRepository',
-        statusOverrides: const {
-          401: 'Incorrect email or password.',
-          403: 'This account needs to be verified first.',
-          409: 'An account with this email already exists.',
-          429: 'Too many attempts. Please wait before trying again.',
-        },
-      );
+    e,
+    tag: 'AuthRepository',
+    statusOverrides: const {
+      401: 'Incorrect email or password.',
+      403: 'This account needs to be verified first.',
+      409: 'An account with this email already exists.',
+      429: 'Too many attempts. Please wait before trying again.',
+    },
+  );
 }

@@ -46,10 +46,7 @@ void main() {
             child: Center(
               child: SizedBox(
                 width: width,
-                child: Padding(
-                  padding: padding,
-                  child: child,
-                ),
+                child: Padding(padding: padding, child: child),
               ),
             ),
           ),
@@ -64,77 +61,85 @@ void main() {
     group('$themeName theme shared component visual tests', () {
       for (final width in [320.0, 393.0, 430.0]) {
         for (final scale in [1.0, 2.0]) {
-          testWidgets('FixoPrimaryButton & FixoGhostButton at ${width}px scale $scale', (tester) async {
-            tester.view.physicalSize = Size(width, 600);
-            tester.view.devicePixelRatio = 1.0;
-            addTearDown(tester.view.resetPhysicalSize);
-            addTearDown(tester.view.resetDevicePixelRatio);
+          testWidgets(
+            'FixoPrimaryButton & FixoGhostButton at ${width}px scale $scale',
+            (tester) async {
+              tester.view.physicalSize = Size(width, 600);
+              tester.view.devicePixelRatio = 1.0;
+              addTearDown(tester.view.resetPhysicalSize);
+              addTearDown(tester.view.resetDevicePixelRatio);
 
-            await tester.pumpWidget(
-              wrapComponent(
-                isDark: isDark,
-                width: width,
-                scale: scale,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FixoPrimaryButton(
-                      label: 'Confirm and Continue',
-                      onPressed: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    FixoGhostButton(
-                      label: 'Decline Offer',
-                      onPressed: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    FixoTonalButton(
-                      label: 'Payment details',
-                      icon: Icons.payments_outlined,
-                      fullWidth: true,
-                      onPressed: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FixoTonalButton(
-                            label: 'Message',
-                            icon: Icons.chat_bubble_outline,
-                            onPressed: () {},
+              await tester.pumpWidget(
+                wrapComponent(
+                  isDark: isDark,
+                  width: width,
+                  scale: scale,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FixoPrimaryButton(
+                        label: 'Confirm and Continue',
+                        onPressed: () {},
+                      ),
+                      const SizedBox(height: 12),
+                      FixoGhostButton(label: 'Decline Offer', onPressed: () {}),
+                      const SizedBox(height: 12),
+                      FixoTonalButton(
+                        label: 'Payment details',
+                        icon: Icons.payments_outlined,
+                        fullWidth: true,
+                        onPressed: () {},
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FixoTonalButton(
+                              label: 'Message',
+                              icon: Icons.chat_bubble_outline,
+                              onPressed: () {},
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FixoTonalButton(
-                            label: 'Call',
-                            icon: Icons.phone_outlined,
-                            onPressed: () {},
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: FixoTonalButton(
+                              label: 'Call',
+                              icon: Icons.phone_outlined,
+                              onPressed: () {},
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-            await tester.pumpAndSettle();
+              );
+              await tester.pumpAndSettle();
 
-            expect(tester.takeException(), isNull);
-            final primaryFinder = find.byType(FixoPrimaryButton);
-            final ghostFinder = find.byType(FixoGhostButton);
-            expect(primaryFinder, findsOneWidget);
-            expect(ghostFinder, findsOneWidget);
+              expect(tester.takeException(), isNull);
+              final primaryFinder = find.byType(FixoPrimaryButton);
+              final ghostFinder = find.byType(FixoGhostButton);
+              expect(primaryFinder, findsOneWidget);
+              expect(ghostFinder, findsOneWidget);
 
-            // Minimum touch target and height verification
-            final primarySize = tester.getSize(primaryFinder);
-            final ghostSize = tester.getSize(ghostFinder);
-            expect(primarySize.height, greaterThanOrEqualTo(DesignTokens.heightPrimary));
-            expect(ghostSize.height, greaterThanOrEqualTo(DesignTokens.heightSecondary));
-            expect(primarySize.width, lessThanOrEqualTo(width));
-          });
+              // Minimum touch target and height verification
+              final primarySize = tester.getSize(primaryFinder);
+              final ghostSize = tester.getSize(ghostFinder);
+              expect(
+                primarySize.height,
+                greaterThanOrEqualTo(DesignTokens.heightPrimary),
+              );
+              expect(
+                ghostSize.height,
+                greaterThanOrEqualTo(DesignTokens.heightSecondary),
+              );
+              expect(primarySize.width, lessThanOrEqualTo(width));
+            },
+          );
 
-          testWidgets('ModernJobCard at ${width}px scale $scale', (tester) async {
+          testWidgets('ModernJobCard at ${width}px scale $scale', (
+            tester,
+          ) async {
             tester.view.physicalSize = Size(width, 800);
             tester.view.devicePixelRatio = 1.0;
             addTearDown(tester.view.resetPhysicalSize);
@@ -146,7 +151,8 @@ void main() {
                 width: width,
                 scale: scale,
                 child: ModernJobCard(
-                  title: 'Fix broken kitchen mixer tap and check pipe connections',
+                  title:
+                      'Fix broken kitchen mixer tap and check pipe connections',
                   category: 'Plumbing',
                   suburb: 'Mount Albert, Auckland',
                   priceLabel: '\$240.00',
@@ -163,7 +169,12 @@ void main() {
             await tester.pumpAndSettle();
 
             expect(tester.takeException(), isNull);
-            expect(find.text('Fix broken kitchen mixer tap and check pipe connections'), findsOneWidget);
+            expect(
+              find.text(
+                'Fix broken kitchen mixer tap and check pipe connections',
+              ),
+              findsOneWidget,
+            );
             expect(find.text('Plumbing'), findsOneWidget);
             expect(find.text('\$240.00'), findsOneWidget);
             expect(find.text('Wiremu Mahi'), findsOneWidget);
@@ -344,7 +355,9 @@ void main() {
         }
       });
 
-      testWidgets('CompactProgressBar all stages in $themeName', (tester) async {
+      testWidgets('CompactProgressBar all stages in $themeName', (
+        tester,
+      ) async {
         for (final status in [
           'Requested',
           'Booked',
@@ -368,7 +381,9 @@ void main() {
         }
       });
 
-      testWidgets('JobTimeline collapsed and expanded in $themeName', (tester) async {
+      testWidgets('JobTimeline collapsed and expanded in $themeName', (
+        tester,
+      ) async {
         await tester.pumpWidget(
           wrapComponent(
             isDark: isDark,
@@ -387,7 +402,9 @@ void main() {
         expect(find.text('Hide steps'), findsOneWidget);
       });
 
-      testWidgets('StickyActionBar with safe area inset in $themeName', (tester) async {
+      testWidgets('StickyActionBar with safe area inset in $themeName', (
+        tester,
+      ) async {
         tester.view.physicalSize = const Size(393, 852);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
@@ -421,7 +438,9 @@ void main() {
         expect(buttonRect.bottom, lessThanOrEqualTo(852));
       });
 
-      testWidgets('CustomBottomNavBar (homeowner & tradie) in $themeName', (tester) async {
+      testWidgets('CustomBottomNavBar (homeowner & tradie) in $themeName', (
+        tester,
+      ) async {
         for (final isHomeowner in [true, false]) {
           await tester.pumpWidget(
             MaterialApp(
@@ -457,13 +476,17 @@ void main() {
         }
       });
 
-      testWidgets('OfferCountdown standard and compact in $themeName', (tester) async {
+      testWidgets('OfferCountdown standard and compact in $themeName', (
+        tester,
+      ) async {
         final offer = JobOffer(
           id: 'o-1',
           jobId: 'j-1',
           tradieId: 't-1',
           offeredAtUtc: DateTime.now().toUtc(),
-          expiresAtUtc: DateTime.now().toUtc().add(const Duration(minutes: 8, seconds: 30)),
+          expiresAtUtc: DateTime.now().toUtc().add(
+            const Duration(minutes: 8, seconds: 30),
+          ),
           response: 'Pending',
           stage: 'Primary',
         );
@@ -506,7 +529,9 @@ void main() {
         expect(find.byType(OtpCodeField), findsOneWidget);
       });
 
-      testWidgets('ConversationTile & ChatBubble in $themeName', (tester) async {
+      testWidgets('ConversationTile & ChatBubble in $themeName', (
+        tester,
+      ) async {
         final conv = ConversationSummary(
           jobId: '42',
           jobTitle: 'Fix leaking shower mixer',
@@ -515,7 +540,9 @@ void main() {
           otherFirstName: 'Wiremu',
           lastMessage: 'I am on my way with the replacement cartridge.',
           lastMessageMine: false,
-          lastMessageAtUtc: DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+          lastMessageAtUtc: DateTime.now().toUtc().subtract(
+            const Duration(minutes: 5),
+          ),
           unreadCount: 2,
         );
 

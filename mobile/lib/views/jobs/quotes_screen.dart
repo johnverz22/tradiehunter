@@ -70,13 +70,19 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
         );
         context.pushReplacement('/jobs/${widget.jobId}');
       } else if (retry.failed) {
-        FixoNotice.error(context, retry.message ?? 'Could not accept the quote.');
+        FixoNotice.error(
+          context,
+          retry.message ?? 'Could not accept the quote.',
+        );
       }
       return;
     }
 
     if (result.failed) {
-      FixoNotice.error(context, result.message ?? 'Could not accept the quote.');
+      FixoNotice.error(
+        context,
+        result.message ?? 'Could not accept the quote.',
+      );
     }
   }
 
@@ -97,8 +103,7 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
             Space.s4,
             Space.s5,
             Space.s4,
-            Space.s5 +
-                MediaQuery.of(sheetContext).viewInsets.bottom,
+            Space.s5 + MediaQuery.of(sheetContext).viewInsets.bottom,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -123,12 +128,11 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
               SizedBox(height: Space.s4),
               CheckboxListTile(
                 value: checked,
-                onChanged: (value) => setSheetState(() => checked = value ?? false),
+                onChanged: (value) =>
+                    setSheetState(() => checked = value ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
-                title: const Text(
-                  'I have a written contract with this tradie',
-                ),
+                title: const Text('I have a written contract with this tradie'),
               ),
               SizedBox(height: Space.s2),
               Row(
@@ -185,7 +189,8 @@ class _QuotesScreenState extends ConsumerState<QuotesScreen> {
         child: ListView.separated(
           padding: EdgeInsets.all(Space.s4),
           itemCount: state.quotes.length,
-          separatorBuilder: (context, index) => const SizedBox(height: Space.s3),
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: Space.s3),
           itemBuilder: (context, index) => QuoteCard(
             quote: state.quotes[index],
             accepting: state.acceptingQuoteId == state.quotes[index].id,
@@ -232,7 +237,8 @@ class QuoteCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.extension<THColors>()!;
     final isAccepted = quote.status == Quote.statusAccepted;
-    final isDecided = isAccepted ||
+    final isDecided =
+        isAccepted ||
         quote.status == Quote.statusDeclined ||
         quote.status == Quote.statusWithdrawn ||
         quote.status == Quote.statusExpired;
@@ -379,7 +385,9 @@ class QuoteCard extends StatelessWidget {
     }
     if (quote.isHourlyWithCap) {
       final rate = quote.amount;
-      return rate == null ? '—' : '${formatRate(rate)} · cap ${formatMoneyOrDash(quote.cap)}';
+      return rate == null
+          ? '—'
+          : '${formatRate(rate)} · cap ${formatMoneyOrDash(quote.cap)}';
     }
     return '—';
   }
@@ -387,8 +395,18 @@ class QuoteCard extends StatelessWidget {
   String _dateLabel(DateTime utc) {
     final local = utc.toLocal();
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${local.day} ${months[local.month - 1]} ${local.year}';
   }
@@ -444,10 +462,7 @@ class _MetaChip extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
           SizedBox(width: Space.s1_5),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall,
-          ),
+          Text(label, style: theme.textTheme.labelSmall),
         ],
       ),
     );

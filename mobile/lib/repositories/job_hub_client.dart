@@ -109,11 +109,12 @@ class JobHubClient {
       String? jobId;
       if (first is Map) {
         final map = Map<String, dynamic>.from(first);
-        jobId = (map['jobId'] ??
-                (map['adjustment'] is Map
-                    ? (map['adjustment'] as Map)['jobId']
-                    : null))
-            ?.toString();
+        jobId =
+            (map['jobId'] ??
+                    (map['adjustment'] is Map
+                        ? (map['adjustment'] as Map)['jobId']
+                        : null))
+                ?.toString();
       }
       if (jobId != null) {
         _adjustmentController.add(JobAdjustmentEvent(jobId: jobId));

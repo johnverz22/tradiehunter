@@ -114,8 +114,7 @@ class _FixoFilterBarState<T> extends State<FixoFilterBar<T>> {
                   },
                 ),
               ),
-              if (i < widget.items.length - 1)
-                const SizedBox(width: Space.s2),
+              if (i < widget.items.length - 1) const SizedBox(width: Space.s2),
             ],
           ],
         ),

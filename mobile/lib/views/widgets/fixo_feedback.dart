@@ -11,22 +11,21 @@ enum FixoTone { brand, accent, danger, success, neutral }
 extension on FixoTone {
   /// Hue used for background tints, borders and icons.
   Color fill(bool isDark) => switch (this) {
-        FixoTone.brand =>
-          isDark ? DesignTokens.brand300 : DesignTokens.brand500,
-        FixoTone.accent => DesignTokens.amber,
-        FixoTone.danger => DesignTokens.red,
-        FixoTone.success => DesignTokens.green,
-        FixoTone.neutral => DesignTokens.inkSoft(isDark),
-      };
+    FixoTone.brand => isDark ? DesignTokens.brand300 : DesignTokens.brand500,
+    FixoTone.accent => DesignTokens.amber,
+    FixoTone.danger => DesignTokens.red,
+    FixoTone.success => DesignTokens.green,
+    FixoTone.neutral => DesignTokens.inkSoft(isDark),
+  };
 
   /// Foreground for text/icons sitting on the tint.
   Color ink(bool isDark) => switch (this) {
-        FixoTone.brand => DesignTokens.foregroundBrand(isDark),
-        FixoTone.accent => DesignTokens.inkAccent(isDark),
-        FixoTone.danger => DesignTokens.inkDanger(isDark),
-        FixoTone.success => DesignTokens.inkSuccess(isDark),
-        FixoTone.neutral => DesignTokens.inkSoft(isDark),
-      };
+    FixoTone.brand => DesignTokens.foregroundBrand(isDark),
+    FixoTone.accent => DesignTokens.inkAccent(isDark),
+    FixoTone.danger => DesignTokens.inkDanger(isDark),
+    FixoTone.success => DesignTokens.inkSuccess(isDark),
+    FixoTone.neutral => DesignTokens.inkSoft(isDark),
+  };
 }
 
 /// Tinted notice card — icon + message (or title + body) on a soft tinted
@@ -69,10 +68,10 @@ class FixoInfoBanner extends StatelessWidget {
     required this.message,
     this.action,
     this.compact = false,
-  })  : icon = Icons.error_outline_rounded,
-        tone = FixoTone.danger,
-        title = null,
-        color = null;
+  }) : icon = Icons.error_outline_rounded,
+       tone = FixoTone.danger,
+       title = null,
+       color = null;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +175,9 @@ class FixoPillChip extends StatelessWidget {
     final fg = textColor ?? color;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: Space.s2_5, vertical: Space.s1),
+        horizontal: Space.s2_5,
+        vertical: Space.s1,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: Alpha.tintStandard),
         borderRadius: BorderRadius.circular(Radii.pill),
@@ -195,8 +196,7 @@ class FixoPillChip extends StatelessWidget {
             )
           else if (icon != null)
             Icon(icon, size: 14, color: fg),
-          if (showDot || icon != null)
-            const SizedBox(width: Space.s1_5),
+          if (showDot || icon != null) const SizedBox(width: Space.s1_5),
           Flexible(
             child: Text(
               uppercase ? label.toUpperCase() : label,
@@ -283,7 +283,9 @@ class FixoSectionLabel extends StatelessWidget {
         Text(
           helper!,
           style: TextStyle(
-              fontSize: DesignTokens.fontSizeCaption, color: th.textSoft),
+            fontSize: DesignTokens.fontSizeCaption,
+            color: th.textSoft,
+          ),
         ),
       ],
     );

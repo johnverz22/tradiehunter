@@ -56,7 +56,10 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              Space.s6, Space.s2, Space.s6, Space.s4,
+              Space.s6,
+              Space.s2,
+              Space.s6,
+              Space.s4,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -69,9 +72,8 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                       "Choose how you'll use TradieHunter",
                       key: const Key('role_helper'),
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: th.textSoft,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: th.textSoft),
                     ),
                   ),
                 FixoPrimaryButton(
@@ -90,7 +92,7 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: Space.s6, // 24
-              vertical: Space.s8,   // 40
+              vertical: Space.s8, // 40
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
@@ -130,7 +132,6 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                   ),
 
                   const SizedBox(height: Space.s4), // 16
-
                   // ── Tradie card ──────────────────────────────────────────
                   AuthRoleChoice(
                     icon: Icons.handyman_rounded,

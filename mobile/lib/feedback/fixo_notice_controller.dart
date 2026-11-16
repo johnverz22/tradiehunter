@@ -19,12 +19,12 @@ enum FixoNoticeTone { info, success, warning, error, push }
 
 extension FixoNoticeToneX on FixoNoticeTone {
   Duration get autoDismiss => switch (this) {
-        FixoNoticeTone.info    => FixoDurations.noticeInfo,
-        FixoNoticeTone.success => FixoDurations.noticeSuccess,
-        FixoNoticeTone.warning => FixoDurations.noticeWarning,
-        FixoNoticeTone.error   => FixoDurations.noticeError,
-        FixoNoticeTone.push    => FixoDurations.noticePush,
-      };
+    FixoNoticeTone.info => FixoDurations.noticeInfo,
+    FixoNoticeTone.success => FixoDurations.noticeSuccess,
+    FixoNoticeTone.warning => FixoDurations.noticeWarning,
+    FixoNoticeTone.error => FixoDurations.noticeError,
+    FixoNoticeTone.push => FixoDurations.noticePush,
+  };
 }
 
 // ── Notice data ──────────────────────────────────────────────────────────────
@@ -75,5 +75,5 @@ class FixoNoticeController extends StateNotifier<FixoNoticeState?> {
 /// Global provider.  Kept alive for the app lifetime (autoDispose omitted).
 final fixoNoticeProvider =
     StateNotifierProvider<FixoNoticeController, FixoNoticeState?>(
-  (ref) => FixoNoticeController(),
-);
+      (ref) => FixoNoticeController(),
+    );

@@ -34,8 +34,7 @@ class _NoticeGalleryScreen extends StatelessWidget {
           ),
           _GallerySection(
             label: 'Success (3 s)',
-            onTap: () =>
-                FixoNotice.success(context, NoticeCopy.profileUpdated),
+            onTap: () => FixoNotice.success(context, NoticeCopy.profileUpdated),
           ),
           _GallerySection(
             label: 'Warning (4 s)',
@@ -44,8 +43,7 @@ class _NoticeGalleryScreen extends StatelessWidget {
           ),
           _GallerySection(
             label: 'Error (5 s)',
-            onTap: () =>
-                FixoNotice.error(context, NoticeCopy.checkInFailed),
+            onTap: () => FixoNotice.error(context, NoticeCopy.checkInFailed),
           ),
           _GallerySection(
             label: 'Push notification (5 s)',
@@ -87,18 +85,23 @@ class _GallerySection extends StatelessWidget {
           foregroundColor: colors.text,
           side: BorderSide(color: colors.line),
           padding: const EdgeInsets.symmetric(
-              horizontal: Space.s4, vertical: Space.s3_5),
+            horizontal: Space.s4,
+            vertical: Space.s3_5,
+          ),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Radii.control)),
+            borderRadius: BorderRadius.circular(Radii.control),
+          ),
         ),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Text(label,
-              style: TextStyle(
-                fontFamily: TypeTokens.fontBody,
-                fontSize: DesignTokens.fontSizeSm,
-                fontWeight: FW.medium,
-              )),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: TypeTokens.fontBody,
+              fontSize: DesignTokens.fontSizeSm,
+              fontWeight: FW.medium,
+            ),
+          ),
         ),
       ),
     );

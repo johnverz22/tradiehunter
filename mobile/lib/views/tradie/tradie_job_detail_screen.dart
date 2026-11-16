@@ -26,7 +26,6 @@ import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// Tradie-side job detail screen for Booked / InProgress / AwaitingConfirmation
 /// / Completed / Cancelled jobs (P5-06).
 ///
@@ -108,10 +107,9 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
       if (event.jobId == widget.jobId && mounted) _load();
     });
     // v1.7 P12-18: homeowner decisions on extra costs arrive live.
-    _adjustmentSub = ref
-        .read(jobHubClientProvider)
-        .onAdjustmentChanged
-        .listen((event) {
+    _adjustmentSub = ref.read(jobHubClientProvider).onAdjustmentChanged.listen((
+      event,
+    ) {
       if (event.jobId == widget.jobId && mounted) _loadAdjustments();
     });
   }
@@ -180,7 +178,10 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         .read(externalLauncherProvider)
         .callPhone(phoneNumber);
     if (!launched && mounted) {
-      FixoNotice.warning(context, "Couldn't open the phone app on this device.");
+      FixoNotice.warning(
+        context,
+        "Couldn't open the phone app on this device.",
+      );
     }
   }
 
@@ -248,31 +249,35 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            if (summary.finalHours != null)
-              Text('Hours worked: ${_formatHours(summary.finalHours!)}'),
-            if (summary.labourAmount != null)
-              Text('Labour: ${formatMoney(summary.labourAmount!)}'),
-            if (summary.adjustmentsTotal != null &&
-                summary.adjustmentsTotal! > Decimal.zero)
-              Text('Approved extras: ${formatMoney(summary.adjustmentsTotal!)}'),
-            if (summary.finalAmount != null)
-              Text('Final total: ${formatMoney(summary.finalAmount!)}'),
-            if (summary.estimatedTotal != null && summary.finalAmount != null)
-              Text('Original estimate: ${formatMoney(summary.estimatedTotal!)}'),
-            const SizedBox(height: Space.s2),
-            Text(
-              summary.exceedsTolerance
-                  ? (summary.toleranceNote?.isNotEmpty == true
-                      ? summary.toleranceNote!
-                      : 'This total is above the estimate tolerance — the '
-                          'homeowner will review it before paying.')
-                  : 'The homeowner now reviews the summary and approves '
-                      'the amount.',
-            ),
-          ],
+              if (summary.finalHours != null)
+                Text('Hours worked: ${_formatHours(summary.finalHours!)}'),
+              if (summary.labourAmount != null)
+                Text('Labour: ${formatMoney(summary.labourAmount!)}'),
+              if (summary.adjustmentsTotal != null &&
+                  summary.adjustmentsTotal! > Decimal.zero)
+                Text(
+                  'Approved extras: ${formatMoney(summary.adjustmentsTotal!)}',
+                ),
+              if (summary.finalAmount != null)
+                Text('Final total: ${formatMoney(summary.finalAmount!)}'),
+              if (summary.estimatedTotal != null && summary.finalAmount != null)
+                Text(
+                  'Original estimate: ${formatMoney(summary.estimatedTotal!)}',
+                ),
+              const SizedBox(height: Space.s2),
+              Text(
+                summary.exceedsTolerance
+                    ? (summary.toleranceNote?.isNotEmpty == true
+                          ? summary.toleranceNote!
+                          : 'This total is above the estimate tolerance — the '
+                                'homeowner will review it before paying.')
+                    : 'The homeowner now reviews the summary and approves '
+                          'the amount.',
+              ),
+            ],
+          ),
         ),
-      ),
-      actions: [
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK'),
@@ -299,8 +304,7 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
   /// generic blob-upload endpoint, so `evidenceFileKey` is only sent when a
   /// key is already available (see [JobsRepository.createAdjustment]).
   Future<void> _showRequestExtraCostSheet() async {
-    final proposal =
-        await showModalBottomSheet<(String, Decimal, String)?>(
+    final proposal = await showModalBottomSheet<(String, Decimal, String)?>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -402,7 +406,9 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           context: context,
           isScrollControlled: true,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.tile)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(Radii.tile),
+            ),
           ),
           builder: (_) =>
               CancelJobSheet(isTradie: true, reasons: _tradieReasons),
@@ -454,7 +460,9 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               'Report No-Show',
-              style: TextStyle(color: Theme.of(context).extension<THColors>()!.danger),
+              style: TextStyle(
+                color: Theme.of(context).extension<THColors>()!.danger,
+              ),
             ),
           ),
         ],
@@ -597,175 +605,178 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
           ),
           Expanded(
             child: ListView(
-        padding: FixoPadding.page,
-        children: [
-          // ── Notices stack ────────────────────────────────────────────────
-          ..._buildNotices(job, status, theme),
-
-          // ── Card 1: People Card (Homeowner contact, Booked+ only) ─────────
-          if (_contact != null) ...[
-            _ContactCard(
-              contact: _contact!,
-              onMessage: () => context.push('/chat/${widget.jobId}'),
-              onCall: (phone) => _call(phone),
-            ),
-            const SizedBox(height: Space.s4),
-          ],
-
-          // ── Card 2: Details Card ──────────────────────────────────────────
-          FixoCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              padding: FixoPadding.page,
               children: [
-                Text(
-                  'Job Details',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FW.bold,
+                // ── Notices stack ────────────────────────────────────────────────
+                ..._buildNotices(job, status, theme),
+
+                // ── Card 1: People Card (Homeowner contact, Booked+ only) ─────────
+                if (_contact != null) ...[
+                  _ContactCard(
+                    contact: _contact!,
+                    onMessage: () => context.push('/chat/${widget.jobId}'),
+                    onCall: (phone) => _call(phone),
+                  ),
+                  const SizedBox(height: Space.s4),
+                ],
+
+                // ── Card 2: Details Card ──────────────────────────────────────────
+                FixoCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Job Details',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FW.bold,
+                        ),
+                      ),
+                      const SizedBox(height: Space.s3),
+                      JobInfoGrid(
+                        tiles: [
+                          JobInfoTile(
+                            label: 'Scheduled',
+                            // v1.7: Flexible/ASAP jobs legitimately have no start
+                            // yet — show Date TBC, never a fabricated date.
+                            value: scheduledLabel ?? 'Date TBC',
+                            icon: Icons.calendar_today_outlined,
+                          ),
+                          JobInfoTile(
+                            label: 'Duration',
+                            value: job.hours > 0
+                                ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
+                                : (job.estimatedHours != null
+                                      ? '≈ ${_formatHours(job.estimatedHours!)}'
+                                      : 'TBC'),
+                            icon: Icons.timer_outlined,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Space.s3),
+                      JobInfoTile(
+                        icon: showFullAddress
+                            ? Icons.location_on
+                            : Icons.location_on_outlined,
+                        label: showFullAddress
+                            ? 'Full Address'
+                            : 'Approximate Location',
+                        value: addressLabel,
+                      ),
+                      if (!showFullAddress) ...[
+                        const SizedBox(height: Space.s1),
+                        Text(
+                          'Full address shown once booked.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      if (canNavigate) ...[
+                        const SizedBox(height: Space.s2),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _NavigateButton(
+                            onAppSelected: (app) => _navigate(app),
+                          ),
+                        ),
+                      ],
+                      if (grossLabel != null) ...[
+                        const SizedBox(height: Space.s3),
+                        // Show net earnings as the primary figure (V16-16).
+                        if (net != null && commissionPercent != null) ...[
+                          JobInfoTile(
+                            emphasized: true,
+                            label:
+                                'You earn (after '
+                                '${commissionPercent.toStringAsFixed(1)}% platform fee)',
+                            value: formatMoney(net),
+                            icon: Icons.payments_outlined,
+                          ),
+                          const SizedBox(height: Space.s2),
+                          JobInfoTile(
+                            label: totalLabel,
+                            value: grossLabel,
+                            icon: Icons.attach_money_outlined,
+                          ),
+                        ] else ...[
+                          JobInfoTile(
+                            emphasized: true,
+                            label: 'You earn',
+                            value: grossLabel,
+                            icon: Icons.payments_outlined,
+                          ),
+                        ],
+                        if (job.estimatedTotal != null &&
+                            job.finalAmount == null) ...[
+                          const SizedBox(height: Space.s2),
+                          Text(
+                            'Total confirmed on completion',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                      const SizedBox(height: Space.s4),
+                      Text(
+                        'Job Description',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: Space.s2),
+                      Text(
+                        job.description?.isNotEmpty == true
+                            ? job.description!
+                            : 'No description provided.',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: Space.s3),
-                JobInfoGrid(
-                  tiles: [
-                    JobInfoTile(
-                      label: 'Scheduled',
-                      // v1.7: Flexible/ASAP jobs legitimately have no start
-                      // yet — show Date TBC, never a fabricated date.
-                      value: scheduledLabel ?? 'Date TBC',
-                      icon: Icons.calendar_today_outlined,
-                    ),
-                    JobInfoTile(
-                      label: 'Duration',
-                      value: job.hours > 0
-                          ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
-                          : (job.estimatedHours != null
-                              ? '≈ ${_formatHours(job.estimatedHours!)}'
-                              : 'TBC'),
-                      icon: Icons.timer_outlined,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Space.s3),
-                JobInfoTile(
-                  icon: showFullAddress
-                      ? Icons.location_on
-                      : Icons.location_on_outlined,
-                  label:
-                      showFullAddress ? 'Full Address' : 'Approximate Location',
-                  value: addressLabel,
-                ),
-                if (!showFullAddress) ...[
-                  const SizedBox(height: Space.s1),
-                  Text(
-                    'Full address shown once booked.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+
+                // ── v1.7 P12-19: extra-cost requests + running total ─────────────
+                if (canRequestExtraCost) ...[
+                  const SizedBox(height: Space.s4),
+                  _TradieAdjustmentsCard(
+                    adjustments: _adjustments,
+                    onRequestExtra: _showRequestExtraCostSheet,
+                    onWithdraw: _withdrawAdjustment,
                   ),
                 ],
-                if (canNavigate) ...[
-                  const SizedBox(height: Space.s2),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _NavigateButton(
-                      onAppSelected: (app) => _navigate(app),
-                    ),
-                  ),
-                ],
-                if (grossLabel != null) ...[
-                  const SizedBox(height: Space.s3),
-                  // Show net earnings as the primary figure (V16-16).
-                  if (net != null && commissionPercent != null) ...[
-                    JobInfoTile(
-                      emphasized: true,
-                      label:
-                          'You earn (after '
-                          '${commissionPercent.toStringAsFixed(1)}% platform fee)',
-                      value: formatMoney(net),
-                      icon: Icons.payments_outlined,
-                    ),
-                    const SizedBox(height: Space.s2),
-                    JobInfoTile(
-                      label: totalLabel,
-                      value: grossLabel,
-                      icon: Icons.attach_money_outlined,
-                    ),
-                  ] else ...[
-                    JobInfoTile(
-                      emphasized: true,
-                      label: 'You earn',
-                      value: grossLabel,
-                      icon: Icons.payments_outlined,
-                    ),
-                  ],
-                  if (job.estimatedTotal != null &&
-                      job.finalAmount == null) ...[
-                    const SizedBox(height: Space.s2),
-                    Text(
-                      'Total confirmed on completion',
-                      style: theme.textTheme.bodySmall?.copyWith(
+
+                // ── Quiet "Need help?" row ────────────────────────────────────────
+                if (canCancel || canDispute) ...[
+                  const SizedBox(height: Space.s5),
+                  Center(
+                    child: TextButton.icon(
+                      icon: Icon(
+                        Icons.help_outline,
+                        size: Sizes.iconInfo,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      label: Text(
+                        'Need help with this job?',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      onPressed: () {
+                        if (canDispute) {
+                          _openDispute();
+                        } else if (canCancel && !_busy) {
+                          _showCancelSheet();
+                        }
+                      },
                     ),
-                  ],
+                  ),
                 ],
-                const SizedBox(height: Space.s4),
-                Text('Job Description', style: theme.textTheme.titleSmall),
-                const SizedBox(height: Space.s2),
-                Text(
-                  job.description?.isNotEmpty == true
-                      ? job.description!
-                      : 'No description provided.',
-                  style: theme.textTheme.bodyLarge,
-                ),
+
+                // Spacer so the bottom nav doesn't overlap content.
+                const SizedBox(height: Space.stickyBarClearance),
               ],
             ),
-          ),
-
-          // ── v1.7 P12-19: extra-cost requests + running total ─────────────
-          if (canRequestExtraCost) ...[
-            const SizedBox(height: Space.s4),
-            _TradieAdjustmentsCard(
-              adjustments: _adjustments,
-              onRequestExtra: _showRequestExtraCostSheet,
-              onWithdraw: _withdrawAdjustment,
-            ),
-          ],
-
-          // ── Quiet "Need help?" row ────────────────────────────────────────
-          if (canCancel || canDispute) ...[
-            const SizedBox(height: Space.s5),
-            Center(
-              child: TextButton.icon(
-                icon: Icon(
-                  Icons.help_outline,
-                  size: Sizes.iconInfo,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                label: Text(
-                  'Need help with this job?',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                onPressed: () {
-                  if (canDispute) {
-                    _openDispute();
-                  } else if (canCancel && !_busy) {
-                    _showCancelSheet();
-                  }
-                },
-              ),
-            ),
-          ],
-
-          // Spacer so the bottom nav doesn't overlap content.
-          const SizedBox(height: Space.stickyBarClearance),
-        ],
-      ),
           ), // Expanded
         ],
       ), // Column body
-
       // ── Action bar ─────────────────────────────────────────────────────────
       bottomNavigationBar: _buildActionBar(context, status),
     );
@@ -800,7 +811,10 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         // P10-19: Show pending/revealed state after review submitted.
         return StickyActionBar(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s3),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.s4,
+              vertical: Space.s3,
+            ),
             decoration: BoxDecoration(
               color: DesignTokens.brand500.withValues(alpha: Alpha.tint),
               borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
@@ -1121,7 +1135,6 @@ class _ContactCard extends StatelessWidget {
   }
 }
 
-
 /// Friendly recovery body for tradie screens where a job cannot be loaded
 /// (expired, unavailable, or deleted). Always provides a path back (V16-02).
 class _TradieJobNotFoundBody extends StatelessWidget {
@@ -1231,14 +1244,14 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
     super.dispose();
   }
 
-  static String _formatHoursText(double hours) =>
-      hours == hours.roundToDouble()
-          ? hours.round().toString()
-          : hours.toString();
+  static String _formatHoursText(double hours) => hours == hours.roundToDouble()
+      ? hours.round().toString()
+      : hours.toString();
 
   double? get _parsedHours {
-    final parsed =
-        double.tryParse(_hoursController.text.trim().replaceAll(',', '.'));
+    final parsed = double.tryParse(
+      _hoursController.text.trim().replaceAll(',', '.'),
+    );
     return parsed != null && parsed > 0 ? parsed : null;
   }
 
@@ -1276,9 +1289,7 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
           children: [
             Text(
               'Check out & submit hours',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FW.bold,
-              ),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
             ),
             const SizedBox(height: Space.s1),
             Text(
@@ -1292,12 +1303,13 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
             TextField(
               key: const Key('final_hours_field'),
               controller: _hoursController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: 'Hours worked',
-                errorText: _hoursController.text.trim().isNotEmpty &&
-                        hours == null
+                errorText:
+                    _hoursController.text.trim().isNotEmpty && hours == null
                     ? 'Enter the hours you worked, e.g. 3.5'
                     : null,
               ),
@@ -1310,7 +1322,8 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
               maxLength: 500,
               decoration: const InputDecoration(
                 labelText: 'Notes (optional)',
-                hintText: 'What was done, anything the homeowner should '
+                hintText:
+                    'What was done, anything the homeowner should '
                     'know…',
               ),
             ),
@@ -1414,7 +1427,8 @@ class _CheckOutSheetState extends State<_CheckOutSheet> {
 /// Helper used by the labour preview — multiplies the hourly [rate] by
 /// [hours] without ever leaving decimal arithmetic.
 Decimal labourPreview(Decimal rate, double hours) {
-  final hoursDecimal = Decimal.tryParse(hours.toStringAsFixed(2)) ?? Decimal.zero;
+  final hoursDecimal =
+      Decimal.tryParse(hours.toStringAsFixed(2)) ?? Decimal.zero;
   return rate * hoursDecimal;
 }
 
@@ -1452,9 +1466,7 @@ class _TradieAdjustmentsCard extends StatelessWidget {
         children: [
           Text(
             'Extra costs',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FW.bold,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
           ),
           const SizedBox(height: Space.s1),
           Text(
@@ -1534,10 +1546,7 @@ class _TradieAdjustmentRow extends StatelessWidget {
   final JobAdjustment adjustment;
   final VoidCallback? onWithdraw;
 
-  const _TradieAdjustmentRow({
-    required this.adjustment,
-    this.onWithdraw,
-  });
+  const _TradieAdjustmentRow({required this.adjustment, this.onWithdraw});
 
   @override
   Widget build(BuildContext context) {
@@ -1546,35 +1555,35 @@ class _TradieAdjustmentRow extends StatelessWidget {
     final a = adjustment;
     final (:tone, :label, :icon) = switch (a.status) {
       JobAdjustment.statusApproved => (
-          tone: ChipTone.success,
-          label: 'Approved',
-          icon: Icons.check_circle_outline,
-        ),
+        tone: ChipTone.success,
+        label: 'Approved',
+        icon: Icons.check_circle_outline,
+      ),
       JobAdjustment.statusDeclined => (
-          tone: ChipTone.danger,
-          label: 'Declined',
-          icon: Icons.cancel_outlined,
-        ),
+        tone: ChipTone.danger,
+        label: 'Declined',
+        icon: Icons.cancel_outlined,
+      ),
       JobAdjustment.statusPending => (
-          tone: ChipTone.warning,
-          label: 'Waiting for approval',
-          icon: Icons.hourglass_top_outlined,
-        ),
+        tone: ChipTone.warning,
+        label: 'Waiting for approval',
+        icon: Icons.hourglass_top_outlined,
+      ),
       JobAdjustment.statusWithdrawn => (
-          tone: ChipTone.neutral,
-          label: 'Withdrawn',
-          icon: Icons.undo_outlined,
-        ),
+        tone: ChipTone.neutral,
+        label: 'Withdrawn',
+        icon: Icons.undo_outlined,
+      ),
       JobAdjustment.statusExpired => (
-          tone: ChipTone.neutral,
-          label: 'Expired',
-          icon: Icons.timer_off_outlined,
-        ),
+        tone: ChipTone.neutral,
+        label: 'Expired',
+        icon: Icons.timer_off_outlined,
+      ),
       _ => (
-          tone: ChipTone.neutral,
-          label: a.status,
-          icon: Icons.help_outline_rounded,
-        ),
+        tone: ChipTone.neutral,
+        label: a.status,
+        icon: Icons.help_outline_rounded,
+      ),
     };
 
     return Container(
@@ -1667,8 +1676,7 @@ class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
     super.dispose();
   }
 
-  Decimal? get _parsedAmount =>
-      Decimal.tryParse(_amountController.text.trim());
+  Decimal? get _parsedAmount => Decimal.tryParse(_amountController.text.trim());
 
   bool get _canSubmit =>
       _parsedAmount != null &&
@@ -1677,14 +1685,11 @@ class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
 
   void _submit(BuildContext context) {
     if (!_canSubmit) return;
-    Navigator.pop(
-      context,
-      (
-        _kind,
-        _parsedAmount!,
-        _descriptionController.text.trim(),
-      ),
-    );
+    Navigator.pop(context, (
+      _kind,
+      _parsedAmount!,
+      _descriptionController.text.trim(),
+    ));
   }
 
   @override
@@ -1704,9 +1709,7 @@ class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
           children: [
             Text(
               'Request extra cost',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FW.bold,
-              ),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
             ),
             const SizedBox(height: Space.s1),
             Text(
@@ -1788,5 +1791,6 @@ class _RequestExtraCostSheetState extends State<_RequestExtraCostSheet> {
 }
 
 /// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
-String _formatHours(double hours) =>
-    hours == hours.roundToDouble() ? hours.round().toString() : hours.toString();
+String _formatHours(double hours) => hours == hours.roundToDouble()
+    ? hours.round().toString()
+    : hours.toString();

@@ -56,7 +56,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(Space.s6, Space.s7, Space.s6, Space.s2),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.s6,
+                  Space.s7,
+                  Space.s6,
+                  Space.s2,
+                ),
                 child: Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -98,7 +103,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               shape: BoxShape.circle,
                               gradient: RadialGradient(
                                 colors: [
-                                  DesignTokens.brand300.withValues(alpha: Alpha.gradient),
+                                  DesignTokens.brand300.withValues(
+                                    alpha: Alpha.gradient,
+                                  ),
                                   Colors.transparent,
                                 ],
                               ),
@@ -139,9 +146,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     width: i == _currentPage
                                         ? Sizes.dotActive
                                         : Sizes.dot,
-                                    margin: const EdgeInsets.only(right: Space.s2),
+                                    margin: const EdgeInsets.only(
+                                      right: Space.s2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(Radii.pill),
+                                      borderRadius: BorderRadius.circular(
+                                        Radii.pill,
+                                      ),
                                       color: i == _currentPage
                                           ? DesignTokens.amber
                                           : colors.track,
@@ -158,7 +169,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(Space.s6, Space.s4, Space.s6, Space.s4 + bottom),
+                padding: EdgeInsets.fromLTRB(
+                  Space.s6,
+                  Space.s4,
+                  Space.s6,
+                  Space.s4 + bottom,
+                ),
                 child: FixoPrimaryButton(
                   label: _currentPage == _slides.length - 1
                       ? 'Get started'

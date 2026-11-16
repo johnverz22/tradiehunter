@@ -131,7 +131,9 @@ Job _job(
   category: 'Plumbing',
   suburb: 'Grafton',
   status: status,
-  stage: stage ?? Job.stageForStatus(status, flowVersion: flowVersion ?? Job.flowVersionV2),
+  stage:
+      stage ??
+      Job.stageForStatus(status, flowVersion: flowVersion ?? Job.flowVersionV2),
   flowVersion: flowVersion ?? Job.flowVersionV2,
   description: 'Kitchen tap drips constantly.',
   address: address,
@@ -282,38 +284,39 @@ void main() {
       expect(find.textContaining('maps app'), findsOneWidget);
     });
 
-    testWidgets('navigate options menu allows choosing Google Maps and Apple Maps', (
-      tester,
-    ) async {
-      final launcher = _LauncherFixture();
-      await mount(
-        tester,
-        _JobsFixture(_job('Booked', latitude: -36.86, longitude: 174.76)),
-        launcher: launcher,
-      );
-      final navigateButton = find.byKey(const Key('navigate_button'));
-      expect(navigateButton, findsOneWidget);
+    testWidgets(
+      'navigate options menu allows choosing Google Maps and Apple Maps',
+      (tester) async {
+        final launcher = _LauncherFixture();
+        await mount(
+          tester,
+          _JobsFixture(_job('Booked', latitude: -36.86, longitude: 174.76)),
+          launcher: launcher,
+        );
+        final navigateButton = find.byKey(const Key('navigate_button'));
+        expect(navigateButton, findsOneWidget);
 
-      // Open popup and choose Google Maps
-      await tester.tap(navigateButton);
-      await tester.pumpAndSettle();
-      expect(find.text('Google Maps'), findsOneWidget);
-      expect(find.text('Apple Maps'), findsOneWidget);
+        // Open popup and choose Google Maps
+        await tester.tap(navigateButton);
+        await tester.pumpAndSettle();
+        expect(find.text('Google Maps'), findsOneWidget);
+        expect(find.text('Apple Maps'), findsOneWidget);
 
-      await tester.tap(find.text('Google Maps'));
-      await tester.pumpAndSettle();
-      expect(launcher.maps, hasLength(1));
-      expect(launcher.maps.single.app, MapApp.googleMaps);
-      expect(launcher.maps.single.lat, -36.86);
+        await tester.tap(find.text('Google Maps'));
+        await tester.pumpAndSettle();
+        expect(launcher.maps, hasLength(1));
+        expect(launcher.maps.single.app, MapApp.googleMaps);
+        expect(launcher.maps.single.lat, -36.86);
 
-      // Open popup and choose Apple Maps
-      await tester.tap(navigateButton);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Apple Maps'));
-      await tester.pumpAndSettle();
-      expect(launcher.maps, hasLength(2));
-      expect(launcher.maps.last.app, MapApp.appleMaps);
-    });
+        // Open popup and choose Apple Maps
+        await tester.tap(navigateButton);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Apple Maps'));
+        await tester.pumpAndSettle();
+        expect(launcher.maps, hasLength(2));
+        expect(launcher.maps.last.app, MapApp.appleMaps);
+      },
+    );
   });
 
   group('contact card', () {

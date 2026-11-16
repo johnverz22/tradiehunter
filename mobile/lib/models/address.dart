@@ -39,13 +39,13 @@ class AddressCandidate {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'address': address,
-        if (suburb != null) 'suburb': suburb,
-        if (city != null) 'city': city,
-        'latitude': latitude,
-        'longitude': longitude,
-      };
+    'id': id,
+    'address': address,
+    if (suburb != null) 'suburb': suburb,
+    if (city != null) 'city': city,
+    'latitude': latitude,
+    'longitude': longitude,
+  };
 }
 
 class AddressSearchResult {

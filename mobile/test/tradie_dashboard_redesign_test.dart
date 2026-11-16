@@ -66,23 +66,23 @@ class _ProfileFixture extends ProfileRepository {
 
   @override
   Future<Map<String, dynamic>> getCurrentProfile() async => {
-        'id': 'tradie-1',
-        'firstName': 'Jay',
-        'role': 1,
-        'isVerified': true,
-        'isAvailable': isAvailable,
-        ...extra,
-      };
+    'id': 'tradie-1',
+    'firstName': 'Jay',
+    'role': 1,
+    'isVerified': true,
+    'isAvailable': isAvailable,
+    ...extra,
+  };
 
   @override
   Future<TradieEarnings> getEarnings() async => TradieEarnings(
-        periodStartUtc: DateTime.utc(2026, 7, 5),
-        periodEndUtc: DateTime.utc(2026, 7, 12),
-        asOfUtc: DateTime.utc(2026, 7, 8),
-        timeZone: 'Pacific/Auckland',
-        earnedNet: Decimal.parse('12496.20'),
-        pendingNet: Decimal.parse('2693.16'),
-      );
+    periodStartUtc: DateTime.utc(2026, 7, 5),
+    periodEndUtc: DateTime.utc(2026, 7, 12),
+    asOfUtc: DateTime.utc(2026, 7, 8),
+    timeZone: 'Pacific/Auckland',
+    earnedNet: Decimal.parse('12496.20'),
+    pendingNet: Decimal.parse('2693.16'),
+  );
 
   @override
   Future<void> updateAvailability(bool value) async {
@@ -109,19 +109,18 @@ Job _job(
   String category = 'Plumbing',
   String suburb = 'Ponsonby',
   String? referenceCode,
-}) =>
-    Job(
-      id: status,
-      title: title.isEmpty ? 'Job $status' : title,
-      category: category,
-      suburb: suburb,
-      status: status,
-      stage: 0,
-      totalAmount: total,
-      scheduledStartUtc: scheduled,
-      hours: 2,
-      referenceCode: referenceCode,
-    );
+}) => Job(
+  id: status,
+  title: title.isEmpty ? 'Job $status' : title,
+  category: category,
+  suburb: suburb,
+  status: status,
+  stage: 0,
+  totalAmount: total,
+  scheduledStartUtc: scheduled,
+  hours: 2,
+  referenceCode: referenceCode,
+);
 
 Future<void> _mountDashboard(
   WidgetTester tester,
@@ -137,7 +136,7 @@ Future<void> _mountDashboard(
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final hub    = _HubFixture();
+  final hub = _HubFixture();
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, _) => const TradieDashboardView()),
@@ -166,9 +165,8 @@ Future<void> _mountDashboard(
         routerConfig: router,
         theme: dark ? FixoTheme.dark() : FixoTheme.light(),
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(scale),
-          ),
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(scale)),
           child: child!,
         ),
       ),
@@ -201,21 +199,27 @@ void main() {
             await _mountDashboard(
               tester,
               _JobsFixture([]),
-              _ProfileFixture(
-                extra: {'reviewCount': 3, 'averageRating': 4.8},
-              ),
+              _ProfileFixture(extra: {'reviewCount': 3, 'averageRating': 4.8}),
               dark: dark,
               scale: scale,
             );
-            final pSize =
-                tester.getSize(find.byKey(const Key('stat_tile_pending')));
-            final rSize =
-                tester.getSize(find.byKey(const Key('stat_tile_rating')));
+            final pSize = tester.getSize(
+              find.byKey(const Key('stat_tile_pending')),
+            );
+            final rSize = tester.getSize(
+              find.byKey(const Key('stat_tile_rating')),
+            );
             // Tolerance of 8px covers text-scaler rounding across platforms.
-            expect(pSize.height, closeTo(rSize.height, 8.0),
-                reason: 'Pending height ≈ Rating height (within 8px)');
-            expect(pSize.width, closeTo(rSize.width, 2.0),
-                reason: 'columns equal width');
+            expect(
+              pSize.height,
+              closeTo(rSize.height, 8.0),
+              reason: 'Pending height ≈ Rating height (within 8px)',
+            );
+            expect(
+              pSize.width,
+              closeTo(rSize.width, 2.0),
+              reason: 'columns equal width',
+            );
           },
         );
       }
@@ -237,8 +241,11 @@ void main() {
         final rH = tester
             .getSize(find.byKey(const Key('stat_tile_rating')))
             .height;
-        expect(pH, closeTo(rH, 8.0),
-            reason: 'heights match even with no-review state (within 8px)');
+        expect(
+          pH,
+          closeTo(rH, 8.0),
+          reason: 'heights match even with no-review state (within 8px)',
+        );
       },
     );
   });
@@ -248,27 +255,26 @@ void main() {
   group('net figure and switch do not overlap', () {
     for (final scale in [1.0, 1.3]) {
       for (final dark in [false, true]) {
-        testWidgets(
-          'no overflow with \$12,496.20 — scale=$scale dark=$dark',
-          (tester) async {
-            await _mountDashboard(
-              tester,
-              _JobsFixture([]),
-              _ProfileFixture(),
-              dark: dark,
-              scale: scale,
-            );
-            expect(tester.takeException(), isNull,
-                reason: 'No RenderFlex overflow');
-            // The availability switch must be present.
-            expect(
-              find.byKey(const Key('availability_button')),
-              findsOneWidget,
-            );
-            // The net figure text must be present.
-            expect(find.textContaining('12,496'), findsAtLeastNWidgets(1));
-          },
-        );
+        testWidgets('no overflow with \$12,496.20 — scale=$scale dark=$dark', (
+          tester,
+        ) async {
+          await _mountDashboard(
+            tester,
+            _JobsFixture([]),
+            _ProfileFixture(),
+            dark: dark,
+            scale: scale,
+          );
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'No RenderFlex overflow',
+          );
+          // The availability switch must be present.
+          expect(find.byKey(const Key('availability_button')), findsOneWidget);
+          // The net figure text must be present.
+          expect(find.textContaining('12,496'), findsAtLeastNWidgets(1));
+        });
       }
     }
   });
@@ -299,7 +305,10 @@ void main() {
   group('availability switch', () {
     testWidgets('shows Online label when isAvailable=true', (tester) async {
       await _mountDashboard(
-          tester, _JobsFixture([]), _ProfileFixture(isAvailable: true));
+        tester,
+        _JobsFixture([]),
+        _ProfileFixture(isAvailable: true),
+      );
       expect(
         find.descendant(
           of: find.byKey(const Key('availability_button')),
@@ -311,7 +320,10 @@ void main() {
 
     testWidgets('shows Offline label when isAvailable=false', (tester) async {
       await _mountDashboard(
-          tester, _JobsFixture([]), _ProfileFixture(isAvailable: false));
+        tester,
+        _JobsFixture([]),
+        _ProfileFixture(isAvailable: false),
+      );
       expect(
         find.descendant(
           of: find.byKey(const Key('availability_button')),
@@ -330,25 +342,29 @@ void main() {
     });
 
     testWidgets('error shows notice with Retry', (tester) async {
-      final profile =
-          _ProfileFixture(isAvailable: false, throwOnToggle: true);
+      final profile = _ProfileFixture(isAvailable: false, throwOnToggle: true);
       await _mountDashboard(tester, _JobsFixture([]), profile);
       await tester.tap(find.byKey(const Key('availability_button')));
       await pumpAsync(tester);
-      expect(find.text('Could not update availability. Try again.'),
-          findsOneWidget);
+      expect(
+        find.text('Could not update availability. Try again.'),
+        findsOneWidget,
+      );
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('going offline with active job shows confirm sheet',
-        (tester) async {
+    testWidgets('going offline with active job shows confirm sheet', (
+      tester,
+    ) async {
       final now = DateTime.now();
       final profile = _ProfileFixture(isAvailable: true);
       await _mountDashboard(
         tester,
         _JobsFixture([
-          _job('InProgress',
-              scheduled: DateTime.utc(now.year, now.month, now.day, 9)),
+          _job(
+            'InProgress',
+            scheduled: DateTime.utc(now.year, now.month, now.day, 9),
+          ),
         ]),
         profile,
       );
@@ -396,72 +412,74 @@ void main() {
             return false;
           })
           .toList();
-      expect(coloredContainers, isEmpty,
-          reason: 'stat column $key must have no filled container (no glass)');
+      expect(
+        coloredContainers,
+        isEmpty,
+        reason: 'stat column $key must have no filled container (no glass)',
+      );
     }
   });
 
   // ── 6. New leads hidden when empty ────────────────────────────────────────
 
-  testWidgets(
-    'leads section renders nothing when empty, loaded, no error',
-    (tester) async {
-      await _mountDashboard(
-        tester,
-        _JobsFixture([]),
-        _ProfileFixture(isAvailable: true),
-      );
-      // No "New leads" section label.
-      expect(find.text('New leads'), findsNothing);
-      // No skeleton card.
-      expect(find.byType(AnimatedSize), findsNothing);
-    },
-  );
+  testWidgets('leads section renders nothing when empty, loaded, no error', (
+    tester,
+  ) async {
+    await _mountDashboard(
+      tester,
+      _JobsFixture([]),
+      _ProfileFixture(isAvailable: true),
+    );
+    // No "New leads" section label.
+    expect(find.text('New leads'), findsNothing);
+    // No skeleton card.
+    expect(find.byType(AnimatedSize), findsNothing);
+  });
 
   // ── 7. Skeleton on first load ─────────────────────────────────────────────
   // The skeleton is rendered by _LeadsSectionState when isFirstLoad=true.
   // isFirstLoad is set when jobsState.isLoading && jobsState.jobs.isEmpty.
   // We simulate by using a repository that never resolves.
-  testWidgets(
-    'leads section shows skeleton while first load is in progress',
-    (tester) async {
-      // Use a fixture that never completes getTradieJobs().
-      final neverCompletes = _StalledJobsFixture();
-      tester.view.physicalSize = const Size(375, 1600);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('leads section shows skeleton while first load is in progress', (
+    tester,
+  ) async {
+    // Use a fixture that never completes getTradieJobs().
+    final neverCompletes = _StalledJobsFixture();
+    tester.view.physicalSize = const Size(375, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final hub    = _HubFixture();
-      final router = GoRouter(
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const TradieDashboardView()),
-        ],
-      );
-      addTearDown(router.dispose);
+    final hub = _HubFixture();
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const TradieDashboardView()),
+      ],
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            jobsRepositoryProvider.overrideWithValue(neverCompletes),
-            profileRepositoryProvider.overrideWithValue(
-                _ProfileFixture(isAvailable: true)),
-            jobHubClientProvider.overrideWithValue(hub),
-          ],
-          child: MaterialApp.router(
-            routerConfig: router,
-            theme: FixoTheme.light(),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          jobsRepositoryProvider.overrideWithValue(neverCompletes),
+          profileRepositoryProvider.overrideWithValue(
+            _ProfileFixture(isAvailable: true),
           ),
+          jobHubClientProvider.overrideWithValue(hub),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: FixoTheme.light(),
         ),
-      );
-      // Single pump — the future has not resolved; isLoading=true.
-      await tester.pump();
-      // The scaffold-level loading indicator shows (whole list loading).
-      // We just ensure no exception was thrown; skeleton is inside the
-      // _LeadsSection which is not reachable until jobs load.
-      expect(tester.takeException(), isNull);
-    },
-  );
+      ),
+    );
+    // Single pump — the future has not resolved; isLoading=true.
+    await tester.pump();
+    // The scaffold-level loading indicator shows (whole list loading).
+    // We just ensure no exception was thrown; skeleton is inside the
+    // _LeadsSection which is not reachable until jobs load.
+    expect(tester.takeException(), isNull);
+  });
 
   // ── 8. Error row kept ─────────────────────────────────────────────────────
   // When getTradieJobs() throws and jobs list is empty, the whole-screen
@@ -470,45 +488,43 @@ void main() {
   // when leads have already loaded once then refresh fails — that path is
   // covered by the error being non-nil on jobsState.
 
-  testWidgets(
-    'error state shows a Retry affordance',
-    (tester) async {
-      final errFixture = _ErrorJobsFixture();
-      tester.view.physicalSize = const Size(375, 1600);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('error state shows a Retry affordance', (tester) async {
+    final errFixture = _ErrorJobsFixture();
+    tester.view.physicalSize = const Size(375, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final hub    = _HubFixture();
-      final router = GoRouter(
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const TradieDashboardView()),
-        ],
-      );
-      addTearDown(router.dispose);
+    final hub = _HubFixture();
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const TradieDashboardView()),
+      ],
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            jobsRepositoryProvider.overrideWithValue(errFixture),
-            profileRepositoryProvider.overrideWithValue(
-                _ProfileFixture(isAvailable: true)),
-            jobHubClientProvider.overrideWithValue(hub),
-          ],
-          child: MaterialApp.router(
-            routerConfig: router,
-            theme: FixoTheme.light(),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          jobsRepositoryProvider.overrideWithValue(errFixture),
+          profileRepositoryProvider.overrideWithValue(
+            _ProfileFixture(isAvailable: true),
           ),
+          jobHubClientProvider.overrideWithValue(hub),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: FixoTheme.light(),
         ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
-      // The whole-screen FixoErrorState renders when jobs list is empty+error.
-      // Its retry button is labelled "Try again".
-      expect(find.textContaining('Try again'), findsAtLeastNWidgets(1));
-    },
-  );
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    // The whole-screen FixoErrorState renders when jobs list is empty+error.
+    // Its retry button is labelled "Try again".
+    expect(find.textContaining('Try again'), findsAtLeastNWidgets(1));
+  });
 
   // ── 9. Leads AnimatedSize present when leads non-empty ────────────────────
 
@@ -519,8 +535,10 @@ void main() {
       await _mountDashboard(
         tester,
         _JobsFixture([
-          _job('Requested',
-              scheduled: DateTime.utc(now.year, now.month, now.day, 10)),
+          _job(
+            'Requested',
+            scheduled: DateTime.utc(now.year, now.month, now.day, 10),
+          ),
         ]),
         _ProfileFixture(isAvailable: true),
       );
@@ -537,75 +555,69 @@ void main() {
   // ── 10. Overdue jobs excluded from Today ──────────────────────────────────
 
   group('overdue jobs', () {
-    testWidgets(
-      'overdue Booked job is in Overdue group, not Today',
-      (tester) async {
-        final now = DateTime.now();
-        final yesterday = DateTime.utc(
-          now.year, now.month, now.day - 1, 9,
-        );
-        await _mountDashboard(
-          tester,
-          _JobsFixture([
-            _job('Booked',
-                title: 'Overdue job',
-                scheduled: yesterday),
-          ]),
-          _ProfileFixture(),
-        );
+    testWidgets('overdue Booked job is in Overdue group, not Today', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      final yesterday = DateTime.utc(now.year, now.month, now.day - 1, 9);
+      await _mountDashboard(
+        tester,
+        _JobsFixture([
+          _job('Booked', title: 'Overdue job', scheduled: yesterday),
+        ]),
+        _ProfileFixture(),
+      );
 
-        // "Overdue" section label must appear.
-        expect(find.text('Overdue'), findsAtLeastNWidgets(1));
-        // The job title appears under Overdue.
-        expect(find.text('Overdue job'), findsOneWidget);
+      // "Overdue" section label must appear.
+      expect(find.text('Overdue'), findsAtLeastNWidgets(1));
+      // The job title appears under Overdue.
+      expect(find.text('Overdue job'), findsOneWidget);
 
-        // Today section must show empty state (zero today jobs).
-        expect(find.text("You're online"), findsOneWidget);
-      },
-    );
+      // Today section must show empty state (zero today jobs).
+      expect(find.text("You're online"), findsOneWidget);
+    });
 
-    testWidgets(
-      'today Booked job is in Today, not Overdue',
-      (tester) async {
-        final now = DateTime.now();
-        await _mountDashboard(
-          tester,
-          _JobsFixture([
-            _job('Booked',
-                title: 'Today job',
-                scheduled: DateTime.utc(now.year, now.month, now.day, 14)),
-          ]),
-          _ProfileFixture(),
-        );
-
-        // No Overdue header.
-        expect(
-          find.descendant(
-            of: find.byType(Scaffold),
-            matching: find.text('Overdue'),
+    testWidgets('today Booked job is in Today, not Overdue', (tester) async {
+      final now = DateTime.now();
+      await _mountDashboard(
+        tester,
+        _JobsFixture([
+          _job(
+            'Booked',
+            title: 'Today job',
+            scheduled: DateTime.utc(now.year, now.month, now.day, 14),
           ),
-          findsNothing,
-        );
-        // Job appears in Today.
-        expect(find.text('Today job'), findsOneWidget);
-      },
-    );
+        ]),
+        _ProfileFixture(),
+      );
+
+      // No Overdue header.
+      expect(
+        find.descendant(
+          of: find.byType(Scaffold),
+          matching: find.text('Overdue'),
+        ),
+        findsNothing,
+      );
+      // Job appears in Today.
+      expect(find.text('Today job'), findsOneWidget);
+    });
   });
 
   // ── 11. StatusChip tone mapping ───────────────────────────────────────────
 
   group('StatusChip chip tone', () {
     const toneMap = {
-      'Requested':            ChipTone.neutral,
-      'AwaitingPayment':      ChipTone.warning,
-      'PaymentReview':        ChipTone.neutral,
-      'Booked':               ChipTone.info,
-      'InProgress':           ChipTone.brand,
+      'Requested': ChipTone.neutral,
+      'AwaitingPayment': ChipTone.warning,
+      'PaymentReview': ChipTone.neutral,
+      'Booked': ChipTone.info,
+      'InProgress': ChipTone.brand,
       'AwaitingConfirmation': ChipTone.warning,
-      'Completed':            ChipTone.success,
-      'Cancelled':            ChipTone.neutral,
-      'Expired':              ChipTone.neutral,
-      'Disputed':             ChipTone.danger,
+      'Completed': ChipTone.success,
+      'Cancelled': ChipTone.neutral,
+      'Expired': ChipTone.neutral,
+      'Disputed': ChipTone.danger,
     };
 
     for (final entry in toneMap.entries) {
@@ -622,52 +634,57 @@ void main() {
 
   group('Today card CTA', () {
     const ctaByStatus = {
-      'Booked':               'Check in',
-      'InProgress':           'Check out',
+      'Booked': 'Check in',
+      'InProgress': 'Check out',
       'AwaitingConfirmation': 'Mark complete',
     };
 
     for (final entry in ctaByStatus.entries) {
-      testWidgets(
-        '${entry.key} card shows CTA "${entry.value}"',
-        (tester) async {
-          final now = DateTime.now();
-          await _mountDashboard(
-            tester,
-            _JobsFixture([
-              _job(entry.key,
-                  scheduled:
-                      DateTime.utc(now.year, now.month, now.day, 9),
-                  total: Decimal.parse('450.00')),
-            ]),
-            _ProfileFixture(),
-          );
-          expect(find.byKey(const Key('today_card_cta')), findsOneWidget);
-          expect(find.text(entry.value), findsOneWidget);
-        },
-      );
+      testWidgets('${entry.key} card shows CTA "${entry.value}"', (
+        tester,
+      ) async {
+        final now = DateTime.now();
+        await _mountDashboard(
+          tester,
+          _JobsFixture([
+            _job(
+              entry.key,
+              scheduled: DateTime.utc(now.year, now.month, now.day, 9),
+              total: Decimal.parse('450.00'),
+            ),
+          ]),
+          _ProfileFixture(),
+        );
+        expect(find.byKey(const Key('today_card_cta')), findsOneWidget);
+        expect(find.text(entry.value), findsOneWidget);
+      });
     }
   });
 
   // ── 13. Sort order ────────────────────────────────────────────────────────
 
-  testWidgets('Today sorted: action-required first, then by schedule time',
-      (tester) async {
+  testWidgets('Today sorted: action-required first, then by schedule time', (
+    tester,
+  ) async {
     final now = DateTime.now();
     await _mountDashboard(
       tester,
       _JobsFixture([
-        _job('Booked',
-            title: 'B Booked',
-            scheduled: DateTime.utc(now.year, now.month, now.day, 10)),
-        _job('InProgress',
-            title: 'A InProgress',
-            scheduled: DateTime.utc(now.year, now.month, now.day, 8)),
+        _job(
+          'Booked',
+          title: 'B Booked',
+          scheduled: DateTime.utc(now.year, now.month, now.day, 10),
+        ),
+        _job(
+          'InProgress',
+          title: 'A InProgress',
+          scheduled: DateTime.utc(now.year, now.month, now.day, 8),
+        ),
       ]),
       _ProfileFixture(),
     );
     final inProgressY = tester.getTopLeft(find.text('A InProgress')).dy;
-    final bookedY     = tester.getTopLeft(find.text('B Booked')).dy;
+    final bookedY = tester.getTopLeft(find.text('B Booked')).dy;
     expect(inProgressY, lessThan(bookedY));
   });
 
@@ -676,14 +693,20 @@ void main() {
   group('Today empty state', () {
     testWidgets('online shows "You\'re online"', (tester) async {
       await _mountDashboard(
-          tester, _JobsFixture([]), _ProfileFixture(isAvailable: true));
+        tester,
+        _JobsFixture([]),
+        _ProfileFixture(isAvailable: true),
+      );
       expect(find.text("You're online"), findsOneWidget);
       expect(find.text('Go online'), findsNothing);
     });
 
     testWidgets('offline shows "Go online" button', (tester) async {
       await _mountDashboard(
-          tester, _JobsFixture([]), _ProfileFixture(isAvailable: false));
+        tester,
+        _JobsFixture([]),
+        _ProfileFixture(isAvailable: false),
+      );
       expect(
         find.textContaining('Online tradies get offers first'),
         findsAtLeastNWidgets(1),
@@ -694,14 +717,17 @@ void main() {
 
   // ── 15. Progress bar caption ──────────────────────────────────────────────
 
-  testWidgets('progress bar caption "Step X of 4" without status suffix',
-      (tester) async {
+  testWidgets('progress bar caption "Step X of 4" without status suffix', (
+    tester,
+  ) async {
     final now = DateTime.now();
     await _mountDashboard(
       tester,
       _JobsFixture([
-        _job('InProgress',
-            scheduled: DateTime.utc(now.year, now.month, now.day, 9)),
+        _job(
+          'InProgress',
+          scheduled: DateTime.utc(now.year, now.month, now.day, 9),
+        ),
       ]),
       _ProfileFixture(),
     );
@@ -711,8 +737,9 @@ void main() {
 
   // ── 16. Hero stats has exactly two columns ────────────────────────────────
 
-  testWidgets('hero stats row has Pending and Rating, no Online tile',
-      (tester) async {
+  testWidgets('hero stats row has Pending and Rating, no Online tile', (
+    tester,
+  ) async {
     await _mountDashboard(
       tester,
       _JobsFixture([]),
@@ -724,20 +751,21 @@ void main() {
     // stat-tile label (fontSizeTiny + Tracking.wide).
     final onlineTileLabels = tester
         .widgetList<Text>(find.text('Online'))
-        .where((t) =>
-            t.style?.fontSize == DesignTokens.fontSizeTiny &&
-            t.style?.letterSpacing == Tracking.wide)
+        .where(
+          (t) =>
+              t.style?.fontSize == DesignTokens.fontSizeTiny &&
+              t.style?.letterSpacing == Tracking.wide,
+        )
         .toList();
-    expect(onlineTileLabels, isEmpty,
-        reason: 'no Online stat tile in hero');
+    expect(onlineTileLabels, isEmpty, reason: 'no Online stat tile in hero');
   });
 
   // ── 17. No sparkline ─────────────────────────────────────────────────────
 
-  testWidgets('_SparklinePainter is gone — no CustomPaint in hero',
-      (tester) async {
-    await _mountDashboard(
-        tester, _JobsFixture([]), _ProfileFixture());
+  testWidgets('_SparklinePainter is gone — no CustomPaint in hero', (
+    tester,
+  ) async {
+    await _mountDashboard(tester, _JobsFixture([]), _ProfileFixture());
     // The only CustomPaint remaining is _RingsPainter.
     // _SparklinePainter drew a 80x40 SizedBox with CustomPaint.
     final painters = tester
@@ -745,35 +773,36 @@ void main() {
         .toList();
     // All remaining painters must be _RingsPainter (rings-only).
     for (final cp in painters) {
-      expect(cp.size, isNot(const Size(80, 40)),
-          reason: 'No 80x40 sparkline CustomPaint remains');
+      expect(
+        cp.size,
+        isNot(const Size(80, 40)),
+        reason: 'No 80x40 sparkline CustomPaint remains',
+      );
     }
   });
 
   // ── 18. Overflow safety at 1.3x, 320px ───────────────────────────────────
 
   for (final dark in [false, true]) {
-    testWidgets(
-      'dashboard fits 320px at 1.3x — dark=$dark',
-      (tester) async {
-        final now = DateTime.now();
-        await _mountDashboard(
-          tester,
-          _JobsFixture([
-            _job('InProgress',
-                title: 'Repair all the kitchen plumbing fixtures and fittings',
-                scheduled: DateTime.utc(now.year, now.month, now.day, 9),
-                total: Decimal.parse('12345.00')),
-          ]),
-          _ProfileFixture(
-              extra: {'reviewCount': 0, 'averageRating': 0}),
-          dark: dark,
-          scale: 1.3,
-          width: 320,
-        );
-        expect(tester.takeException(), isNull);
-      },
-    );
+    testWidgets('dashboard fits 320px at 1.3x — dark=$dark', (tester) async {
+      final now = DateTime.now();
+      await _mountDashboard(
+        tester,
+        _JobsFixture([
+          _job(
+            'InProgress',
+            title: 'Repair all the kitchen plumbing fixtures and fittings',
+            scheduled: DateTime.utc(now.year, now.month, now.day, 9),
+            total: Decimal.parse('12345.00'),
+          ),
+        ]),
+        _ProfileFixture(extra: {'reviewCount': 0, 'averageRating': 0}),
+        dark: dark,
+        scale: 1.3,
+        width: 320,
+      );
+      expect(tester.takeException(), isNull);
+    });
   }
 }
 
@@ -793,8 +822,7 @@ class _ErrorJobsFixture extends JobsRepository {
   _ErrorJobsFixture() : super(Dio(), const FlutterSecureStorage());
 
   @override
-  Future<List<Job>> getTradieJobs() async =>
-      throw Exception('Failed to load');
+  Future<List<Job>> getTradieJobs() async => throw Exception('Failed to load');
 
   @override
   Future<JobOffer?> getPendingOffer(String jobId) async => null;

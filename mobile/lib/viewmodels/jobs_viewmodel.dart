@@ -102,10 +102,7 @@ class JobsNotifier extends StateNotifier<JobsState> {
       if (job.id.toString() == jobId) {
         return job.copyWith(
           status: status,
-          stage: Job.stageForStatus(
-            status,
-            flowVersion: job.flowVersion,
-          ),
+          stage: Job.stageForStatus(status, flowVersion: job.flowVersion),
         );
       }
       return job;
@@ -367,8 +364,7 @@ class PostJobState {
   /// DateRange needs both ends.
   bool get timingComplete => switch (timingPreference) {
     'SpecificDate' => scheduledStartLocal != null,
-    'DateRange' =>
-      scheduledStartLocal != null && scheduledEndLocal != null,
+    'DateRange' => scheduledStartLocal != null && scheduledEndLocal != null,
     _ => true,
   };
 
@@ -461,7 +457,8 @@ class PostJobState {
 class PostJobNotifier extends StateNotifier<PostJobState> {
   final JobsRepository _repo;
   final AddressRepository? _addressRepo;
-  PostJobNotifier(this._repo, [this._addressRepo]) : super(const PostJobState()) {
+  PostJobNotifier(this._repo, [this._addressRepo])
+    : super(const PostJobState()) {
     loadServices();
     _loadCachedAddress();
   }
@@ -510,8 +507,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
   }
 
   void setTimingPreference(String value) {
-    final keepsDates =
-        value == 'SpecificDate' || value == 'DateRange';
+    final keepsDates = value == 'SpecificDate' || value == 'DateRange';
     state = state.copyWith(
       timingPreference: value,
       // Dropping back to Flexible/ASAP clears any picked dates so the
@@ -565,8 +561,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
   void setSiteVisitWelcome(bool value) =>
       state = state.copyWith(siteVisitWelcome: value);
 
-  void setScopeNotes(String value) =>
-      state = state.copyWith(scopeNotes: value);
+  void setScopeNotes(String value) => state = state.copyWith(scopeNotes: value);
 
   void setCategory(String category) =>
       state = state.copyWith(category: category);
@@ -577,11 +572,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
   void setUrgency(String urgency) => state = state.copyWith(urgency: urgency);
 
   void setAddress(String address) {
-    state = state.copyWith(
-      address: address,
-      clearLocation: true,
-      error: null,
-    );
+    state = state.copyWith(address: address, clearLocation: true, error: null);
   }
 
   Future<void> selectAddress(
@@ -624,7 +615,8 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
     if (state.isSubmitting) return null;
     if (!state.isValid) {
       state = state.copyWith(
-        error: 'Choose a service and an address result, add a title and '
+        error:
+            'Choose a service and an address result, add a title and '
             'description, then complete the timing selection.',
       );
       return null;
@@ -649,8 +641,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
                 .toIso8601String(),
         if (state.timingPreference == 'DateRange' &&
             state.scheduledEndLocal != null)
-          'scheduledEndUtc':
-              state.scheduledEndLocal!.toUtc().toIso8601String(),
+          'scheduledEndUtc': state.scheduledEndLocal!.toUtc().toIso8601String(),
         if (state.estimatedHours != null)
           'estimatedHours': state.estimatedHours,
         'jobType': state.jobType,
@@ -665,9 +656,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
         },
       };
 
-      final jobId =
-          state.submittedJobId ??
-          await _repo.postJob(payload);
+      final jobId = state.submittedJobId ?? await _repo.postJob(payload);
 
       if (!mounted) return jobId;
       state = state.copyWith(submittedJobId: jobId);
@@ -745,14 +734,14 @@ class TradieListState {
     bool? insuredOnly,
     bool? availableNowOnly,
   }) => TradieListState(
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : error ?? this.error,
-        tradies: tradies ?? this.tradies,
-        sort: sort ?? this.sort,
-        verifiedOnly: verifiedOnly ?? this.verifiedOnly,
-        insuredOnly: insuredOnly ?? this.insuredOnly,
-        availableNowOnly: availableNowOnly ?? this.availableNowOnly,
-      );
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : error ?? this.error,
+    tradies: tradies ?? this.tradies,
+    sort: sort ?? this.sort,
+    verifiedOnly: verifiedOnly ?? this.verifiedOnly,
+    insuredOnly: insuredOnly ?? this.insuredOnly,
+    availableNowOnly: availableNowOnly ?? this.availableNowOnly,
+  );
 }
 
 /// Loads the server-ranked tradie list for one job. Family-keyed by job id;
@@ -848,14 +837,14 @@ class QuotesState {
     bool clearAcceptingQuoteId = false,
     bool? isSubmitting,
   }) => QuotesState(
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-        quotes: quotes ?? this.quotes,
-        acceptingQuoteId: clearAcceptingQuoteId
-            ? null
-            : acceptingQuoteId ?? this.acceptingQuoteId,
-        isSubmitting: isSubmitting ?? this.isSubmitting,
-      );
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+    quotes: quotes ?? this.quotes,
+    acceptingQuoteId: clearAcceptingQuoteId
+        ? null
+        : acceptingQuoteId ?? this.acceptingQuoteId,
+    isSubmitting: isSubmitting ?? this.isSubmitting,
+  );
 }
 
 class QuotesNotifier extends StateNotifier<QuotesState> {
@@ -885,7 +874,9 @@ class QuotesNotifier extends StateNotifier<QuotesState> {
     required bool confirmWrittenContract,
   }) async {
     if (state.acceptingQuoteId != null) {
-      return const QuoteAcceptResult.failure('An acceptance is already in progress.');
+      return const QuoteAcceptResult.failure(
+        'An acceptance is already in progress.',
+      );
     }
     state = state.copyWith(acceptingQuoteId: quoteId, clearError: true);
     try {
@@ -920,10 +911,7 @@ class QuotesNotifier extends StateNotifier<QuotesState> {
 
 final quotesProvider = StateNotifierProvider.autoDispose
     .family<QuotesNotifier, QuotesState, String>((ref, jobId) {
-      final notifier = QuotesNotifier(
-        ref.watch(jobsRepositoryProvider),
-        jobId,
-      );
+      final notifier = QuotesNotifier(ref.watch(jobsRepositoryProvider), jobId);
       notifier.load();
       return notifier;
     });

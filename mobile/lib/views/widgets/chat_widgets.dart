@@ -56,21 +56,26 @@ class ConversationTile extends StatelessWidget {
           onTap: onTap,
           child: Container(
             constraints: const BoxConstraints(minHeight: Sizes.inboxTileMin),
-            padding: const EdgeInsets.symmetric(horizontal: Space.s3, vertical: Space.s2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.s3,
+              vertical: Space.s2,
+            ),
             decoration: BoxDecoration(
               color: selected
                   ? (isDark
-                      ? DesignTokens.brand700.withValues(alpha: Alpha.border)
-                      : DesignTokens.brand100Light)
+                        ? DesignTokens.brand700.withValues(alpha: Alpha.border)
+                        : DesignTokens.brand100Light)
                   : DesignTokens.surfaceCard(isDark),
               borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
               border: Border.all(
                 color: selected
                     ? DesignTokens.brand500
                     : (isDark
-                        ? DesignTokens.paperLineDark
-                        : DesignTokens.paperLineLight),
-                width: selected ? Sizes.borderWidthVerified : Sizes.borderWidthThin,
+                          ? DesignTokens.paperLineDark
+                          : DesignTokens.paperLineLight),
+                width: selected
+                    ? Sizes.borderWidthVerified
+                    : Sizes.borderWidthThin,
               ),
               boxShadow: isDark || selected
                   ? null
@@ -215,8 +220,14 @@ class _UnreadBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = count > 99 ? '99+' : '$count';
     return Container(
-      constraints: const BoxConstraints(minWidth: Sizes.unreadBadgeMin, minHeight: Sizes.unreadBadgeMin),
-      padding: const EdgeInsets.symmetric(horizontal: Space.s1_5, vertical: Space.s0_5),
+      constraints: const BoxConstraints(
+        minWidth: Sizes.unreadBadgeMin,
+        minHeight: Sizes.unreadBadgeMin,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s1_5,
+        vertical: Space.s0_5,
+      ),
       decoration: BoxDecoration(
         color: DesignTokens.brand500,
         borderRadius: BorderRadius.circular(Radii.pill),
@@ -240,6 +251,7 @@ class _UnreadBadge extends StatelessWidget {
 class _ConversationAvatar extends StatelessWidget {
   final String initial;
   final bool isDark;
+
   /// True when the job is in an active state (Booked / InProgress / AwaitingConfirmation).
   /// Shows a filled brand-500 circle with white initials and a verified badge.
   final bool isActive;
@@ -425,23 +437,24 @@ class ChatBubble extends StatelessWidget {
     // the rest are fully round (chatBubbleFullR) for a modern bubble shape.
     final BorderRadius radius = m.sentByMe
         ? const BorderRadius.only(
-            topLeft:     Radius.circular(Sizes.chatBubbleFullR),
-            topRight:    Radius.circular(Sizes.chatBubbleFullR),
-            bottomLeft:  Radius.circular(Sizes.chatBubbleFullR),
+            topLeft: Radius.circular(Sizes.chatBubbleFullR),
+            topRight: Radius.circular(Sizes.chatBubbleFullR),
+            bottomLeft: Radius.circular(Sizes.chatBubbleFullR),
             bottomRight: Radius.circular(Sizes.chatBubbleTailR),
           )
         : const BorderRadius.only(
-            topLeft:     Radius.circular(Sizes.chatBubbleTailR),
-            topRight:    Radius.circular(Sizes.chatBubbleFullR),
-            bottomLeft:  Radius.circular(Sizes.chatBubbleFullR),
+            topLeft: Radius.circular(Sizes.chatBubbleTailR),
+            topRight: Radius.circular(Sizes.chatBubbleFullR),
+            bottomLeft: Radius.circular(Sizes.chatBubbleFullR),
             bottomRight: Radius.circular(Sizes.chatBubbleFullR),
           );
 
     return Align(
       alignment: m.sentByMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment:
-            m.sentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: m.sentByMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           // Sender name (incoming only, first in a group)
           if (!m.sentByMe && m.senderName.isNotEmpty && !isGrouped)
@@ -477,9 +490,7 @@ class ChatBubble extends StatelessWidget {
                           ? DesignTokens.paperLineDark
                           : DesignTokens.paperLineLight,
                     ),
-              boxShadow: m.sentByMe
-                  ? null
-                  : DesignTokens.cardShadow(isDark),
+              boxShadow: m.sentByMe ? null : DesignTokens.cardShadow(isDark),
             ),
             child: Text(
               m.text ?? '',
@@ -604,8 +615,7 @@ class ChatComposer extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(vertical: Space.s1),
                 itemCount: quickReplies.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: Space.s2),
+                separatorBuilder: (_, _) => const SizedBox(width: Space.s2),
                 itemBuilder: (_, i) {
                   final reply = quickReplies[i];
                   return GestureDetector(
@@ -619,8 +629,9 @@ class ChatComposer extends StatelessWidget {
                         color: isDark
                             ? DesignTokens.cardDark
                             : DesignTokens.surfaceCard(isDark),
-                        borderRadius:
-                            BorderRadius.circular(DesignTokens.radiusPill),
+                        borderRadius: BorderRadius.circular(
+                          DesignTokens.radiusPill,
+                        ),
                         border: Border.all(
                           color: isDark
                               ? DesignTokens.paperLineDark
@@ -666,8 +677,7 @@ class ChatComposer extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: Sizes.input),
                 decoration: BoxDecoration(
                   color: DesignTokens.surfaceCard(isDark),
-                  borderRadius:
-                      BorderRadius.circular(DesignTokens.radiusPill),
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
                   border: Border.all(
                     color: isDark
                         ? DesignTokens.paperLineDark

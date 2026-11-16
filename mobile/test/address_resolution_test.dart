@@ -214,24 +214,21 @@ void main() {
     expect(repo.posts, 0);
   });
 
-  test(
-    'submission preserves explicit title, estimate and UTC schedule, never a rate',
-    () async {
-      final repo = PostFixture();
-      final notifier = PostJobNotifier(repo);
-      addTearDown(notifier.dispose);
-      await fill(notifier);
-      expect(await notifier.submit(), '123');
-      expect(repo.posted!['title'], 'Fix the tap');
-      // v1.7: hourlyRate is never sent — rates are snapshotted server-side
-      // when a tradie accepts (contract #1).
-      expect(repo.posted!.containsKey('hourlyRate'), isFalse);
-      expect(repo.posted!['estimatedHours'], 2);
-      expect(repo.posted!['jobType'], 'Hourly');
-      expect(repo.posted!['latitude'], -36.85);
-      expect(DateTime.parse(repo.posted!['scheduledStartUtc']).isUtc, isTrue);
-    },
-  );
+  test('submission preserves explicit title, estimate and UTC schedule, never a rate', () async {
+    final repo = PostFixture();
+    final notifier = PostJobNotifier(repo);
+    addTearDown(notifier.dispose);
+    await fill(notifier);
+    expect(await notifier.submit(), '123');
+    expect(repo.posted!['title'], 'Fix the tap');
+    // v1.7: hourlyRate is never sent — rates are snapshotted server-side
+    // when a tradie accepts (contract #1).
+    expect(repo.posted!.containsKey('hourlyRate'), isFalse);
+    expect(repo.posted!['estimatedHours'], 2);
+    expect(repo.posted!['jobType'], 'Hourly');
+    expect(repo.posted!['latitude'], -36.85);
+    expect(DateTime.parse(repo.posted!['scheduledStartUtc']).isUtc, isTrue);
+  });
 
   test(
     'photo failure retries the created job rather than posting twice',

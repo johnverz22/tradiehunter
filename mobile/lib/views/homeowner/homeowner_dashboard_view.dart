@@ -90,10 +90,11 @@ class _HomeownerDashboardViewState
     final profileState = ref.watch(profileViewModelProvider);
     final firstName = (profileState.profile?['firstName'] as String? ?? '')
         .trim();
-    final location = (profileState.profile?['address'] as String? ??
-            profileState.profile?['suburb'] as String? ??
-            profileState.profile?['location'] as String?)
-        ?.trim();
+    final location =
+        (profileState.profile?['address'] as String? ??
+                profileState.profile?['suburb'] as String? ??
+                profileState.profile?['location'] as String?)
+            ?.trim();
     final attention = jobsState.jobs
         .where((j) => needsHomeownerAttention(j.status))
         .toList();
@@ -151,126 +152,136 @@ class _HomeownerDashboardViewState
       child: Scaffold(
         key: const Key('homeowner_dashboard'),
         body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // ── Brand header — light-blue abstract bg shared with every
-            // app bar ─────────────────────────────────────────────────
-            HomeownerDashboardHeader(
-              firstName: firstName,
-              location: (location != null && location.isNotEmpty) ? location : null,
-            ),
-            Expanded(
-              child: jobsState.isLoading && jobsState.jobs.isEmpty
-                  ? const FixoLoading(label: 'Loading your jobs...')
-                  : jobsState.error != null && jobsState.jobs.isEmpty
-                  ? FixoErrorState(
-                      message: 'Could not load your jobs. Please try again.',
-                      onRetry: () => ref
-                          .read(jobsViewModelProvider.notifier)
-                          .loadHomeownerJobs(),
-                    )
-                  : Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 760),
-                        child: RefreshIndicator(
-                          onRefresh: () => ref
-                              .read(jobsViewModelProvider.notifier)
-                              .loadHomeownerJobs(),
-                          child: CustomScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            slivers: [
-                              SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s3, Space.gutter, Space.navClearance),
-                                sliver: SliverMainAxisGroup(
-                                  slivers: [
-                                    SliverToBoxAdapter(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (jobsState.error != null)
-                                            JobsRefreshNotice(
-                                              onRetry: () => ref
-                                                  .read(
-                                                    jobsViewModelProvider
-                                                        .notifier,
-                                                  )
-                                                  .loadHomeownerJobs(),
-                                            ),
-                                          if (jobsState.jobs.isEmpty)
-                                            HomeownerDashboardEmpty(
-                                              onPost: () =>
-                                                  context.push('/jobs/new'),
-                                            ),
-                                          if (attention.isNotEmpty)
-                                            _eyebrow('Needs your attention'),
-                                        ],
-                                      ),
-                                    ),
-                                    _jobs(attention, isAttention: true),
-                                    if (booked.isNotEmpty) ...[
+          top: false,
+          child: Column(
+            children: [
+              // ── Brand header — light-blue abstract bg shared with every
+              // app bar ─────────────────────────────────────────────────
+              HomeownerDashboardHeader(
+                firstName: firstName,
+                location: (location != null && location.isNotEmpty)
+                    ? location
+                    : null,
+              ),
+              Expanded(
+                child: jobsState.isLoading && jobsState.jobs.isEmpty
+                    ? const FixoLoading(label: 'Loading your jobs...')
+                    : jobsState.error != null && jobsState.jobs.isEmpty
+                    ? FixoErrorState(
+                        message: 'Could not load your jobs. Please try again.',
+                        onRetry: () => ref
+                            .read(jobsViewModelProvider.notifier)
+                            .loadHomeownerJobs(),
+                      )
+                    : Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: RefreshIndicator(
+                            onRefresh: () => ref
+                                .read(jobsViewModelProvider.notifier)
+                                .loadHomeownerJobs(),
+                            child: CustomScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              slivers: [
+                                SliverPadding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    Space.gutter,
+                                    Space.s3,
+                                    Space.gutter,
+                                    Space.navClearance,
+                                  ),
+                                  sliver: SliverMainAxisGroup(
+                                    slivers: [
                                       SliverToBoxAdapter(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            _eyebrow('Booked'),
-                                            HomeownerBookedJobs(jobs: booked),
+                                            if (jobsState.error != null)
+                                              JobsRefreshNotice(
+                                                onRetry: () => ref
+                                                    .read(
+                                                      jobsViewModelProvider
+                                                          .notifier,
+                                                    )
+                                                    .loadHomeownerJobs(),
+                                              ),
+                                            if (jobsState.jobs.isEmpty)
+                                              HomeownerDashboardEmpty(
+                                                onPost: () =>
+                                                    context.push('/jobs/new'),
+                                              ),
+                                            if (attention.isNotEmpty)
+                                              _eyebrow('Needs your attention'),
                                           ],
                                         ),
                                       ),
-                                    ],
-                                    if (active.isNotEmpty) ...[
-                                      SliverToBoxAdapter(
-                                        child: _eyebrow('Active jobs'),
-                                      ),
-                                      _jobs(active),
-                                    ],
-                                    if (past.isNotEmpty) ...[
-                                      SliverToBoxAdapter(
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(top: Space.s5_5),
-                                          child: Semantics(
-                                            expanded: _showPast,
-                                            child: TextButton.icon(
-                                              onPressed: () => setState(
-                                                () => _showPast = !_showPast,
-                                              ),
-                                              icon: Icon(
-                                                _showPast
-                                                    ? Icons.expand_less
-                                                    : Icons.expand_more,
-                                              ),
-                                              label: Text(
-                                                'Past jobs (${past.length})',
+                                      _jobs(attention, isAttention: true),
+                                      if (booked.isNotEmpty) ...[
+                                        SliverToBoxAdapter(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              _eyebrow('Booked'),
+                                              HomeownerBookedJobs(jobs: booked),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      if (active.isNotEmpty) ...[
+                                        SliverToBoxAdapter(
+                                          child: _eyebrow('Active jobs'),
+                                        ),
+                                        _jobs(active),
+                                      ],
+                                      if (past.isNotEmpty) ...[
+                                        SliverToBoxAdapter(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: Space.s5_5,
+                                            ),
+                                            child: Semantics(
+                                              expanded: _showPast,
+                                              child: TextButton.icon(
+                                                onPressed: () => setState(
+                                                  () => _showPast = !_showPast,
+                                                ),
+                                                icon: Icon(
+                                                  _showPast
+                                                      ? Icons.expand_less
+                                                      : Icons.expand_more,
+                                                ),
+                                                label: Text(
+                                                  'Past jobs (${past.length})',
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      if (_showPast) _jobs(past),
-                                    ],
-                                    if (jobsState.jobs.isNotEmpty)
-                                      SliverToBoxAdapter(
-                                        child: TextButton(
-                                          onPressed: () => context.go('/jobs'),
-                                          child: const Text('See all jobs'),
+                                        if (_showPast) _jobs(past),
+                                      ],
+                                      if (jobsState.jobs.isNotEmpty)
+                                        SliverToBoxAdapter(
+                                          child: TextButton(
+                                            onPressed: () =>
+                                                context.go('/jobs'),
+                                            child: const Text('See all jobs'),
+                                          ),
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    ), // Scaffold
+      ), // Scaffold
     ); // AnnotatedRegion
   }
 }

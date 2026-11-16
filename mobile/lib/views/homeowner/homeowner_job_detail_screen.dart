@@ -25,7 +25,6 @@ import '../widgets/status_strip.dart';
 import '../widgets/fixo_feedback.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// Homeowner-side job detail screen (P5-07).
 ///
 /// Shows contextual primary action per status:
@@ -96,10 +95,9 @@ class _HomeownerJobDetailScreenState
     // v1.7 P12-18: adjustment proposals/decisions arrive live — reload the
     // adjustments history and the completion summary so the running total
     // stays current.
-    _adjustmentSub = ref
-        .read(jobHubClientProvider)
-        .onAdjustmentChanged
-        .listen((event) {
+    _adjustmentSub = ref.read(jobHubClientProvider).onAdjustmentChanged.listen((
+      event,
+    ) {
       if (event.jobId == widget.jobId && mounted) _loadAdjustments();
     });
   }
@@ -228,7 +226,8 @@ class _HomeownerJobDetailScreenState
 
     // Active dispute on a non-terminal job (Booked, InProgress, AwaitingConfirmation, Disputed)
     // outranks routine status guidance so banners never stack.
-    final hasActiveDispute = status == 'Disputed' ||
+    final hasActiveDispute =
+        status == 'Disputed' ||
         job.disputeStatus == 'Open' ||
         job.disputeStatus == 'UnderReview';
     if (hasActiveDispute) {
@@ -319,7 +318,9 @@ class _HomeownerJobDetailScreenState
           context: context,
           isScrollControlled: true,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.tile)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(Radii.tile),
+            ),
           ),
           builder: (_) => CancelJobSheet(
             isTradie: false,
@@ -405,7 +406,9 @@ class _HomeownerJobDetailScreenState
             onPressed: () => Navigator.pop(ctx, 'cancel'),
             child: Text(
               'Cancel & Refund',
-              style: TextStyle(color: Theme.of(context).extension<THColors>()!.danger),
+              style: TextStyle(
+                color: Theme.of(context).extension<THColors>()!.danger,
+              ),
             ),
           ),
         ],
@@ -439,10 +442,7 @@ class _HomeownerJobDetailScreenState
   /// total vs estimate before the homeowner commits — one explicit tap, no
   /// auto-approval path (D6 cut).
   Future<void> _showAdjustmentDecisionSheet(JobAdjustment adjustment) async {
-    final decision = await showModalBottomSheet<(
-      bool approve,
-      String? note,
-    )>(
+    final decision = await showModalBottomSheet<(bool approve, String? note)>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -511,10 +511,7 @@ class _HomeownerJobDetailScreenState
     final job = _job;
     if (job == null) {
       return Scaffold(
-        appBar: FixoAppBar(
-          title: 'Job Detail',
-          showBack: !widget.embedded,
-        ),
+        appBar: FixoAppBar(title: 'Job Detail', showBack: !widget.embedded),
         body: _JobNotFoundBody(
           heading: "We couldn't find this job",
           onBack: () => context.go('/jobs'),
@@ -548,7 +545,8 @@ class _HomeownerJobDetailScreenState
     // the rate with "total confirmed on completion"; project jobs show the
     // quote/estimate total; completed jobs show the final amount. The
     // deprecated `totalAmount` wire alias is intentionally not used here.
-    final showRateLine = job.hourlyRate != null &&
+    final showRateLine =
+        job.hourlyRate != null &&
         (status == 'Requested' ||
             status == 'Matching' ||
             status == 'Booked' ||
@@ -556,16 +554,26 @@ class _HomeownerJobDetailScreenState
             status == 'AwaitingConfirmation');
     final totalLabel = switch (status) {
       // After check-out the server's finalAmount is the authority.
-      'AwaitingConfirmation' || 'AwaitingPayment' || 'PaymentReview' ||
+      'AwaitingConfirmation' ||
+      'AwaitingPayment' ||
+      'PaymentReview' ||
       'Completed' =>
-        (job.finalAmount ?? (job.flowVersion < Job.flowVersionV2 ? job.totalAmount : null)) != null
+        (job.finalAmount ??
+                    (job.flowVersion < Job.flowVersionV2
+                        ? job.totalAmount
+                        : null)) !=
+                null
             ? ('Total', (job.finalAmount ?? job.totalAmount)!)
             : (job.estimatedTotal != null
-                ? ('Estimated total', job.estimatedTotal!)
-                : null),
+                  ? ('Estimated total', job.estimatedTotal!)
+                  : null),
       _ =>
         // Before completion: an estimate when the server computed one.
-        (job.estimatedTotal ?? (job.flowVersion < Job.flowVersionV2 ? job.totalAmount : null)) != null
+        (job.estimatedTotal ??
+                    (job.flowVersion < Job.flowVersionV2
+                        ? job.totalAmount
+                        : null)) !=
+                null
             ? ('Estimated total', (job.estimatedTotal ?? job.totalAmount)!)
             : null,
     };
@@ -600,10 +608,7 @@ class _HomeownerJobDetailScreenState
               },
               itemBuilder: (context) => [
                 if (status == 'Draft')
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Edit job'),
-                  ),
+                  const PopupMenuItem(value: 'edit', child: Text('Edit job')),
                 if (canReportNoShow)
                   const PopupMenuItem(
                     value: 'noshow',
@@ -633,261 +638,297 @@ class _HomeownerJobDetailScreenState
           ),
           Expanded(
             child: ListView(
-        padding: FixoPadding.page,
-        children: [
-          // ── Card 1: Tradie card ───────────────────────────────────────────
-          if (hasTradie) ...[
-            const SizedBox(height: Space.s3),
-            _MatchedTradieCard(
-              profile: _tradieProfile,
-              fallbackTrade: job.category,
-              canChat: canChat,
-              phoneNumber: _contact?.phoneNumber,
-              onChat: _openChat,
-              onViewProfile: () =>
-                  context.push('/tradie/${job.matchedTradieId}'),
-              onCall: (phone) =>
-                  ref.read(externalLauncherProvider).callPhone(phone),
-            ),
-          ],
-
-          // ── Card 2: Details card ──────────────────────────────────────────
-          const SizedBox(height: Space.s3),
-          FixoCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              padding: FixoPadding.page,
               children: [
-                // Scheduled / Duration grid — "Date TBC" when the job has no
-                // confirmed start (v1.7: Flexible/ASAP jobs never fake one).
-                JobInfoGrid(
-                  tiles: [
-                    JobInfoTile(
-                      label: 'Scheduled',
-                      value: scheduledLabel ?? 'Date TBC',
-                      icon: Icons.calendar_today_outlined,
-                    ),
-                    JobInfoTile(
-                      label: 'Duration',
-                      value: (job.hours > 0)
-                          ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
-                          : (job.estimatedHours != null
-                              ? '≈ ${_formatHours(job.estimatedHours!)}'
-                              : 'TBC'),
-                      icon: Icons.timer_outlined,
-                    ),
-                  ],
-                ),
-                // Address row
-                if (job.address != null && job.address!.isNotEmpty) ...[
+                // ── Card 1: Tradie card ───────────────────────────────────────────
+                if (hasTradie) ...[
                   const SizedBox(height: Space.s3),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: Sizes.iconSm,
-                        color: DesignTokens.inkSoft(isDark),
-                      ),
-                      const SizedBox(width: Space.s2),
-                      Expanded(
-                        child: Text(
-                          job.address!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: DesignTokens.inkSoft(isDark),
-                          ),
-                        ),
-                      ),
-                    ],
+                  _MatchedTradieCard(
+                    profile: _tradieProfile,
+                    fallbackTrade: job.category,
+                    canChat: canChat,
+                    phoneNumber: _contact?.phoneNumber,
+                    onChat: _openChat,
+                    onViewProfile: () =>
+                        context.push('/tradie/${job.matchedTradieId}'),
+                    onCall: (phone) =>
+                        ref.read(externalLauncherProvider).callPhone(phone),
                   ),
                 ],
-                // Total price row — v1.7: label reflects the pricing stage
-                // (Estimated total → Total after approval) and hourly jobs
-                // show the rate line instead of a fixed total.
-                if (totalLabel case (final totalTitle, final totalValue)) ...[
-                  const SizedBox(height: Space.s2_5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                // ── Card 2: Details card ──────────────────────────────────────────
+                const SizedBox(height: Space.s3),
+                FixoCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          totalTitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                      // Scheduled / Duration grid — "Date TBC" when the job has no
+                      // confirmed start (v1.7: Flexible/ASAP jobs never fake one).
+                      JobInfoGrid(
+                        tiles: [
+                          JobInfoTile(
+                            label: 'Scheduled',
+                            value: scheduledLabel ?? 'Date TBC',
+                            icon: Icons.calendar_today_outlined,
+                          ),
+                          JobInfoTile(
+                            label: 'Duration',
+                            value: (job.hours > 0)
+                                ? '${job.hours} hour${job.hours != 1 ? 's' : ''}'
+                                : (job.estimatedHours != null
+                                      ? '≈ ${_formatHours(job.estimatedHours!)}'
+                                      : 'TBC'),
+                            icon: Icons.timer_outlined,
+                          ),
+                        ],
+                      ),
+                      // Address row
+                      if (job.address != null && job.address!.isNotEmpty) ...[
+                        const SizedBox(height: Space.s3),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: Sizes.iconSm,
+                              color: DesignTokens.inkSoft(isDark),
+                            ),
+                            const SizedBox(width: Space.s2),
+                            Expanded(
+                              child: Text(
+                                job.address!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: DesignTokens.inkSoft(isDark),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      // Total price row — v1.7: label reflects the pricing stage
+                      // (Estimated total → Total after approval) and hourly jobs
+                      // show the rate line instead of a fixed total.
+                      if (totalLabel case (
+                        final totalTitle,
+                        final totalValue,
+                      )) ...[
+                        const SizedBox(height: Space.s2_5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                totalTitle,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: DesignTokens.inkSoft(isDark),
+                                ),
+                              ),
+                            ),
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  formatMoney(totalValue),
+                                  style: TextStyle(
+                                    fontFamily: DesignTokens.fontBody,
+                                    fontSize: DesignTokens.fontSizeAmount,
+                                    fontWeight: FW.bold,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                    color: DesignTokens.foreground(isDark),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (showRateLine) ...[
+                        const SizedBox(height: Space.s2),
+                        Text(
+                          '${formatMoney(job.hourlyRate!)}/hr · total confirmed on completion',
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: DesignTokens.inkSoft(isDark),
                           ),
                         ),
+                      ],
+                      if (status == 'AwaitingPayment') ...[
+                        const SizedBox(height: Space.s3),
+                        FixoTonalButton(
+                          key: const Key('payment_details_button'),
+                          icon: Icons.payments_outlined,
+                          label: 'Payment details',
+                          fullWidth: true,
+                          onPressed: () =>
+                              context.push('/jobs/${widget.jobId}/payment'),
+                        ),
+                      ],
+                      // Divider + description
+                      const SizedBox(height: Space.s3),
+                      Divider(
+                        height: 1,
+                        color: theme.extension<THColors>()!.line,
                       ),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
+                      const SizedBox(height: Space.s3),
+                      Text(
+                        'Job Description',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: Space.s2),
+                      Text(
+                        job.description?.isNotEmpty == true
+                            ? job.description!
+                            : 'No description provided.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: DesignTokens.inkSoft(isDark),
+                        ),
+                      ),
+                      // Status banner (dispute, booked reminder, etc.)
+                      if (_bannerContent(job, status, scheduledLabel) case (
+                        final icon,
+                        final color,
+                        final message,
+                      )) ...[
+                        const SizedBox(height: Space.s3),
+                        FixoInfoBanner(
+                          icon: icon,
+                          color: color,
+                          message: message,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // ── v1.7 P12-11: itemised completion summary (AwaitingConfirmation)
+                if (status == 'AwaitingConfirmation') ...[
+                  const SizedBox(height: Space.s3),
+                  _CompletionSummaryCard(
+                    job: job,
+                    adjustments: _adjustments,
+                    isDark: isDark,
+                  ),
+                ],
+
+                // ── v1.7 P12-24: quote comparison for Project jobs still seeking
+                // tradies — quotes live on their own comparison screen.
+                if (job.isProject &&
+                    (status == 'Requested' || status == 'Matching')) ...[
+                  const SizedBox(height: Space.s3),
+                  FixoTonalButton(
+                    key: const Key('compare_quotes_button'),
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Compare quotes',
+                    fullWidth: true,
+                    onPressed: () =>
+                        context.push('/jobs/${widget.jobId}/quotes'),
+                  ),
+                ],
+
+                // ── v1.7 P12-20: adjustments history (all statuses, always honest)
+                const SizedBox(height: Space.s3),
+                _AdjustmentsSection(
+                  adjustments: _adjustments,
+                  isDark: isDark,
+                  // Homeowner decisions only apply while the job is in flight.
+                  canRespond:
+                      status == 'Booked' ||
+                      status == 'InProgress' ||
+                      status == 'AwaitingConfirmation',
+                  onRespond: (adjustment) =>
+                      _showAdjustmentDecisionSheet(adjustment),
+                ),
+
+                // ── Collapsible cancellation policy ───────────────────────────────
+                if (canCancel) ...[
+                  const SizedBox(height: Space.s3),
+                  Material(
+                    color: DesignTokens.surfaceCard(isDark),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusTile,
+                      ),
+                      side: BorderSide(
+                        color: isDark
+                            ? DesignTokens.paperLineDark
+                            : DesignTokens.paperLineLight,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ExpansionTile(
+                      key: const Key('cancellation_policy_tile'),
+                      title: Text(
+                        'Cancellation policy',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: Space.s4,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(
+                        Space.s4,
+                        0,
+                        Space.s4,
+                        Space.s4,
+                      ),
+                      children: [
+                        Text(
+                          _cancellationWarning(status),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // ── P10-22: Materials disclaimer ──────────────────────────────────
+                if (materialsDisclaimer != null &&
+                    materialsDisclaimer.isNotEmpty) ...[
+                  const SizedBox(height: Space.s3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Space.s3_5,
+                      vertical: Space.s3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: DesignTokens.brand500.withValues(
+                        alpha: Alpha.faint,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        DesignTokens.radiusTile,
+                      ),
+                      border: Border.all(
+                        color: DesignTokens.brand500.withValues(
+                          alpha: Alpha.border,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: Sizes.iconInfo,
+                          color: DesignTokens.foregroundBrand(isDark),
+                        ),
+                        const SizedBox(width: Space.s2_5),
+                        Expanded(
                           child: Text(
-                            formatMoney(totalValue),
+                            materialsDisclaimer,
                             style: TextStyle(
-                              fontFamily: DesignTokens.fontBody,
-                              fontSize: DesignTokens.fontSizeAmount,
-                              fontWeight: FW.bold,
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                              color: DesignTokens.foreground(isDark),
+                              fontSize: DesignTokens.fontSizeCaption,
+                              height: 1.45,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (showRateLine) ...[
-                  const SizedBox(height: Space.s2),
-                  Text(
-                    '${formatMoney(job.hourlyRate!)}/hr · total confirmed on completion',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: DesignTokens.inkSoft(isDark),
+                      ],
                     ),
                   ),
                 ],
-                if (status == 'AwaitingPayment') ...[
-                  const SizedBox(height: Space.s3),
-                  FixoTonalButton(
-                    key: const Key('payment_details_button'),
-                    icon: Icons.payments_outlined,
-                    label: 'Payment details',
-                    fullWidth: true,
-                    onPressed: () =>
-                        context.push('/jobs/${widget.jobId}/payment'),
-                  ),
-                ],
-                // Divider + description
-                const SizedBox(height: Space.s3),
-                Divider(height: 1, color: theme.extension<THColors>()!.line),
-                const SizedBox(height: Space.s3),
-                Text('Job Description', style: theme.textTheme.titleSmall),
-                const SizedBox(height: Space.s2),
-                Text(
-                  job.description?.isNotEmpty == true
-                      ? job.description!
-                      : 'No description provided.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: DesignTokens.inkSoft(isDark),
-                  ),
-                ),
-                // Status banner (dispute, booked reminder, etc.)
-                if (_bannerContent(job, status, scheduledLabel) case (
-                  final icon,
-                  final color,
-                  final message,
-                )) ...[
-                  const SizedBox(height: Space.s3),
-                  FixoInfoBanner(icon: icon, color: color, message: message),
-                ],
+
+                const SizedBox(height: Space.stickyBarClearance),
               ],
             ),
-          ),
-
-          // ── v1.7 P12-11: itemised completion summary (AwaitingConfirmation)
-          if (status == 'AwaitingConfirmation') ...[
-            const SizedBox(height: Space.s3),
-            _CompletionSummaryCard(
-              job: job,
-              adjustments: _adjustments,
-              isDark: isDark,
-            ),
-          ],
-
-          // ── v1.7 P12-24: quote comparison for Project jobs still seeking
-          // tradies — quotes live on their own comparison screen.
-          if (job.isProject && (status == 'Requested' || status == 'Matching')) ...[
-            const SizedBox(height: Space.s3),
-            FixoTonalButton(
-              key: const Key('compare_quotes_button'),
-              icon: Icons.receipt_long_outlined,
-              label: 'Compare quotes',
-              fullWidth: true,
-              onPressed: () => context.push('/jobs/${widget.jobId}/quotes'),
-            ),
-          ],
-
-          // ── v1.7 P12-20: adjustments history (all statuses, always honest)
-          const SizedBox(height: Space.s3),
-          _AdjustmentsSection(
-            adjustments: _adjustments,
-            isDark: isDark,
-            // Homeowner decisions only apply while the job is in flight.
-            canRespond:
-                status == 'Booked' ||
-                status == 'InProgress' ||
-                status == 'AwaitingConfirmation',
-            onRespond: (adjustment) => _showAdjustmentDecisionSheet(adjustment),
-          ),
-
-          // ── Collapsible cancellation policy ───────────────────────────────
-          if (canCancel) ...[
-            const SizedBox(height: Space.s3),
-            Material(
-              color: DesignTokens.surfaceCard(isDark),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
-                side: BorderSide(
-                  color: isDark
-                      ? DesignTokens.paperLineDark
-                      : DesignTokens.paperLineLight,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: ExpansionTile(
-                key: const Key('cancellation_policy_tile'),
-                title: Text(
-                  'Cancellation policy',
-                  style: theme.textTheme.titleSmall,
-                ),
-                tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
-                childrenPadding: const EdgeInsets.fromLTRB(Space.s4, 0, Space.s4, Space.s4),
-                children: [
-                  Text(
-                    _cancellationWarning(status),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // ── P10-22: Materials disclaimer ──────────────────────────────────
-          if (materialsDisclaimer != null &&
-              materialsDisclaimer.isNotEmpty) ...[
-            const SizedBox(height: Space.s3),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: Space.s3_5, vertical: Space.s3),
-              decoration: BoxDecoration(
-                color: DesignTokens.brand500.withValues(alpha: Alpha.faint),
-                borderRadius: BorderRadius.circular(DesignTokens.radiusTile),
-                border: Border.all(
-                  color: DesignTokens.brand500.withValues(alpha: Alpha.border),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: Sizes.iconInfo,
-                    color: DesignTokens.foregroundBrand(isDark),
-                  ),
-                  const SizedBox(width: Space.s2_5),
-                  Expanded(
-                    child: Text(
-                      materialsDisclaimer,
-                      style: TextStyle(
-                        fontSize: DesignTokens.fontSizeCaption,
-                        height: 1.45,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: Space.stickyBarClearance),
-        ],
-      ),
           ), // Expanded
         ],
       ), // Column body
@@ -941,8 +982,7 @@ class _HomeownerJobDetailScreenState
         // the amount (POST /approve) then pays; nothing is confirmed while
         // a dispute is open or an adjustment is still pending (the server
         // 409s the approve and the message surfaces).
-        final hasPendingAdjustments =
-            _adjustments.any((a) => a.isPending);
+        final hasPendingAdjustments = _adjustments.any((a) => a.isPending);
         return StickyActionBar(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -954,8 +994,8 @@ class _HomeownerJobDetailScreenState
                 isLoading: _approving || _busy,
                 onPressed:
                     (hasOpenDispute || hasPendingAdjustments || _approving)
-                        ? null
-                        : _approveAndPay,
+                    ? null
+                    : _approveAndPay,
               ),
               if (hasPendingAdjustments) ...[
                 const SizedBox(height: Space.s2),
@@ -963,9 +1003,8 @@ class _HomeownerJobDetailScreenState
                   'An extra cost is waiting for your decision above — '
                   'approve or decline it first.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
                 ),
               ],
               if (hasOpenDispute) ...[
@@ -973,9 +1012,8 @@ class _HomeownerJobDetailScreenState
                 Text(
                   'The amount cannot be approved while a dispute is open.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.error),
                 ),
               ],
               const SizedBox(height: Space.s2),
@@ -1091,8 +1129,10 @@ class _MatchedTradieCard extends StatelessWidget {
 
     final isVerified = p?.isVerified == true;
     final isNarrow = MediaQuery.sizeOf(context).width <= 340;
-    final isLargeText = isNarrow ||
-        MediaQuery.textScalerOf(context).scale(DesignTokens.fontSizeSecondary) > 17;
+    final isLargeText =
+        isNarrow ||
+        MediaQuery.textScalerOf(context).scale(DesignTokens.fontSizeSecondary) >
+            17;
 
     final viewProfileButton = InkWell(
       onTap: onViewProfile,
@@ -1124,7 +1164,10 @@ class _MatchedTradieCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  FixoAvatar(initials: p == null ? '?' : p.initials, radius: Sizes.statusChip),
+                  FixoAvatar(
+                    initials: p == null ? '?' : p.initials,
+                    radius: Sizes.statusChip,
+                  ),
                   if (isVerified)
                     Positioned(
                       right: -Space.s0_5,
@@ -1221,8 +1264,7 @@ class _MatchedTradieCard extends StatelessWidget {
                     key: const Key('tradie_card_call_button'),
                     icon: Icons.phone_outlined,
                     label: 'Call',
-                    onPressed:
-                        onCall != null ? () => onCall!(phone) : null,
+                    onPressed: onCall != null ? () => onCall!(phone) : null,
                   ),
               ];
 
@@ -1257,8 +1299,6 @@ class _MatchedTradieCard extends StatelessWidget {
   }
 }
 
-
-
 // ── P6-03: Cancel Job bottom sheet lives in views/widgets/cancel_job_sheet.dart ──
 
 /// Friendly recovery screen shown when a job cannot be loaded (V16-02).
@@ -1279,7 +1319,10 @@ class _JobNotFoundBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Space.s7, vertical: Space.s9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s7,
+        vertical: Space.s9,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1345,10 +1388,8 @@ class _CompletionSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<THColors>()!;
-    final approved =
-        adjustments.where((a) => a.isApproved).toList();
-    final hasBreakdown =
-        job.labourAmount != null || approved.isNotEmpty;
+    final approved = adjustments.where((a) => a.isApproved).toList();
+    final hasBreakdown = job.labourAmount != null || approved.isNotEmpty;
 
     return FixoCard(
       child: Column(
@@ -1356,9 +1397,7 @@ class _CompletionSummaryCard extends StatelessWidget {
         children: [
           Text(
             'Completion summary',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FW.bold,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
           ),
           const SizedBox(height: Space.s1),
           Text(
@@ -1377,7 +1416,10 @@ class _CompletionSummaryCard extends StatelessWidget {
                 value: formatMoneyOrDash(job.labourAmount),
               ),
             if (job.finalHours == null && job.labourAmount != null)
-              _SummaryLine(label: 'Labour', value: formatMoney(job.labourAmount!)),
+              _SummaryLine(
+                label: 'Labour',
+                value: formatMoney(job.labourAmount!),
+              ),
             for (final a in approved)
               _SummaryLine(
                 label:
@@ -1426,11 +1468,11 @@ class _CompletionSummaryCard extends StatelessWidget {
             Text(
               job.finalAmount! > job.estimatedTotal!
                   ? 'That\'s ${formatMoney(job.finalAmount! - job.estimatedTotal!)} '
-                      'above the original estimate of '
-                      '${formatMoney(job.estimatedTotal!)}.'
+                        'above the original estimate of '
+                        '${formatMoney(job.estimatedTotal!)}.'
                   : 'That\'s ${formatMoney(job.estimatedTotal! - job.finalAmount!)} '
-                      'under the original estimate of '
-                      '${formatMoney(job.estimatedTotal!)}.',
+                        'under the original estimate of '
+                        '${formatMoney(job.estimatedTotal!)}.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: job.finalAmount! > job.estimatedTotal!
                     ? colors.accentText
@@ -1453,17 +1495,16 @@ class _CompletionSummaryCard extends StatelessWidget {
     );
   }
 
-  static String _hours(double hours) =>
-      hours == hours.roundToDouble()
-          ? hours.round().toString()
-          : hours.toString();
+  static String _hours(double hours) => hours == hours.roundToDouble()
+      ? hours.round().toString()
+      : hours.toString();
 
   static String _kindLabel(String kind) => switch (kind) {
-        JobAdjustment.kindMaterials => 'Materials',
-        JobAdjustment.kindExtraLabour => 'Extra labour',
-        JobAdjustment.kindTravel => 'Travel',
-        _ => 'Other',
-      };
+    JobAdjustment.kindMaterials => 'Materials',
+    JobAdjustment.kindExtraLabour => 'Extra labour',
+    JobAdjustment.kindTravel => 'Travel',
+    _ => 'Other',
+  };
 }
 
 class _SummaryLine extends StatelessWidget {
@@ -1531,9 +1572,7 @@ class _AdjustmentsSection extends StatelessWidget {
         children: [
           Text(
             'Adjustments',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FW.bold,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
           ),
           const SizedBox(height: Space.s1),
           Text(
@@ -1625,18 +1664,14 @@ class _AdjustmentRow extends StatelessWidget {
           ),
           const SizedBox(height: Space.s1),
           if (a.description.isNotEmpty)
-            Text(
-              a.description,
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text(a.description, style: theme.textTheme.bodyMedium),
           const SizedBox(height: Space.s0_5),
           Text(
             [
               a.kind,
               'asked ${DateFormat('d MMM').format(a.createdAtUtc.toLocal())}',
               if (a.evidenceUrl?.isNotEmpty == true) 'receipt attached',
-              if (a.responseNote?.isNotEmpty == true)
-                'note: ${a.responseNote}',
+              if (a.responseNote?.isNotEmpty == true) 'note: ${a.responseNote}',
             ].join(' · '),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -1683,35 +1718,35 @@ class _AdjustmentStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (:tone, :label, :icon) = switch (status) {
       JobAdjustment.statusApproved => (
-          tone: ChipTone.success,
-          label: 'Approved',
-          icon: Icons.check_circle_outline,
-        ),
+        tone: ChipTone.success,
+        label: 'Approved',
+        icon: Icons.check_circle_outline,
+      ),
       JobAdjustment.statusDeclined => (
-          tone: ChipTone.danger,
-          label: 'Declined',
-          icon: Icons.cancel_outlined,
-        ),
+        tone: ChipTone.danger,
+        label: 'Declined',
+        icon: Icons.cancel_outlined,
+      ),
       JobAdjustment.statusPending => (
-          tone: ChipTone.warning,
-          label: 'Waiting on you',
-          icon: Icons.hourglass_top_outlined,
-        ),
+        tone: ChipTone.warning,
+        label: 'Waiting on you',
+        icon: Icons.hourglass_top_outlined,
+      ),
       JobAdjustment.statusWithdrawn => (
-          tone: ChipTone.neutral,
-          label: 'Withdrawn',
-          icon: Icons.undo_outlined,
-        ),
+        tone: ChipTone.neutral,
+        label: 'Withdrawn',
+        icon: Icons.undo_outlined,
+      ),
       JobAdjustment.statusExpired => (
-          tone: ChipTone.neutral,
-          label: 'Expired',
-          icon: Icons.timer_off_outlined,
-        ),
+        tone: ChipTone.neutral,
+        label: 'Expired',
+        icon: Icons.timer_off_outlined,
+      ),
       _ => (
-          tone: ChipTone.neutral,
-          label: status,
-          icon: Icons.help_outline_rounded,
-        ),
+        tone: ChipTone.neutral,
+        label: status,
+        icon: Icons.help_outline_rounded,
+      ),
     };
     return StatusChip(label: label, tone: tone, icon: icon);
   }
@@ -1753,12 +1788,10 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
   }
 
   void _submit(BuildContext context) {
-    Navigator.pop(
-      context,
-      (_approved, _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim()),
-    );
+    Navigator.pop(context, (
+      _approved,
+      _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+    ));
   }
 
   @override
@@ -1768,8 +1801,7 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
 
     // Running total if this proposal were approved: what's already approved
     // plus this item. A truthful projection of server data only.
-    final projected =
-        widget.approvedAdjustmentsTotal + a.amount;
+    final projected = widget.approvedAdjustmentsTotal + a.amount;
 
     return SafeArea(
       child: Padding(
@@ -1785,15 +1817,11 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
           children: [
             Text(
               'Extra cost request',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FW.bold,
-              ),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FW.bold),
             ),
             const SizedBox(height: Space.s3),
             Text(
-              a.description.isEmpty
-                  ? a.kind
-                  : a.description,
+              a.description.isEmpty ? a.kind : a.description,
               style: theme.textTheme.bodyLarge,
             ),
             const SizedBox(height: Space.s1),
@@ -1801,8 +1829,7 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
               [
                 a.kind,
                 'asked by ${a.proposedByTradieName.isEmpty ? 'your tradie' : a.proposedByTradieName}',
-                if (a.evidenceUrl?.isNotEmpty == true)
-                  'receipt attached',
+                if (a.evidenceUrl?.isNotEmpty == true) 'receipt attached',
               ].join(' · '),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1893,10 +1920,10 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
             Text(
               _approved
                   ? 'Approved extras are added to the job total — you\'ll '
-                      'see them itemised before you pay.'
+                        'see them itemised before you pay.'
                   : 'Declined extras are never added to the total. Your '
-                      'tradie can keep to the original scope or cancel '
-                      'without penalty.',
+                        'tradie can keep to the original scope or cancel '
+                        'without penalty.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1910,7 +1937,6 @@ class _AdjustmentDecisionSheetState extends State<_AdjustmentDecisionSheet> {
 }
 
 /// Hours render without a trailing ".0" — 2.5 stays 2.5, 3 stays 3.
-String _formatHours(double hours) =>
-    hours == hours.roundToDouble()
-        ? hours.round().toString()
-        : hours.toString();
+String _formatHours(double hours) => hours == hours.roundToDouble()
+    ? hours.round().toString()
+    : hours.toString();

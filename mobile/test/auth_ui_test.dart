@@ -166,9 +166,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-          authViewModelProvider.overrideWith((ref) => auth),
-          localeConfigProvider.overrideWith((ref) async => null),
-        ],
+            authViewModelProvider.overrideWith((ref) => auth),
+            localeConfigProvider.overrideWith((ref) async => null),
+          ],
           child: MaterialApp.router(
             routerConfig: router,
             theme: dark ? FixoTheme.dark() : FixoTheme.light(),
@@ -315,9 +315,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-          authViewModelProvider.overrideWith((ref) => auth),
-          localeConfigProvider.overrideWith((ref) async => null),
-        ],
+            authViewModelProvider.overrideWith((ref) => auth),
+            localeConfigProvider.overrideWith((ref) async => null),
+          ],
           child: MaterialApp.router(
             routerConfig: router,
             theme: FixoTheme.light(),

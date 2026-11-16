@@ -214,10 +214,7 @@ void main() {
       MaterialApp(
         theme: FixoTheme.light(),
         home: const Scaffold(
-          body: HomeownerDashboardHeader(
-            firstName: '',
-            location: null,
-          ),
+          body: HomeownerDashboardHeader(firstName: '', location: null),
         ),
       ),
     );
@@ -233,10 +230,7 @@ void main() {
       MaterialApp(
         theme: FixoTheme.dark(),
         home: const Scaffold(
-          body: HomeownerDashboardHeader(
-            firstName: 'Sarah',
-            location: '',
-          ),
+          body: HomeownerDashboardHeader(firstName: 'Sarah', location: ''),
         ),
       ),
     );
@@ -297,8 +291,14 @@ void main() {
       );
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, DesignTokens.brand900);
-      expect(container.constraints?.minWidth ?? 56.0, greaterThanOrEqualTo(48.0));
-      expect(container.constraints?.minHeight ?? 56.0, greaterThanOrEqualTo(48.0));
+      expect(
+        container.constraints?.minWidth ?? 56.0,
+        greaterThanOrEqualTo(48.0),
+      );
+      expect(
+        container.constraints?.minHeight ?? 56.0,
+        greaterThanOrEqualTo(48.0),
+      );
 
       await tester.tap(fabFinder);
       expect(posted, isTrue);

@@ -16,24 +16,43 @@ class ProfileScreen extends StatelessWidget {
       dock: THDock(role: THDockRole.homeowner, active: THDockTab.profile),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           Column(
-            crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s1_5,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: Space.s1_5,
             children: [
               THAvatar('MR', size: THAvatarSize.lg),
               THText('Mere Rangi', style: THTextStyle.h2),
-              THText('mere@example.co.nz', style: THTextStyle.meta, tone: THTone.soft),
+              THText(
+                'mere@example.co.nz',
+                style: THTextStyle.meta,
+                tone: THTone.soft,
+              ),
             ],
           ),
           const SizedBox(height: 8.0),
           THCard(
             padding: Space.s1,
             children: [
-              THListRow(icon: Icons.person_rounded, title: 'Personal details', flat: true),
-              THListRow(icon: Icons.credit_card_rounded, title: 'Payments and receipts', flat: true, divider: true),
-              THListRow(icon: Icons.notifications_rounded, title: 'Notifications', flat: true, divider: true),
+              THListRow(
+                icon: Icons.person_rounded,
+                title: 'Personal details',
+                flat: true,
+              ),
+              THListRow(
+                icon: Icons.credit_card_rounded,
+                title: 'Payments and receipts',
+                flat: true,
+                divider: true,
+              ),
+              THListRow(
+                icon: Icons.notifications_rounded,
+                title: 'Notifications',
+                flat: true,
+                divider: true,
+              ),
             ],
           ),
           THCard(
@@ -42,7 +61,8 @@ class ProfileScreen extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.all(Space.s3),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: Space.s3,
                   children: [
                     THTile(Icons.dark_mode_rounded),
                     Expanded(
@@ -52,7 +72,11 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              THListRow(icon: Icons.help_outline_rounded, title: 'Help and support', flat: true),
+              THListRow(
+                icon: Icons.help_outline_rounded,
+                title: 'Help and support',
+                flat: true,
+              ),
             ],
           ),
           THButton(
@@ -60,8 +84,8 @@ class ProfileScreen extends StatelessWidget {
             kind: THButtonKind.ghost,
             onPressed: () {},
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

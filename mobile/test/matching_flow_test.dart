@@ -413,7 +413,9 @@ void main() {
       // Pump 60 frames across a full 2-second animation cycle (~33ms per frame)
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 33));
-        final currentY = tester.getTopLeft(find.text('Contacting Tradie 1…')).dy;
+        final currentY = tester
+            .getTopLeft(find.text('Contacting Tradie 1…'))
+            .dy;
         expect(
           (currentY - initialY).abs(),
           lessThanOrEqualTo(0.5),

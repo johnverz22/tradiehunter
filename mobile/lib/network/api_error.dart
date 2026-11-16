@@ -29,19 +29,24 @@ String friendlyDioError(
       final body = e.response?.data;
       debugPrint('[$tag] HTTP $status body: $body');
       return switch (status) {
-        400 => extractServerMessage(body) ?? 'Invalid details. Please check your input.',
+        400 =>
+          extractServerMessage(body) ??
+              'Invalid details. Please check your input.',
         401 => statusOverrides[401] ?? 'Please sign in again.',
-        403 => extractServerMessage(body) ??
-            statusOverrides[403] ??
-            'You do not have access to this.',
-        409 => extractServerMessage(body) ??
-            statusOverrides[409] ??
-            'That conflicts with something that already exists.',
+        403 =>
+          extractServerMessage(body) ??
+              statusOverrides[403] ??
+              'You do not have access to this.',
+        409 =>
+          extractServerMessage(body) ??
+              statusOverrides[409] ??
+              'That conflicts with something that already exists.',
         413 => extractServerMessage(body) ?? 'That file is too large.',
         422 => extractServerMessage(body) ?? 'Validation failed.',
-        429 => extractServerMessage(body) ??
-            statusOverrides[429] ??
-            'Too many attempts. Please wait before trying again.',
+        429 =>
+          extractServerMessage(body) ??
+              statusOverrides[429] ??
+              'Too many attempts. Please wait before trying again.',
         500 => 'Server error. Please try again later.',
         _ => 'Unexpected error ($status). Please try again.',
       };

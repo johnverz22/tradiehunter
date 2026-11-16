@@ -36,9 +36,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       double barHeight(bool fab) {
-        return tester
-            .getSize(find.byType(CustomBottomNavBar).first)
-            .height;
+        return tester.getSize(find.byType(CustomBottomNavBar).first).height;
       }
 
       await tester.pumpWidget(

@@ -45,19 +45,22 @@ void main() {
       expect(uri.queryParameters['travelmode'], 'driving');
     });
 
-    test('Google Maps builds universal directions URI with address fallback', () {
-      final uri = launcher.mapUri(
-        address: '8 Ponsonby Road, Auckland',
-        app: MapApp.googleMaps,
-      );
-      expect(uri, isNotNull);
-      expect(uri!.scheme, 'https');
-      expect(uri.host, 'www.google.com');
-      expect(uri.path, '/maps/dir/');
-      expect(uri.queryParameters['api'], '1');
-      expect(uri.queryParameters['destination'], contains('Ponsonby'));
-      expect(uri.queryParameters['travelmode'], 'driving');
-    });
+    test(
+      'Google Maps builds universal directions URI with address fallback',
+      () {
+        final uri = launcher.mapUri(
+          address: '8 Ponsonby Road, Auckland',
+          app: MapApp.googleMaps,
+        );
+        expect(uri, isNotNull);
+        expect(uri!.scheme, 'https');
+        expect(uri.host, 'www.google.com');
+        expect(uri.path, '/maps/dir/');
+        expect(uri.queryParameters['api'], '1');
+        expect(uri.queryParameters['destination'], contains('Ponsonby'));
+        expect(uri.queryParameters['travelmode'], 'driving');
+      },
+    );
 
     test('Returns null when neither coordinates nor address are present', () {
       expect(launcher.mapUri(app: MapApp.appleMaps), isNull);

@@ -108,55 +108,55 @@ class _TradieListScreenState extends ConsumerState<TradieListScreen> {
             child: state.isLoading && state.tradies.isEmpty
                 ? const FixoLoading(label: 'Finding tradies…')
                 : state.error != null && state.tradies.isEmpty
-                    ? FixoErrorState(
-                        message: 'Could not load tradies for this job.',
-                        onRetry: notifier.load,
-                      )
-                    : state.tradies.isEmpty
-                        ? FixoEmptyState(
-                            icon: Icons.search_off_outlined,
-                            title: 'No tradies match yet',
-                            subtitle:
-                                'Try removing a filter, or use Quick match '
-                                'to let us contact tradies for you.',
-                            actionLabel: 'Clear filters',
-                            onAction: () {
-                              if (state.verifiedOnly ||
-                                  state.insuredOnly ||
-                                  state.availableNowOnly) {
-                                if (state.verifiedOnly) notifier.toggleVerified();
-                                if (state.insuredOnly) notifier.toggleInsured();
-                                if (state.availableNowOnly) {
-                                  notifier.toggleAvailableNow();
-                                }
-                              } else {
-                                notifier.load();
-                              }
-                            },
-                          )
-                        : RefreshIndicator(
-                            onRefresh: notifier.load,
-                            child: ListView.separated(
-                              key: const Key('tradie_list'),
-                              padding: const EdgeInsets.fromLTRB(
-                                Space.gutter,
-                                Space.s2,
-                                Space.gutter,
-                                Space.stickyBarClearance,
-                              ),
-                              itemCount: state.tradies.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: Space.s4),
-                              itemBuilder: (context, index) => _TradieCard(
-                                entry: state.tradies[index],
-                                isDark: isDark,
-                                onTap: () => context.push(
-                                  '/tradie/${state.tradies[index].tradieId}'
-                                  '?jobId=${widget.jobId}',
-                                ),
-                              ),
-                            ),
-                          ),
+                ? FixoErrorState(
+                    message: 'Could not load tradies for this job.',
+                    onRetry: notifier.load,
+                  )
+                : state.tradies.isEmpty
+                ? FixoEmptyState(
+                    icon: Icons.search_off_outlined,
+                    title: 'No tradies match yet',
+                    subtitle:
+                        'Try removing a filter, or use Quick match '
+                        'to let us contact tradies for you.',
+                    actionLabel: 'Clear filters',
+                    onAction: () {
+                      if (state.verifiedOnly ||
+                          state.insuredOnly ||
+                          state.availableNowOnly) {
+                        if (state.verifiedOnly) notifier.toggleVerified();
+                        if (state.insuredOnly) notifier.toggleInsured();
+                        if (state.availableNowOnly) {
+                          notifier.toggleAvailableNow();
+                        }
+                      } else {
+                        notifier.load();
+                      }
+                    },
+                  )
+                : RefreshIndicator(
+                    onRefresh: notifier.load,
+                    child: ListView.separated(
+                      key: const Key('tradie_list'),
+                      padding: const EdgeInsets.fromLTRB(
+                        Space.gutter,
+                        Space.s2,
+                        Space.gutter,
+                        Space.stickyBarClearance,
+                      ),
+                      itemCount: state.tradies.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: Space.s4),
+                      itemBuilder: (context, index) => _TradieCard(
+                        entry: state.tradies[index],
+                        isDark: isDark,
+                        onTap: () => context.push(
+                          '/tradie/${state.tradies[index].tradieId}'
+                          '?jobId=${widget.jobId}',
+                        ),
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -191,7 +191,9 @@ class _TradieCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.extension<THColors>()!;
     final hasRating =
-        entry.rating != null && entry.rating! > 0 && (entry.reviewCount ?? 0) > 0;
+        entry.rating != null &&
+        entry.rating! > 0 &&
+        (entry.reviewCount ?? 0) > 0;
 
     // Availability: a real boolean from the server — "Available" pill when
     // true, "Next availability" muted text when false. Never invented.
@@ -222,9 +224,7 @@ class _TradieCard extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          entry.initials.isEmpty
-                              ? '?'
-                              : entry.initials,
+                          entry.initials.isEmpty ? '?' : entry.initials,
                           style: TextStyle(
                             fontFamily: TypeTokens.fontDisplay,
                             fontSize: DesignTokens.fontSizeH3,
@@ -360,8 +360,7 @@ class _TradieCard extends StatelessWidget {
                                   TextSpan(
                                     text: gstLabel,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -385,10 +384,8 @@ class _TradieCard extends StatelessWidget {
     final distance = entry.distance.trim().isNotEmpty
         ? entry.distance.trim()
         : (entry.distanceKm > 0
-            ? '${entry.distanceKm.toStringAsFixed(1)} km away'
-            : '');
-    return distance.isEmpty
-        ? 'Distance unavailable'
-        : distance;
+              ? '${entry.distanceKm.toStringAsFixed(1)} km away'
+              : '');
+    return distance.isEmpty ? 'Distance unavailable' : distance;
   }
 }

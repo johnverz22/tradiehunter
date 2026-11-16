@@ -15,29 +15,25 @@ class OnboardingScreen extends StatelessWidget {
     return THScaffold(
       scrollable: false,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           THIllustration(Icons.search_rounded),
           const SizedBox(height: 24.0),
           THText('Post a job in minutes', style: THTextStyle.h1),
           const SizedBox(height: 8.0),
-          THText('Describe what you need, choose a local tradie, and pay only when the work is approved.', style: THTextStyle.body, tone: THTone.soft),
+          THText(
+            'Describe what you need, choose a local tradie, and pay only when the work is approved.',
+            style: THTextStyle.body,
+            tone: THTone.soft,
+          ),
           const Spacer(),
           THDots(count: 3, on: 0),
           const SizedBox(height: 20.0),
-          THButton(
-            label: 'Next',
-            kind: THButtonKind.primary,
-            onPressed: () {},
-          ),
-          THButton(
-            label: 'Skip',
-            kind: THButtonKind.ghost,
-            onPressed: () {},
-          ),
-          ],
-        ),
+          THButton(label: 'Next', kind: THButtonKind.primary, onPressed: () {}),
+          THButton(label: 'Skip', kind: THButtonKind.ghost, onPressed: () {}),
+        ],
+      ),
     );
   }
 }

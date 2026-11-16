@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+
 import '../feedback/fixo_notice.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -13,12 +14,22 @@ class AuthInterceptor extends Interceptor {
   // Requests that arrived while a refresh was in-flight are queued here.
   // Each entry holds the pending handler; on success they are completed with
   // the new token, on failure they are rejected so the caller gets the error.
-  final _pendingQueue = <({RequestInterceptorHandler? reqHandler, ErrorInterceptorHandler? errHandler, RequestOptions options})>[];
+  final _pendingQueue =
+      <
+        ({
+          RequestInterceptorHandler? reqHandler,
+          ErrorInterceptorHandler? errHandler,
+          RequestOptions options,
+        })
+      >[];
 
   AuthInterceptor(this.dio, this.storage, this.router);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final token = await storage.read(key: 'jwt_token');
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -32,8 +43,7 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    final isRefreshEndpoint =
-        err.requestOptions.path.contains('/auth/refresh');
+    final isRefreshEndpoint = err.requestOptions.path.contains('/auth/refresh');
 
     // P9-06: A 401 from the refresh endpoint means the token is invalid/
     // expired/revoked. Clear credentials and show a user-visible error.
@@ -97,9 +107,13 @@ class AuthInterceptor extends Interceptor {
         dio
             .fetch(pending.options)
             .then((r) => pending.errHandler?.resolve(r))
-            .catchError((e) => pending.errHandler?.reject(e is DioException
-                ? e
-                : DioException(requestOptions: pending.options)));
+            .catchError(
+              (e) => pending.errHandler?.reject(
+                e is DioException
+                    ? e
+                    : DioException(requestOptions: pending.options),
+              ),
+            );
       }
       _pendingQueue.clear();
 
@@ -109,10 +123,7 @@ class AuthInterceptor extends Interceptor {
       for (final pending in _pendingQueue) {
         final dioErr = e is DioException
             ? e
-            : DioException(
-                requestOptions: pending.options,
-                error: e,
-              );
+            : DioException(requestOptions: pending.options, error: e);
         pending.errHandler?.reject(dioErr);
       }
       _pendingQueue.clear();

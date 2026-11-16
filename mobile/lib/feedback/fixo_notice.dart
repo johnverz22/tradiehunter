@@ -48,14 +48,13 @@ abstract class FixoNotice {
     BuildContext context,
     String message, {
     VoidCallback? onRetry,
-  }) =>
-      _show(
-        context,
-        FixoNoticeTone.error,
-        message,
-        action: onRetry,
-        actionLabel: onRetry != null ? 'Retry' : null,
-      );
+  }) => _show(
+    context,
+    FixoNoticeTone.error,
+    message,
+    action: onRetry,
+    actionLabel: onRetry != null ? 'Retry' : null,
+  );
 
   /// In-app FCM foreground push notification with optional "View" action (5 s).
   ///
@@ -132,10 +131,7 @@ abstract class FixoNotice {
         top: 0,
         left: 0,
         right: 0,
-        child: _FixoNoticeBanner(
-          notice: notice,
-          onDismiss: _cancelFallback,
-        ),
+        child: _FixoNoticeBanner(notice: notice, onDismiss: _cancelFallback),
       ),
     );
 
@@ -181,13 +177,10 @@ class _FixoNoticeHostState extends ConsumerState<FixoNoticeHost>
       vsync: this,
       duration: FixoDurations.noticeAnimate,
     );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, -1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
   }
 
@@ -220,12 +213,7 @@ class _FixoNoticeHostState extends ConsumerState<FixoNoticeHost>
       children: [
         widget.child,
         if (_current != null)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _buildBanner(),
-          ),
+          Positioned(top: 0, left: 0, right: 0, child: _buildBanner()),
       ],
     );
   }
@@ -238,15 +226,11 @@ class _FixoNoticeHostState extends ConsumerState<FixoNoticeHost>
       animation: _animController,
       builder: (context, child) => FadeTransition(
         opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: child,
-        ),
+        child: SlideTransition(position: _slideAnim, child: child),
       ),
       child: _FixoNoticeBanner(
         notice: notice,
-        onDismiss: () =>
-            ref.read(fixoNoticeProvider.notifier).dismiss(),
+        onDismiss: () => ref.read(fixoNoticeProvider.notifier).dismiss(),
       ),
     );
   }
@@ -255,10 +239,7 @@ class _FixoNoticeHostState extends ConsumerState<FixoNoticeHost>
 // ── Banner widget ─────────────────────────────────────────────────────────────
 
 class _FixoNoticeBanner extends StatefulWidget {
-  const _FixoNoticeBanner({
-    required this.notice,
-    required this.onDismiss,
-  });
+  const _FixoNoticeBanner({required this.notice, required this.onDismiss});
 
   final FixoNoticeState notice;
   final VoidCallback onDismiss;
@@ -303,18 +284,16 @@ class _FixoNoticeBannerState extends State<_FixoNoticeBanner> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = Theme.of(context).extension<THColors>()!;
 
-    final (bg, border, iconColor, textColor) =
-        _resolveColors(notice.tone, isDark, colors);
+    final (bg, border, iconColor, textColor) = _resolveColors(
+      notice.tone,
+      isDark,
+      colors,
+    );
 
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          Space.s4,
-          Space.s2,
-          Space.s4,
-          Space.s0_5,
-        ),
+        padding: EdgeInsets.fromLTRB(Space.s4, Space.s2, Space.s4, Space.s0_5),
         child: Material(
           color: Colors.transparent,
           child: Container(
@@ -341,8 +320,10 @@ class _FixoNoticeBannerState extends State<_FixoNoticeBanner> {
                 children: [
                   // Leading icon
                   Padding(
-                    padding:
-                        const EdgeInsets.only(top: Space.s0_5, right: Space.s3),
+                    padding: const EdgeInsets.only(
+                      top: Space.s0_5,
+                      right: Space.s3,
+                    ),
                     child: Icon(
                       _iconFor(notice.tone),
                       size: Sizes.noticeIconSize,
@@ -429,12 +410,12 @@ class _FixoNoticeBannerState extends State<_FixoNoticeBanner> {
   }
 
   static IconData _iconFor(FixoNoticeTone tone) => switch (tone) {
-        FixoNoticeTone.info    => Icons.info_outline_rounded,
-        FixoNoticeTone.success => Icons.check_circle_outline_rounded,
-        FixoNoticeTone.warning => Icons.warning_amber_rounded,
-        FixoNoticeTone.error   => Icons.error_outline_rounded,
-        FixoNoticeTone.push    => Icons.notifications_outlined,
-      };
+    FixoNoticeTone.info => Icons.info_outline_rounded,
+    FixoNoticeTone.success => Icons.check_circle_outline_rounded,
+    FixoNoticeTone.warning => Icons.warning_amber_rounded,
+    FixoNoticeTone.error => Icons.error_outline_rounded,
+    FixoNoticeTone.push => Icons.notifications_outlined,
+  };
 
   /// Returns (background, borderColor, iconColor, textColor).
   static (Color, Color, Color, Color) _resolveColors(
@@ -444,35 +425,35 @@ class _FixoNoticeBannerState extends State<_FixoNoticeBanner> {
   ) {
     return switch (tone) {
       FixoNoticeTone.info => (
-          colors.surface,
-          colors.line,
-          colors.textSoft,
-          colors.text,
-        ),
+        colors.surface,
+        colors.line,
+        colors.textSoft,
+        colors.text,
+      ),
       FixoNoticeTone.success => (
-          colors.success.withValues(alpha: Alpha.faint),
-          colors.success.withValues(alpha: Alpha.tintStandard),
-          colors.success,
-          colors.text,
-        ),
+        colors.success.withValues(alpha: Alpha.faint),
+        colors.success.withValues(alpha: Alpha.tintStandard),
+        colors.success,
+        colors.text,
+      ),
       FixoNoticeTone.warning => (
-          colors.accent.withValues(alpha: Alpha.faint),
-          colors.accent.withValues(alpha: Alpha.tintLight),
-          colors.accentText,
-          colors.text,
-        ),
+        colors.accent.withValues(alpha: Alpha.faint),
+        colors.accent.withValues(alpha: Alpha.tintLight),
+        colors.accentText,
+        colors.text,
+      ),
       FixoNoticeTone.error => (
-          colors.danger.withValues(alpha: Alpha.faint),
-          colors.danger.withValues(alpha: Alpha.tintStandard),
-          colors.danger,
-          colors.text,
-        ),
+        colors.danger.withValues(alpha: Alpha.faint),
+        colors.danger.withValues(alpha: Alpha.tintStandard),
+        colors.danger,
+        colors.text,
+      ),
       FixoNoticeTone.push => (
-          colors.brand.withValues(alpha: Alpha.subtle),
-          colors.brand.withValues(alpha: Alpha.tintStandard),
-          colors.brand,
-          colors.text,
-        ),
+        colors.brand.withValues(alpha: Alpha.subtle),
+        colors.brand.withValues(alpha: Alpha.tintStandard),
+        colors.brand,
+        colors.text,
+      ),
     };
   }
 }

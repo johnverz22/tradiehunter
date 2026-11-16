@@ -59,9 +59,7 @@ class AddressRepository {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_cachedAddressKey);
       if (raw == null) return null;
-      return AddressCandidate.fromJson(
-        jsonDecode(raw) as Map<String, dynamic>,
-      );
+      return AddressCandidate.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

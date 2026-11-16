@@ -18,11 +18,7 @@ void main() {
       final libDir = Directory('lib');
       expect(libDir.existsSync(), isTrue, reason: 'lib directory must exist');
 
-      final forbidden = [
-        'ScaffoldMessenger.of',
-        'showSnackBar',
-        'SnackBar(',
-      ];
+      final forbidden = ['ScaffoldMessenger.of', 'showSnackBar', 'SnackBar('];
 
       final violations = <String>[];
 
@@ -106,7 +102,9 @@ void main() {
       );
     }
 
-    testWidgets('renders info notice and dismisses on close tap', (tester) async {
+    testWidgets('renders info notice and dismisses on close tap', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestApp(
           child: Scaffold(
@@ -124,7 +122,9 @@ void main() {
 
       await tester.tap(find.text('Show'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300)); // finish slide-in animation
+      await tester.pump(
+        const Duration(milliseconds: 300),
+      ); // finish slide-in animation
 
       expect(find.text(NoticeCopy.copied), findsOneWidget);
       expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
@@ -132,17 +132,18 @@ void main() {
       // Close button meets tap target minimum (48dp)
       final closeButton = find.byIcon(Icons.close_rounded);
       expect(closeButton, findsOneWidget);
-      final closeBox = tester.getRect(find.ancestor(
-        of: closeButton,
-        matching: find.byType(SizedBox),
-      ).first);
+      final closeBox = tester.getRect(
+        find.ancestor(of: closeButton, matching: find.byType(SizedBox)).first,
+      );
       expect(closeBox.width, greaterThanOrEqualTo(Sizes.tapMin));
       expect(closeBox.height, greaterThanOrEqualTo(Sizes.tapMin));
 
       // Tap close button
       await tester.tap(closeButton);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300)); // finish slide-out animation
+      await tester.pump(
+        const Duration(milliseconds: 300),
+      ); // finish slide-out animation
 
       expect(find.text(NoticeCopy.copied), findsNothing);
     });
@@ -230,8 +231,9 @@ void main() {
       expect(find.text(NoticeCopy.checkInFailed), findsNothing);
     });
 
-    testWidgets('renders push notice with title, body, and View action',
-        (tester) async {
+    testWidgets('renders push notice with title, body, and View action', (
+      tester,
+    ) async {
       var viewed = false;
 
       await tester.pumpWidget(
@@ -276,8 +278,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () =>
-                    FixoNotice.info(context, NoticeCopy.copied),
+                onPressed: () => FixoNotice.info(context, NoticeCopy.copied),
                 child: const Text('Show'),
               ),
             ),

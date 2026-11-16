@@ -46,10 +46,10 @@ class _StatusStripState extends State<StatusStrip>
   bool _expanded = false;
 
   JobStepperFlow get _flow => JobStepperFlow.resolve(
-        widget.status,
-        stage: widget.stage,
-        flowVersion: widget.flowVersion,
-      );
+    widget.status,
+    stage: widget.stage,
+    flowVersion: widget.flowVersion,
+  );
 
   bool get _isTerminal => _flow.isTerminal;
 
@@ -72,7 +72,8 @@ class _StatusStripState extends State<StatusStrip>
     final stepLabel = flow.titles.isNotEmpty && stepIndex < flow.titles.length
         ? flow.titles[stepIndex]
         : flow.stepCaption;
-    final shouldShowSublabel = stepLabel.trim().toLowerCase() !=
+    final shouldShowSublabel =
+        stepLabel.trim().toLowerCase() !=
         presentation.label.trim().toLowerCase();
 
     // Progress bar shows for known, non-terminal statuses only — unknown
@@ -84,7 +85,12 @@ class _StatusStripState extends State<StatusStrip>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s3_5, Space.gutter, Space.s4),
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.s3_5,
+        Space.gutter,
+        Space.s4,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -131,7 +137,10 @@ class _StatusStripState extends State<StatusStrip>
                             Clipboard.setData(
                               ClipboardData(text: widget.referenceCode!),
                             );
-                            FixoNotice.info(context, 'Job code copied: ${widget.referenceCode}');
+                            FixoNotice.info(
+                              context,
+                              'Job code copied: ${widget.referenceCode}',
+                            );
                           },
                           child: Text(
                             widget.referenceCode!,
@@ -139,8 +148,9 @@ class _StatusStripState extends State<StatusStrip>
                               fontFamily: DesignTokens.fontMono,
                               fontSize: DesignTokens.fontSizeMono,
                               fontWeight: FW.medium,
-                              color: Colors.white
-                                  .withValues(alpha: Alpha.textOnGradient),
+                              color: Colors.white.withValues(
+                                alpha: Alpha.textOnGradient,
+                              ),
                             ),
                           ),
                         ),
@@ -170,8 +180,7 @@ class _StatusStripState extends State<StatusStrip>
                   child: Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: Sizes.iconLg,
-                    color: Colors.white
-                        .withValues(alpha: Alpha.iconOnGradient),
+                    color: Colors.white.withValues(alpha: Alpha.iconOnGradient),
                   ),
                 ),
               ),
@@ -240,8 +249,9 @@ class _StatusStripState extends State<StatusStrip>
                       Expanded(
                         child: Container(
                           width: Sizes.borderWidthThick,
-                          margin:
-                              const EdgeInsets.symmetric(vertical: Space.s0_5),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: Space.s0_5,
+                          ),
                           color: isCompleted ? activeLineColor : lineColor,
                         ),
                       ),
@@ -252,8 +262,10 @@ class _StatusStripState extends State<StatusStrip>
               // Step title + subtitle
               Expanded(
                 child: Padding(
-                  padding:
-                      EdgeInsets.only(top: Space.s0_5, bottom: isLast ? 0 : Space.s5),
+                  padding: EdgeInsets.only(
+                    top: Space.s0_5,
+                    bottom: isLast ? 0 : Space.s5,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -276,8 +288,9 @@ class _StatusStripState extends State<StatusStrip>
                           fontSize: DesignTokens.fontSizeCaption,
                           color: isUpcoming
                               ? Colors.white.withValues(alpha: Alpha.border)
-                              : Colors.white
-                                  .withValues(alpha: Alpha.iconOnGradientSoft),
+                              : Colors.white.withValues(
+                                  alpha: Alpha.iconOnGradientSoft,
+                                ),
                         ),
                       ),
                     ],

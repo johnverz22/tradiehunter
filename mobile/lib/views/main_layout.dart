@@ -37,18 +37,24 @@ class MainLayout extends ConsumerWidget {
       int currentIndex = 0;
       if (location.startsWith('/jobs')) {
         currentIndex = 1;
-      } else if (location.startsWith('/messages') || location.startsWith('/chat')) {
+      } else if (location.startsWith('/messages') ||
+          location.startsWith('/chat')) {
         currentIndex = 2;
-      } else if (location.startsWith('/profile') || location.startsWith('/settings')) {
+      } else if (location.startsWith('/profile') ||
+          location.startsWith('/settings')) {
         currentIndex = 3;
       }
 
       void navigate(int index) {
         switch (index) {
-          case 0: context.go('/tradie');
-          case 1: context.go('/jobs');
-          case 2: context.go('/messages');
-          case 3: context.go('/profile');
+          case 0:
+            context.go('/tradie');
+          case 1:
+            context.go('/jobs');
+          case 2:
+            context.go('/messages');
+          case 3:
+            context.go('/profile');
         }
       }
 
@@ -85,18 +91,24 @@ class MainLayout extends ConsumerWidget {
     int currentIndex = 0;
     if (location.startsWith('/jobs')) {
       currentIndex = 1;
-    } else if (location.startsWith('/messages') || location.startsWith('/chat')) {
+    } else if (location.startsWith('/messages') ||
+        location.startsWith('/chat')) {
       currentIndex = 2;
-    } else if (location.startsWith('/profile') || location.startsWith('/settings')) {
+    } else if (location.startsWith('/profile') ||
+        location.startsWith('/settings')) {
       currentIndex = 3;
     }
 
     void navigate(int index) {
       switch (index) {
-        case 0: context.go('/home');
-        case 1: context.go('/jobs');
-        case 2: context.go('/messages');
-        case 3: context.go('/profile');
+        case 0:
+          context.go('/home');
+        case 1:
+          context.go('/jobs');
+        case 2:
+          context.go('/messages');
+        case 3:
+          context.go('/profile');
       }
     }
 
@@ -156,8 +168,7 @@ class _FixoNavRail extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final bgColor =
-        isDark ? DesignTokens.cardDark : DesignTokens.paperLight;
+    final bgColor = isDark ? DesignTokens.cardDark : DesignTokens.paperLight;
     final borderColor = DesignTokens.paperLine(isDark);
     final activeColor = DesignTokens.brand900;
     final inactiveColor = DesignTokens.inkSoft(isDark);
@@ -224,7 +235,10 @@ class _RailItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(Radii.medium),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Space.s2, vertical: Space.s2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.s2,
+            vertical: Space.s2,
+          ),
           child: SizedBox(
             width: 56,
             child: Column(
@@ -252,8 +266,7 @@ class _RailItem extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: DesignTokens.fontBody,
                     fontSize: DesignTokens.fontSizeCaption,
-                    fontWeight:
-                        selected ? FW.bold : FW.medium,
+                    fontWeight: selected ? FW.bold : FW.medium,
                     color: color,
                   ),
                 ),
@@ -306,4 +319,3 @@ class _RailPostJobButton extends StatelessWidget {
     );
   }
 }
-

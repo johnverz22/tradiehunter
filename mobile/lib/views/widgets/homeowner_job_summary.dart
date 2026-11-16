@@ -29,8 +29,7 @@ Widget homeownerJobSummary(
   bool isAttention = false,
 }) {
   final presentation = JobStatusPresentation.forStatus(job.status);
-  final bool isBooked =
-      job.status == 'Booked' || job.status == 'InProgress';
+  final bool isBooked = job.status == 'Booked' || job.status == 'InProgress';
   final String? actionLabel = switch (job.status) {
     'AwaitingPayment' => 'Pay now',
     'PaymentReview' => 'View payment status',
@@ -54,9 +53,7 @@ Widget homeownerJobSummary(
     category: job.category,
     suburb: job.suburb,
     reference: job.referenceCode,
-    priceLabel: job.totalAmount == null
-        ? null
-        : formatMoney(job.totalAmount!),
+    priceLabel: job.totalAmount == null ? null : formatMoney(job.totalAmount!),
     scheduleLabel: job.scheduledStartUtc == null
         ? null
         : '${DateFormat.MMMd().add_jm().format(job.scheduledStartUtc!.toLocal())}${job.hours > 0 ? ' · ${job.hours}h' : ''}',
@@ -117,8 +114,7 @@ class _BookedJobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(DesignTokens.radiusCard),
         onTap: () => openHomeownerJob(context, job),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.s4, Space.s3, Space.s4, 0),
+          padding: const EdgeInsets.fromLTRB(Space.s4, Space.s3, Space.s4, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -192,9 +188,7 @@ class _BookedJobCard extends StatelessWidget {
                             fontFamily: DesignTokens.fontBody,
                             fontSize: DesignTokens.fontSizeBody,
                             fontWeight: FW.bold,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                             color: DesignTokens.foreground(isDark),
                           ),
                         ),

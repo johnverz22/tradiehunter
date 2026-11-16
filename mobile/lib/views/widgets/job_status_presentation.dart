@@ -10,35 +10,35 @@ import '../../widgets/fixo_cards.dart';
 /// Maps to soft-tint bg + readable foreground in both themes.
 /// Distinct from [FixoBadgeKind] which governs the legacy solid [StatusBadge].
 enum ChipTone {
-  neutral,    // Requested, Cancelled, Expired
-  info,       // Booked
-  brand,      // In progress (amber/brand)
-  warning,    // Awaiting confirmation, Payment due
-  success,    // Completed
-  danger,     // Disputed, Under review
+  neutral, // Requested, Cancelled, Expired
+  info, // Booked
+  brand, // In progress (amber/brand)
+  warning, // Awaiting confirmation, Payment due
+  success, // Completed
+  danger, // Disputed, Under review
 }
 
 extension _ChipToneColors on ChipTone {
   /// Tint hue colour used for background at [Alpha.tintStandard] and border at
   /// [Alpha.borderMid].
   Color fill(bool isDark) => switch (this) {
-        ChipTone.neutral  => DesignTokens.inkSoft(isDark),
-        ChipTone.info     => isDark ? DesignTokens.brand300 : DesignTokens.brand500,
-        ChipTone.brand    => DesignTokens.amber,
-        ChipTone.warning  => DesignTokens.amber,
-        ChipTone.success  => DesignTokens.green,
-        ChipTone.danger   => DesignTokens.red,
-      };
+    ChipTone.neutral => DesignTokens.inkSoft(isDark),
+    ChipTone.info => isDark ? DesignTokens.brand300 : DesignTokens.brand500,
+    ChipTone.brand => DesignTokens.amber,
+    ChipTone.warning => DesignTokens.amber,
+    ChipTone.success => DesignTokens.green,
+    ChipTone.danger => DesignTokens.red,
+  };
 
   /// Foreground colour for label + icon — must meet 4.5:1 on the tinted bg.
   Color ink(bool isDark) => switch (this) {
-        ChipTone.neutral  => DesignTokens.inkSoft(isDark),
-        ChipTone.info     => DesignTokens.foregroundBrand(isDark),
-        ChipTone.brand    => DesignTokens.inkAccent(isDark),
-        ChipTone.warning  => DesignTokens.inkAccent(isDark),
-        ChipTone.success  => DesignTokens.inkSuccess(isDark),
-        ChipTone.danger   => DesignTokens.inkDanger(isDark),
-      };
+    ChipTone.neutral => DesignTokens.inkSoft(isDark),
+    ChipTone.info => DesignTokens.foregroundBrand(isDark),
+    ChipTone.brand => DesignTokens.inkAccent(isDark),
+    ChipTone.warning => DesignTokens.inkAccent(isDark),
+    ChipTone.success => DesignTokens.inkSuccess(isDark),
+    ChipTone.danger => DesignTokens.inkDanger(isDark),
+  };
 }
 
 // ── Tinted status chip ────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ class StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fill = tone.fill(isDark);
-    final fg   = tone.ink(isDark);
+    final fg = tone.ink(isDark);
 
     return Semantics(
       label: 'Status: $label',
@@ -88,12 +88,12 @@ class StatusChip extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: Space.s2_5,
-          vertical:   Space.s1,
+          vertical: Space.s1,
         ),
         decoration: BoxDecoration(
-          color:        fill.withValues(alpha: Alpha.tintStandard),
+          color: fill.withValues(alpha: Alpha.tintStandard),
           borderRadius: BorderRadius.circular(Radii.pill),
-          border:       Border.all(color: fill.withValues(alpha: Alpha.borderMid)),
+          border: Border.all(color: fill.withValues(alpha: Alpha.borderMid)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -385,6 +385,5 @@ class JobStepperFlow {
   }
 
   /// "Step X of N" caption used by the compact progress bar.
-  String get stepCaption =>
-      'Step ${activeIndex + 1} of $totalSteps';
+  String get stepCaption => 'Step ${activeIndex + 1} of $totalSteps';
 }

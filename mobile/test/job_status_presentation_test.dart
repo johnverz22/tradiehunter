@@ -34,15 +34,18 @@ void main() {
     });
   }
 
-  test('unknown status is cancelled/fallback and does not invent an action', () {
-    for (final status in ['', 'FutureServerState']) {
-      final presentation = JobStatusPresentation.forStatus(status);
-      expect(presentation.label, 'Status unavailable');
-      expect(presentation.kind, FixoBadgeKind.cancelled);
-      expect(presentation.homeownerAction, 'Open chat');
-      expect(presentation.tradieAction, 'View request');
-    }
-  });
+  test(
+    'unknown status is cancelled/fallback and does not invent an action',
+    () {
+      for (final status in ['', 'FutureServerState']) {
+        final presentation = JobStatusPresentation.forStatus(status);
+        expect(presentation.label, 'Status unavailable');
+        expect(presentation.kind, FixoBadgeKind.cancelled);
+        expect(presentation.homeownerAction, 'Open chat');
+        expect(presentation.tradieAction, 'View request');
+      }
+    },
+  );
 
   // ── Chip tone mapping ─────────────────────────────────────────────────────
   //
@@ -50,24 +53,21 @@ void main() {
   // The amber CTA is the only solid-fill element in the hierarchy.
 
   const expectedTones = {
-    'Requested':           ChipTone.neutral,
-    'AwaitingPayment':     ChipTone.warning,
-    'PaymentReview':       ChipTone.neutral,
-    'Booked':              ChipTone.info,
-    'InProgress':          ChipTone.brand,
+    'Requested': ChipTone.neutral,
+    'AwaitingPayment': ChipTone.warning,
+    'PaymentReview': ChipTone.neutral,
+    'Booked': ChipTone.info,
+    'InProgress': ChipTone.brand,
     'AwaitingConfirmation': ChipTone.warning,
-    'Completed':           ChipTone.success,
-    'Cancelled':           ChipTone.neutral,
-    'Expired':             ChipTone.neutral,
-    'Disputed':            ChipTone.danger,
+    'Completed': ChipTone.success,
+    'Cancelled': ChipTone.neutral,
+    'Expired': ChipTone.neutral,
+    'Disputed': ChipTone.danger,
   };
 
   for (final entry in expectedTones.entries) {
     test('${entry.key} chip maps to tone ${entry.value}', () {
-      expect(
-        JobStatusPresentation.forStatus(entry.key).chipTone,
-        entry.value,
-      );
+      expect(JobStatusPresentation.forStatus(entry.key).chipTone, entry.value);
     });
   }
 
@@ -76,16 +76,16 @@ void main() {
   // Only statuses where the tradie must physically act now should trigger a CTA.
 
   const actionRequired = {
-    'Booked':              true,
-    'InProgress':          true,
+    'Booked': true,
+    'InProgress': true,
     'AwaitingConfirmation': true,
-    'Requested':           false,
-    'AwaitingPayment':     false,
-    'PaymentReview':       false,
-    'Completed':           false,
-    'Cancelled':           false,
-    'Expired':             false,
-    'Disputed':            false,
+    'Requested': false,
+    'AwaitingPayment': false,
+    'PaymentReview': false,
+    'Completed': false,
+    'Cancelled': false,
+    'Expired': false,
+    'Disputed': false,
   };
 
   for (final entry in actionRequired.entries) {
@@ -100,10 +100,7 @@ void main() {
   // ── Tradie CTA labels ────────────────────────────────────────────────────
 
   test('action-required statuses have specific tradie CTA labels', () {
-    expect(
-      JobStatusPresentation.forStatus('Booked').tradieAction,
-      'Check in',
-    );
+    expect(JobStatusPresentation.forStatus('Booked').tradieAction, 'Check in');
     expect(
       JobStatusPresentation.forStatus('InProgress').tradieAction,
       'Check out',
@@ -118,21 +115,24 @@ void main() {
 
   test('homeowner actions match expected destinations', () {
     const actions = {
-      'Requested':           'View matching',
-      'AwaitingPayment':     'Payment details',
-      'PaymentReview':       'View payment status',
-      'Booked':              'View job details',
-      'InProgress':          'View job details',
+      'Requested': 'View matching',
+      'AwaitingPayment': 'Payment details',
+      'PaymentReview': 'View payment status',
+      'Booked': 'View job details',
+      'InProgress': 'View job details',
       'AwaitingConfirmation': 'Review completion',
-      'Completed':           'View job details',
-      'Cancelled':           'Open chat',
-      'Expired':             'Open chat',
-      'Disputed':            'Open chat',
+      'Completed': 'View job details',
+      'Cancelled': 'Open chat',
+      'Expired': 'Open chat',
+      'Disputed': 'Open chat',
     };
     for (final entry in actions.entries) {
       final presentation = JobStatusPresentation.forStatus(entry.key);
-      expect(presentation.homeownerAction, entry.value,
-          reason: '${entry.key} homeownerAction');
+      expect(
+        presentation.homeownerAction,
+        entry.value,
+        reason: '${entry.key} homeownerAction',
+      );
     }
   });
 
@@ -157,9 +157,8 @@ void main() {
               MaterialApp(
                 theme: dark ? FixoTheme.dark() : FixoTheme.light(),
                 builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    textScaler: TextScaler.linear(scale),
-                  ),
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(scale)),
                   child: child!,
                 ),
                 home: Scaffold(
@@ -173,10 +172,16 @@ void main() {
                 ),
               ),
             );
-            expect(tester.takeException(), isNull,
-                reason: '$status dark=$dark scale=$scale');
-            expect(find.text(presentation.label), findsOneWidget,
-                reason: '$status label visible');
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '$status dark=$dark scale=$scale',
+            );
+            expect(
+              find.text(presentation.label),
+              findsOneWidget,
+              reason: '$status label visible',
+            );
             // Semantics label must be "Status: <label>".
             expect(
               find.bySemanticsLabel('Status: ${presentation.label}'),
@@ -193,12 +198,16 @@ void main() {
   //
   // The chip background must be a tinted (alpha < 1) fill, never solid amber.
 
-  testWidgets('StatusChip uses tinted bg, not solid amber fill', (tester) async {
+  testWidgets('StatusChip uses tinted bg, not solid amber fill', (
+    tester,
+  ) async {
     for (final tone in ChipTone.values) {
       final pres = JobStatusPresentation.forStatus(
         expectedTones.entries
-            .firstWhere((e) => e.value == tone,
-                orElse: () => const MapEntry('Requested', ChipTone.neutral))
+            .firstWhere(
+              (e) => e.value == tone,
+              orElse: () => const MapEntry('Requested', ChipTone.neutral),
+            )
             .key,
       );
       await tester.pumpWidget(
@@ -223,17 +232,25 @@ void main() {
               matching: find.byType(Container),
             ),
           )
-          .where((c) =>
-              c.decoration is BoxDecoration &&
-              (c.decoration as BoxDecoration).color != null)
+          .where(
+            (c) =>
+                c.decoration is BoxDecoration &&
+                (c.decoration as BoxDecoration).color != null,
+          )
           .toList();
       expect(containers, isNotEmpty, reason: 'chip has a decoration container');
       final bg = (containers.first.decoration! as BoxDecoration).color!;
-      expect(bg.a, lessThan(1.0),
-          reason: 'chip bg is tinted (alpha < 1), not solid for tone $tone');
+      expect(
+        bg.a,
+        lessThan(1.0),
+        reason: 'chip bg is tinted (alpha < 1), not solid for tone $tone',
+      );
       // Must not be raw amber.
-      expect(bg, isNot(DesignTokens.amber),
-          reason: 'chip bg is not solid amber for tone $tone');
+      expect(
+        bg,
+        isNot(DesignTokens.amber),
+        reason: 'chip bg is not solid amber for tone $tone',
+      );
     }
   });
 
@@ -291,17 +308,17 @@ void main() {
     tester,
   ) async {
     const paths = {
-      'Requested':           '/jobs/42/matching',
-      'AwaitingPayment':     '/jobs/42/payment',
-      'PaymentReview':       '/jobs/42/payment/status',
-      'Booked':              '/jobs/42/detail',
-      'InProgress':          '/jobs/42/detail',
+      'Requested': '/jobs/42/matching',
+      'AwaitingPayment': '/jobs/42/payment',
+      'PaymentReview': '/jobs/42/payment/status',
+      'Booked': '/jobs/42/detail',
+      'InProgress': '/jobs/42/detail',
       'AwaitingConfirmation': '/jobs/42/detail',
-      'Completed':           '/jobs/42/detail',
-      'Cancelled':           '/jobs/42/detail',
-      'Expired':             '/jobs/42/detail',
-      'Disputed':            '/jobs/42/detail',
-      'FutureServerState':   '/chat/42',
+      'Completed': '/jobs/42/detail',
+      'Cancelled': '/jobs/42/detail',
+      'Expired': '/jobs/42/detail',
+      'Disputed': '/jobs/42/detail',
+      'FutureServerState': '/chat/42',
     };
     for (final entry in paths.entries) {
       final job = Job(

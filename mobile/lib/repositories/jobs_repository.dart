@@ -440,9 +440,7 @@ class JobsRepository {
         },
         options: _authOptions(token),
       );
-      return CheckOutSummary.fromJson(
-        res.data as Map<String, dynamic>,
-      );
+      return CheckOutSummary.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       debugPrint(
         '[Jobs] checkOut failed: ${friendlyDioError(e, tag: 'CheckOut')}',
@@ -467,9 +465,7 @@ class JobsRepository {
     try {
       await _dio.post(
         '/api/jobs/$jobId/approve',
-        data: {
-          if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-        },
+        data: {if (note != null && note.trim().isNotEmpty) 'note': note.trim()},
         options: _authOptions(token),
       );
     } on DioException catch (e) {
@@ -503,9 +499,7 @@ class JobsRepository {
     );
     final items = res.data as List?;
     return items
-            ?.map(
-              (t) => TradieListEntry.fromJson(t as Map<String, dynamic>),
-            )
+            ?.map((t) => TradieListEntry.fromJson(t as Map<String, dynamic>))
             .toList() ??
         const [];
   }
@@ -558,9 +552,7 @@ class JobsRepository {
       );
       final items = res.data as List?;
       return items
-              ?.map(
-                (a) => JobAdjustment.fromJson(a as Map<String, dynamic>),
-              )
+              ?.map((a) => JobAdjustment.fromJson(a as Map<String, dynamic>))
               .toList() ??
           const [];
     } on DioException catch (e) {
@@ -723,9 +715,7 @@ class JobsRepository {
           message: body['message']?.toString(),
         );
       }
-      return QuoteAcceptResult.failure(
-        friendlyDioError(e, tag: 'Quote'),
-      );
+      return QuoteAcceptResult.failure(friendlyDioError(e, tag: 'Quote'));
     }
   }
 
@@ -913,27 +903,39 @@ class QuoteAcceptResult {
   });
 
   const QuoteAcceptResult.accepted()
-      : this._(accepted: true, requiresWrittenContract: false, signedOut: false, failed: false);
+    : this._(
+        accepted: true,
+        requiresWrittenContract: false,
+        signedOut: false,
+        failed: false,
+      );
 
-  const QuoteAcceptResult.needsWrittenContract({String? threshold, String? message})
-      : this._(
-          accepted: false,
-          requiresWrittenContract: true,
-          signedOut: false,
-          failed: false,
-          threshold: threshold,
-          message: message,
-        );
+  const QuoteAcceptResult.needsWrittenContract({
+    String? threshold,
+    String? message,
+  }) : this._(
+         accepted: false,
+         requiresWrittenContract: true,
+         signedOut: false,
+         failed: false,
+         threshold: threshold,
+         message: message,
+       );
 
   const QuoteAcceptResult.signedOut()
-      : this._(accepted: false, requiresWrittenContract: false, signedOut: true, failed: true);
+    : this._(
+        accepted: false,
+        requiresWrittenContract: false,
+        signedOut: true,
+        failed: true,
+      );
 
   const QuoteAcceptResult.failure(String reason)
-      : this._(
-          accepted: false,
-          requiresWrittenContract: false,
-          signedOut: false,
-          failed: true,
-          message: reason,
-        );
+    : this._(
+        accepted: false,
+        requiresWrittenContract: false,
+        signedOut: false,
+        failed: true,
+        message: reason,
+      );
 }

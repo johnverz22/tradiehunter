@@ -47,8 +47,10 @@ class JobInfoTile extends StatelessWidget {
                     fontWeight: FW.bold,
                     color: DesignTokens.foreground(dark),
                   )
-                : Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(fontSize: DesignTokens.fontSizeH3, fontWeight: FW.semibold),
+                : Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: DesignTokens.fontSizeH3,
+                    fontWeight: FW.semibold,
+                  ),
           ),
         ],
       ),

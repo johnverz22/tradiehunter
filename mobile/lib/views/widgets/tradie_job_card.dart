@@ -39,7 +39,12 @@ class TradieJobCard extends StatelessWidget {
     if (job.status != 'Booked') return false;
     final scheduled = job.scheduledStartUtc?.toLocal();
     if (scheduled == null) return false;
-    return scheduled.isBefore(DateTime.now());
+    // Overdue = scheduled strictly before the start of today (not just before
+    // the current moment). A job at 14:00 that it's now 22:00 is not overdue —
+    // it may have run; only yesterday-or-earlier jobs get the warning chip.
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    return scheduled.isBefore(startOfToday);
   }
 
   @override
@@ -51,8 +56,9 @@ class TradieJobCard extends StatelessWidget {
     final overdue = isOverdue;
 
     // Price string — tabular numerals.
-    final priceText =
-        job.totalAmount != null ? formatMoney(job.totalAmount!) : null;
+    final priceText = job.totalAmount != null
+        ? formatMoney(job.totalAmount!)
+        : null;
 
     // Schedule: date label over time label with relative "Today"/"Tomorrow".
     String? dateLabel;
@@ -112,9 +118,7 @@ class TradieJobCard extends StatelessWidget {
               color: overdue
                   ? DesignTokens.amber
                   : DesignTokens.paperLine(isDark),
-              width: overdue
-                  ? Sizes.borderWidthThick
-                  : Sizes.borderWidthThin,
+              width: overdue ? Sizes.borderWidthThick : Sizes.borderWidthThin,
             ),
             boxShadow: DesignTokens.cardShadow(isDark),
           ),

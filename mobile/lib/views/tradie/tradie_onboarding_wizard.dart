@@ -16,7 +16,6 @@ import '../../widgets/fixo_states.dart';
 import '../widgets/fixo_feedback.dart';
 import '../../feedback/fixo_notice.dart';
 
-
 /// Four-section tradie onboarding wizard (P1-09, D7).
 ///
 /// Where you work (profile + weekly availability) → Trades (primary trade +
@@ -165,8 +164,7 @@ class _TradieOnboardingWizardState
     }
   }
 
-  void _snack(String message) =>
-      FixoNotice.errorDynamic(context, message);
+  void _snack(String message) => FixoNotice.errorDynamic(context, message);
 
   Future<CredentialKind?> _askCredentialKind(String fileName) {
     return showModalBottomSheet<CredentialKind>(
@@ -279,8 +277,9 @@ class _TradieOnboardingWizardState
         if (!didPop && !state.isFirstStep) _back();
       },
       child: Scaffold(
-        backgroundColor:
-            isDark ? DesignTokens.paperDark : DesignTokens.paperLight,
+        backgroundColor: isDark
+            ? DesignTokens.paperDark
+            : DesignTokens.paperLight,
         appBar: FixoGradientAppBar(
           title: 'Tradie setup',
           subtitle:
@@ -411,9 +410,7 @@ class _WizardProgress extends StatelessWidget {
                           style: TextStyle(
                             fontFamily: DesignTokens.fontDisplay,
                             fontSize: DesignTokens.fontSizeCaption,
-                            fontWeight: i == step
-                                ? FW.semibold
-                                : FW.regular,
+                            fontWeight: i == step ? FW.semibold : FW.regular,
                             color: i <= step
                                 ? (isDark
                                       ? DesignTokens.inkDark
@@ -476,7 +473,6 @@ class _WizardFooter extends StatelessWidget {
   }
 }
 
-
 // ── Step 1: where you work ──────────────────────────────────────────────────
 
 class _WorkStep extends StatelessWidget {
@@ -533,7 +529,11 @@ class _WorkStep extends StatelessWidget {
           onChanged: notifier.setPhone,
         ),
         const SizedBox(height: DesignTokens.space6),
-        const FixoSectionLabel(label: 'Service area', helper: 'Jobs outside your patch are never sent to you.', uppercase: true),
+        const FixoSectionLabel(
+          label: 'Service area',
+          helper: 'Jobs outside your patch are never sent to you.',
+          uppercase: true,
+        ),
         const SizedBox(height: DesignTokens.space3),
         _Field(
           label: 'Base address',
@@ -708,7 +708,10 @@ class _TradeSelector extends StatelessWidget {
             padding: const EdgeInsets.only(top: DesignTokens.space1),
             child: Text(
               'The trade your jobs are matched against.',
-              style: TextStyle(fontSize: DesignTokens.fontSizeCaption, color: muted),
+              style: TextStyle(
+                fontSize: DesignTokens.fontSizeCaption,
+                color: muted,
+              ),
             ),
           ),
       ],
@@ -921,7 +924,11 @@ class _TradesStep extends ConsumerWidget {
           onSelected: notifier.setTradeType,
         ),
         const SizedBox(height: DesignTokens.space6),
-        FixoSectionLabel(label: 'Services & rates', helper: 'Tick every service you take on and set its hourly rate.', uppercase: true),
+        FixoSectionLabel(
+          label: 'Services & rates',
+          helper: 'Tick every service you take on and set its hourly rate.',
+          uppercase: true,
+        ),
         if (servicesError != null) ...[
           const SizedBox(height: DesignTokens.space2),
           Text(
@@ -938,7 +945,9 @@ class _TradesStep extends ConsumerWidget {
         if (state.tradeType.isEmpty)
           FixoCard(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: DesignTokens.space4),
+              padding: const EdgeInsets.symmetric(
+                vertical: DesignTokens.space4,
+              ),
               child: Text(
                 'Choose your primary trade above to see its services.',
                 textAlign: TextAlign.center,
@@ -1257,7 +1266,10 @@ class _VerificationStep extends StatelessWidget {
         if (state.credentials.isNotEmpty) ...[
           Row(
             children: [
-              StatusBadge(label: '$pending pending', kind: FixoBadgeKind.waiting),
+              StatusBadge(
+                label: '$pending pending',
+                kind: FixoBadgeKind.waiting,
+              ),
               const SizedBox(width: DesignTokens.space2),
               StatusBadge(
                 label: '$approved approved',
@@ -1461,7 +1473,10 @@ class _PayoutStep extends StatelessWidget {
                 child: Text(
                   'Only you can see these details — they are never shown '
                   'on your public profile.',
-                  style: TextStyle(fontSize: DesignTokens.fontSizeSecondary, color: muted),
+                  style: TextStyle(
+                    fontSize: DesignTokens.fontSizeSecondary,
+                    color: muted,
+                  ),
                 ),
               ),
             ],
@@ -1533,7 +1548,6 @@ class _StepScroll extends StatelessWidget {
     );
   }
 }
-
 
 const _monoStyle = TextStyle(
   fontFamily: DesignTokens.fontMono,
@@ -1646,7 +1660,13 @@ class _Field extends StatelessWidget {
         ),
         if (helper != null) ...[
           const SizedBox(height: DesignTokens.space1),
-          Text(helper!, style: TextStyle(fontSize: DesignTokens.fontSizeCaption, color: muted)),
+          Text(
+            helper!,
+            style: TextStyle(
+              fontSize: DesignTokens.fontSizeCaption,
+              color: muted,
+            ),
+          ),
         ],
       ],
     );

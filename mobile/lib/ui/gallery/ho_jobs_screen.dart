@@ -16,25 +16,30 @@ class HoJobsScreen extends StatelessWidget {
       dock: THDock(role: THDockRole.homeowner, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           THText('My jobs', style: THTextStyle.h1),
           THSegmented(items: ['Active', 'Completed'], selected: 0),
           THCard(
-            
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s2,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s2,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Leaking kitchen tap', style: THTextStyle.title),
-                      THText('Aroha Plumbing', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Leaking kitchen tap', style: THTextStyle.title),
+                        THText(
+                          'Aroha Plumbing',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
                   THBadge('Pay now', kind: THBadgeKind.accent),
                 ],
@@ -44,19 +49,24 @@ class HoJobsScreen extends StatelessWidget {
             ],
           ),
           THCard(
-            
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s2,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s2,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Repaint hallway', style: THTextStyle.title),
-                      THText('Waiting for Kiri Painters', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Repaint hallway', style: THTextStyle.title),
+                        THText(
+                          'Waiting for Kiri Painters',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
                   THBadge('Requested', kind: THBadgeKind.brand),
                 ],
@@ -66,19 +76,24 @@ class HoJobsScreen extends StatelessWidget {
             ],
           ),
           THCard(
-            
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s2,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s2,
                 children: [
                   Expanded(
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2.0,
-                    children: [
-                      THText('Kitchen renovation', style: THTextStyle.title),
-                      THText('2 of 3 quotes in', style: THTextStyle.meta, tone: THTone.soft),
-                    ],
-                  ),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 2.0,
+                      children: [
+                        THText('Kitchen renovation', style: THTextStyle.title),
+                        THText(
+                          '2 of 3 quotes in',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
                   ),
                   THBadge('Quotes', kind: THBadgeKind.ok),
                 ],
@@ -87,8 +102,8 @@ class HoJobsScreen extends StatelessWidget {
               THProgress(steps: 5, done: 1, current: true),
             ],
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

@@ -14,25 +14,37 @@ class HoPaymentStatusScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return THScaffold(
       appBar: THAppBar(title: 'Payment status'),
-      stickyBar: THStickyBar(children: [
-        THButton(
-          label: 'Back to job',
-          kind: THButtonKind.secondary,
-          onPressed: () {},
-        ),
-      ]),
+      stickyBar: THStickyBar(
+        children: [
+          THButton(
+            label: 'Back to job',
+            kind: THButtonKind.secondary,
+            onPressed: () {},
+          ),
+        ],
+      ),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           const SizedBox(height: 12.0),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.center, spacing: Space.s3_5,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: Space.s3_5,
             children: [
               THTile(Icons.check_rounded, big: true, tone: THBadgeKind.ok),
-              THText('Receipt sent for review', style: THTextStyle.h1, align: TextAlign.center),
-              THText('We usually verify within one business day. You’ll get a notification as soon as it’s done.', style: THTextStyle.body, tone: THTone.soft, align: TextAlign.center),
+              THText(
+                'Receipt sent for review',
+                style: THTextStyle.h1,
+                align: TextAlign.center,
+              ),
+              THText(
+                'We usually verify within one business day. You’ll get a notification as soon as it’s done.',
+                style: THTextStyle.body,
+                tone: THTone.soft,
+                align: TextAlign.center,
+              ),
             ],
           ),
           THCard(
@@ -40,11 +52,16 @@ class HoPaymentStatusScreen extends StatelessWidget {
             children: [
               THKeyValue('Amount', '\$261.00', bold: true),
               THKeyValue('Reference', 'TH-4821', bold: true, divider: true),
-              THKeyValue('Status', 'In review', badge: THBadgeKind.accent, divider: true),
+              THKeyValue(
+                'Status',
+                'In review',
+                badge: THBadgeKind.accent,
+                divider: true,
+              ),
             ],
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }

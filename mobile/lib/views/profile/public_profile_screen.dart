@@ -33,17 +33,17 @@ final _profileProvider = FutureProvider.family<UserProfile?, String>((
 /// the server-authoritative rate for the job's service plus the D8 GST
 /// status. Null when the tradie isn't on the list (e.g. not available for
 /// this job) — the rate section is then omitted rather than fabricated.
-final _jobTradieProvider = FutureProvider.family<TradieListEntry?, (
-  String,
-  String,
-)>((ref, ids) async {
-  final (jobId, tradieId) = ids;
-  final tradies = await ref.read(jobsRepositoryProvider).getTradieList(jobId);
-  for (final entry in tradies) {
-    if (entry.tradieId == tradieId) return entry;
-  }
-  return null;
-});
+final _jobTradieProvider =
+    FutureProvider.family<TradieListEntry?, (String, String)>((ref, ids) async {
+      final (jobId, tradieId) = ids;
+      final tradies = await ref
+          .read(jobsRepositoryProvider)
+          .getTradieList(jobId);
+      for (final entry in tradies) {
+        if (entry.tradieId == tradieId) return entry;
+      }
+      return null;
+    });
 
 /// Paginated reviews state for a user.
 class _ReviewsState {
@@ -185,18 +185,18 @@ class PublicProfileScreen extends ConsumerWidget {
       // buttons are retired in favour of this bar.
       bottomNavigationBar: !isOwner && viewerId != null && viewerId.isNotEmpty
           ? (inJobContext
-              ? _JobRequestActions(
-                  key: const Key('job_request_actions'),
-                  profileId: profileId,
-                  jobId: jobId!,
-                )
-              : _ContextualActions(
-                  profileId: profileId,
-                  isTradie: isTradie,
-                  viewerRole: viewer?['role'] as int?,
-                  ref: ref,
-                  sticky: true,
-                ))
+                ? _JobRequestActions(
+                    key: const Key('job_request_actions'),
+                    profileId: profileId,
+                    jobId: jobId!,
+                  )
+                : _ContextualActions(
+                    profileId: profileId,
+                    isTradie: isTradie,
+                    viewerRole: viewer?['role'] as int?,
+                    ref: ref,
+                    sticky: true,
+                  ))
           : null,
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -469,11 +469,7 @@ class _ProfileBody extends StatelessWidget {
           // fabricated) when the tradie isn't listed for the job or no rate
           // was returned.
           if (jobId != null && jobId!.isNotEmpty)
-            _JobRateCard(
-              jobId: jobId!,
-              profileId: profileId,
-              isDark: isDark,
-            ),
+            _JobRateCard(jobId: jobId!, profileId: profileId, isDark: isDark),
 
           // ── About section — H17: blurb between stats and actions ──────
           if (hasBio) ...[
@@ -1208,17 +1204,16 @@ class _JobRequestActionsState extends ConsumerState<_JobRequestActions> {
             children: [
               Text(
                 'Request this tradie',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FW.semibold,
-                    ),
+                style: Theme.of(ctx).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FW.semibold),
               ),
               const SizedBox(height: Space.s2),
               Text(
                 'Add an optional message — it\'s the only way to reach them '
                 'before they accept.',
                 style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: Space.s4),
               TextField(
@@ -1227,7 +1222,8 @@ class _JobRequestActionsState extends ConsumerState<_JobRequestActions> {
                 maxLength: 500,
                 decoration: const InputDecoration(
                   labelText: 'Message (optional)',
-                  hintText: 'e.g. Hi, the job is the flat above — call before '
+                  hintText:
+                      'e.g. Hi, the job is the flat above — call before '
                       'you come.',
                 ),
               ),
@@ -1255,15 +1251,13 @@ class _JobRequestActionsState extends ConsumerState<_JobRequestActions> {
       if (!mounted) return;
       // D8 label rides along so the request-sent screen can show it without
       // another lookup; null just omits the label.
-      final entry = ref.read(_jobTradieProvider((
-        widget.jobId,
-        widget.profileId,
-      ))).value;
-      final gstLabel = entry == null ? null : gstLabelFor(entry.isGstRegistered);
-      context.push(
-        '/jobs/${widget.jobId}/request',
-        extra: gstLabel,
-      );
+      final entry = ref
+          .read(_jobTradieProvider((widget.jobId, widget.profileId)))
+          .value;
+      final gstLabel = entry == null
+          ? null
+          : gstLabelFor(entry.isGstRegistered);
+      context.push('/jobs/${widget.jobId}/request', extra: gstLabel);
     } on ProfileApiException catch (e) {
       if (!mounted) return;
       FixoNotice.errorDynamic(context, e.message);

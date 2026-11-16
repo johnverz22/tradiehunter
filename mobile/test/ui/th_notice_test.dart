@@ -6,28 +6,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app({required ThemeMode mode, required Widget body}) => ProviderScope(
-      child: MaterialApp(
-        theme: THTheme.light,
-        darkTheme: THTheme.dark,
-        themeMode: mode,
-        builder: (context, child) => THNoticeHost(child: child ?? const SizedBox()),
-        home: Scaffold(body: body),
-      ),
-    );
+  child: MaterialApp(
+    theme: THTheme.light,
+    darkTheme: THTheme.dark,
+    themeMode: mode,
+    builder: (context, child) => THNoticeHost(child: child ?? const SizedBox()),
+    home: Scaffold(body: body),
+  ),
+);
 
 void main() {
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {
-    testWidgets('shows, runs retry action and dismisses (${mode.name})', (tester) async {
+    testWidgets('shows, runs retry action and dismisses (${mode.name})', (
+      tester,
+    ) async {
       var retried = false;
-      await tester.pumpWidget(_app(
-        mode: mode,
-        body: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => THNotice.error(context, NoticeCopy.checkInFailed, onRetry: () => retried = true),
-            child: const Text('go'),
+      await tester.pumpWidget(
+        _app(
+          mode: mode,
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => THNotice.error(
+                context,
+                NoticeCopy.checkInFailed,
+                onRetry: () => retried = true,
+              ),
+              child: const Text('go'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('go'));
       await tester.pump();
@@ -46,15 +54,22 @@ void main() {
 
   testWidgets('push notice shows title and View action', (tester) async {
     var viewed = false;
-    await tester.pumpWidget(_app(
-      mode: ThemeMode.light,
-      body: Builder(
-        builder: (context) => TextButton(
-          onPressed: () => THNotice.push(context, title: 'New job', body: 'Fix tap', onView: () => viewed = true),
-          child: const Text('go'),
+    await tester.pumpWidget(
+      _app(
+        mode: ThemeMode.light,
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => THNotice.push(
+              context,
+              title: 'New job',
+              body: 'Fix tap',
+              onView: () => viewed = true,
+            ),
+            child: const Text('go'),
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('go'));
     await tester.pump();
     await tester.pump(THDurations.base);
@@ -65,12 +80,17 @@ void main() {
   });
 
   testWidgets('auto-dismisses after the tone duration', (tester) async {
-    await tester.pumpWidget(_app(
-      mode: ThemeMode.light,
-      body: Builder(
-        builder: (context) => TextButton(onPressed: () => THNotice.info(context, NoticeCopy.copied), child: const Text('go')),
+    await tester.pumpWidget(
+      _app(
+        mode: ThemeMode.light,
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => THNotice.info(context, NoticeCopy.copied),
+            child: const Text('go'),
+          ),
+        ),
       ),
-    ));
+    );
     await tester.tap(find.text('go'));
     await tester.pump();
     await tester.pump(THDurations.base);

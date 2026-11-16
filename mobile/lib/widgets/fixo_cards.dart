@@ -60,11 +60,7 @@ class StatusBadge extends StatelessWidget {
     switch (kind) {
       case FixoBadgeKind.actionNeeded:
       case FixoBadgeKind.hold:
-        return (
-          DesignTokens.amber,
-          DesignTokens.onAmber,
-          Icons.error_outline,
-        );
+        return (DesignTokens.amber, DesignTokens.onAmber, Icons.error_outline);
       case FixoBadgeKind.active:
       case FixoBadgeKind.live:
         return (
@@ -135,14 +131,14 @@ class StatusBadge extends StatelessWidget {
   }
 
   static IconData _defaultIconForKind(FixoBadgeKind kind) => switch (kind) {
-        FixoBadgeKind.actionNeeded || FixoBadgeKind.hold => Icons.error_outline,
-        FixoBadgeKind.active || FixoBadgeKind.live => Icons.play_arrow_rounded,
-        FixoBadgeKind.waiting => Icons.schedule_rounded,
-        FixoBadgeKind.done || FixoBadgeKind.verified => Icons.check_rounded,
-        FixoBadgeKind.cancelled || FixoBadgeKind.neutral => Icons.close_rounded,
-        FixoBadgeKind.problem || FixoBadgeKind.urgent =>
-          Icons.warning_amber_rounded,
-      };
+    FixoBadgeKind.actionNeeded || FixoBadgeKind.hold => Icons.error_outline,
+    FixoBadgeKind.active || FixoBadgeKind.live => Icons.play_arrow_rounded,
+    FixoBadgeKind.waiting => Icons.schedule_rounded,
+    FixoBadgeKind.done || FixoBadgeKind.verified => Icons.check_rounded,
+    FixoBadgeKind.cancelled || FixoBadgeKind.neutral => Icons.close_rounded,
+    FixoBadgeKind.problem ||
+    FixoBadgeKind.urgent => Icons.warning_amber_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {

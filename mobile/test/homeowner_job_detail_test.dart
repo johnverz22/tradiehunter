@@ -216,10 +216,7 @@ void main() {
     });
 
     testWidgets('PaymentReview offers View payment status', (tester) async {
-      await mount(
-        tester,
-        _JobsFixture(_job('PaymentReview', tradieId: 't-1')),
-      );
+      await mount(tester, _JobsFixture(_job('PaymentReview', tradieId: 't-1')));
       await tester.tap(find.text('View payment status'));
       await tester.pumpAndSettle();
       expect(find.text('Destination /jobs/42/payment/status'), findsOneWidget);
@@ -242,9 +239,7 @@ void main() {
       expect(find.byTooltip('Open chat'), findsNothing);
     });
 
-    testWidgets('AwaitingConfirmation exposes Approve & pay', (
-      tester,
-    ) async {
+    testWidgets('AwaitingConfirmation exposes Approve & pay', (tester) async {
       final jobs = _JobsFixture(_job('AwaitingConfirmation', tradieId: 't-1'));
       await mount(tester, jobs);
       expect(find.byKey(const Key('approve_pay_button')), findsOneWidget);

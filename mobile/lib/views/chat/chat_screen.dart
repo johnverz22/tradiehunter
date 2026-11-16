@@ -25,11 +25,7 @@ class ChatScreen extends ConsumerStatefulWidget {
   final String jobId;
   final bool embedded;
 
-  const ChatScreen({
-    super.key,
-    required this.jobId,
-    this.embedded = false,
-  });
+  const ChatScreen({super.key, required this.jobId, this.embedded = false});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -342,9 +338,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (isChatLocked)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: Space.gutter, vertical: Space.s2_5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.gutter,
+                  vertical: Space.s2_5,
+                ),
                 color: isDark
-                    ? DesignTokens.paperLineDark.withValues(alpha: Alpha.divider)
+                    ? DesignTokens.paperLineDark.withValues(
+                        alpha: Alpha.divider,
+                      )
                     : DesignTokens.paperLineLight,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -393,9 +394,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           child: ListView.builder(
                             controller: _scrollCtrl,
                             padding: const EdgeInsets.fromLTRB(
-                              Space.s4, Space.s4, Space.s4, Space.s3,
+                              Space.s4,
+                              Space.s4,
+                              Space.s4,
+                              Space.s3,
                             ),
-                            itemCount: _buildMessageItems(chatState.messages).length +
+                            itemCount:
+                                _buildMessageItems(chatState.messages).length +
                                 (chatState.hasMore ? 1 : 0),
                             itemBuilder: (context, index) {
                               if (chatState.hasMore && index == 0) {
@@ -407,9 +412,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 );
                               }
                               final offset = chatState.hasMore ? 1 : 0;
-                              final item = _buildMessageItems(chatState.messages)[index - offset];
+                              final item = _buildMessageItems(
+                                chatState.messages,
+                              )[index - offset];
                               if (item is _DateSeparatorItem) {
-                                return ChatDateSeparator(timestampUtc: item.timestamp);
+                                return ChatDateSeparator(
+                                  timestampUtc: item.timestamp,
+                                );
                               }
                               final mi = item as _MessageItem;
                               return Padding(
@@ -419,10 +428,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 child: ChatBubble(
                                   message: mi.message,
                                   isGrouped: mi.isGrouped,
-                                  failed: chatState.failedIds.contains(mi.message.id),
+                                  failed: chatState.failedIds.contains(
+                                    mi.message.id,
+                                  ),
                                   onRetry: () => ref
                                       .read(
-                                        chatNotifierProvider(widget.jobId).notifier,
+                                        chatNotifierProvider(widget.jobId)
+                                            .notifier,
                                       )
                                       .retryMessage(mi.message.id),
                                 ),
@@ -439,9 +451,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // ── Input bar — extends background behind home indicator ───────────
       bottomNavigationBar: Container(
         color: DesignTokens.surfaceCard(isDark),
-        padding: EdgeInsets.fromLTRB(Space.s3, Space.s2, Space.s3, MediaQuery.of(context).viewInsets.bottom +
+        padding: EdgeInsets.fromLTRB(
+          Space.s3,
+          Space.s2,
+          Space.s3,
+          MediaQuery.of(context).viewInsets.bottom +
               MediaQuery.of(context).padding.bottom +
-              8),
+              8,
+        ),
         child: Align(
           alignment: Alignment.topCenter,
           heightFactor: 1.0,
@@ -449,7 +466,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: isChatLocked
                 ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Space.s2, horizontal: Space.s1),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Space.s2,
+                      horizontal: Space.s1,
+                    ),
                     child: Text(
                       'Messaging is disabled for this job.',
                       textAlign: TextAlign.center,
@@ -466,7 +486,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     hintText: participant.isNotEmpty
                         ? 'Message $participant…'
                         : null,
-                    onAttach: () => FixoNotice.info(context, NoticeCopy.photoUnavailable),
+                    onAttach: () =>
+                        FixoNotice.info(context, NoticeCopy.photoUnavailable),
                   ),
           ),
         ),
@@ -505,7 +526,8 @@ List<_ListItem> _buildMessageItems(List<ChatMessage> messages) {
 
   for (final m in messages) {
     // Insert separator if this is the first message or > 5 min gap.
-    final needsSeparator = lastSeparatorTime == null ||
+    final needsSeparator =
+        lastSeparatorTime == null ||
         m.sentAtUtc.difference(lastSeparatorTime).abs().inMinutes >= 5;
     if (needsSeparator) {
       items.add(_DateSeparatorItem(m.sentAtUtc));
@@ -513,7 +535,8 @@ List<_ListItem> _buildMessageItems(List<ChatMessage> messages) {
     }
 
     // Group with previous if same sender and < 60 seconds apart.
-    final isGrouped = prev != null &&
+    final isGrouped =
+        prev != null &&
         prev.sentByMe == m.sentByMe &&
         m.sentAtUtc.difference(prev.sentAtUtc).inSeconds.abs() < 60 &&
         !needsSeparator;
@@ -573,9 +596,7 @@ class _ChatAvatar extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: DesignTokens.green,
                   border: Border.all(
-                    color: isDark
-                        ? DesignTokens.cardDark
-                        : Colors.white,
+                    color: isDark ? DesignTokens.cardDark : Colors.white,
                     width: Sizes.borderWidthVerified,
                   ),
                 ),
@@ -602,13 +623,13 @@ class _ChatStatusPill extends StatelessWidget {
   // Human-readable step label from raw status string.
   static String _label(String status) => switch (status) {
     'Requested' => 'Step 1 of 4 · Requested',
-    'Booked'    => 'Step 2 of 4 · Booked',
+    'Booked' => 'Step 2 of 4 · Booked',
     'InProgress' || 'In Progress' => 'Step 3 of 4 · In progress',
-    'AwaitingConfirmation'        => 'Step 4 of 4 · Awaiting confirmation',
-    'Completed'  => 'Step 4 of 4 · Completed',
-    'Cancelled'  => 'Cancelled',
-    'Disputed'   => 'Disputed',
-    _            => status,
+    'AwaitingConfirmation' => 'Step 4 of 4 · Awaiting confirmation',
+    'Completed' => 'Step 4 of 4 · Completed',
+    'Cancelled' => 'Cancelled',
+    'Disputed' => 'Disputed',
+    _ => status,
   };
 
   @override
@@ -616,15 +637,18 @@ class _ChatStatusPill extends StatelessWidget {
     final bool isAlert = status == 'Disputed';
     final Color bg = isAlert
         ? DesignTokens.inkDanger(isDark).withValues(alpha: Alpha.tintLight)
-        : (isDark
-            ? DesignTokens.brand100Dark
-            : DesignTokens.paperLineLight);
+        : (isDark ? DesignTokens.brand100Dark : DesignTokens.paperLineLight);
     final Color fg = isAlert
         ? DesignTokens.inkDanger(isDark)
         : (isDark ? DesignTokens.inkSoftDark : DesignTokens.inkSoftLight);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Space.gutter, Space.s2_5, Space.gutter, Space.s1),
+      padding: const EdgeInsets.fromLTRB(
+        Space.gutter,
+        Space.s2_5,
+        Space.gutter,
+        Space.s1,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -701,8 +725,8 @@ class _DotPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = (isDark
-              ? Colors.white.withValues(alpha: Alpha.subtle)
-              : Colors.black.withValues(alpha: Alpha.wash))
+          ? Colors.white.withValues(alpha: Alpha.subtle)
+          : Colors.black.withValues(alpha: Alpha.wash))
       ..style = PaintingStyle.fill;
 
     const double spacing = Sizes.dotPatternSpacing;

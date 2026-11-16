@@ -27,33 +27,45 @@ export '../../feedback/notice_copy.dart' show NoticeCopy;
 abstract class THNotice {
   THNotice._();
 
-  static void info(BuildContext context, String message) => _show(context, FixoNoticeTone.info, message);
+  static void info(BuildContext context, String message) =>
+      _show(context, FixoNoticeTone.info, message);
 
-  static void success(BuildContext context, String message) => _show(context, FixoNoticeTone.success, message);
+  static void success(BuildContext context, String message) =>
+      _show(context, FixoNoticeTone.success, message);
 
-  static void warning(BuildContext context, String message) => _show(context, FixoNoticeTone.warning, message);
+  static void warning(BuildContext context, String message) =>
+      _show(context, FixoNoticeTone.warning, message);
 
-  static void error(BuildContext context, String message, {VoidCallback? onRetry}) => _show(
-        context,
-        FixoNoticeTone.error,
-        message,
-        action: onRetry,
-        actionLabel: onRetry != null ? 'Retry' : null,
-      );
+  static void error(
+    BuildContext context,
+    String message, {
+    VoidCallback? onRetry,
+  }) => _show(
+    context,
+    FixoNoticeTone.error,
+    message,
+    action: onRetry,
+    actionLabel: onRetry != null ? 'Retry' : null,
+  );
 
   /// Foreground push notification with an optional "View" action.
-  static void push(BuildContext context, {required String title, required String body, VoidCallback? onView}) =>
-      _show(
-        context,
-        FixoNoticeTone.push,
-        body,
-        title: title,
-        action: onView,
-        actionLabel: onView != null ? 'View' : null,
-      );
+  static void push(
+    BuildContext context, {
+    required String title,
+    required String body,
+    VoidCallback? onView,
+  }) => _show(
+    context,
+    FixoNoticeTone.push,
+    body,
+    title: title,
+    action: onView,
+    actionLabel: onView != null ? 'View' : null,
+  );
 
   /// Error from a dynamic message (DioException, payment API, ...).
-  static void errorDynamic(BuildContext context, String message) => error(context, message);
+  static void errorDynamic(BuildContext context, String message) =>
+      error(context, message);
 
   static void _show(
     BuildContext context,
@@ -63,9 +75,18 @@ abstract class THNotice {
     VoidCallback? action,
     String? actionLabel,
   }) {
-    final notice = FixoNoticeState(message: message, tone: tone, title: title, action: action, actionLabel: actionLabel);
+    final notice = FixoNoticeState(
+      message: message,
+      tone: tone,
+      title: title,
+      action: action,
+      actionLabel: actionLabel,
+    );
     try {
-      ProviderScope.containerOf(context, listen: false).read(fixoNoticeProvider.notifier).show(notice);
+      ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(fixoNoticeProvider.notifier).show(notice);
     } catch (_) {
       // No ProviderScope above this context: nothing can show the notice.
     }
@@ -83,11 +104,20 @@ class THNoticeHost extends ConsumerStatefulWidget {
   ConsumerState<THNoticeHost> createState() => _THNoticeHostState();
 }
 
-class _THNoticeHostState extends ConsumerState<THNoticeHost> with SingleTickerProviderStateMixin {
-  late final AnimationController _anim = AnimationController(vsync: this, duration: THDurations.base);
-  late final Animation<Offset> _slide = Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
-      .animate(CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic));
-  late final Animation<double> _fade = CurvedAnimation(parent: _anim, curve: Curves.easeIn);
+class _THNoticeHostState extends ConsumerState<THNoticeHost>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: THDurations.base,
+  );
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, -1),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic));
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _anim,
+    curve: Curves.easeIn,
+  );
 
   FixoNoticeState? _current;
 
@@ -129,7 +159,8 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost> with SingleTickerPr
                 position: _slide,
                 child: THNoticeBanner(
                   notice: notice,
-                  onDismiss: () => ref.read(fixoNoticeProvider.notifier).dismiss(),
+                  onDismiss: () =>
+                      ref.read(fixoNoticeProvider.notifier).dismiss(),
                 ),
               ),
             ),
@@ -142,7 +173,11 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost> with SingleTickerPr
 /// The v2 banner. Picks light/dark `THColors` from the ambient brightness, so it
 /// renders correctly even when mounted above any `ThScope` (e.g. at the app root).
 class THNoticeBanner extends StatefulWidget {
-  const THNoticeBanner({super.key, required this.notice, required this.onDismiss});
+  const THNoticeBanner({
+    super.key,
+    required this.notice,
+    required this.onDismiss,
+  });
 
   final FixoNoticeState notice;
   final VoidCallback onDismiss;
@@ -180,15 +215,16 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
   }
 
   static IconData _icon(FixoNoticeTone tone) => switch (tone) {
-        FixoNoticeTone.info => Icons.info_outline_rounded,
-        FixoNoticeTone.success => Icons.check_circle_outline_rounded,
-        FixoNoticeTone.warning => Icons.warning_amber_rounded,
-        FixoNoticeTone.error => Icons.error_outline_rounded,
-        FixoNoticeTone.push => Icons.notifications_outlined,
-      };
+    FixoNoticeTone.info => Icons.info_outline_rounded,
+    FixoNoticeTone.success => Icons.check_circle_outline_rounded,
+    FixoNoticeTone.warning => Icons.warning_amber_rounded,
+    FixoNoticeTone.error => Icons.error_outline_rounded,
+    FixoNoticeTone.push => Icons.notifications_outlined,
+  };
 
   /// (background, border, accent) per tone, all from v2 tokens.
-  static (Color, Color, Color) _palette(FixoNoticeTone tone, THColors c) => switch (tone) {
+  static (Color, Color, Color) _palette(FixoNoticeTone tone, THColors c) =>
+      switch (tone) {
         FixoNoticeTone.info => (c.surface, c.line, c.textSoft),
         FixoNoticeTone.success => (c.successTint, c.success, c.success),
         FixoNoticeTone.warning => (c.accentTint, c.accent, c.accentText),
@@ -202,12 +238,19 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
     final c = dark ? THColors.dark : THColors.light;
     final notice = widget.notice;
     final (bg, border, accent) = _palette(notice.tone, c);
-    final live = notice.tone == FixoNoticeTone.error || notice.tone == FixoNoticeTone.warning;
+    final live =
+        notice.tone == FixoNoticeTone.error ||
+        notice.tone == FixoNoticeTone.warning;
 
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(Space.s4, Space.s2, Space.s4, Space.s1),
+        padding: const EdgeInsets.fromLTRB(
+          Space.s4,
+          Space.s2,
+          Space.s4,
+          Space.s1,
+        ),
         child: Semantics(
           container: true,
           liveRegion: live,
@@ -216,7 +259,11 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
             child: Container(
               key: const Key('th-notice-banner'),
               constraints: const BoxConstraints(minHeight: Sizes.tapMin),
-              padding: const EdgeInsets.only(left: Space.s3_5, top: Space.s2_5, bottom: Space.s2_5),
+              padding: const EdgeInsets.only(
+                left: Space.s3_5,
+                top: Space.s2_5,
+                bottom: Space.s2_5,
+              ),
               decoration: BoxDecoration(
                 color: bg,
                 borderRadius: BorderRadius.circular(Radii.tile),
@@ -226,16 +273,30 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: Space.s1, right: Space.s3),
-                    child: Icon(_icon(notice.tone), size: Sizes.icon, color: accent),
+                    padding: const EdgeInsets.only(
+                      top: Space.s1,
+                      right: Space.s3,
+                    ),
+                    child: Icon(
+                      _icon(notice.tone),
+                      size: Sizes.icon,
+                      color: accent,
+                    ),
                   ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (notice.title != null) Text(notice.title!, style: THType.title.copyWith(color: c.text)),
-                        Text(notice.message, style: THType.body.copyWith(color: c.text)),
+                        if (notice.title != null)
+                          Text(
+                            notice.title!,
+                            style: THType.title.copyWith(color: c.text),
+                          ),
+                        Text(
+                          notice.message,
+                          style: THType.body.copyWith(color: c.text),
+                        ),
                         if (notice.action != null && notice.actionLabel != null)
                           Padding(
                             padding: const EdgeInsets.only(top: Space.s1_5),
@@ -245,7 +306,9 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
                                 widget.onDismiss();
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: Space.s1),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: Space.s1,
+                                ),
                                 child: Text(
                                   notice.actionLabel!,
                                   style: THType.button.copyWith(
@@ -271,7 +334,13 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
                       child: SizedBox(
                         width: Sizes.tapMin,
                         height: Sizes.tapMin,
-                        child: Center(child: Icon(Icons.close_rounded, size: Sizes.iconSm, color: c.textSoft)),
+                        child: Center(
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: Sizes.iconSm,
+                            color: c.textSoft,
+                          ),
+                        ),
                       ),
                     ),
                   ),

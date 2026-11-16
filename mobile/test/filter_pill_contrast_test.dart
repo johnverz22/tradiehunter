@@ -40,104 +40,129 @@ void main() {
       const fg = Colors.white;
       const bg = DesignTokens.brand900;
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Light selected ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Light selected ratio was $ratio',
+      );
     });
 
     test('Selected state contrast in Dark theme >= 4.5:1', () {
       const fg = Colors.white;
       const bg = DesignTokens.brand700;
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Dark selected ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Dark selected ratio was $ratio',
+      );
     });
 
     test('Unselected state contrast in Light theme >= 4.5:1', () {
       final fg = DesignTokens.inkLight;
       final bg = THColors.light.surface;
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Light unselected ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Light unselected ratio was $ratio',
+      );
     });
 
     test('Unselected state contrast in Dark theme >= 4.5:1', () {
       final fg = DesignTokens.inkDark;
       final bg = THColors.dark.surface;
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Dark unselected ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Dark unselected ratio was $ratio',
+      );
     });
 
     test('Disabled state contrast in Light theme >= 4.5:1', () {
       final fg = DesignTokens.foregroundDisabled(false);
       final bg = DesignTokens.surfaceDisabled(false);
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Light disabled ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Light disabled ratio was $ratio',
+      );
     });
 
     test('Disabled state contrast in Dark theme >= 4.5:1', () {
       final fg = DesignTokens.foregroundDisabled(true);
       final bg = DesignTokens.surfaceDisabled(true);
       final ratio = contrastRatio(fg, bg);
-      expect(ratio, greaterThanOrEqualTo(4.5),
-          reason: 'Dark disabled ratio was $ratio');
+      expect(
+        ratio,
+        greaterThanOrEqualTo(4.5),
+        reason: 'Dark disabled ratio was $ratio',
+      );
     });
   });
 
   group('FixoFilterPill widget interactions and hit targets', () {
     testWidgets('tap target is at least 48dp high', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: FixoTheme.light(),
-        home: Scaffold(
-          body: Center(
-            child: FixoFilterPill(
-              label: 'Plumbing',
-              selected: false,
-              onSelected: (_) {},
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FixoTheme.light(),
+          home: Scaffold(
+            body: Center(
+              child: FixoFilterPill(
+                label: 'Plumbing',
+                selected: false,
+                onSelected: (_) {},
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       final size = tester.getSize(find.byType(FixoFilterPill));
       expect(size.height, greaterThanOrEqualTo(Sizes.tapMin));
     });
 
-    testWidgets('selected pill displays white check icon and solid navy fill',
-        (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: FixoTheme.light(),
-        home: Scaffold(
-          body: Center(
-            child: FixoFilterPill(
-              label: 'Electrical',
-              selected: true,
-              showCheckmark: true,
-              onSelected: (_) {},
+    testWidgets('selected pill displays white check icon and solid navy fill', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FixoTheme.light(),
+          home: Scaffold(
+            body: Center(
+              child: FixoFilterPill(
+                label: 'Electrical',
+                selected: true,
+                showCheckmark: true,
+                onSelected: (_) {},
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
       expect(find.text('Electrical'), findsOneWidget);
     });
 
     testWidgets('unselected pill does not display check icon', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        theme: FixoTheme.light(),
-        home: Scaffold(
-          body: Center(
-            child: FixoFilterPill(
-              label: 'Carpentry',
-              selected: false,
-              showCheckmark: true,
-              onSelected: (_) {},
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FixoTheme.light(),
+          home: Scaffold(
+            body: Center(
+              child: FixoFilterPill(
+                label: 'Carpentry',
+                selected: false,
+                showCheckmark: true,
+                onSelected: (_) {},
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       expect(find.byIcon(Icons.check_rounded), findsNothing);
       expect(find.text('Carpentry'), findsOneWidget);
@@ -145,26 +170,29 @@ void main() {
   });
 
   group('FixoFilterBar horizontal scroll row', () {
-    testWidgets('renders filter items in a single horizontal scroll row',
-        (tester) async {
+    testWidgets('renders filter items in a single horizontal scroll row', (
+      tester,
+    ) async {
       String selected = 'Today';
       final items = ['Today', 'Upcoming', 'Awaiting payment', 'Done', 'All'];
 
-      await tester.pumpWidget(MaterialApp(
-        theme: FixoTheme.light(),
-        home: Scaffold(
-          body: StatefulBuilder(
-            builder: (context, setState) {
-              return FixoFilterBar<String>(
-                items: items,
-                selectedItem: selected,
-                labelBuilder: (s) => s,
-                onSelected: (s) => setState(() => selected = s),
-              );
-            },
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FixoTheme.light(),
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return FixoFilterBar<String>(
+                  items: items,
+                  selectedItem: selected,
+                  labelBuilder: (s) => s,
+                  onSelected: (s) => setState(() => selected = s),
+                );
+              },
+            ),
           ),
         ),
-      ));
+      );
 
       // All items are created
       for (final item in items) {
@@ -178,20 +206,21 @@ void main() {
       expect(selected, 'Upcoming');
     });
 
-    testWidgets('renders in Dark theme without layout errors',
-        (tester) async {
+    testWidgets('renders in Dark theme without layout errors', (tester) async {
       final items = ['Active', 'Completed', 'All'];
-      await tester.pumpWidget(MaterialApp(
-        theme: FixoTheme.dark(),
-        home: Scaffold(
-          body: FixoFilterBar<String>(
-            items: items,
-            selectedItem: 'Active',
-            labelBuilder: (s) => s,
-            onSelected: (_) {},
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: FixoTheme.dark(),
+          home: Scaffold(
+            body: FixoFilterBar<String>(
+              items: items,
+              selectedItem: 'Active',
+              labelBuilder: (s) => s,
+              onSelected: (_) {},
+            ),
           ),
         ),
-      ));
+      );
 
       expect(tester.takeException(), isNull);
       expect(find.text('Active'), findsOneWidget);

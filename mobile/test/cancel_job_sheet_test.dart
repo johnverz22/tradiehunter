@@ -36,9 +36,7 @@ void main() {
           size: const Size(390, 844),
           textScaler: TextScaler.linear(textScale),
         ),
-        child: Scaffold(
-          body: child,
-        ),
+        child: Scaffold(body: child),
       ),
     );
   }
@@ -56,7 +54,9 @@ void main() {
       );
 
       expect(
-        find.text('Cancellation fees may apply depending on how far along the job is.'),
+        find.text(
+          'Cancellation fees may apply depending on how far along the job is.',
+        ),
         findsOneWidget,
       );
     });
@@ -65,15 +65,14 @@ void main() {
       setTestView(tester);
       await tester.pumpWidget(
         buildSheetHarness(
-          child: const CancelJobSheet(
-            isTradie: true,
-            reasons: tradieReasons,
-          ),
+          child: const CancelJobSheet(isTradie: true, reasons: tradieReasons),
         ),
       );
 
       expect(
-        find.text('Repeated cancellations will flag your account and may affect your ranking.'),
+        find.text(
+          'Repeated cancellations will flag your account and may affect your ranking.',
+        ),
         findsOneWidget,
       );
     });
@@ -85,7 +84,8 @@ void main() {
           child: const CancelJobSheet(
             isTradie: false,
             reasons: homeownerReasons,
-            warning: 'Job is already in progress. Incurred labor charges apply.',
+            warning:
+                'Job is already in progress. Incurred labor charges apply.',
           ),
         ),
       );
@@ -95,14 +95,18 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('Cancellation fees may apply depending on how far along the job is.'),
+        find.text(
+          'Cancellation fees may apply depending on how far along the job is.',
+        ),
         findsNothing,
       );
     });
   });
 
   group('CancelJobSheet interaction & result', () {
-    testWidgets('confirm button disabled until reason selected', (tester) async {
+    testWidgets('confirm button disabled until reason selected', (
+      tester,
+    ) async {
       setTestView(tester);
       await tester.pumpWidget(
         buildSheetHarness(
@@ -126,7 +130,9 @@ void main() {
       expect(updatedButton.onPressed, isNotNull);
     });
 
-    testWidgets('confirming with reason and notes pops correct record', (tester) async {
+    testWidgets('confirming with reason and notes pops correct record', (
+      tester,
+    ) async {
       setTestView(tester);
       ({String reasonCode, String? notes})? sheetResult;
 
@@ -137,14 +143,17 @@ void main() {
             body: Builder(
               builder: (ctx) => ElevatedButton(
                 onPressed: () async {
-                  sheetResult = await showModalBottomSheet<({String reasonCode, String? notes})>(
-                    context: ctx,
-                    isScrollControlled: true,
-                    builder: (_) => const CancelJobSheet(
-                      isTradie: false,
-                      reasons: homeownerReasons,
-                    ),
-                  );
+                  sheetResult =
+                      await showModalBottomSheet<
+                        ({String reasonCode, String? notes})
+                      >(
+                        context: ctx,
+                        isScrollControlled: true,
+                        builder: (_) => const CancelJobSheet(
+                          isTradie: false,
+                          reasons: homeownerReasons,
+                        ),
+                      );
                 },
                 child: const Text('Open Sheet'),
               ),
@@ -161,7 +170,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter notes
-      await tester.enterText(find.byType(TextField), 'Travelling out of town tomorrow');
+      await tester.enterText(
+        find.byType(TextField),
+        'Travelling out of town tomorrow',
+      );
       await tester.pumpAndSettle();
 
       // Tap Confirm
@@ -173,7 +185,9 @@ void main() {
       expect(sheetResult!.notes, 'Travelling out of town tomorrow');
     });
 
-    testWidgets('confirming with empty notes returns null notes in record', (tester) async {
+    testWidgets('confirming with empty notes returns null notes in record', (
+      tester,
+    ) async {
       setTestView(tester);
       ({String reasonCode, String? notes})? sheetResult;
 
@@ -184,14 +198,17 @@ void main() {
             body: Builder(
               builder: (ctx) => ElevatedButton(
                 onPressed: () async {
-                  sheetResult = await showModalBottomSheet<({String reasonCode, String? notes})>(
-                    context: ctx,
-                    isScrollControlled: true,
-                    builder: (_) => const CancelJobSheet(
-                      isTradie: true,
-                      reasons: tradieReasons,
-                    ),
-                  );
+                  sheetResult =
+                      await showModalBottomSheet<
+                        ({String reasonCode, String? notes})
+                      >(
+                        context: ctx,
+                        isScrollControlled: true,
+                        builder: (_) => const CancelJobSheet(
+                          isTradie: true,
+                          reasons: tradieReasons,
+                        ),
+                      );
                 },
                 child: const Text('Open Sheet'),
               ),
@@ -226,14 +243,17 @@ void main() {
             body: Builder(
               builder: (ctx) => ElevatedButton(
                 onPressed: () async {
-                  sheetResult = await showModalBottomSheet<({String reasonCode, String? notes})>(
-                    context: ctx,
-                    isScrollControlled: true,
-                    builder: (_) => const CancelJobSheet(
-                      isTradie: false,
-                      reasons: homeownerReasons,
-                    ),
-                  );
+                  sheetResult =
+                      await showModalBottomSheet<
+                        ({String reasonCode, String? notes})
+                      >(
+                        context: ctx,
+                        isScrollControlled: true,
+                        builder: (_) => const CancelJobSheet(
+                          isTradie: false,
+                          reasons: homeownerReasons,
+                        ),
+                      );
                   dismissed = true;
                 },
                 child: const Text('Open Sheet'),
@@ -246,7 +266,9 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byKey(const Key('cancel_dismiss_button')));
+      await tester.ensureVisible(
+        find.byKey(const Key('cancel_dismiss_button')),
+      );
       await tester.tap(find.byKey(const Key('cancel_dismiss_button')));
       await tester.pumpAndSettle();
 
@@ -257,16 +279,15 @@ void main() {
 
   group('CancelJobSheet responsive & theme sanity', () {
     for (final isDark in [false, true]) {
-      testWidgets('renders cleanly on 320px narrow viewport dark=$isDark', (tester) async {
+      testWidgets('renders cleanly on 320px narrow viewport dark=$isDark', (
+        tester,
+      ) async {
         setTestView(tester, size: const Size(320, 700));
         await tester.pumpWidget(
           buildSheetHarness(
             isDark: isDark,
             child: const SingleChildScrollView(
-              child: CancelJobSheet(
-                isTradie: false,
-                reasons: homeownerReasons,
-              ),
+              child: CancelJobSheet(isTradie: false, reasons: homeownerReasons),
             ),
           ),
         );

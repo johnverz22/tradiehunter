@@ -262,48 +262,48 @@ class Job {
     Decimal? finalAmount,
     double? finalHours,
   }) => Job(
-        id: id,
-        title: title,
-        category: category,
-        suburb: suburb,
-        status: status ?? this.status,
-        stage: stage ?? this.stage,
-        urgency: urgency,
-        description: description,
-        photoUrls: photoUrls,
-        createdAtUtc: createdAtUtc,
-        address: address,
-        latitude: latitude,
-        longitude: longitude,
-        matchedTradieId: matchedTradieId ?? this.matchedTradieId,
-        matchedTradieName: matchedTradieName ?? this.matchedTradieName,
-        homeownerId: homeownerId,
-        serviceId: serviceId,
-        scheduledStartUtc: scheduledStartUtc ?? this.scheduledStartUtc,
-        hours: hours,
-        hourlyRate: hourlyRate ?? this.hourlyRate,
-        totalAmount: totalAmount,
-        referenceCode: referenceCode,
-        disputeStatus: disputeStatus ?? this.disputeStatus,
-        timingPreference: timingPreference,
-        scheduledEndUtc: scheduledEndUtc,
-        estimatedHours: estimatedHours,
-        estimatedTotal: estimatedTotal ?? this.estimatedTotal,
-        finalHours: finalHours ?? this.finalHours,
-        labourAmount: labourAmount,
-        adjustmentsTotal: adjustmentsTotal,
-        finalAmount: finalAmount ?? this.finalAmount,
-        completionSubmittedAtUtc: completionSubmittedAtUtc,
-        jobType: jobType,
-        agreedPricingModel: agreedPricingModel,
-        flowVersion: flowVersion,
-        isAboveEstimateTolerance: isAboveEstimateTolerance,
-        budgetMin: budgetMin,
-        budgetMax: budgetMax,
-        materialsBy: materialsBy,
-        siteVisitWelcome: siteVisitWelcome,
-        scopeNotes: scopeNotes,
-      );
+    id: id,
+    title: title,
+    category: category,
+    suburb: suburb,
+    status: status ?? this.status,
+    stage: stage ?? this.stage,
+    urgency: urgency,
+    description: description,
+    photoUrls: photoUrls,
+    createdAtUtc: createdAtUtc,
+    address: address,
+    latitude: latitude,
+    longitude: longitude,
+    matchedTradieId: matchedTradieId ?? this.matchedTradieId,
+    matchedTradieName: matchedTradieName ?? this.matchedTradieName,
+    homeownerId: homeownerId,
+    serviceId: serviceId,
+    scheduledStartUtc: scheduledStartUtc ?? this.scheduledStartUtc,
+    hours: hours,
+    hourlyRate: hourlyRate ?? this.hourlyRate,
+    totalAmount: totalAmount,
+    referenceCode: referenceCode,
+    disputeStatus: disputeStatus ?? this.disputeStatus,
+    timingPreference: timingPreference,
+    scheduledEndUtc: scheduledEndUtc,
+    estimatedHours: estimatedHours,
+    estimatedTotal: estimatedTotal ?? this.estimatedTotal,
+    finalHours: finalHours ?? this.finalHours,
+    labourAmount: labourAmount,
+    adjustmentsTotal: adjustmentsTotal,
+    finalAmount: finalAmount ?? this.finalAmount,
+    completionSubmittedAtUtc: completionSubmittedAtUtc,
+    jobType: jobType,
+    agreedPricingModel: agreedPricingModel,
+    flowVersion: flowVersion,
+    isAboveEstimateTolerance: isAboveEstimateTolerance,
+    budgetMin: budgetMin,
+    budgetMax: budgetMax,
+    materialsBy: materialsBy,
+    siteVisitWelcome: siteVisitWelcome,
+    scopeNotes: scopeNotes,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -893,8 +893,7 @@ class TradieListEntry {
   }
 
   /// A distance is only worth showing when the server computed one.
-  bool get hasDistance =>
-      distance.trim().isNotEmpty || distanceKm > 0;
+  bool get hasDistance => distance.trim().isNotEmpty || distanceKm > 0;
 
   factory TradieListEntry.fromJson(Map<String, dynamic> json) {
     final numKm = (json['distanceKm'] as num?)?.toDouble() ?? 0;
@@ -983,29 +982,27 @@ class JobAdjustment {
   bool get isPending => status == JobAdjustment.statusPending;
   bool get isApproved => status == JobAdjustment.statusApproved;
 
-  factory JobAdjustment.fromJson(Map<String, dynamic> json) =>
-      JobAdjustment(
-        id: json['id']?.toString() ?? '',
-        jobId: json['jobId']?.toString() ?? '',
-        proposedByTradieId: json['proposedByTradieId']?.toString() ?? '',
-        proposedByTradieName:
-            json['proposedByTradieName'] as String? ?? '',
-        kind: json['kind'] as String? ?? JobAdjustment.kindOther,
-        description: json['description'] as String? ?? '',
-        amount: _decimalFromJson(json['amount']) ?? Decimal.zero,
-        evidenceUrl: json['evidenceUrl'] as String?,
-        status: json['status'] as String? ?? JobAdjustment.statusPending,
-        createdAtUtc: json['createdAtUtc'] != null
-            ? DateTime.parse(json['createdAtUtc'] as String).toUtc()
-            : DateTime.now().toUtc(),
-        respondedAtUtc: json['respondedAtUtc'] != null
-            ? DateTime.parse(json['respondedAtUtc'] as String).toUtc()
-            : null,
-        responseNote: json['responseNote'] as String?,
-        expiresAtUtc: json['expiresAtUtc'] != null
-            ? DateTime.parse(json['expiresAtUtc'] as String).toUtc()
-            : null,
-      );
+  factory JobAdjustment.fromJson(Map<String, dynamic> json) => JobAdjustment(
+    id: json['id']?.toString() ?? '',
+    jobId: json['jobId']?.toString() ?? '',
+    proposedByTradieId: json['proposedByTradieId']?.toString() ?? '',
+    proposedByTradieName: json['proposedByTradieName'] as String? ?? '',
+    kind: json['kind'] as String? ?? JobAdjustment.kindOther,
+    description: json['description'] as String? ?? '',
+    amount: _decimalFromJson(json['amount']) ?? Decimal.zero,
+    evidenceUrl: json['evidenceUrl'] as String?,
+    status: json['status'] as String? ?? JobAdjustment.statusPending,
+    createdAtUtc: json['createdAtUtc'] != null
+        ? DateTime.parse(json['createdAtUtc'] as String).toUtc()
+        : DateTime.now().toUtc(),
+    respondedAtUtc: json['respondedAtUtc'] != null
+        ? DateTime.parse(json['respondedAtUtc'] as String).toUtc()
+        : null,
+    responseNote: json['responseNote'] as String?,
+    expiresAtUtc: json['expiresAtUtc'] != null
+        ? DateTime.parse(json['expiresAtUtc'] as String).toUtc()
+        : null,
+  );
 }
 
 /// Server response from POST /api/jobs/{id}/check-out (v1.7 contract #7).
@@ -1052,8 +1049,7 @@ class CheckOutSummary {
         exceedsTolerance: json['exceedsTolerance'] as bool? ?? false,
         toleranceNote: json['toleranceNote'] as String?,
         completionSubmittedAtUtc: json['completionSubmittedAtUtc'] != null
-            ? DateTime.parse(json['completionSubmittedAtUtc'] as String)
-                .toUtc()
+            ? DateTime.parse(json['completionSubmittedAtUtc'] as String).toUtc()
             : null,
       );
 }
@@ -1136,33 +1132,31 @@ class Quote {
   }
 
   factory Quote.fromJson(Map<String, dynamic> json) => Quote(
-        id: json['id']?.toString() ?? '',
-        jobId: json['jobId']?.toString() ?? '',
-        tradieId: json['tradieId']?.toString() ?? '',
-        tradieName: json['tradieName'] as String? ?? '',
-        businessName: json['businessName'] as String?,
-        initials: json['initials'] as String? ?? '',
-        verified: json['verified'] as bool? ?? false,
-        rating: (json['rating'] as num?)?.toDouble(),
-        reviewCount: (json['reviewCount'] as num?)?.toInt(),
-        pricingModel:
-            json['pricingModel'] as String? ?? Quote.pricingFixed,
-        amount: _decimalFromJson(json['amount']),
-        minAmount: _decimalFromJson(json['minAmount']),
-        maxAmount: _decimalFromJson(json['maxAmount']),
-        cap: _decimalFromJson(json['cap']),
-        inclusions: json['inclusions'] as String?,
-        exclusions: json['exclusions'] as String?,
-        materialsIncluded: json['materialsIncluded'] as bool? ?? false,
-        gstIncluded: json['gstIncluded'] as bool? ?? false,
-        proposedStartUtc: json['proposedStartUtc'] != null
-            ? DateTime.parse(json['proposedStartUtc'] as String).toUtc()
-            : null,
-        estimatedDurationDays:
-            (json['estimatedDurationDays'] as num?)?.toInt(),
-        validUntilUtc: json['validUntilUtc'] != null
-            ? DateTime.parse(json['validUntilUtc'] as String).toUtc()
-            : null,
-        status: json['status'] as String? ?? Quote.statusPending,
-      );
+    id: json['id']?.toString() ?? '',
+    jobId: json['jobId']?.toString() ?? '',
+    tradieId: json['tradieId']?.toString() ?? '',
+    tradieName: json['tradieName'] as String? ?? '',
+    businessName: json['businessName'] as String?,
+    initials: json['initials'] as String? ?? '',
+    verified: json['verified'] as bool? ?? false,
+    rating: (json['rating'] as num?)?.toDouble(),
+    reviewCount: (json['reviewCount'] as num?)?.toInt(),
+    pricingModel: json['pricingModel'] as String? ?? Quote.pricingFixed,
+    amount: _decimalFromJson(json['amount']),
+    minAmount: _decimalFromJson(json['minAmount']),
+    maxAmount: _decimalFromJson(json['maxAmount']),
+    cap: _decimalFromJson(json['cap']),
+    inclusions: json['inclusions'] as String?,
+    exclusions: json['exclusions'] as String?,
+    materialsIncluded: json['materialsIncluded'] as bool? ?? false,
+    gstIncluded: json['gstIncluded'] as bool? ?? false,
+    proposedStartUtc: json['proposedStartUtc'] != null
+        ? DateTime.parse(json['proposedStartUtc'] as String).toUtc()
+        : null,
+    estimatedDurationDays: (json['estimatedDurationDays'] as num?)?.toInt(),
+    validUntilUtc: json['validUntilUtc'] != null
+        ? DateTime.parse(json['validUntilUtc'] as String).toUtc()
+        : null,
+    status: json['status'] as String? ?? Quote.statusPending,
+  );
 }

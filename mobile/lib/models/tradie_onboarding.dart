@@ -30,13 +30,16 @@ class TradieService {
   });
 
   factory TradieService.fromJson(Map<String, dynamic> json) => TradieService(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        name: json['name'] as String? ?? '',
-        category: json['category'] as String? ?? '',
-      );
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    name: json['name'] as String? ?? '',
+    category: json['category'] as String? ?? '',
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'name': name, 'category': category};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'category': category,
+  };
 }
 
 /// One service the tradie offers plus the hourly rate they charge for it.
@@ -51,15 +54,18 @@ class TradieRateEntry {
     required this.hourlyRate,
   });
 
-  factory TradieRateEntry.fromJson(Map<String, dynamic> json) => TradieRateEntry(
+  factory TradieRateEntry.fromJson(Map<String, dynamic> json) =>
+      TradieRateEntry(
         serviceId: (json['serviceId'] as num?)?.toInt() ?? 0,
         serviceName: json['serviceName'] as String? ?? '',
         hourlyRate: parseDecimal(json['hourlyRate']) ?? Decimal.zero,
       );
 
   /// Matches `RateInputDto` on `POST /api/tradie/rates`.
-  Map<String, dynamic> toInputJson() =>
-      {'serviceId': serviceId, 'hourlyRate': hourlyRate.toDouble()};
+  Map<String, dynamic> toInputJson() => {
+    'serviceId': serviceId,
+    'hourlyRate': hourlyRate.toDouble(),
+  };
 }
 
 /// A tradie's availability window on one weekday.
@@ -79,18 +85,22 @@ class TradieScheduleSlot {
     final weekday = (json['weekday'] as num?)?.toInt() ?? 0;
     return TradieScheduleSlot(
       weekday: weekday,
-      start: parseApiTimeOfDay(json['startTime']) ?? const TimeOfDay(hour: 9, minute: 0),
-      end: parseApiTimeOfDay(json['endTime']) ?? const TimeOfDay(hour: 17, minute: 0),
+      start:
+          parseApiTimeOfDay(json['startTime']) ??
+          const TimeOfDay(hour: 9, minute: 0),
+      end:
+          parseApiTimeOfDay(json['endTime']) ??
+          const TimeOfDay(hour: 17, minute: 0),
     );
   }
 
   /// Matches `TradieScheduleDto`. The backend validates `start < end`, one
   /// slot per weekday, and `end <= 24:00`.
   Map<String, dynamic> toJson() => {
-        'weekday': weekday,
-        'startTime': formatApiTimeOfDay(start),
-        'endTime': formatApiTimeOfDay(end),
-      };
+    'weekday': weekday,
+    'startTime': formatApiTimeOfDay(start),
+    'endTime': formatApiTimeOfDay(end),
+  };
 
   TradieScheduleSlot copyWith({TimeOfDay? start, TimeOfDay? end}) =>
       TradieScheduleSlot(

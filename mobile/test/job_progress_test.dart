@@ -109,7 +109,9 @@ void main() {
             }
             expect(
               find.bySemanticsLabel(
-                RegExp('Requested.*Booked.*In progress.*Review & approve.*Pay.*Completed'),
+                RegExp(
+                  'Requested.*Booked.*In progress.*Review & approve.*Pay.*Completed',
+                ),
               ),
               findsOneWidget,
             );

@@ -156,7 +156,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       filled: true,
       fillColor: isEditable ? editableBg : readOnlyBg,
       constraints: const BoxConstraints(minHeight: DesignTokens.heightInput),
-      contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: Space.s4,
+        vertical: Space.s4,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
         borderSide: BorderSide(
@@ -176,15 +179,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
         borderSide: BorderSide(
-          color: isDark ? Colors.white.withValues(alpha: Alpha.tintStandard) : Colors.black.withValues(alpha: Alpha.tintStandard),
+          color: isDark
+              ? Colors.white.withValues(alpha: Alpha.tintStandard)
+              : Colors.black.withValues(alpha: Alpha.tintStandard),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(DesignTokens.radiusInput),
-        borderSide: const BorderSide(
-          color: DesignTokens.amber,
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: DesignTokens.amber, width: 2),
       ),
     );
   }
@@ -285,7 +287,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: StatusBadge(
                   label: isTradie ? 'Tradie' : 'Homeowner',
                   kind: FixoBadgeKind.waiting,
-                  icon: isTradie ? Icons.handyman_outlined : Icons.home_outlined,
+                  icon: isTradie
+                      ? Icons.handyman_outlined
+                      : Icons.home_outlined,
                 ),
               ),
               const SizedBox(height: Space.s3),
@@ -301,7 +305,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       }
                     });
                   },
-                  icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded, size: 18),
+                  icon: Icon(
+                    _isEditing ? Icons.close_rounded : Icons.edit_rounded,
+                    size: 18,
+                  ),
                   label: Text(_isEditing ? 'Cancel Editing' : 'Edit Profile'),
                 ),
               ),

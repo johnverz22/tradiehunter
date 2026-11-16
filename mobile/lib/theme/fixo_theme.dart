@@ -56,22 +56,41 @@ class FixoTheme {
         GoogleFonts.ibmPlexSans(
           fontSize: size,
           fontWeight: weight,
-          height: 1.4,  // was 1.5 — tighter but still readable; 1.4 × 16 = 22.4 px
+          height:
+              1.4, // was 1.5 — tighter but still readable; 1.4 × 16 = 22.4 px
           color: muted ? DesignTokens.inkSoft(isDark) : colorScheme.onSurface,
         );
     final controlShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(DesignTokens.radiusControl),
     );
     final textTheme = baseTextTheme.copyWith(
-      headlineLarge: heading(DesignTokens.fontSizeH1, FW.bold),          // 24, h: 1.25
-      headlineMedium: heading(DesignTokens.fontSizeH2, FW.semibold),     // 20, h: 1.25
-      headlineSmall: heading(DesignTokens.fontSizeH3, FW.semibold),      // 17, h: 1.25
-      titleLarge: heading(DesignTokens.fontSizeH2, FW.semibold),         // 20, h: 1.25
-      titleMedium: heading(DesignTokens.fontSizeH3, FW.semibold),        // 17, h: 1.25 (was body)
-      titleSmall: body(DesignTokens.fontSizeSecondary, FW.semibold),     // 14, h: 1.4
-      labelLarge: body(DesignTokens.fontSizeControl, FW.semibold),       // 16, h: 1.4 (button label)
-      labelMedium: body(DesignTokens.fontSizeStatus, FW.semibold),       // 13, h: 1.4 (chip/status)
-      labelSmall: body(DesignTokens.fontSizeCaption, FW.medium),         // 13, h: 1.4
+      headlineLarge: heading(DesignTokens.fontSizeH1, FW.bold), // 24, h: 1.25
+      headlineMedium: heading(
+        DesignTokens.fontSizeH2,
+        FW.semibold,
+      ), // 20, h: 1.25
+      headlineSmall: heading(
+        DesignTokens.fontSizeH3,
+        FW.semibold,
+      ), // 17, h: 1.25
+      titleLarge: heading(DesignTokens.fontSizeH2, FW.semibold), // 20, h: 1.25
+      titleMedium: heading(
+        DesignTokens.fontSizeH3,
+        FW.semibold,
+      ), // 17, h: 1.25 (was body)
+      titleSmall: body(
+        DesignTokens.fontSizeSecondary,
+        FW.semibold,
+      ), // 14, h: 1.4
+      labelLarge: body(
+        DesignTokens.fontSizeControl,
+        FW.semibold,
+      ), // 16, h: 1.4 (button label)
+      labelMedium: body(
+        DesignTokens.fontSizeStatus,
+        FW.semibold,
+      ), // 13, h: 1.4 (chip/status)
+      labelSmall: body(DesignTokens.fontSizeCaption, FW.medium), // 13, h: 1.4
       displayLarge: GoogleFonts.spaceGrotesk(
         fontSize: DesignTokens.fontSizeDisplay,
         fontWeight: FW.bold,
@@ -90,9 +109,10 @@ class FixoTheme {
         height: 1.25,
         color: colorScheme.onSurface,
       ),
-      bodyLarge: body(DesignTokens.fontSizeBody, FW.regular),            // 16, h: 1.4
-      bodyMedium: body(DesignTokens.fontSizeBody, FW.regular),           // 16, h: 1.4
-      bodySmall: body(                                                     // 14, h: 1.4 muted
+      bodyLarge: body(DesignTokens.fontSizeBody, FW.regular), // 16, h: 1.4
+      bodyMedium: body(DesignTokens.fontSizeBody, FW.regular), // 16, h: 1.4
+      bodySmall: body(
+        // 14, h: 1.4 muted
         DesignTokens.fontSizeSecondary,
         FW.regular,
         muted: true,
@@ -258,11 +278,7 @@ class FixoTheme {
       inputDecorationTheme: InputDecorationTheme(
         constraints: const BoxConstraints(minHeight: DesignTokens.heightInput),
         helperStyle: textTheme.bodySmall,
-        hintStyle: body(
-          DesignTokens.fontSizeBody,
-          FW.regular,
-          muted: true,
-        ),
+        hintStyle: body(DesignTokens.fontSizeBody, FW.regular, muted: true),
         labelStyle: textTheme.bodyMedium,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(DesignTokens.radiusInput),

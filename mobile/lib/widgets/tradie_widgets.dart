@@ -137,15 +137,16 @@ class TradieCard extends StatelessWidget {
                         rating! <= 0)
                     ? 'New to TradieHunter'
                     : reviewCount != null &&
-                            reviewCount! > 0 &&
-                            rating != null &&
-                            rating! > 0 &&
-                            rating! <= 5
-                        ? '${rating!.toStringAsFixed(1)} ($reviewCount ${reviewCount == 1 ? 'review' : 'reviews'})'
-                        : 'New to TradieHunter',
+                          reviewCount! > 0 &&
+                          rating != null &&
+                          rating! > 0 &&
+                          rating! <= 5
+                    ? '${rating!.toStringAsFixed(1)} ($reviewCount ${reviewCount == 1 ? 'review' : 'reviews'})'
+                    : 'New to TradieHunter',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FW.semibold,
-                  color: (reviewCount == null ||
+                  color:
+                      (reviewCount == null ||
                           reviewCount == 0 ||
                           rating == null ||
                           rating! <= 0)

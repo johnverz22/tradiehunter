@@ -38,10 +38,10 @@ class FixoProgressBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: height,
-              backgroundColor:
-                  trackColor ?? DesignTokens.paperLine(isDark),
+              backgroundColor: trackColor ?? DesignTokens.paperLine(isDark),
               valueColor: AlwaysStoppedAnimation<Color>(
-                  barColor ?? DesignTokens.brand500),
+                barColor ?? DesignTokens.brand500,
+              ),
             ),
           ),
         ),

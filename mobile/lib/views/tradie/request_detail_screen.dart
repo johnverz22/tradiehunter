@@ -214,7 +214,10 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
         setState(() => _busy = false);
         await _reloadOffer();
         if (mounted) {
-          FixoNotice.error(context, 'Could not respond to this offer — it may have expired.');
+          FixoNotice.error(
+            context,
+            'Could not respond to this offer — it may have expired.',
+          );
         }
       case OfferResponseOutcome.alreadyInFlight:
         setState(() => _busy = false);
@@ -232,14 +235,10 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
     final job = _job;
     if (job == null) {
       return Scaffold(
-        appBar: FixoAppBar(
-          title: 'Job Request',
-          showBack: !widget.embedded,
-        ),
+        appBar: FixoAppBar(title: 'Job Request', showBack: !widget.embedded),
         body: _RequestNotFoundBody(
           heading: 'This request expired',
-          subtext:
-              'Another tradie may have accepted this job, or the offer window closed.',
+          subtext: 'Another tradie may have accepted this job, or the offer window closed.',
           onAction: () {
             if (context.canPop()) {
               context.pop();
@@ -262,10 +261,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
     final canRespond = !_busy && offer != null && !expired;
 
     return Scaffold(
-      appBar: FixoAppBar(
-        title: 'Job Request',
-        showBack: !widget.embedded,
-      ),
+      appBar: FixoAppBar(title: 'Job Request', showBack: !widget.embedded),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           Space.s6,
@@ -390,9 +386,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
                     key: ValueKey('photo_thumb_$i'),
                     onTap: () => _openPhotoViewer(context, i),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        Radii.control,
-                      ),
+                      borderRadius: BorderRadius.circular(Radii.control),
                       child: Image.network(
                         _resolvePhotoUrl(job.photoUrls[i]),
                         width: Sizes.photoThumbW,
@@ -526,9 +520,8 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
       ),
-      builder: (_) => _QuoteFormSheet(
-        gstRegisteredFromProfile: _profileGstRegistered(),
-      ),
+      builder: (_) =>
+          _QuoteFormSheet(gstRegisteredFromProfile: _profileGstRegistered()),
     );
     if (payload == null || !mounted) return;
 
@@ -613,8 +606,8 @@ class _ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheduledUtc = job.scheduledStartUtc!;
-    var dateStr =
-        DateFormat('EEEE d MMMM · h:mm a').format(scheduledUtc.toLocal());
+    var dateStr = DateFormat('EEEE d MMMM · h:mm a')
+        .format(scheduledUtc.toLocal());
     if (job.hours > 0) dateStr += ' · ${job.hours}h';
     return FixoCard(
       child: Row(
@@ -863,10 +856,7 @@ class _RequestNotFoundBody extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: Sizes.button,
-            child: FilledButton(
-              onPressed: onAction,
-              child: Text(actionLabel),
-            ),
+            child: FilledButton(onPressed: onAction, child: Text(actionLabel)),
           ),
         ],
       ),
@@ -944,15 +934,12 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
   }
 
   bool get _canSubmit => switch (_pricingModel) {
-        Quote.pricingFixed => _fixedAmount != null,
-        Quote.pricingEstimateRange =>
-          _rangeMin != null &&
-              _rangeMax != null &&
-              _rangeMin! <= _rangeMax!,
-        Quote.pricingHourlyWithCap =>
-          _hourlyRate != null && _hourlyCap != null,
-        _ => false,
-      };
+    Quote.pricingFixed => _fixedAmount != null,
+    Quote.pricingEstimateRange =>
+      _rangeMin != null && _rangeMax != null && _rangeMin! <= _rangeMax!,
+    Quote.pricingHourlyWithCap => _hourlyRate != null && _hourlyCap != null,
+    _ => false,
+  };
 
   void _submit(BuildContext context) {
     if (!_canSubmit) return;
@@ -960,14 +947,11 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
       'pricingModel': _pricingModel,
       if (_pricingModel == Quote.pricingFixed && _fixedAmount != null)
         'amount': _fixedAmount.toString(),
-      if (_pricingModel == Quote.pricingEstimateRange &&
-          _rangeMin != null)
+      if (_pricingModel == Quote.pricingEstimateRange && _rangeMin != null)
         'minAmount': _rangeMin.toString(),
-      if (_pricingModel == Quote.pricingEstimateRange &&
-          _rangeMax != null)
+      if (_pricingModel == Quote.pricingEstimateRange && _rangeMax != null)
         'maxAmount': _rangeMax.toString(),
-      if (_pricingModel == Quote.pricingHourlyWithCap &&
-          _hourlyRate != null)
+      if (_pricingModel == Quote.pricingHourlyWithCap && _hourlyRate != null)
         'amount': _hourlyRate.toString(),
       if (_pricingModel == Quote.pricingHourlyWithCap && _hourlyCap != null)
         'cap': _hourlyCap.toString(),
@@ -998,8 +982,13 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
     );
     if (time == null) return;
     setState(() {
-      _proposedStart =
-          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _proposedStart = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -1137,8 +1126,7 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
                   decoration: const InputDecoration(
                     labelText: 'Cap (maximum total)',
                     prefixText: r'$',
-                    helperText:
-                        'The homeowner pays your rate, never more than the cap.',
+                    helperText: 'The homeowner pays your rate, never more than the cap.',
                     helperMaxLines: 2,
                   ),
                   onChanged: (_) => setState(() {}),
@@ -1152,8 +1140,7 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
                 controller: _inclusionsController,
                 maxLines: 3,
                 maxLength: 1000,
-                buildCounter:
-                    _hideQuoteCounterUntilThreshold(threshold: 0.8),
+                buildCounter: _hideQuoteCounterUntilThreshold(threshold: 0.8),
                 decoration: const InputDecoration(
                   labelText: 'Inclusions (optional)',
                   hintText: 'What the price covers…',
@@ -1165,8 +1152,7 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
                 controller: _exclusionsController,
                 maxLines: 3,
                 maxLength: 1000,
-                buildCounter:
-                    _hideQuoteCounterUntilThreshold(threshold: 0.8),
+                buildCounter: _hideQuoteCounterUntilThreshold(threshold: 0.8),
                 decoration: const InputDecoration(
                   labelText: 'Exclusions (optional)',
                   hintText: 'What it does not cover…',
@@ -1191,10 +1177,10 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
               Text(
                 gstKnown
                     ? (_gstIncluded
-                        ? 'From your profile — you are GST-registered.'
-                        : 'From your profile — you are not GST-registered.')
+                          ? 'From your profile — you are GST-registered.'
+                          : 'From your profile — you are not GST-registered.')
                     : 'Tick only if you are GST-registered — the app validates '
-                        'this against your profile.',
+                          'this against your profile.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -1215,8 +1201,9 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
                     vertical: Space.s2,
                   ),
                   decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(DesignTokens.radiusInput),
+                    borderRadius: BorderRadius.circular(
+                      DesignTokens.radiusInput,
+                    ),
                     border: Border.all(
                       color: DesignTokens.borderControl(
                         theme.brightness == Brightness.dark,
@@ -1236,7 +1223,7 @@ class _QuoteFormSheetState extends State<_QuoteFormSheet> {
                           _proposedStart == null
                               ? 'Proposed start (optional)'
                               : '${DateFormat('EEE d MMM y').format(_proposedStart!)} · '
-                                  '${DateFormat('h:mm a').format(_proposedStart!)}',
+                                    '${DateFormat('h:mm a').format(_proposedStart!)}',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: _proposedStart == null
                                 ? theme.hintColor

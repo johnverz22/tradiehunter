@@ -22,8 +22,8 @@ final localeConfigProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
 /// Currency symbol from locale config, defaulting to `$`.
 String currencySymbolOf(Map<String, dynamic>? locale) =>
     (locale?['currencySymbol'] as String?)?.trim().isNotEmpty == true
-        ? locale!['currencySymbol'] as String
-        : '\$';
+    ? locale!['currencySymbol'] as String
+    : '\$';
 
 /// Human region label, e.g. "New Zealand (NZD)". Never "$ NZD". The country
 /// name is shown only when the backend supplies a known country code;
@@ -33,6 +33,7 @@ String regionLabel(Map<String, dynamic>? config) {
   final code = (locale?['defaultCurrency'] as String?)?.trim();
   final currency = code == null || code.isEmpty ? 'NZD' : code;
   const countries = {'NZ': 'New Zealand', 'AU': 'Australia'};
-  final country = countries[(locale?['legalEntityCountry'] as String?)?.toUpperCase()];
+  final country =
+      countries[(locale?['legalEntityCountry'] as String?)?.toUpperCase()];
   return country == null ? currency : '$country ($currency)';
 }

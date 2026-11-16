@@ -13,40 +13,70 @@ class TrExtraCostScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return THScaffold(
-      appBar: THAppBar(title: 'Request extra cost', subtitle: 'Mere must approve before billing'),
-      stickyBar: THStickyBar(children: [
-        THButton(
-          label: 'Send request',
-          kind: THButtonKind.accent,
-          onPressed: () {},
-        ),
-      ]),
+      appBar: THAppBar(
+        title: 'Request extra cost',
+        subtitle: 'Mere must approve before billing',
+      ),
+      stickyBar: THStickyBar(
+        children: [
+          THButton(
+            label: 'Send request',
+            kind: THButtonKind.accent,
+            onPressed: () {},
+          ),
+        ],
+      ),
       scrollable: true,
       body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: Space.s3,
-          children: [
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s3,
+        children: [
           THText('TYPE', style: THTextStyle.label, tone: THTone.soft),
-          THPills(items: [THPillItem('Materials', selected: true), THPillItem('Extra work'), THPillItem('Travel')]),
-          THField(label: 'AMOUNT · INCL. GST', value: '\$48.50', icon: Icons.attach_money_rounded),
-          THField(label: 'WHAT IS IT FOR?', value: 'Replacement tap cartridge. The old one is worn through.', height: 90.0),
-          THDashBox(icon: Icons.photo_camera_rounded, title: 'Attach receipt or photo'),
+          THPills(
+            items: [
+              THPillItem('Materials', selected: true),
+              THPillItem('Extra work'),
+              THPillItem('Travel'),
+            ],
+          ),
+          THField(
+            label: 'AMOUNT · INCL. GST',
+            value: '\$48.50',
+            icon: Icons.attach_money_rounded,
+          ),
+          THField(
+            label: 'WHAT IS IT FOR?',
+            value: 'Replacement tap cartridge. The old one is worn through.',
+            height: 90.0,
+          ),
+          THDashBox(
+            icon: Icons.photo_camera_rounded,
+            title: 'Attach receipt or photo',
+          ),
           THCard(
             padding: Space.s3_5,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start, spacing: Space.s2_5,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: Space.s2_5,
                 children: [
-                  THIcon(Icons.info_outline_rounded, size: 18.0, tone: THTone.brand),
+                  THIcon(
+                    Icons.info_outline_rounded,
+                    size: 18.0,
+                    tone: THTone.brand,
+                  ),
                   Expanded(
-                    child: THText('Requests expire after 24 hours. Commission applies to labour only.', style: THTextStyle.meta),
+                    child: THText(
+                      'Requests expire after 24 hours. Commission applies to labour only.',
+                      style: THTextStyle.meta,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          ],
-        ),
+        ],
+      ),
     );
   }
 }
