@@ -4,6 +4,7 @@
 > **This document is docs-only.** No application code, components, styles, or source files are modified in Phase 1.
 > **Source:** `th-design-v2/` (Trust Navy + Gold, v2.0.0)
 > **Replaces:** `docs/design/` (Space Grotesk + IBM Plex + Amber, v1.7)
+> **Revision 2026-11-16:** Phases 2–6 rewritten as a side-by-side rebuild of the presentation layer (see §4.0). Phase 1, §1–§3 and §5 are unchanged.
 
 ---
 
@@ -189,6 +190,51 @@ The following **specific strings** appear in multiple docs and rule files and mu
 
 ## 4. Phased Execution Roadmap
 
+### 4.0 Strategy (revised 2026-11-16) — rebuild the UI beside the old one, keep the data layer
+
+> [!NOTE]
+> Phases 2–6 were rewritten on 2026-11-16. Phase 1 and everything marked done are unchanged. The earlier Phase 2–5 draft replaced `design_tokens.dart` in place and swapped `Fixo*` widgets file by file; that fails immediately because the v1 app already defines `THColors`, `THType`, `THBadge`, `THField` etc. (in `lib/theme/design_tokens.dart` and `lib/widgets/th_components.dart`), and it would touch 60 files and 2,000-line screens in one pass.
+
+**What we keep untouched** (verified UI-independent: nothing in them imports `views/`): `models/`, `repositories/` (auth, jobs, payments, profile, chat/reviews, addresses, SignalR `job_hub_client`), `network/`, `viewmodels/`, `utils/`, `feedback/` controllers, Firebase/FCM setup, `app_router.dart` paths, `extra` payload types and deep-link behaviour, and the Flutter platform projects (Firebase, Google sign-in, signing, icons).
+
+**What we recreate:** the presentation layer only, in a new tree `mobile/lib/ui/` (feature folders: `auth/`, `homeowner/`, `tradie/`, `shared/`, `feedback/`, `design/`, `gallery/`), built from `th_widgets.dart` and `THTheme`.
+
+**Why not a brand-new Flutter project:** it would force redoing Firebase, Google sign-in, push, signing and icons, and re-wiring auth/SignalR for no design benefit. **Why not in-place swapping:** name collisions, one giant PR, and the app is unshippable until it finishes.
+
+**How old and new coexist**
+- Same routes, same paths, same `extra`. A route builder returns the v2 screen only if its id is in `v2Screens` (or `--dart-define=UI_V2=all`); otherwise it returns the old screen. Rollback of any screen is a one-line flag change.
+- v2 screens are wrapped in `ThScope` (§2.3), so the rest of the app keeps `FixoTheme` until Phase 6.
+- An import-boundary guard (§2.4) keeps v1 and v2 files from importing each other.
+
+**Per-screen recipe (used in Phases 3–5)**
+1. Copy the generated stub from `docs/design/flutter/screens/<id>_screen.dart` into `lib/ui/<feature>/`. It is now hand-owned; never regenerate over it. (`ast/` + `mockups/` stay the design reference.)
+2. Make it a `ConsumerWidget` and replace sample copy by watching the **existing** providers/viewmodels the old screen used. Put model→display mapping (money via `utils/money.dart`, status text via `job_status_presentation.dart`) in a small pure mapper next to the screen so it can be unit-tested.
+3. Port the old screen's **actions** one by one (every button/sheet/navigation) to the same viewmodel methods. Write the action list from the old file first; it is the parity checklist.
+4. Use `ThStateView` for loading / empty / error; use `THNotice` for toasts and banners.
+5. Preserve the `Key`s the old screen exposed (141 in `lib/views`) wherever `test/` or `integration_test/` rely on them.
+6. Add a widget test (provider overrides, light + dark) and, where useful, a golden.
+7. Visual QA against `docs/design/mockups/index.html`, then add the id to `v2Screens`, one PR per screen or small group.
+
+**Definition of done for a screen:** parity checklist complete, old-screen flow tests green with the flag on, no hardcoded colours/sizes/fonts (tokens only), Semantics labels kept, light + dark verified.
+
+### 4.1 API policy and gap register
+
+The backend API is the contract. **No backend change is planned by default.** While porting, if a v2 element needs data the API does not return, resolve it in this order: (1) derive it client-side from data already returned, (2) omit the element, (3) only if neither is acceptable, add an **additive, optional** field (with a backend test and a note in `docs/SPECS.md`) so the shipped app never breaks. Every gap gets a row here.
+
+| # | Screen | Need | Finding | Resolution |
+|---|---|---|---|---|
+| G-1 | `tr_earnings` | 7-day bar chart (`THBars`) | `GET /api/tradie/earnings` (`TradieEarningsDto`) returns only period totals (earned / processed / pending / failed). No per-day values exist. | Port totals first; hide `THBars` when data is absent. Optional additive field `DailyNet[]` on `TradieEarningsDto` only if the owner wants the chart. |
+| G-2 | `notifications` | notification list | Backend has no inbox endpoint; the app keeps a client-side store (`notification_center.dart`). | No change; keep client-side. |
+| G-3 | `ho_home` hero | "Needs your attention" item | Not verified. Expected to derive from job statuses in `GET /api/jobs`. | Verify in step 4.1 (#1); derive client-side or omit. |
+| G-4 | dock / `chat` | unread badges, last message | Not verified. `GET /api/chat/conversations` is the likely source. | Verify in 3.1; derive or omit. |
+| G-5 | `tr_home` / `ho_tradie_profile` | rating, job count, response time, distance | Not verified against `GET /api/profile/:id` and the matches DTOs. | Verify per screen; derive or omit. |
+
+### 4.2 Screens in the app with no v2 design (not in the 30)
+
+`signup`, `settings`, `messages_list`, `categories`, `browse_tradies` (`/find-tradie`), homeowner public profile (`/users/:id`), quick-match radar (`/jobs/:id/matching`), cancel-job / schedule / rating sheets, designed empty/error states, wide-screen nav rail, and any admin screens. Compose them from `TH*` widgets per `DESIGN_GUIDE.md`, label PRs `needs-design`, and feed them to the D-4 design pass. These are **not** blockers for Phases 2–5.
+
+---
+
 ### Phase 1 — Documentation Restructuring (This phase — docs only)
 
 **Goal:** Archive legacy design, install v2 design system docs, update all cross-references. No app code changes.
@@ -229,149 +275,132 @@ The following **specific strings** appear in multiple docs and rule files and mu
 
 ---
 
-### Phase 2 — Design Token Implementation
+### Phase 2 — Foundation (no screen changes, app behaves exactly as today)
 
-**Goal:** Replace `mobile/lib/theme/design_tokens.dart` with the v2 token file. Update `fixo_theme.dart` to wire `THTheme`. No screen-level widget changes yet.
+**Goal:** Install v2 tokens, fonts, widgets and a scoped theme under `mobile/lib/ui/`, next to the old code. Nothing in `lib/views/`, `lib/widgets/` or `lib/theme/` changes.
 
-- [ ] **2.1** Back up `mobile/lib/theme/design_tokens.dart` (git branch)
-- [ ] **2.2** Copy `docs/design/tokens/design_tokens.dart` to `mobile/lib/theme/design_tokens.dart`
-- [ ] **2.3** Add `Lexend` and `Source Sans 3` to `pubspec.yaml` (via `google_fonts` or bundled assets)
-- [ ] **2.4** Update `mobile/lib/theme/fixo_theme.dart` to call `THTheme.light` and `THTheme.dark`
-- [ ] **2.5** Wire `MaterialApp(theme: THTheme.light, darkTheme: THTheme.dark, themeMode: ThemeMode.system)`
-- [ ] **2.6** Copy `docs/design/flutter/th_widgets.dart` to `mobile/lib/theme/th_widgets.dart` (or `mobile/lib/widgets/`)
-- [ ] **2.7** Run `flutter analyze` and resolve any token name conflicts (e.g., `FixoDurations` vs `THDurations.fast/base/slow`)
-- [ ] **2.8** Run `dart format .`
-- [ ] **2.9** Run existing widget and unit tests — fix any failures caused by token renames
-- [ ] **2.10** Update `mobile/HARDCODED_AUDIT.md` to reflect v2 token names
-- [ ] **2.11** Add a debug gallery route (`/debug/screen-gallery`) exposing `thScreenBuilders` for all 30 screens
+- [ ] **2.1** Create `mobile/lib/ui/design/` and copy in `docs/design/tokens/design_tokens.dart` → `th_tokens.dart` and `docs/design/flutter/th_widgets.dart` → `th_widgets.dart`. Fix the one relative import (`design_tokens.dart` → `th_tokens.dart`). Keep class names unchanged (`THColors`, `THType`, `THButton`, …).
+- [ ] **2.2** Bundle fonts (D-2): add Lexend + Source Sans 3 files for the weights used in `tokens.json` under `mobile/assets/fonts/v2/` and declare both families in `pubspec.yaml`. **Keep the v1 families until Phase 6.** Verify on a real iOS and Android device that the files render (Flutter's mobile engines are only guaranteed to load `.ttf`/`.otf`; if `.woff2` falls back to the system font, convert to `.ttf`, which still satisfies D-2).
+- [ ] **2.3** Add `ThScope` (`lib/ui/design/th_scope.dart`): wraps a subtree in `Theme(data: THTheme.light | THTheme.dark)`, choosing by the existing `themeModeProvider` + platform brightness. `THTheme.light/dark` are getters, not methods. This is how v2 screens get v2 theme while the rest of the app keeps `FixoTheme`.
+- [ ] **2.4** Add the import-boundary guard (script in `scripts/` + CI step): files under `lib/ui/**` must not import `theme/design_tokens.dart`, `theme/fixo_theme.dart`, `widgets/fixo_*`, `widgets/th_components.dart` or `views/**`; files outside `lib/ui/**` must not import `ui/design/**`. This is what makes the side-by-side approach safe, because the old app and v2 both define `THColors`, `THType`, `THBadge`, `THField`, `THSegmented`, `THSwitch`, `THIconButton`, `THListRow` and `THDivider`. They only clash if one file imports both.
+- [ ] **2.5** Add `node docs/design/tools/build.mjs --check` to CI now (it already passes: 30 screens, contrast 38/38). Retiring the v1 audit targets waits for Phase 6.
+- [ ] **2.6** Copy the 30 generated stubs to `mobile/lib/ui/gallery/` (static sample data, imports repointed) and add a debug-only `/debug/screen-gallery` route exposing `thScreenBuilders`, each wrapped in `ThScope`. These stubs are the visual baseline and golden source. They are **not** the real screens.
+- [ ] **2.7** Add golden tests for the 30 gallery screens (light + dark) under `test/ui/goldens/`.
+- [ ] **2.8** Create `lib/ui/feedback/th_notice.dart` (D-3): a v2-styled skin that reuses the existing `FixoNoticeController`/`notice_copy.dart` logic (UI-independent). The class rename of the old widgets happens at cutover.
+- [ ] **2.9** Create `lib/ui/feedback/th_state_view.dart`: loading (skeleton), empty and error views composed from v2 widgets and the existing copy in `designed_empty_state.dart` / `fixo_states.dart`. D-4 (error/empty/skeleton design pass) is separate, so this is the interim.
+- [ ] **2.10** Add `lib/ui/ui_flags.dart`: a per-screen allowlist (`const Set<String> v2Screens`) plus `--dart-define=UI_V2=all` for developers. See §4.0 for how routes use it.
+- [ ] **2.11** Decouple `main.dart` from `views/settings_screen.dart` (it imports `themeModeProvider` from a view file): move the provider to `lib/viewmodels/theme_mode_viewmodel.dart` and re-export it from the old location. This is the only existing file touched in this phase.
+- [ ] **2.12** Run `flutter analyze`, `dart format`, and the full existing test suite. **Nothing may change.**
 
-> [!WARNING]
-> `THColors` **adds** fields in v2 (`surfaceAlt`, tints, hero gradient colours, `glass`, `heroGlow`) and **removes** none of the existing fields. The old `outdoor` variant from v1 is not present in v2. Any code that references `DesignTokens.paperDark` etc. will need mapping to the new `THColors` extension accessed via `context.th.<name>`.
-
-✅ **Phase 2 done when:** App compiles with `flutter analyze` clean, both light and dark themes render via `THTheme`, and the debug screen gallery shows all 30 v2 screens.
+✅ **Phase 2 done when:** app builds and behaves identically, existing tests are green, `build.mjs --check` runs in CI, the import-boundary guard is green, and the debug gallery shows all 30 screens in both themes.
 
 ---
 
-### Phase 3 — Component Library Migration
+### Phase 3 — Shell, Auth and Shared Screens (proves the recipe)
 
-**Goal:** Replace `Fixo*` widgets with their `TH*` equivalents across all screen files. Run the v2 audit gate.
+**Goal:** Port the low-risk, high-reuse screens first so the per-screen recipe (§4.0) is proven before the big flows.
 
-- [ ] **3.1** Audit all `mobile/lib/views/` files for `Fixo*` widget usage — produce a replacement checklist
-- [ ] **3.2** Migrate each widget family:
+- [ ] **3.1** Build the v2 shell: `ThShell` using `THDock` (homeowner: Home / Jobs / Chat / Profile with centre action `onNewRequest` → `/jobs/new`; tradie: same four tabs, **no** `onNewRequest`). Mirror the role/tab logic and unread badge source of `views/main_layout.dart` (including the wide-screen `_FixoNavRail` behaviour, which v2 does not design, so keep it as-is or decide in D-4). The router swaps the `ShellRoute` builder via the flag.
+- [ ] **3.2** Port auth screens (data layer untouched: `auth_viewmodel`, `auth_repository`):
 
-  | Old widget | New widget | Notes |
+  | v2 screen | Old file | Endpoints (already exist) |
   |---|---|---|
-  | `FixoPrimaryButton` (gold CTA) | `THButton(kind: ButtonKind.accent)` | One per screen only |
-  | `FixoPrimaryButton` (navy) | `THButton(kind: ButtonKind.primary)` | Secondary filled actions |
-  | `FixoGhostButton` | `THButton(kind: ButtonKind.ghost)` | |
-  | `FixoAppBar` | `THAppBar` | |
-  | `FixoCard` | `THCard` | |
-  | `THHeroBand` | `THHero` | Hero card with gradient |
-  | `THStatusStrip` / `StatusBadge` | `THBadge` or `THProgress` | |
-  | `StickyActionBar` | `THSticky` | |
-  | `FixoNotice.*` | stays — confirm compatibility | |
-  | `CustomBottomNavBar` + FAB | `THDock` | HO gets FAB with `THHuntGlyph`; tradie does not |
+  | `splash` | `views/splash_screen.dart` | `/api/auth/refresh` (session restore) |
+  | `onboarding` | `views/onboarding/onboarding_view.dart` | none |
+  | `sign_in` | `views/login_screen.dart` | `/api/auth/login`, `/api/auth/google` |
+  | `verify_otp` | `views/auth/otp_verification_screen.dart` | `/api/auth/verify-email`, `/api/auth/resend-otp` |
+  | `role_select` | `views/auth/role_select_screen.dart` | `/api/auth/complete-registration` |
+  | *(no v2 design)* | `views/signup_screen.dart` | `/api/auth/register` — compose from `sign_in` + `THField` (see D-4 list in §4.2) |
 
-- [ ] **3.3** Replace all `Space.*` token refs where values have changed (new additions: `s8` 40, `s9` 48)
-- [ ] **3.4** Replace all `Radii.*` token refs (control is now 16 vs 14 in v1; hero 28 is new)
-- [ ] **3.5** Replace all `Sizes.*` token refs (button now 54 vs 56; `dock` 68, `fab` 56, `stickyClearance` 96, `dockClearance` 120 are new)
-- [ ] **3.6** Replace typography: all `DesignTokens.fontSize*` with `THType.*`, all `FW.*` remain compatible
-- [ ] **3.7** Remove all `outdoor` theme code paths (not in v2)
-- [ ] **3.8** Run `node docs/design/tools/build.mjs --check` (the v2 CI gate)
-- [ ] **3.9** Run `python3 docs/design/tools/audit_full.py` on any remaining HTML artefacts (if applicable)
-- [ ] **3.10** Run full test suite (`flutter test`, `dart analyze`)
-- [ ] **3.11** Visual QA: compare each screen against `docs/design/mockups/index.html` (light + dark)
-- [ ] **3.12** Update `mobile/HARDCODED_AUDIT.md` with v2 audit results
+- [ ] **3.3** Port shared screens:
 
-✅ **Phase 3 done when:** `flutter analyze` clean, `build.mjs --check` passes, no `Fixo*` widget usages remain except `FixoNotice`, visual QA passes for all 30 screens in both themes.
-
----
-
-### Phase 4 — Screen Migration (Homeowner Flows)
-
-**Goal:** Port all homeowner screens to use generated v2 screen ASTs as layout reference, binding real data.
-
-- [ ] **4.1** Map v2 screen IDs to current view files:
-
-  | v2 screen | Current file | v1 frame |
+  | v2 screen | Old file | Data source |
   |---|---|---|
-  | `splash` | `SplashScreen` | S01 |
-  | `onboarding` | `OnboardingScreen` | S02–S04 |
-  | `sign_in` | `SignInScreen` | S05 |
-  | `verify_otp` | `VerifyOtpScreen` | S07 |
-  | `role_select` | `RoleSelectScreen` | S08 |
-  | `ho_home` | `HomeownerHomeScreen` | H07 |
-  | `ho_post_project` | `PostJobScreen` | H09 |
-  | `ho_post_quick` | `PostJobQuickScreen` | H09 quick |
-  | `ho_quotes` | `QuotesScreen` | H11 |
-  | `ho_choose_tradie` | `ChooseTradieScreen` | H19 |
-  | `ho_tradie_profile` | `TradieProfileScreen` | H17 |
-  | `ho_request_sent` | `RequestSentScreen` | — |
-  | `ho_job_booked` | `JobDetailScreen` | H12 |
-  | `ho_extra_cost` | `ExtraCostScreen` | — |
-  | `ho_review_completion` | `ReviewCompletionScreen` | — |
-  | `ho_payment` | `PaymentScreen` | H14 |
-  | `ho_payment_status` | `PaymentStatusScreen` | H15 |
-  | `ho_review` | `ReviewScreen` | — |
-  | `ho_dispute` | `DisputeScreen` | H16 |
-  | `ho_jobs` | `JobsScreen` | — |
+  | `chat` | `views/chat/chat_screen.dart` | `/api/jobs/:id/messages` + SignalR (`job_hub_client`, `chat_viewmodel`) |
+  | `notifications` | `views/notifications/notifications_screen.dart` | client-side `notification_center` (no backend inbox exists — keep) |
+  | `profile` | `views/profile_screen.dart` | `/api/profile` (+ block / report / device-token) |
+  | *(no v2 design)* | `views/chat/messages_list_screen.dart` | `/api/chat/conversations` |
+  | *(no v2 design)* | `views/settings_screen.dart` | theme mode, locale, sign-out |
 
-- [ ] **4.2** For each screen: use `thScreenBuilders['<id>']!(context)` as the layout baseline; bind real ViewModel data; replace sample copy; keep widget tree structure
-- [ ] **4.3** Run widget tests for each migrated screen
-- [ ] **4.4** Visual QA against `docs/design/mockups/index.html`
+- [ ] **3.4** For each screen follow the §4.0 recipe, including widget tests, preserved `Key`s and flipping its entry in `v2Screens`.
+- [ ] **3.5** Visual QA each screen against `docs/design/mockups/index.html` (light + dark).
 
-✅ **Phase 4 done when:** All 20 homeowner screens migrated, widget tests pass.
+✅ **Phase 3 done when:** a user can sign up, verify, sign in (email and Google), pick a role, and land in the v2 shell with chat / notifications / profile in v2, with all auth tests green.
 
 ---
 
-### Phase 5 — Screen Migration (Tradie Flows)
+### Phase 4 — Homeowner Flows
 
-**Goal:** Port all tradie screens to v2 layout, bind real data.
+**Goal:** Recreate homeowner screens in v2, porting behaviour from the old screens. Ordered so each step can be tested end to end.
 
-- [ ] **5.1** Map v2 tradie screen IDs to current view files:
+- [ ] **4.1** Port in this order (corrected mapping — several names in the earlier draft did not exist):
 
-  | v2 screen | Current file |
-  |---|---|
-  | `tr_home` | `TradieHomeScreen` |
-  | `tr_lead` | `LeadDetailScreen` |
-  | `tr_job` | `TradieJobScreen` |
-  | `tr_extra_cost` | `TradieExtraCostScreen` |
-  | `tr_complete` | `TradieCompleteScreen` |
-  | `tr_earnings` | `TradieEarningsScreen` |
-  | `tr_onboarding` | `TradieOnboardingScreen` |
+  | Order | v2 screen | Old file (actual) | Endpoints (already exist) |
+  |---|---|---|---|
+  | 1 | `ho_home` | `homeowner/homeowner_dashboard_view.dart` + `widgets/homeowner_dashboard_header.dart` | `GET /api/jobs`, `/api/services/search` |
+  | 2 | `ho_jobs` | `jobs/jobs_list_screen.dart` | `GET /api/jobs` |
+  | 3 | `ho_post_quick`, `ho_post_project` | `jobs/post_job_screen.dart` (1,344 lines, both modes) | `POST /api/jobs`, `/photos`, `/api/addresses/search`, `/api/services/search` |
+  | 4 | `ho_choose_tradie` | `jobs/tradie_list_screen.dart` | `GET /api/jobs/:id/tradies` |
+  | 5 | `ho_tradie_profile` | `profile/public_profile_screen.dart` (`jobId` context) | `GET /api/profile/:id`, `/api/users/:id/reviews`, `POST /api/jobs/:id/request` |
+  | 6 | `ho_request_sent` | `jobs/matching_screen.dart` (`requestSent` mode) | SignalR + `GET /api/jobs/:id` |
+  | 7 | `ho_quotes` | `jobs/quotes_screen.dart` | `GET/POST /api/jobs/:id/quotes`, `…/quotes/:id/accept` |
+  | 8 | `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_review` | `homeowner/homeowner_job_detail_screen.dart` (**1,916 lines, one route, many states**) | `GET /api/jobs/:id`, `/adjustments`, `…/respond`, `/confirm`, `/reviews`, `/schedule`, `/cancel` |
+  | 9 | `ho_payment`, `ho_payment_status` | `payment/payment_screen.dart`, `payment/payment_status_screen.dart` | `GET /api/jobs/:id/payment`, `POST …/upload-receipt` |
+  | 10 | `ho_dispute` | `jobs/dispute_screen.dart` | `POST /api/disputes`, `…/evidence/text`, `…/evidence/files` |
+  | — | *(no v2 design)* | `homeowner/categories_screen.dart`, `homeowner/browse_tradies_screen.dart`, quick-match radar mode of `matching_screen.dart` | `/api/services/search`, `POST /api/jobs/:id/match`, `GET …/matches` |
 
-- [ ] **5.2** Same bind-and-test process as Phase 4
-- [ ] **5.3** Map shared screens:
+- [ ] **4.2** Job detail is one route with several v2 designs. Build `ThJobDetailRouter`, which reuses the status logic in `widgets/job_status_presentation.dart` to choose between `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_review` and the cancelled/disputed states. Split into one widget per state; do not recreate a 1,900-line file.
+- [ ] **4.3** Screens without a v2 design (listed above, plus cancel / schedule / rating sheets, `/users/:id`, wide-layout rail) are composed from `TH*` widgets following `DESIGN_GUIDE.md`, flagged `needs-design` in the PR, and added to the D-4 design-pass backlog.
+- [ ] **4.4** Preserve post-job navigation (`/jobs/new` → `/jobs/:id/tradies` | `/matching` | `/request`) and all `extra` payload types in `app_router.dart` unchanged. Push-notification deep links must keep working.
+- [ ] **4.5** Widget tests per screen; run the matching existing flow tests (`job_request_test`, `matching_test`, `payment_test`, `dispute_test`, `job_lifecycle_test`) with v2 enabled.
+- [ ] **4.6** Visual QA against `docs/design/mockups/index.html`.
 
-  | v2 screen | Shared by |
-  |---|---|
-  | `chat` | HO + Tradie |
-  | `notifications` | HO + Tradie |
-  | `profile` | HO + Tradie |
-
-- [ ] **5.4** Confirm tradie dock has **no FAB** (`THDock` with `fab: false`)
-- [ ] **5.5** Visual QA against `docs/design/mockups/index.html`
-
-✅ **Phase 5 done when:** All 10 tradie + shared screens migrated, widget tests pass.
+✅ **Phase 4 done when:** the full homeowner journey (post → choose/match → book → adjust → confirm → pay → review/dispute) runs on v2 screens only with the flag at `all`, and the listed flow tests pass.
 
 ---
 
-### Phase 6 — AST Workflow Integration + CI Gate
+### Phase 5 — Tradie Flows
 
-**Goal:** Wire the v2 build pipeline into the project's CI/toolchain so it stays in sync.
+**Goal:** Same recipe for tradie screens.
 
-- [ ] **6.1** Confirm `node docs/design/tools/build.mjs` is runnable from repo root (update `package.json` or `agent/Makefile` if needed)
-- [ ] **6.2** Add `build.mjs --check` to CI pipeline (runs contrast gate + stale-output check)
-- [ ] **6.3** Retire old audit targets from `agent/Makefile` (`audit`, `transpile`, `sheet`) or redirect them
-- [ ] **6.4** Update `agent/setup.sh` for v2 dependencies (Node 18+ remains; Python audit deps may no longer be needed)
-- [ ] **6.5** Document the new "change a colour/screen/component" workflow in `docs/ai/AI-TOOLING.md` §4 and in the `docs/design/README.md`
-- [ ] **6.6** Establish the v2 regression gate checklist in `docs/TESTING.md`:
-  1. `node docs/design/tools/build.mjs --check` — contrast, stale outputs, unknown nodes
-  2. `flutter analyze` — static analysis
-  3. `flutter test` — unit + widget tests
-  4. Visual QA against `docs/design/mockups/index.html`
+- [ ] **5.1** Port in this order:
 
-✅ **Phase 6 done when:** CI runs `build.mjs --check` on every PR, the v1 audit tools are retired, and the new workflow is documented.
+  | Order | v2 screen | Old file | Endpoints (already exist) |
+  |---|---|---|---|
+  | 1 | `tr_home` | `tradie/tradie_dashboard_view.dart` (2,016 lines) | `GET /api/jobs`, `/api/jobs/:id/offers/pending`, `POST …/offers/:id/respond`, `POST /api/profile/availability` |
+  | 2 | `tr_lead` | `tradie/request_detail_screen.dart` | `GET /api/jobs/:id`, `accept`, `decline`, `POST …/quotes` |
+  | 3 | `tr_job` | `tradie/tradie_job_detail_screen.dart` (1,792 lines) | `check-in`, `no-show`, `schedule`, `adjustments` |
+  | 4 | `tr_extra_cost` | adjustment flow inside `tradie_job_detail_screen.dart` | `POST /api/jobs/:id/adjustments`, `…/withdraw` |
+  | 5 | `tr_complete` | check-out flow inside `tradie_job_detail_screen.dart` | `POST …/check-out`, `…/photos` |
+  | 6 | `tr_earnings` | earnings section of `tradie_dashboard_view.dart` | `GET /api/tradie/earnings` (see **G-1**) |
+  | 7 | `tr_onboarding` | `tradie/tradie_onboarding_wizard.dart` (1,657 lines) | `/api/tradie/services`, `/rates`, `/credentials`, `/schedule` |
+
+- [ ] **5.2** Keep `tradie_onboarding_viewmodel` (708 lines) and `offer_responder` untouched; only the presentation is recreated. Split the dashboard and job-detail files into per-section widgets rather than porting them 1:1.
+- [ ] **5.3** Confirm the tradie dock has **no** centre action (`THDock(role: THDockRole.tradie)`, `onNewRequest` null). The earlier draft's `fab: false` parameter does not exist in `th_widgets.dart`.
+- [ ] **5.4** Run `offer_countdown` and offer-response behaviour tests with v2 enabled.
+- [ ] **5.5** Visual QA against `docs/design/mockups/index.html`.
+
+✅ **Phase 5 done when:** the full tradie journey (onboard → go online → receive offer/lead → accept/quote → check in → adjust → check out → earnings) runs on v2 screens only.
+
+---
+
+### Phase 6 — Cutover, Cleanup and CI Toolchain
+
+**Goal:** Make v2 the only UI, delete v1, and finish the toolchain work.
+
+- [ ] **6.1** Flip `UI_V2` default to on and remove `ui_flags.dart` and the per-route conditionals in `app_router.dart`. Point `MaterialApp(theme: THTheme.light, darkTheme: THTheme.dark, themeMode: ...)` at v2, and remove `ThScope` wrappers.
+- [ ] **6.2** Delete v1: `lib/views/**` (all screens now live in `lib/ui/`), `lib/widgets/fixo_*.dart`, `th_components.dart`, `tradie_widgets.dart`, `lib/theme/design_tokens.dart`, `lib/theme/fixo_theme.dart`, and the old v1 view-only widgets. Then move `lib/ui/design/*` to `lib/theme/` (or keep as `lib/ui/design/`; decide once, update `.agent/rules/mobile.md`).
+- [ ] **6.3** Rename `FixoNotice*` → `THNotice*` (D-3) and update the ~90 usages.
+- [ ] **6.4** Confirm no `outdoor` code path, `AvailabilityColors`/`SocialColors` leftovers or v1 token names remain (D-5): `grep -rn "outdoor\|DesignTokens\|Fixo[A-Z]" mobile/lib` must be empty.
+- [ ] **6.5** Remove v1 fonts from `assets/fonts/` and `pubspec.yaml` (Space Grotesk, IBM Plex), drop `google_fonts` if unused, and remove the import-boundary guard from §2.4.
+- [ ] **6.6** Update or delete the 32 test files referencing v1 names; regenerate goldens and the store-screenshot tests (`screenshots_*`).
+- [ ] **6.7** Update `mobile/HARDCODED_AUDIT.md` for v2 tokens.
+- [ ] **6.8** Retire old audit targets from `agent/Makefile` (`audit`, `transpile`, `sheet`) or redirect them to `build.mjs`; update `agent/setup.sh` and root `package.json` scripts (`audit`, `verify`).
+- [ ] **6.9** Document the "change a colour / screen / component" workflow in `docs/ai/AI-TOOLING.md` §4 and `docs/design/README.md`, including that ported screens are now hand-owned code and the AST stubs remain the design reference.
+- [ ] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mockups/index.html`.
+- [ ] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
+
+✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, and a release build passes on iOS and Android.
 
 ---
 
@@ -392,11 +421,16 @@ The following **specific strings** appear in multiple docs and rule files and mu
 ## 6. File Placement Reference
 
 ```
-docs/design/                         → v2 design system (installed 2026-11-16) ✅
-docs/archive/design-legacy-v1/       → v1.7 legacy design system (archived 2026-11-16) ✅
-mobile/lib/theme/design_tokens.dart  → Phase 2 target (replace with docs/design/tokens/design_tokens.dart)
-mobile/lib/theme/th_widgets.dart     → Phase 2 target (copy from docs/design/flutter/th_widgets.dart)
-mobile/lib/views/design_v2/          → Phase 2 target for generated screen stubs (debug only)
+docs/design/                          → v2 design system (installed 2026-11-16) ✅
+docs/archive/design-legacy-v1/        → v1.7 legacy design system (archived 2026-11-16) ✅
+mobile/lib/ui/design/th_tokens.dart   → Phase 2 (copy of docs/design/tokens/design_tokens.dart)
+mobile/lib/ui/design/th_widgets.dart  → Phase 2 (copy of docs/design/flutter/th_widgets.dart)
+mobile/lib/ui/design/th_scope.dart    → Phase 2 (scoped THTheme wrapper)
+mobile/lib/ui/gallery/                → Phase 2 (static stubs, debug gallery + goldens only)
+mobile/lib/ui/{auth,homeowner,tradie,shared,feedback}/ → Phases 3–5 (real screens bound to existing viewmodels)
+mobile/assets/fonts/v2/               → Phase 2 (Lexend + Source Sans 3)
+mobile/lib/{models,repositories,network,viewmodels}/   → unchanged throughout
+mobile/lib/{views,widgets,theme}/     → v1, deleted in Phase 6
 ```
 
 ---
