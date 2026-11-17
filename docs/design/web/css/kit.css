@@ -192,23 +192,28 @@ a { color: var(--ink-brand); }
 .badge.dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .badge-lg { height: 28px; padding: 0 var(--sp-3); font-size: 13px; }
 .badge-info { background: var(--brand-tint); color: var(--ink-brand); }
-.badge-ok { background: var(--success-tint); color: var(--success); }
+.badge-ok { background: var(--success-tint); color: var(--success-ink); }
 .badge-warn { background: var(--accent-tint); color: var(--accent-ink); }
 .badge-danger { background: var(--danger-tint); color: var(--danger); }
 @media (forced-colors: active) { .badge { border: 1px solid CanvasText; } }
-.banner { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); border: 1px solid var(--line); border-left: var(--sp-1) solid var(--ink-soft); background: var(--surface); color: var(--ink); font: var(--ty-body-sm); }
-.banner > svg { flex: none; margin-top: 1px; }
-.banner b { display: block; font: var(--ty-title); font-size: 14px; margin-bottom: 2px; }
-.banner-info { background: var(--brand-tint); border-left-color: var(--brand); } .banner-info > svg { color: var(--ink-brand); }
-.banner-ok { background: var(--success-tint); border-left-color: var(--success); } .banner-ok > svg { color: var(--success); }
-.banner-warn { background: var(--accent-tint); border-left-color: var(--accent); } .banner-warn > svg { color: var(--accent-ink); }
-.banner-danger { background: var(--danger-tint); border-left-color: var(--danger); } .banner-danger > svg { color: var(--danger); }
-.toast { display: flex; gap: var(--sp-3); align-items: flex-start; width: min(var(--sz-toast), calc(100vw - 2 * var(--sz-gutter-sm))); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); border-left: var(--sp-1) solid var(--brand); box-shadow: var(--sh-pop); font: var(--ty-body-sm); color: var(--ink); }
-.toast-ok { border-left-color: var(--success); } .toast-danger { border-left-color: var(--danger); } .toast-warn { border-left-color: var(--accent); }
+/* Notices. No side stripes, no tinted fills: the tone lives in the icon tile (and the hairline for warn and danger). */
+.banner { display: flex; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-card); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: var(--ty-body-sm); }
+.banner-warn { border-color: var(--accent); } .banner-danger { border-color: var(--danger); }
+.banner-body { flex: 1; min-width: 0; }
+.banner-title { font: var(--ty-title); font-size: 14px; }
+.banner-text { color: var(--ink-soft); }
+.banner-actions { display: flex; gap: var(--sp-2); flex: none; align-items: center; }
+.toast { display: flex; gap: var(--sp-3); align-items: center; width: min(var(--sz-toast), calc(100vw - 2 * var(--sz-gutter-sm))); padding: var(--sp-2_5) var(--sp-3); border-radius: var(--r-card); background: var(--ink); color: var(--surface); box-shadow: var(--sh-pop); font: var(--ty-body-sm); }
+.toast-body { flex: 1; min-width: 0; }
+.toast-title { font: var(--ty-title); font-size: 14px; }
+.toast-text { opacity: .86; }
+.toast .btn-icon { color: var(--surface); }
+.toast .btn-icon:hover:not(:disabled) { background: color-mix(in srgb, var(--surface) 16%, transparent); }
 .empty { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-10) var(--sp-6); text-align: center; }
 .empty h3 { font: var(--ty-title); margin: var(--sp-2) 0 0; } .empty p { margin: 0; max-width: 44ch; color: var(--ink-soft); font: var(--ty-body-sm); }
 .tile { width: var(--sz-avatar-lg); height: var(--sz-avatar-lg); border-radius: var(--r-panel); display: inline-flex; align-items: center; justify-content: center; background: var(--brand-tint); color: var(--ink-brand); flex: none; }
 .tile-sm { width: var(--sz-avatar); height: var(--sz-avatar); border-radius: var(--r-card); }
+.tile-xs { width: var(--sz-control-sm); height: var(--sz-control-sm); border-radius: var(--r-control); }
 .tile-ok { background: var(--success-tint); color: var(--success); } .tile-warn { background: var(--accent-tint); color: var(--accent-ink); } .tile-danger { background: var(--danger-tint); color: var(--danger); }
 .skeleton { display: block; height: var(--sp-4); border-radius: var(--r-sm); background: linear-gradient(90deg, var(--surface-alt) 0%, var(--track) 50%, var(--surface-alt) 100%); background-size: 200% 100%; animation: th-shimmer 1.4s linear infinite; }
 .spinner { width: var(--sz-icon); height: var(--sz-icon); border-radius: 50%; border: 2px solid var(--track); border-top-color: var(--brand); animation: th-spin 700ms linear infinite; }
@@ -240,19 +245,29 @@ a.stat:hover { border-color: var(--line-strong); }
 .dl dt { color: var(--ink-soft); font: var(--ty-body-sm); } .dl dd { margin: 0; font: var(--ty-body-sm); overflow-wrap: anywhere; }
 .dl > div.total dt { color: var(--ink); font: var(--ty-title); } .dl > div.total dd { font: var(--ty-title); }
 @media (max-width: 639px) { .dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); } }
-.stepper { display: flex; list-style: none; margin: 0; padding: 0; }
+.stepper { --dot: calc(var(--sz-step-dot) + var(--sp-2)); display: flex; list-style: none; margin: 0; padding: 0; }
 .stepper li { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-2); min-width: 0; padding: 0 var(--sp-1); font: var(--ty-label); color: var(--ink-soft); }
-.stepper li::before { content: ""; position: absolute; top: calc(var(--sz-step-dot) / 2); left: calc(-50% + var(--sz-step-dot)); right: calc(50% + var(--sz-step-dot)); height: 3px; border-radius: 2px; background: var(--track); }
+.stepper li::before { content: ""; position: absolute; top: calc(var(--dot) / 2 - 1.5px); left: calc(-50% + var(--dot) / 2 + var(--sp-1)); right: calc(50% + var(--dot) / 2 + var(--sp-1)); height: 3px; border-radius: 2px; background: var(--line-strong); }
 .stepper li:first-child::before { display: none; }
 .stepper li.done::before, .stepper li.current::before { background: var(--success); }
-.stepper .dot { position: relative; z-index: 1; width: calc(var(--sz-step-dot) + var(--sp-2)); height: calc(var(--sz-step-dot) + var(--sp-2)); margin-top: calc(var(--sp-1) * -1); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); border: 2px solid var(--track); color: var(--on-brand); }
+.stepper li.halt::before { background: var(--danger); }
+.stepper .dot { position: relative; z-index: 1; width: var(--dot); height: var(--dot); flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); border: 2px solid var(--line-strong); }
 .stepper .done .dot { background: var(--success); border-color: var(--success); color: var(--surface); }
 .stepper .current .dot { border-color: var(--accent); background: var(--accent-tint); } .stepper .current .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .stepper .halt .dot { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
-.stepper .halt::before { background: var(--danger); }
 .stepper .done, .stepper .current { color: var(--ink); } .stepper .halt { color: var(--danger); }
 .stepper small { display: block; font: var(--ty-meta); font-size: 12px; color: var(--ink-soft); font-weight: 400; }
-@media (max-width: 767px) { .stepper { flex-direction: column; gap: var(--sp-4); } .stepper li { flex-direction: row; text-align: left; align-items: flex-start; } .stepper li::before { top: calc(var(--sz-step-dot) + var(--sp-3)); bottom: calc(var(--sp-4) * -1 - var(--sp-2)); left: calc(var(--sz-step-dot) / 2 + var(--sp-1) + 1px); right: auto; width: 3px; height: auto; } .stepper li:first-child::before { display: block; } .stepper li:last-child::before { display: none; } }
+/* Vertical: each step draws ONE connector down to the next step (::after), so the line is continuous whatever the label height. */
+@media (max-width: 767px) {
+  .stepper { flex-direction: column; }
+  .stepper li { flex-direction: row; align-items: flex-start; text-align: left; gap: var(--sp-3); padding: 0 0 var(--sp-4); }
+  .stepper li:last-child { padding-bottom: 0; }
+  .stepper li::before { display: none; }
+  .stepper li > span:last-child { padding-top: var(--sp-1); }
+  .stepper li:not(:last-child)::after { content: ""; position: absolute; left: calc(var(--dot) / 2 - 1.5px); top: calc(var(--dot) + 2px); bottom: 2px; width: 3px; border-radius: 2px; background: var(--line-strong); }
+  .stepper li.done::after { background: var(--success); }
+  .stepper li.done:has(+ .halt)::after { background: var(--danger); }
+}
 .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .timeline li { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--sp-4); padding: var(--sp-3) 0 var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--line); }
 .timeline li:last-child { border-bottom: 0; }
@@ -279,7 +294,7 @@ a.stat:hover { border-color: var(--line-strong); }
 
 /* ── Small additions ────────────────────────────────────── */
 :where(h1, h2, h3, p) { margin: 0; }
-.c-soft { color: var(--ink-soft); } .c-brand { color: var(--ink-brand); } .c-accent { color: var(--accent-ink); } .c-ok { color: var(--success); } .c-danger { color: var(--danger); } .c-onHeroSoft { color: var(--on-sidebar-soft); }
+.c-soft { color: var(--ink-soft); } .c-brand { color: var(--ink-brand); } .c-accent { color: var(--accent-ink); } .c-ok { color: var(--success-ink); } .c-danger { color: var(--danger); } .c-onHeroSoft { color: var(--on-sidebar-soft); }
 .card .table-wrap { border: 0; border-radius: 0; box-shadow: none; }
 .card.flush > .card-body { padding: 0; gap: 0; }
 .wordmark-lg { font-size: 28px; }

@@ -31,9 +31,10 @@
   --line-strong: #7C89A3;
   --focus: #1E3A8A;
   --on-danger: #FFFFFF;
+  --success-ink: #126B33;
   --sidebar: #1E3A8A;
   --on-sidebar: #FFFFFF;
-  --on-sidebar-soft: rgba(255, 255, 255, 0.80);
+  --on-sidebar-soft: rgba(255, 255, 255, 0.90);
   --sidebar-hover: rgba(255, 255, 255, 0.12);
   --sidebar-active: rgba(255, 255, 255, 0.18);
   --scrim: rgba(10, 16, 30, 0.55);
@@ -74,9 +75,10 @@
     --line-strong: #62729C;
     --focus: #8FA8F2;
     --on-danger: #1A0505;
+    --success-ink: #4ADE80;
     --sidebar: #17255C;
     --on-sidebar: #FFFFFF;
-    --on-sidebar-soft: rgba(255, 255, 255, 0.80);
+    --on-sidebar-soft: rgba(255, 255, 255, 0.90);
     --sidebar-hover: rgba(255, 255, 255, 0.10);
     --sidebar-active: rgba(255, 255, 255, 0.16);
     --scrim: rgba(5, 8, 15, 0.70);
@@ -117,9 +119,10 @@
   --line-strong: #62729C;
   --focus: #8FA8F2;
   --on-danger: #1A0505;
+  --success-ink: #4ADE80;
   --sidebar: #17255C;
   --on-sidebar: #FFFFFF;
-  --on-sidebar-soft: rgba(255, 255, 255, 0.80);
+  --on-sidebar-soft: rgba(255, 255, 255, 0.90);
   --sidebar-hover: rgba(255, 255, 255, 0.10);
   --sidebar-active: rgba(255, 255, 255, 0.16);
   --scrim: rgba(5, 8, 15, 0.70);

@@ -68,17 +68,20 @@ const TEXT = [
   ['textBrand', 'paper'], ['textBrand', 'surface'], ['textBrand', 'surfaceAlt'], ['textBrand', 'tintBrand'], ['brand', 'surface'],
   ['onBrand', 'brand'], ['onAccent', 'accent'], ['onDanger', 'danger'],
   ['accentText', 'surface'], ['accentText', 'paper'], ['accentText', 'accentTint'],
-  ['success', 'surface'], ['success', 'successTint'], ['danger', 'surface'], ['danger', 'dangerTint'],
+  ['successInk', 'paper'], ['successInk', 'surface'], ['successInk', 'surfaceAlt'], ['successInk', 'tintBrand'], ['successInk', 'successTint'], ['successInk', 'dangerTint'], ['successInk', 'accentTint'],
+  ['danger', 'paper'], ['danger', 'surface'], ['danger', 'surfaceAlt'], ['danger', 'tintBrand'], ['danger', 'dangerTint'], ['surface', 'text'], ['text', 'glass', 'paper'],
   ['onAvTradie', 'avTradie'], ['onHero', 'heroStart'], ['onHero', 'heroEnd'], ['heroGold', 'heroStart'], ['heroGold', 'heroEnd'],
-  ['onSidebar', 'sidebar'], ['onSidebarSoft', 'sidebar'], ['onSidebarSoft', 'heroEnd'], ['onSidebar', 'sidebarActive', 'sidebar'], ['onSidebarSoft', 'sidebarHover', 'sidebar'], ['heroStart', 'heroGold'],
+  ['onSidebar', 'sidebar'], ['onSidebarSoft', 'sidebar'], ['onSidebarSoft', 'heroEnd'], ['onSidebar', 'sidebarActive', 'sidebar'], ['onSidebarSoft', 'sidebarHover', 'sidebar'], ['onSidebarSoft', 'sidebarActive', 'sidebar'], ['heroStart', 'heroGold'],
 ];
 const NONTEXT = [
   ['lineStrong', 'paper'], ['lineStrong', 'surface'], ['lineStrong', 'surfaceAlt'], ['focus', 'paper'], ['focus', 'surface'],
   ['brand', 'surface'], ['accent', 'surface'], ['success', 'surface'], ['danger', 'surface'],
+  ['textBrand', 'tintBrand'], ['success', 'successTint'], ['accentText', 'accentTint'], ['danger', 'dangerTint'], ['success', 'surface'],
+  ['lineStrong', 'surface'], ['accent', 'accentTint'],
 ];
-const report = ['Contrast gate: text pairs WCAG AA 4.5:1, non-text UI pairs WCAG 2.2 SC 1.4.11 3:1'];
+const report = ['Contrast gate: text pairs must reach 5.0:1 (WCAG AA is 4.5:1; the extra 0.5 is margin for antialiasing and small sizes), non-text UI pairs 3:1 (WCAG 2.2 SC 1.4.11)'];
 let passed = 0, total = 0;
-for (const [label, list, min] of [['text', TEXT, 4.5], ['non-text', NONTEXT, 3]]) {
+for (const [label, list, min] of [['text', TEXT, 5], ['non-text', NONTEXT, 3]]) {
   for (const mode of ['light', 'dark']) {
     for (const [f, b, ov] of list) {
       const c = T.color[mode];
@@ -172,7 +175,7 @@ const KIT = read(`${ROOT}/css/kit.css`);
 const kitCode = KIT.replace(/\/\*[\s\S]*?\*\//g, '');
 for (const m of kitCode.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) if (!/%23/.test(kitCode.slice(Math.max(0, m.index - 3), m.index))) errors.push(`kit.css: raw colour ${m[0]} (use a token)`);
 for (const m of kitCode.matchAll(/\b(rgba?|hsla?)\(/g)) errors.push(`kit.css: ${m[0]} literal (use a token)`);
-const defined = new Set([...out['tokens/tokens.css'].matchAll(/(--[\w-]+):/g)].map((m) => m[1]));
+const defined = new Set([...out['tokens/tokens.css'].matchAll(/(--[\w-]+):/g), ...kitCode.matchAll(/(--[\w-]+):/g)].map((m) => m[1])); // tokens + component-local custom properties
 for (const m of kitCode.matchAll(/var\((--[\w-]+)/g)) if (!defined.has(m[1])) errors.push(`kit.css: undefined variable ${m[1]}`);
 
 // ───────────────────────── 5. icons and nodes ─────────────────────────
@@ -234,9 +237,13 @@ function H(n) {
     case 'tabs': return `<div class="tabs" role="tablist">${n.items.map((s, i) => `<button type="button" role="tab" aria-selected="${i === n.on}">${esc(s)}</button>`).join('')}</div>`;
     case 'chips': return `<div class="row">${n.items.map((c) => `<button type="button" class="chip" aria-pressed="${!!c.on}">${esc(c.v)}</button>`).join('')}</div>`;
     case 'drop': return `<div class="dropzone">${svg(n.ic, 22)}<span>${esc(n.v)}</span></div>`;
-    case 'banner': case 'toast': {
-      const cls = n.t === 'banner' ? 'banner' : 'toast', icn = { info: 'info', ok: 'ok', warn: 'alert', danger: 'bad' }[n.tone];
-      return `<div class="${cls} ${cls}-${n.tone}" role="${n.tone === 'danger' ? 'alert' : 'status'}">${svg(icn, 20)}<div class="grow"><b>${esc(n.title)}</b>${esc(n.v)}</div>${n.action ? H(n.action) : ''}</div>`;
+    case 'banner': {
+      const icn = { info: 'info', ok: 'ok', warn: 'alert', danger: 'bad' }[n.tone], tl = { info: '', ok: ' tile-ok', warn: ' tile-warn', danger: ' tile-danger' }[n.tone];
+      return `<div class="banner banner-${n.tone}" role="${n.tone === 'danger' ? 'alert' : 'status'}"><span class="tile tile-xs${tl}">${svg(icn, 18)}</span><div class="banner-body"><div class="banner-title">${esc(n.title)}</div><div class="banner-text">${esc(n.v)}</div></div>${n.action || n.dismiss ? `<div class="banner-actions">${n.action ? H(n.action) : ''}${n.dismiss ? `<button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Dismiss">${svg('x', 18)}</button>` : ''}</div>` : ''}</div>`;
+    }
+    case 'toast': {
+      const icn = { info: 'info', ok: 'ok', warn: 'alert', danger: 'bad' }[n.tone], tl = { info: '', ok: ' tile-ok', warn: ' tile-warn', danger: ' tile-danger' }[n.tone];
+      return `<div class="toast toast-${n.tone}" role="${n.tone === 'danger' ? 'alert' : 'status'}"><span class="tile tile-xs${tl}">${svg(icn, 18)}</span><div class="toast-body"><div class="toast-title">${esc(n.title)}</div><div class="toast-text">${esc(n.v)}</div></div><button type="button" class="btn btn-ghost btn-sm btn-icon" aria-label="Dismiss">${svg('x', 18)}</button></div>`;
     }
     case 'empty': return `<div class="empty"><span class="tile">${svg(n.ic, 26)}</span><h3>${esc(n.title)}</h3><p>${esc(n.v)}</p>${n.action ? H(n.action) : ''}</div>`;
     case 'skeleton': return `<div class="stack" aria-hidden="true">${Array.from({ length: n.rows }, (_, i) => `<span class="skeleton" style="width:${[92, 70, 84, 56][i % 4]}%"></span>`).join('')}</div>`;
@@ -309,7 +316,7 @@ ${sections.map(([t, ids]) => `<h2>${t}</h2><div class="gal">${ids.map((id) => fi
 </body></html>\n`;
 
 const SYS_CSS = `body{padding:var(--sp-8) var(--sp-6) var(--sp-11);max-width:1180px;margin:0 auto}h1{font:var(--ty-h1);margin:0}h2{font:var(--ty-h2);margin:var(--sp-10) 0 var(--sp-1)}h3{font:var(--ty-title);margin:var(--sp-5) 0 var(--sp-2)}.note{color:var(--ink-soft);margin:0 0 var(--sp-4);max-width:72ch;font:var(--ty-bodySm)}.top{display:flex;gap:var(--sp-4);align-items:center;justify-content:space-between;flex-wrap:wrap}.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:var(--sp-3)}.sw div{border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;background:var(--surface);font:var(--ty-meta)}.sw i{display:block;height:48px;border-bottom:1px solid var(--line)}.sw b{display:block;padding:var(--sp-2) var(--sp-3) 0;font:var(--ty-label)}.sw span{display:block;padding:0 var(--sp-3) var(--sp-2);color:var(--ink-soft)}.spec{display:grid;grid-template-columns:150px 1fr;gap:var(--sp-4);align-items:baseline;padding:var(--sp-2) 0;border-top:1px dashed var(--line)}.spec small{color:var(--ink-soft);font:var(--ty-meta)}.bars{display:flex;flex-direction:column;gap:var(--sp-1_5)}.bars div{display:flex;gap:var(--sp-3);align-items:center;font:var(--ty-meta)}.bars i{display:block;height:var(--sp-3);background:var(--brand);border-radius:2px}.boxes{display:flex;gap:var(--sp-4);flex-wrap:wrap}.boxes div{width:112px;height:72px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:flex-end;padding:var(--sp-2);font:var(--ty-meta)}.demo{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-5);background:var(--paper);border:1px dashed var(--line-strong);border-radius:var(--r-panel)}`;
-const groups = [['Surfaces', ['paper', 'surface', 'surfaceAlt']], ['Text', ['text', 'textSoft', 'textBrand']], ['Brand', ['brand', 'onBrand', 'tintBrand']], ['Accent (gold)', ['accent', 'onAccent', 'accentText', 'accentTint']], ['Status', ['success', 'successTint', 'danger', 'dangerTint', 'onDanger']], ['Lines and focus', ['line', 'lineStrong', 'track', 'focus']], ['Shell', ['sidebar', 'onSidebar', 'onSidebarSoft', 'sidebarHover', 'sidebarActive', 'heroStart', 'heroEnd', 'heroGold', 'scrim', 'glass']], ['Avatar', ['avTradie', 'onAvTradie']]];
+const groups = [['Surfaces', ['paper', 'surface', 'surfaceAlt']], ['Text', ['text', 'textSoft', 'textBrand']], ['Brand', ['brand', 'onBrand', 'tintBrand']], ['Accent (gold)', ['accent', 'onAccent', 'accentText', 'accentTint']], ['Status', ['success', 'successInk', 'successTint', 'danger', 'dangerTint', 'onDanger']], ['Lines and focus', ['line', 'lineStrong', 'track', 'focus']], ['Shell', ['sidebar', 'onSidebar', 'onSidebarSoft', 'sidebarHover', 'sidebarActive', 'heroStart', 'heroEnd', 'heroGold', 'scrim', 'glass']], ['Avatar', ['avTradie', 'onAvTradie']]];
 const grouped = new Set(groups.flatMap(([, k]) => k));
 for (const k of colorKeys) if (!grouped.has(k) && k !== 'onHero' && k !== 'heroGlow') errors.push(`colour "${k}" is not shown in system.html groups`);
 const swatches = groups.map(([t, ks]) => `<h3>${t}</h3><div class="sw">${ks.map((k) => `<div><i style="background:var(--${cn(k)})"></i><b>${cn(k)}</b><span>${T.color.light[k]} / ${T.color.dark[k]}</span></div>`).join('')}</div>`).join('');

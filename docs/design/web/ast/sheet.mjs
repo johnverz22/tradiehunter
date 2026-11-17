@@ -24,7 +24,7 @@ export const sheet = [
   ] },
   { id: 'feedback', title: 'Feedback', note: 'Banners are inline and persistent. Toasts are for short confirmations; errors and warnings stay on screen until dismissed.', nodes: [
     banner('info', 'Heads up', 'Reviews close for editing 24 hours after a job completes.'), banner('ok', 'Payment verified', 'JOB-1042 moved to Booked.'),
-    banner('warn', 'Receipt is blurry', 'Ask the homeowner to upload a clearer photo.', { action: btn('Contact homeowner', 'ghost', { sz: 'sm' }) }), banner('danger', 'Could not load payments', 'Check your connection and try again.', { action: btn('Retry', 'secondary', { sz: 'sm' }) }),
+    banner('warn', 'Receipt is blurry', 'Ask the homeowner to upload a clearer photo.', { action: btn('Contact homeowner', 'ghost', { sz: 'sm' }) }), banner('danger', 'Could not load payments', 'Check your connection and try again.', { action: btn('Retry', 'secondary', { sz: 'sm' }), dismiss: true }),
     row({ align: 'start' }, toast('ok', 'Saved', 'Settings updated.'), toast('danger', 'Could not verify', 'The server rejected the request.')),
     grid({ cols: 2 }, card({ flush: true }, empty('inbox', 'Nothing to review', 'New receipts will appear here as homeowners upload them.')), card({}, skeleton(4))),
   ] },

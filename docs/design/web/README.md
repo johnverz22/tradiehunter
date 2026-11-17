@@ -7,7 +7,7 @@ tokens/tokens.json           web layer: extends ../mobile/tokens/tokens.json (=p
 tokens/tokens.css            GENERATED  CSS variables, light + dark, type classes
 tokens/theme.css             GENERATED  Tailwind v4 @theme mapping and t-* utilities
 tokens/tokens.resolved.json  GENERATED  every resolved value, for tooling
-tokens/contrast-report.txt   GENERATED  WCAG gate results (36 text + 9 non-text pairs per theme)
+tokens/contrast-report.txt   GENERATED  WCAG gate results (47 text + 16 non-text pairs per theme)
 fonts/                       self-hosted woff2 (Lexend, Source Sans 3; latin + latin-ext) and OFL licences
 fonts/fonts.css              GENERATED  @font-face rules
 css/kit.css                  hand-written component kit (tokens only, linted)
