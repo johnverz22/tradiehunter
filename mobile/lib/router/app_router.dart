@@ -47,6 +47,7 @@ import '../ui/homeowner/ho_home_screen.dart';
 import '../ui/homeowner/ho_jobs_screen.dart';
 import '../ui/homeowner/ho_post_job_screen.dart';
 import '../ui/homeowner/ho_tradie_profile_screen.dart';
+import '../ui/homeowner/ho_job_detail_router.dart';
 import '../ui/shared/th_shell.dart';
 import '../ui/shared/chat_screen.dart';
 import '../ui/shared/messages_list_screen.dart';
@@ -271,10 +272,24 @@ final GoRouter appRouter = GoRouter(
     //   context.push('/jobs/:jobId/detail')
     GoRoute(
       path: '/jobs/:jobId/detail',
-      builder: (context, state) => HomeownerJobDetailScreen(
-        key: ValueKey('job_detail_${state.pathParameters['jobId']}'),
-        jobId: state.pathParameters['jobId']!,
-      ),
+      builder: (context, state) {
+        final jobId = state.pathParameters['jobId']!;
+        return _pick(
+          'ho_job_detail',
+          HomeownerJobDetailScreen(
+            key: ValueKey('job_detail_$jobId'),
+            jobId: jobId,
+          ),
+          ThJobDetailRouter(
+            key: ValueKey('job_detail_$jobId'),
+            jobId: jobId,
+            v1Fallback: () => HomeownerJobDetailScreen(
+              key: ValueKey('job_detail_$jobId'),
+              jobId: jobId,
+            ),
+          ),
+        );
+      },
     ),
     // P7-03: Dispute screen
     GoRoute(
