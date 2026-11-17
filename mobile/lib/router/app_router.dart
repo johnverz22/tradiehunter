@@ -42,6 +42,7 @@ import '../ui/auth/sign_in_screen.dart';
 import '../ui/auth/sign_up_screen.dart';
 import '../ui/auth/verify_otp_screen.dart';
 import '../ui/auth/role_select_screen.dart';
+import '../ui/homeowner/ho_home_screen.dart';
 import '../ui/shared/th_shell.dart';
 import '../ui/shared/chat_screen.dart';
 import '../ui/shared/messages_list_screen.dart';
@@ -321,7 +322,11 @@ final GoRouter appRouter = GoRouter(
         // 05-homeowner-home
         GoRoute(
           path: '/home',
-          builder: (context, state) => const HomeownerDashboardView(),
+          builder: (context, state) => _pick(
+            'ho_home',
+            const HomeownerDashboardView(),
+            const ThHomeScreen(),
+          ),
         ),
         // 09-tradie-home
         GoRoute(

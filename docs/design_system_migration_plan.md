@@ -225,9 +225,9 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 |---|---|---|---|---|
 | G-1 | `tr_earnings` | 7-day bar chart (`THBars`) | `GET /api/tradie/earnings` (`TradieEarningsDto`) returns only period totals (earned / processed / pending / failed). No per-day values exist. | Port totals first; hide `THBars` when data is absent. Optional additive field `DailyNet[]` on `TradieEarningsDto` only if the owner wants the chart. |
 | G-2 | `notifications` | notification list | Backend has no inbox endpoint; the app keeps a client-side store (`notification_center.dart`). | No change; keep client-side. |
-| G-3 | `ho_home` hero | "Needs your attention" item | Not verified. Expected to derive from job statuses in `GET /api/jobs`. | Verify in step 4.1 (#1); derive client-side or omit. |
+| G-3 | `ho_home` hero | "Needs your attention" item | Verified 2026-11-17: no extra field needed. | **Resolved:** derived client-side from `GET /api/jobs` statuses (priority: payment due, awaiting confirmation, dispute, payment review). Amount shown only when the job is priced. |
 | G-4 | dock / `chat` | unread badges, last message | Not verified. `GET /api/chat/conversations` is the likely source. | Verify in 3.1; derive or omit. |
-| G-5 | `tr_home` / `ho_tradie_profile` | rating, job count, response time, distance | Not verified against `GET /api/profile/:id` and the matches DTOs. | Verify per screen; derive or omit. |
+| G-5 | `tr_home` / `ho_tradie_profile` | rating, job count, response time, distance | Not verified against `GET /api/profile/:id` and the matches DTOs. `ho_home` "Top rated near you" has no endpoint feeding the home screen. | `ho_home`: **omitted** (nothing invented). Verify the rest per screen; derive or omit. |
 
 ### 4.2 Screens in the app with no v2 design (not in the 30)
 
@@ -356,6 +356,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
   | 9 | `ho_payment`, `ho_payment_status` | `payment/payment_screen.dart`, `payment/payment_status_screen.dart` | `GET /api/jobs/:id/payment`, `POST …/upload-receipt` |
   | 10 | `ho_dispute` | `jobs/dispute_screen.dart` | `POST /api/disputes`, `…/evidence/text`, `…/evidence/files` |
   | — | *(no v2 design)* | `homeowner/categories_screen.dart`, `homeowner/browse_tradies_screen.dart`, quick-match radar mode of `matching_screen.dart` | `/api/services/search`, `POST /api/jobs/:id/match`, `GET …/matches` |
+
+  *4.1 progress (2026-11-17): **#1 `ho_home` ported** as `ThHomeScreen` (`lib/ui/homeowner/ho_home_screen.dart`) with pure mapping in `ho_home_mapper.dart` and a v2 copy of the card-navigation rules in `ho_job_navigation.dart` (same routes, plan 4.4). Parity kept: load + pull-to-refresh, SignalR status events, first name, attention / booked / active / past grouping, past-jobs toggle, See all jobs, empty state with Post a job, refresh-error notice, `homeowner_dashboard` / `homeowner_hero` Keys. New in v2 per the mockup: attention hero, search entry (`/find-tradie`), category tiles (`/find-tradie` seeded, More to `/categories`). Dropped: the v1 location pill (not in the v2 design). Wired in `app_router.dart` as `_pick('ho_home', …)`; **not yet added to `v2Screens`** until the on-device visual QA and the flow tests with `--dart-define=UI_V2=ho_home` have been run (Flutter was not available in the authoring sandbox, so `flutter analyze` and `flutter test` still need a run on a dev machine). Remaining: #2 to #10.*
 
 - [ ] **4.2** Job detail is one route with several v2 designs. Build `ThJobDetailRouter`, which reuses the status logic in `widgets/job_status_presentation.dart` to choose between `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_review` and the cancelled/disputed states. Split into one widget per state; do not recreate a 1,900-line file.
 - [ ] **4.3** Screens without a v2 design (listed above, plus cancel / schedule / rating sheets, `/users/:id`, wide-layout rail) are composed from `TH*` widgets following `DESIGN_GUIDE.md`, flagged `needs-design` in the PR, and added to the D-4 design-pass backlog.
