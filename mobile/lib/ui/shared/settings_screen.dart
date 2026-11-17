@@ -91,7 +91,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                 minTileHeight: 56,
                 title: Text(
                   label,
-                  style: THType.button.copyWith(color: c.text, fontSize: 15),
+                  style: THType.button.copyWith(color: c.text),
                 ),
                 subtitle: subtitle == null
                     ? null
@@ -157,7 +157,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                       'Notifications',
                       style: THType.button.copyWith(
                         color: c.text,
-                        fontSize: 15,
+                        fontSize: THType.button.fontSize,
                       ),
                     ),
                     subtitle: Text(
@@ -202,7 +202,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                       'Theme',
                       style: THType.button.copyWith(
                         color: c.text,
-                        fontSize: 15,
+                        fontSize: THType.button.fontSize,
                       ),
                     ),
                     subtitle: Text(
@@ -247,7 +247,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                       return Text(
                         '$appName v1.0.0',
                         style: THType.meta.copyWith(
-                          fontSize: 11,
+                          fontSize: THType.compact.fontSize,
                           color: c.textSoft,
                         ),
                       );
@@ -255,7 +255,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                     orElse: () => Text(
                       'TradieHunter v1.0.0',
                       style: THType.meta.copyWith(
-                        fontSize: 11,
+                        fontSize: THType.compact.fontSize,
                         color: c.textSoft,
                       ),
                     ),

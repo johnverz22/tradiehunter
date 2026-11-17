@@ -298,6 +298,7 @@ void main() {
   ) async {
     final chat = _ChatRepo()..history = [_msg('1')];
     await mountChat(tester, chat, _JobsRepo(job: _job('Booked')));
+    expect(find.bySemanticsLabel('That works for me.'), findsOneWidget);
     await tester.tap(find.text('That works for me.'));
     await tester.pump();
     expect(chat.hubSends, isEmpty);
@@ -631,6 +632,51 @@ void main() {
     }
   });
 
+  testWidgets('v2 notification rows remain ellipsized at 2x text scale', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(2),
+              platformBrightness: Brightness.dark,
+            ),
+            child: child!,
+          ),
+          home: const ThNotificationsScreen(),
+        ),
+      ),
+    );
+    container
+        .read(notificationCenterProvider.notifier)
+        .add(
+          FixoNotification(
+            id: 'large-text',
+            title: 'An unusually long notification title that needs truncation',
+            body: 'A detailed notification preview that should wrap or ellipsize cleanly on a narrow screen.',
+            category: 'payments',
+            receivedAt: DateTime(2026, 11, 3, 9),
+          ),
+        );
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Text && widget.overflow == TextOverflow.ellipsis,
+      ),
+      findsAtLeastNWidgets(2),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   // ── Profile ─────────────────────────────────────────────────────────────────
 
   Future<void> mountProfile(
@@ -677,6 +723,8 @@ void main() {
         }),
         dark: dark,
       );
+      await tester.tap(find.text('Personal details'));
+      await tester.pumpAndSettle();
       expect(find.text('Payout Details'), findsOneWidget);
       expect(find.text('Bank Account Name'), findsOneWidget);
       expect(
@@ -708,6 +756,8 @@ void main() {
       'isAvailable': true,
     });
     await mountProfile(tester, profile);
+    await tester.tap(find.text('Personal details'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Available for jobs'));
     await tester.pumpAndSettle();
     expect(profile.availabilitySaved, isFalse);
@@ -722,6 +772,8 @@ void main() {
       'bankAccountVerified': true,
     });
     await mountProfile(tester, profile);
+    await tester.tap(find.text('Personal details'));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Edit profile'));
     await tester.pump();
     // The bank number field is the last TextFormField on the tradie form.
@@ -740,15 +792,18 @@ void main() {
       tester,
       _ProfileRepo(const {'firstName': 'Mere', 'role': 0}),
     );
+    expect(find.text('Personal details'), findsOneWidget);
+    await tester.tap(find.text('Personal details'));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('toggle_edit_mode_button')), findsOneWidget);
-    expect(find.text('Edit Profile'), findsOneWidget);
+    expect(find.bySemanticsLabel('Edit profile'), findsOneWidget);
     await tester.tap(find.byKey(const Key('toggle_edit_mode_button')));
     await tester.pump();
-    expect(find.text('Cancel Editing'), findsOneWidget);
+    expect(find.bySemanticsLabel('Cancel editing'), findsOneWidget);
     expect(find.text('Save Changes'), findsOneWidget);
     await tester.tap(find.byKey(const Key('toggle_edit_mode_button')));
     await tester.pump();
-    expect(find.text('Edit Profile'), findsOneWidget);
+    expect(find.bySemanticsLabel('Edit profile'), findsOneWidget);
     expect(find.text('Save Changes'), findsNothing);
   });
 

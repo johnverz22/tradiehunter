@@ -1,14 +1,14 @@
 // ThProfileScreen: v2 self profile (migration plan 3.3, id `profile`).
 //
-// Hand-owned port of views/profile_screen.dart. Same edit-mode flow
-// (app-bar pencil + body toggle, forms re-initialized on exit), same
-// immediate-save availability switch (POST /api/profile/availability), same
-// NZ bank-number validation, same payload keys on PUT /api/profile, same
-// loading/error/empty states. Keys preserved: toggle_edit_mode_button.
+// Hand-owned v2 profile composition. Personal details opens the preserved
+// edit form as a separate view; writes still use the existing API and payload.
+// The tradie availability switch still saves immediately, and NZ bank-number
+// validation and loading/error/empty states are retained.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../viewmodels/auth_viewmodel.dart';
 import '../../repositories/profile_repository.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../design/th_scope.dart';
@@ -42,6 +42,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
   bool _formInitialized = false;
   bool _availabilitySaving = false;
   bool _bankVerified = false;
+  bool _showDetails = false;
 
   @override
   void initState() {
@@ -211,14 +212,183 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
           final isTradie =
               profile['role'] ==
               1; // UserRole: Homeowner=0, Tradie=1, Staff=2, Superadmin=3
+          Widget valueRow(String label, String value, {bool divider = false}) =>
+              THKeyValue(label, value, divider: divider);
+
+          if (!_showDetails) {
+            final themeMode = ref.watch(themeModeProvider);
+            final firstName = profile['firstName'] as String? ?? '';
+            final lastName = profile['lastName'] as String? ?? '';
+            final initials =
+                '${firstName.isEmpty ? '' : firstName[0]}'
+                '${lastName.isEmpty ? '' : lastName[0]}';
+
+            Widget row({
+              required IconData icon,
+              required String title,
+              required VoidCallback onTap,
+              bool divider = true,
+            }) => Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Space.s4,
+                  ),
+                  minTileHeight: Sizes.tapMin,
+                  leading: Icon(icon, color: c.textSoft),
+                  title: Text(
+                    title,
+                    style: THType.button.copyWith(color: c.text),
+                  ),
+                  trailing: Icon(Icons.chevron_right, color: c.textSoft),
+                  onTap: onTap,
+                ),
+                if (divider) Divider(height: 1, color: c.line),
+              ],
+            );
+
+            Widget card(List<Widget> children) => Container(
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(Radii.card),
+                border: Border.all(color: c.line),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(children: children),
+              ),
+            );
+
+            return Scaffold(
+              backgroundColor: c.paper,
+              appBar: THAppBar(
+                title: 'Profile',
+                showBack: false,
+                actions: [
+                  THIconButton(
+                    icon: Icons.settings_outlined,
+                    semanticLabel: 'Settings',
+                    onPressed: () => context.push('/settings'),
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                bottom: false,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    Sizes.gutter,
+                    Space.s3,
+                    Sizes.gutter,
+                    Sizes.dockClearance,
+                  ),
+                  children: [
+                    Column(
+                      children: [
+                        THAvatar(initials, size: THAvatarSize.lg),
+                        const SizedBox(height: Space.s2),
+                        Text(
+                          '$firstName $lastName'.trim(),
+                          style: THType.h2.copyWith(color: c.text),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: Space.s1),
+                        Text(
+                          profile['email'] as String? ?? '',
+                          style: THType.meta.copyWith(color: c.textSoft),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: Space.s2),
+                        THBadge(
+                          isTradie ? 'Tradie' : 'Homeowner',
+                          kind: THBadgeKind.accent,
+                          icon: isTradie
+                              ? Icons.handyman_outlined
+                              : Icons.home_outlined,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Space.s4),
+                    card([
+                      row(
+                        icon: Icons.person_rounded,
+                        title: 'Personal details',
+                        onTap: () => setState(() => _showDetails = true),
+                      ),
+                      row(
+                        icon: Icons.credit_card_rounded,
+                        title: 'Payments and receipts',
+                        onTap: () => context.push('/settings'),
+                      ),
+                      row(
+                        icon: Icons.notifications_rounded,
+                        title: 'Notifications',
+                        onTap: () => context.push('/settings'),
+                        divider: false,
+                      ),
+                    ]),
+                    const SizedBox(height: Space.s4),
+                    card([
+                      SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Space.s4,
+                        ),
+                        minTileHeight: Sizes.tapMin,
+                        secondary: Icon(
+                          Icons.dark_mode_rounded,
+                          color: c.textSoft,
+                        ),
+                        title: Text(
+                          'Dark mode',
+                          style: THType.button.copyWith(color: c.text),
+                        ),
+                        value: themeMode == ThemeMode.dark,
+                        onChanged: (enabled) => ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(
+                              enabled ? ThemeMode.dark : ThemeMode.light,
+                            ),
+                      ),
+                      Divider(height: 1, color: c.line),
+                      row(
+                        icon: Icons.help_outline_rounded,
+                        title: 'Help and support',
+                        onTap: () => context.push('/settings'),
+                        divider: false,
+                      ),
+                    ]),
+                    const SizedBox(height: Space.s4),
+                    THButton(
+                      key: const Key('sign_out_button'),
+                      label: 'Sign out',
+                      kind: THButtonKind.ghost,
+                      onPressed: () async {
+                        await ref.read(authViewModelProvider.notifier).logout();
+                        ref.invalidate(profileViewModelProvider);
+                        if (context.mounted) context.go('/auth');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
           return Scaffold(
             backgroundColor: c.paper,
             appBar: THAppBar(
-              title: 'Profile',
-              showBack: false,
+              title: 'Personal details',
+              leading: THIconButton(
+                icon: Icons.arrow_back_rounded,
+                semanticLabel: 'Back to profile',
+                onPressed: () {
+                  if (_isEditing) _toggleEditing(profile);
+                  setState(() => _showDetails = false);
+                },
+              ),
               actions: [
                 THIconButton(
+                  key: const Key('toggle_edit_mode_button'),
                   icon: _isEditing ? Icons.close_rounded : Icons.edit_outlined,
                   semanticLabel: _isEditing ? 'Cancel editing' : 'Edit profile',
                   onPressed: () => _toggleEditing(profile),
@@ -260,45 +430,39 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                               : Icons.home_outlined,
                         ),
                       ),
-                      Center(
-                        child: TextButton.icon(
-                          key: const Key('toggle_edit_mode_button'),
-                          onPressed: () => _toggleEditing(profile),
-                          icon: Icon(
-                            _isEditing
-                                ? Icons.close_rounded
-                                : Icons.edit_rounded,
-                            size: Sizes.icon,
-                          ),
-                          label: Text(
-                            _isEditing ? 'Cancel Editing' : 'Edit Profile',
-                          ),
+                      if (_isEditing) ...[
+                        THTextField(
+                          label: 'First Name',
+                          controller: _firstNameCtrl,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Required'
+                              : null,
                         ),
-                      ),
-                      THTextField(
-                        label: 'First Name',
-                        controller: _firstNameCtrl,
-                        enabled: _isEditing,
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Required' : null,
-                      ),
-                      THTextField(
-                        label: 'Last Name',
-                        controller: _lastNameCtrl,
-                        enabled: _isEditing,
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Required' : null,
-                      ),
-                      THTextField(
-                        label: 'Email',
-                        controller: _emailCtrl,
-                        enabled: false,
-                      ),
-                      THTextField(
-                        label: 'Phone Number',
-                        controller: _phoneCtrl,
-                        enabled: _isEditing,
-                      ),
+                        THTextField(
+                          label: 'Last Name',
+                          controller: _lastNameCtrl,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Required'
+                              : null,
+                        ),
+                        THTextField(
+                          label: 'Phone Number',
+                          controller: _phoneCtrl,
+                        ),
+                      ] else ...[
+                        valueRow('First Name', _firstNameCtrl.text),
+                        valueRow(
+                          'Last Name',
+                          _lastNameCtrl.text,
+                          divider: true,
+                        ),
+                        valueRow('Email', _emailCtrl.text, divider: true),
+                        valueRow(
+                          'Phone Number',
+                          _phoneCtrl.text,
+                          divider: true,
+                        ),
+                      ],
 
                       if (isTradie) ...[
                         const SizedBox(height: Space.s3),
@@ -306,16 +470,23 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                           'Tradie Information',
                           style: THType.h2.copyWith(color: c.text),
                         ),
-                        THTextField(
-                          label: 'Business Name',
-                          controller: _businessNameCtrl,
-                          enabled: _isEditing,
-                        ),
-                        THTextField(
-                          label: 'Trade Type',
-                          controller: _tradeTypeCtrl,
-                          enabled: _isEditing,
-                        ),
+                        if (_isEditing) ...[
+                          THTextField(
+                            label: 'Business Name',
+                            controller: _businessNameCtrl,
+                          ),
+                          THTextField(
+                            label: 'Trade Type',
+                            controller: _tradeTypeCtrl,
+                          ),
+                        ] else ...[
+                          valueRow('Business Name', _businessNameCtrl.text),
+                          valueRow(
+                            'Trade Type',
+                            _tradeTypeCtrl.text,
+                            divider: true,
+                          ),
+                        ],
                         // Saves immediately via POST /api/profile/availability —
                         // this switch never waits on form save.
                         InkWell(
@@ -373,19 +544,26 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                               : 'Used for your weekly payout. Only you can see this.',
                           style: THType.meta.copyWith(color: c.textSoft),
                         ),
-                        THTextField(
-                          label: 'Bank Account Name',
-                          controller: _bankNameCtrl,
-                          enabled: _isEditing,
-                        ),
-                        THTextField(
-                          label: 'Bank Account Number',
-                          hint: 'XX-XXXX-XXXXXXX-XX',
-                          controller: _bankNumberCtrl,
-                          enabled: _isEditing,
-                          keyboardType: TextInputType.number,
-                          validator: _bankNumberValidator,
-                        ),
+                        if (_isEditing) ...[
+                          THTextField(
+                            label: 'Bank Account Name',
+                            controller: _bankNameCtrl,
+                          ),
+                          THTextField(
+                            label: 'Bank Account Number',
+                            hint: 'XX-XXXX-XXXXXXX-XX',
+                            controller: _bankNumberCtrl,
+                            keyboardType: TextInputType.number,
+                            validator: _bankNumberValidator,
+                          ),
+                        ] else ...[
+                          valueRow('Bank Account Name', _bankNameCtrl.text),
+                          valueRow(
+                            'Bank Account Number',
+                            _bankNumberCtrl.text,
+                            divider: true,
+                          ),
+                        ],
                         if (_isEditing && _bankVerified)
                           Text(
                             'If you change your bank account number, we will re-verify it before your next payout.',

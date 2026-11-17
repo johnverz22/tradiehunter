@@ -16,13 +16,6 @@ import '../design/th_widgets.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 
-/// One-off durations: v1 FixoDurations.splash / splashRing / splashRingLate
-/// (2800ms cycle, 600/1200ms ring staggers). No v2 duration token exists for
-/// these yet; see HARDCODED_AUDIT note in the phase 3 QA record.
-const Duration _splashCycle = Duration(milliseconds: 2800);
-const Duration _ringStagger1 = Duration(milliseconds: 600);
-const Duration _ringStagger2 = Duration(milliseconds: 1200);
-
 class ThSplashScreen extends ConsumerStatefulWidget {
   const ThSplashScreen({super.key});
 
@@ -35,24 +28,38 @@ class _ThSplashScreenState extends ConsumerState<ThSplashScreen>
   final _storage = const FlutterSecureStorage();
 
   // Three separate controllers staggered so rings ripple outward.
-  late final AnimationController _ring1;
-  late final AnimationController _ring2;
-  late final AnimationController _ring3;
+  late AnimationController _ring1;
+  late AnimationController _ring2;
+  late AnimationController _ring3;
+  bool _ringsInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _ring1 = _makeRingController(delay: Duration.zero);
-    _ring2 = _makeRingController(delay: _ringStagger1);
-    _ring3 = _makeRingController(delay: _ringStagger2);
     _checkAppState();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_ringsInitialized) return;
+    _ringsInitialized = true;
+    _ring1 = _makeRingController(delay: Duration.zero);
+    _ring2 = _makeRingController(delay: THMotion.splashRingStagger);
+    _ring3 = _makeRingController(delay: THMotion.splashRingLate);
+  }
+
   AnimationController _makeRingController({required Duration delay}) {
-    final ctrl = AnimationController(vsync: this, duration: _splashCycle);
-    Future.delayed(delay, () {
-      if (mounted) ctrl.repeat();
-    });
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: THMotion.duration(context, THMotion.splashCycle),
+    );
+    if (!reduceMotion) {
+      Future.delayed(THMotion.duration(context, delay), () {
+        if (mounted) ctrl.repeat();
+      });
+    }
     return ctrl;
   }
 
@@ -66,7 +73,7 @@ class _ThSplashScreenState extends ConsumerState<ThSplashScreen>
 
   Future<void> _checkAppState() async {
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(THDurations.splashIntro);
       if (!mounted) return;
 
       final prefs = await SharedPreferences.getInstance();
@@ -143,7 +150,7 @@ class _ThSplashScreenState extends ConsumerState<ThSplashScreen>
                           height: 2,
                           decoration: BoxDecoration(
                             color: c.heroGold,
-                            borderRadius: BorderRadius.circular(1),
+                            borderRadius: BorderRadius.circular(Radii.hairline),
                           ),
                         ),
                         const SizedBox(height: Space.s3),
@@ -208,7 +215,7 @@ class _ThRingsPainter extends CustomPainter {
     final minRadius = size.shortestSide / 2 * minRadiusFraction * 1.6;
 
     for (final t in progresses) {
-      final eased = Curves.easeOut.transform(t);
+      final eased = THMotion.splashCurve.transform(t);
       final radius = minRadius + (maxRadius - minRadius) * eased;
       final opacity = t < 0.2 ? (t / 0.2) * 0.18 : (1.0 - t) / 0.8 * 0.18;
       if (opacity <= 0) continue;

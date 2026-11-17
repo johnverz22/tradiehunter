@@ -233,7 +233,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                             'Verification code',
                             style: THType.label.copyWith(
                               color: th.textSoft,
-                              fontSize: 10.5,
+                              fontSize: THType.railLabel.fontSize,
                               letterSpacing: 0.6,
                             ),
                           ),

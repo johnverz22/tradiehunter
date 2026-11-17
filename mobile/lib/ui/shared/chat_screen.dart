@@ -98,8 +98,8 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
       if (!_scrollCtrl.hasClients) return;
       _scrollCtrl.animateTo(
         _scrollCtrl.position.maxScrollExtent,
-        duration: THDurations.fast,
-        curve: Curves.easeOut,
+        duration: THMotion.duration(context, THMotion.chatScroll),
+        curve: THMotion.curve(context, THMotion.chatCurve),
       );
     });
   }
@@ -687,10 +687,14 @@ class _ThChatBubble extends StatelessWidget {
                 color: m.sentByMe ? c.brand : c.surface,
                 border: m.sentByMe ? null : Border.all(color: c.line),
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(m.sentByMe ? 18 : 6),
-                  bottomRight: Radius.circular(m.sentByMe ? 6 : 18),
+                  topLeft: const Radius.circular(Radii.chatBubble),
+                  topRight: const Radius.circular(Radii.chatBubble),
+                  bottomLeft: Radius.circular(
+                    m.sentByMe ? Radii.chatBubble : Radii.chatBubbleTail,
+                  ),
+                  bottomRight: Radius.circular(
+                    m.sentByMe ? Radii.chatBubbleTail : Radii.chatBubble,
+                  ),
                 ),
               ),
               child: Text(
@@ -741,7 +745,10 @@ class _ThChatBubble extends StatelessWidget {
                 ),
                 child: Text(
                   DateFormat('h:mm a').format(m.sentAtUtc.toLocal()),
-                  style: THType.meta.copyWith(fontSize: 11, color: c.textSoft),
+                  style: THType.meta.copyWith(
+                    fontSize: THType.compact.fontSize,
+                    color: c.textSoft,
+                  ),
                 ),
               ),
           ],
@@ -781,14 +788,13 @@ class _ThChatDateSeparator extends StatelessWidget {
           Expanded(child: Container(height: 1, color: c.line)),
           Flexible(
             flex: 4,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                _label(),
-                style: THType.meta.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: c.textSoft,
-                ),
+            child: Text(
+              _label(),
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: THType.meta.copyWith(
+                fontWeight: FontWeight.w500,
+                color: c.textSoft,
               ),
             ),
           ),
@@ -838,7 +844,7 @@ class _ThChatComposer extends StatelessWidget {
         // ── Quick-reply chips ───────────────────────────────────────────
         if (quickReplies.isNotEmpty)
           SizedBox(
-            height: Sizes.buttonSm,
+            height: Sizes.quickReplyHeight,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(vertical: Space.s1),
@@ -846,28 +852,39 @@ class _ThChatComposer extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: Space.s2),
               itemBuilder: (_, i) {
                 final reply = quickReplies[i];
-                return GestureDetector(
-                  onTap: () => _applyQuickReply(reply),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Space.s4,
-                      vertical: Space.s1_5,
-                    ),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(Radii.pill),
-                      border: Border.all(color: c.line),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        reply,
-                        maxLines: 1,
-                        style: THType.button.copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: c.text,
+                return Semantics(
+                  button: true,
+                  label: reply,
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: () => _applyQuickReply(reply),
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: Space.s4,
+                        vertical: Space.s1,
+                      ),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                        border: Border.all(color: c.line),
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: Sizes.quickReplyWidth,
+                        ),
+                        child: Text(
+                          reply,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
+                          style: THType.button.copyWith(
+                            fontSize: THType.meta.fontSize,
+                            fontWeight: FontWeight.w500,
+                            color: c.text,
+                          ),
                         ),
                       ),
                     ),

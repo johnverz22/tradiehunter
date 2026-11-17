@@ -633,9 +633,8 @@ class THField extends StatelessWidget {
 }
 
 /// Real text input styled with TH tokens (plan 3.2 — THField is display-only,
-/// so auth/profile screens compose on this). The label renders above the
-/// field, mirroring [THField]'s small-caps label; errors come from
-/// [validator] and render in the danger tone below the field.
+/// so auth/profile screens compose on this). Its small-caps label and input
+/// share the same bordered surface as [THField] and the design mockups.
 class THTextField extends StatelessWidget {
   const THTextField({
     super.key,
@@ -692,73 +691,76 @@ class THTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    OutlineInputBorder border(Color color, [double width = 1]) =>
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Radii.control),
-          borderSide: BorderSide(color: color, width: width),
-        );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (label != null && label!.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 3),
-            child: Text(
-              label!,
-              style: THType.label.copyWith(
-                fontSize: 10.5,
-                letterSpacing: 0.6,
-                color: c.textSoft,
+    return Container(
+      constraints: const BoxConstraints(minHeight: Sizes.input),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.s3_5,
+        vertical: Space.s2_5,
+      ),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(Radii.control),
+        border: Border.all(color: c.line),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (label != null && label!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.s1),
+              child: Text(
+                label!,
+                style: THType.label.copyWith(
+                  fontSize: 10.5,
+                  letterSpacing: 0.6,
+                  color: c.textSoft,
+                ),
               ),
             ),
-          ),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          enabled: enabled,
-          autofocus: autofocus,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          validator: validator,
-          onChanged: onChanged,
-          onFieldSubmitted: onFieldSubmitted,
-          autofillHints: autofillHints,
-          inputFormatters: inputFormatters,
-          maxLength: maxLength,
-          autocorrect: autocorrect,
-          enableSuggestions: enableSuggestions,
-          textCapitalization: textCapitalization,
-          minLines: minLines,
-          maxLines: obscure ? 1 : maxLines,
-          style: THType.body.copyWith(color: enabled ? c.text : c.textSoft),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: THType.body.copyWith(color: c.textSoft),
-            errorMaxLines: errorMaxLines,
-            errorStyle: THType.meta.copyWith(color: c.danger, height: 1.3),
-            filled: true,
-            fillColor: c.surface,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: Space.s3_5,
-              vertical: Space.s3_5,
+          TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            enabled: enabled,
+            autofocus: autofocus,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            validator: validator,
+            onChanged: onChanged,
+            onFieldSubmitted: onFieldSubmitted,
+            autofillHints: autofillHints,
+            inputFormatters: inputFormatters,
+            maxLength: maxLength,
+            autocorrect: autocorrect,
+            enableSuggestions: enableSuggestions,
+            textCapitalization: textCapitalization,
+            minLines: minLines,
+            maxLines: obscure ? 1 : maxLines,
+            style: THType.body.copyWith(color: enabled ? c.text : c.textSoft),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: THType.body.copyWith(color: c.textSoft),
+              errorMaxLines: errorMaxLines,
+              errorStyle: THType.meta.copyWith(color: c.danger, height: 1.3),
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+              prefixIcon: icon == null
+                  ? null
+                  : Icon(icon, size: 18, color: c.textSoft),
+              prefixIconColor: c.textSoft,
+              suffixIcon: trailing,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
             ),
-            prefixIcon: icon == null
-                ? null
-                : Icon(icon, size: 18, color: c.textSoft),
-            prefixIconColor: c.textSoft,
-            suffixIcon: trailing,
-            border: border(c.line),
-            enabledBorder: border(c.line),
-            disabledBorder: border(c.line),
-            focusedBorder: border(c.textBrand, 1.5),
-            errorBorder: border(c.danger),
-            focusedErrorBorder: border(c.danger, 1.5),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -2099,9 +2101,11 @@ class THDock extends StatelessWidget {
           onTap: onSelected == null ? null : () => onSelected!(t),
           borderRadius: BorderRadius.circular(Radii.control),
           child: SizedBox(
-            width: 56,
+            width: Sizes.railItem,
+            height: Sizes.tapMin,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               spacing: 2,
               children: [
                 Stack(

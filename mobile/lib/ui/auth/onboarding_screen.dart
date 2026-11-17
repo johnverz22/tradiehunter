@@ -189,8 +189,14 @@ class _ThOnboardingScreenState extends ConsumerState<ThOnboardingScreen> {
                           context.go('/auth');
                         } else {
                           _pageController.nextPage(
-                            duration: THDurations.base,
-                            curve: Curves.easeInOutCubic,
+                            duration: THMotion.duration(
+                              context,
+                              THMotion.onboardingPage,
+                            ),
+                            curve: THMotion.curve(
+                              context,
+                              THMotion.onboardingCurve,
+                            ),
                           );
                         }
                       },

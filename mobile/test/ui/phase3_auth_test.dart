@@ -95,6 +95,7 @@ void main() {
     _V2Auth auth, {
     bool dark = false,
     double scale = 1.0,
+    bool reduceMotion = false,
     GoRouter? router,
     double width = 393,
     double height = 1400,
@@ -119,6 +120,7 @@ void main() {
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     textScaler: TextScaler.linear(scale),
+                    disableAnimations: reduceMotion,
                     platformBrightness: dark
                         ? Brightness.dark
                         : Brightness.light,
@@ -130,6 +132,7 @@ void main() {
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     textScaler: TextScaler.linear(scale),
+                    disableAnimations: reduceMotion,
                     platformBrightness: dark
                         ? Brightness.dark
                         : Brightness.light,
@@ -285,6 +288,29 @@ void main() {
       expect(routeExtra, 'new@example.co.nz');
     });
   }
+
+  testWidgets('v2 splash stops decorative motion when reduce motion is on', (
+    tester,
+  ) async {
+    final router = brouter({
+      '/splash': (_) => const ThSplashScreen(),
+      '/onboarding': (_) => const SizedBox(),
+      '/auth': (_) => const SizedBox(),
+    }, '/splash');
+    addTearDown(router.dispose);
+    await pumpScreen(
+      tester,
+      const SizedBox(),
+      _V2Auth(),
+      reduceMotion: true,
+      router: router,
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.binding.transientCallbackCount, 0);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
 
   testWidgets('v2 onboarding announces all three steps and advances', (
     tester,

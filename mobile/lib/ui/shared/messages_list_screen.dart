@@ -315,7 +315,7 @@ class _ThConversationTile extends StatelessWidget {
                               conversation.lastMessageAtUtc!,
                             ),
                             style: THType.meta.copyWith(
-                              fontSize: 11,
+                              fontSize: THType.compact.fontSize,
                               color: c.textSoft,
                             ),
                           ),
@@ -336,7 +336,7 @@ class _ThConversationTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: THType.body.copyWith(
-                              fontSize: 13,
+                              fontSize: THType.meta.fontSize,
                               fontWeight: hasUnread
                                   ? FontWeight.w500
                                   : FontWeight.w400,

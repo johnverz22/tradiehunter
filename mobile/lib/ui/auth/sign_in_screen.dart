@@ -162,6 +162,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                       label: 'Password',
                       controller: _passwordController,
                       obscure: _obscurePassword,
+                      icon: Icons.lock_outline_rounded,
                       textInputAction: TextInputAction.done,
                       autofillHints: const [AutofillHints.password],
                       onFieldSubmitted: (_) => _login(),

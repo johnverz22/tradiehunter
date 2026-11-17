@@ -91,52 +91,54 @@ class _ThShellState extends ConsumerState<ThShell> {
       Future.microtask(() => ref.read(chatUnreadProvider.notifier).refresh());
     }
 
-    return ThScope(
+    final chrome = ThScope(
       themeMode: ref.watch(themeModeProvider),
       child: useRail
-          ? Scaffold(
-              body: Row(
-                children: [
-                  _ThNavRail(
-                    activeTab: _activeTab(location),
-                    isTradie: isTradie,
-                    unread: unread,
-                    onSelected: (tab) => _go(tab, isTradie),
-                    onNewRequest: () => context.push('/jobs/new'),
-                  ),
-                  Expanded(child: widget.child),
-                ],
-              ),
+          ? _ThNavRail(
+              activeTab: _activeTab(location),
+              isTradie: isTradie,
+              unread: unread,
+              onSelected: (tab) => _go(tab, isTradie),
+              onNewRequest: () => context.push('/jobs/new'),
             )
-          : Stack(
-              children: [
-                Positioned.fill(child: widget.child),
-                Positioned(
-                  left: Space.s3_5,
-                  right: Space.s3_5,
-                  bottom: Space.s4,
-                  // The floating dock sits outside any Scaffold — the v1
-                  // bottom bar got its Material from Scaffold. THDock's
-                  // InkWells need one, so provide a transparent Material.
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: SafeArea(
-                      top: false,
-                      child: THDock(
-                        role: isTradie
-                            ? THDockRole.tradie
-                            : THDockRole.homeowner,
-                        active: _activeTab(location),
-                        badges: {THDockTab.chat: unread},
-                        onSelected: (tab) => _go(tab, isTradie),
-                        onNewRequest: () => context.push('/jobs/new'),
-                      ),
-                    ),
-                  ),
+          : Material(
+              type: MaterialType.transparency,
+              child: SafeArea(
+                top: false,
+                child: THDock(
+                  role: isTradie ? THDockRole.tradie : THDockRole.homeowner,
+                  active: _activeTab(location),
+                  badges: {THDockTab.chat: unread},
+                  onSelected: (tab) => _go(tab, isTradie),
+                  onNewRequest: () => context.push('/jobs/new'),
                 ),
-              ],
+              ),
             ),
     );
+
+    // Keep the routed subtree under the app's FixoTheme. Several Phase 3
+    // routes still render v1 screens, which require the Fixo THColors
+    // extension; ThScope installs only the v2 extension.
+    return useRail
+        ? Scaffold(
+            body: Row(
+              children: [
+                chrome,
+                Expanded(child: widget.child),
+              ],
+            ),
+          )
+        : Stack(
+            children: [
+              Positioned.fill(child: widget.child),
+              Positioned(
+                left: Space.s3_5,
+                right: Space.s3_5,
+                bottom: Space.s4,
+                child: chrome,
+              ),
+            ],
+          );
   }
 }
 
@@ -237,7 +239,7 @@ class _RailItem extends StatelessWidget {
             vertical: Space.s2,
           ),
           child: SizedBox(
-            width: 56, // one-off: dock/rail item width
+            width: Sizes.railItem,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               spacing: 2,
@@ -251,8 +253,8 @@ class _RailItem extends StatelessWidget {
                         top: -2,
                         right: -6,
                         child: Container(
-                          width: 9,
-                          height: 9,
+                          width: Sizes.unreadDot,
+                          height: Sizes.unreadDot,
                           decoration: BoxDecoration(
                             color: c.accent,
                             shape: BoxShape.circle,
@@ -265,7 +267,7 @@ class _RailItem extends StatelessWidget {
                   _labels[tab]!,
                   maxLines: 1,
                   style: THType.label.copyWith(
-                    fontSize: 10.5,
+                    fontSize: THType.railLabel.fontSize,
                     letterSpacing: 0,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     color: color,
@@ -297,8 +299,8 @@ class _RailPostJobButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(Radii.sheet),
           child: Container(
-            width: 48, // one-off: rail action size (v1 _RailPostJobButton)
-            height: 48,
+            width: Sizes.railAction,
+            height: Sizes.railAction,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: c.accent,

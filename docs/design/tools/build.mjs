@@ -65,6 +65,21 @@ abstract class THDurations {
   THDurations._();
 ${Object.entries(tokens.motion).map(([k, v]) => `  static const Duration ${k} = Duration(milliseconds: ${v});`).join('\n')}
 }
+abstract class THMotion {
+  THMotion._();
+  static const Duration splashCycle = THDurations.splashCycle;
+  static const Duration splashRingStagger = THDurations.splashRingStagger;
+  static const Duration splashRingLate = THDurations.splashRingLate;
+  static const Duration onboardingPage = THDurations.onboardingPage;
+  static const Duration chatScroll = THDurations.chatScroll;
+  static const Curve onboardingCurve = Curves.easeInOutCubic;
+  static const Curve chatCurve = Curves.easeOut;
+  static const Curve splashCurve = Curves.easeOut;
+  static Duration duration(BuildContext context, Duration value) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
+  static Curve curve(BuildContext context, Curve value) =>
+      MediaQuery.disableAnimationsOf(context) ? Curves.linear : value;
+}
 
 /// Type scale. Use via THText(style: THTextStyle.x) or THType.x directly.
 abstract class THType {

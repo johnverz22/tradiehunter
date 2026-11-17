@@ -220,7 +220,7 @@ class _ThNotificationRow extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: THType.title.copyWith(
-                              fontSize: 14.5,
+                              fontSize: THType.detail.fontSize,
                               color: c.text,
                             ),
                           ),
@@ -228,7 +228,7 @@ class _ThNotificationRow extends StatelessWidget {
                         Text(
                           time,
                           style: THType.meta.copyWith(
-                            fontSize: 11,
+                            fontSize: THType.compact.fontSize,
                             color: c.textSoft,
                           ),
                         ),
@@ -244,7 +244,7 @@ class _ThNotificationRow extends StatelessWidget {
                     Text(
                       category,
                       style: THType.meta.copyWith(
-                        fontSize: 11,
+                        fontSize: THType.compact.fontSize,
                         color: c.textBrand,
                       ),
                     ),

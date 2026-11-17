@@ -39,6 +39,9 @@ abstract class Radii {
   static const double hero = 28.0;
   static const double sheet = 32.0;
   static const double pill = 999.0;
+  static const double hairline = 1.0;
+  static const double chatBubble = 18.0;
+  static const double chatBubbleTail = 6.0;
 }
 
 /// Component sizes.
@@ -59,6 +62,11 @@ abstract class Sizes {
   static const double gutter = 20.0;
   static const double stickyClearance = 96.0;
   static const double dockClearance = 120.0;
+  static const double railItem = 56.0;
+  static const double railAction = 48.0;
+  static const double unreadDot = 9.0;
+  static const double quickReplyHeight = 64.0;
+  static const double quickReplyWidth = 180.0;
 }
 
 abstract class THDurations {
@@ -66,6 +74,28 @@ abstract class THDurations {
   static const Duration fast = Duration(milliseconds: 150);
   static const Duration base = Duration(milliseconds: 220);
   static const Duration slow = Duration(milliseconds: 320);
+  static const Duration splashIntro = Duration(milliseconds: 2000);
+  static const Duration splashCycle = Duration(milliseconds: 2800);
+  static const Duration splashRingStagger = Duration(milliseconds: 600);
+  static const Duration splashRingLate = Duration(milliseconds: 1200);
+  static const Duration onboardingPage = Duration(milliseconds: 220);
+  static const Duration chatScroll = Duration(milliseconds: 150);
+}
+
+abstract class THMotion {
+  THMotion._();
+  static const Duration splashCycle = THDurations.splashCycle;
+  static const Duration splashRingStagger = THDurations.splashRingStagger;
+  static const Duration splashRingLate = THDurations.splashRingLate;
+  static const Duration onboardingPage = THDurations.onboardingPage;
+  static const Duration chatScroll = THDurations.chatScroll;
+  static const Curve onboardingCurve = Curves.easeInOutCubic;
+  static const Curve chatCurve = Curves.easeOut;
+  static const Curve splashCurve = Curves.easeOut;
+  static Duration duration(BuildContext context, Duration value) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
+  static Curve curve(BuildContext context, Curve value) =>
+      MediaQuery.disableAnimationsOf(context) ? Curves.linear : value;
 }
 
 /// Type scale. Use via THText(style: THTextStyle.x) or THType.x directly.
@@ -139,6 +169,27 @@ abstract class THType {
     fontSize: 13.0,
     fontWeight: FontWeight.w400,
     height: 1.4,
+    letterSpacing: 0,
+  );
+  static TextStyle get railLabel => const TextStyle(
+    fontFamily: THFonts.display,
+    fontSize: 10.5,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+    letterSpacing: 0,
+  );
+  static TextStyle get compact => const TextStyle(
+    fontFamily: THFonts.display,
+    fontSize: 11.0,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+    letterSpacing: 0,
+  );
+  static TextStyle get detail => const TextStyle(
+    fontFamily: THFonts.body,
+    fontSize: 14.5,
+    fontWeight: FontWeight.w400,
+    height: 1.45,
     letterSpacing: 0,
   );
 }
