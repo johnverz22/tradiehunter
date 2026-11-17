@@ -48,7 +48,7 @@ HoJobDetailSelection thSelectJobDetailView(
   }
   if (job.status == 'InProgress' || job.status == 'Booked') {
     final hasPendingAdjustment = adjustments.any((item) => item.isPending);
-    if (job.status == 'InProgress' && hasPendingAdjustment) {
+    if (hasPendingAdjustment) {
       return const HoJobDetailSelection(HoJobDetailView.extraCost);
     }
     return HoJobDetailSelection(

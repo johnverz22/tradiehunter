@@ -77,37 +77,40 @@ void main() {
       }
     });
 
-    test('pending adjustment selects extra cost only for InProgress', () {
-      final adjustment = JobAdjustment(
-        id: 'adj-1',
-        jobId: 'job-1',
-        proposedByTradieId: 'tradie-1',
-        proposedByTradieName: 'Tradie',
-        kind: JobAdjustment.kindMaterials,
-        description: 'Parts',
-        amount: Decimal.parse('12.00'),
-        status: JobAdjustment.statusPending,
-        createdAtUtc: DateTime.utc(2026),
-      );
-      expect(
-        thSelectJobDetailView(
-          _job('InProgress'),
-          adjustments: [adjustment],
-          hasReview: false,
-          hasTradie: true,
-        ).view,
-        HoJobDetailView.extraCost,
-      );
-      expect(
-        thSelectJobDetailView(
-          _job('Booked'),
-          adjustments: [adjustment],
-          hasReview: false,
-          hasTradie: true,
-        ).view,
-        HoJobDetailView.booked,
-      );
-    });
+    test(
+      'pending adjustments select the adjustment layout in active states',
+      () {
+        final adjustment = JobAdjustment(
+          id: 'adj-1',
+          jobId: 'job-1',
+          proposedByTradieId: 'tradie-1',
+          proposedByTradieName: 'Tradie',
+          kind: JobAdjustment.kindMaterials,
+          description: 'Parts',
+          amount: Decimal.parse('12.00'),
+          status: JobAdjustment.statusPending,
+          createdAtUtc: DateTime.utc(2026),
+        );
+        expect(
+          thSelectJobDetailView(
+            _job('InProgress'),
+            adjustments: [adjustment],
+            hasReview: false,
+            hasTradie: true,
+          ).view,
+          HoJobDetailView.extraCost,
+        );
+        expect(
+          thSelectJobDetailView(
+            _job('Booked'),
+            adjustments: [adjustment],
+            hasReview: false,
+            hasTradie: true,
+          ).view,
+          HoJobDetailView.extraCost,
+        );
+      },
+    );
 
     test('terminal states outrank disputes; active dispute outranks routine states', () {
       expect(

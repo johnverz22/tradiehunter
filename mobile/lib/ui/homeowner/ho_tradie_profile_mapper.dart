@@ -72,10 +72,7 @@ List<ThProfileStat> thProfileStats({
   }
   if (jobEntry?.completedJobs != null && jobEntry!.completedJobs! > 0) {
     stats.add(
-      ThProfileStat(
-        value: '${jobEntry.completedJobs}',
-        label: 'Jobs done',
-      ),
+      ThProfileStat(value: '${jobEntry.completedJobs}', label: 'Jobs done'),
     );
   }
   if (jobEntry != null && jobEntry.hasDistance) {

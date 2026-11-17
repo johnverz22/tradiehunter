@@ -327,11 +327,7 @@ class _AttentionHero extends StatelessWidget {
         ),
         const SizedBox(height: Space.s2),
         THText(hero.headline, style: THTextStyle.h2, tone: THTone.onHero),
-        THText(
-          hero.subtitle,
-          style: THTextStyle.meta,
-          tone: THTone.onHeroSoft,
-        ),
+        THText(hero.subtitle, style: THTextStyle.meta, tone: THTone.onHeroSoft),
         const SizedBox(height: Space.s4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -416,10 +412,7 @@ class _Section extends StatelessWidget {
       spacing: Space.s3,
       children: [
         const SizedBox(height: Space.s1),
-        Semantics(
-          header: true,
-          child: THText(title, style: THTextStyle.title),
-        ),
+        Semantics(header: true, child: THText(title, style: THTextStyle.title)),
         ..._jobCards(jobs),
       ],
     );

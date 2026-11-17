@@ -12,6 +12,7 @@ import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/ui/homeowner/ho_post_job_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_post_job_screen.dart';
+import 'package:fixo/ui/homeowner/ho_choose_tradie_screen.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/viewmodels/address_viewmodel.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
@@ -48,6 +49,23 @@ class _JobsFake extends JobsRepository {
   String postError = 'Server validation failed';
   bool failUpload = false;
   int uploads = 0;
+  int matchStarts = 0;
+  bool matchStartResult = true;
+
+  @override
+  Future<List<TradieListEntry>> getTradieList(
+    String jobId, {
+    String sort = 'best',
+    bool? verified,
+    bool? insured,
+    bool? availableNow,
+  }) async => [];
+
+  @override
+  Future<bool> triggerMatch(String jobId) async {
+    matchStarts++;
+    return matchStartResult;
+  }
 
   @override
   Future<List<ServiceOption>> getServiceCatalog() async => [_service];
@@ -121,7 +139,12 @@ GoRouter _router({Widget? screen}) => GoRouter(
     GoRoute(
       path: '/jobs/:id/tradies',
       builder: (_, state) =>
-          Scaffold(body: Text('Choose a Tradie ${state.pathParameters['id']}')),
+          ThChooseTradieScreen(jobId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/jobs/:id/matching',
+      builder: (_, state) =>
+          Scaffold(body: Text('Matching ${state.pathParameters['id']}')),
     ),
   ],
 );
@@ -432,7 +455,14 @@ void main() {
       expect(jobs.posted!['serviceId'], 1);
       expect(jobs.posted!['jobType'], Job.jobTypeHourly);
       expect(jobs.posted!.containsKey('hourlyRate'), isFalse);
-      expect(find.text('Choose a Tradie job-1'), findsOneWidget);
+      expect(find.byKey(const Key('choose_tradie')), findsOneWidget);
+      expect(find.text('Choose a Tradie'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('quick_match_button')));
+      await tester.pumpAndSettle();
+
+      expect(jobs.matchStarts, 1);
+      expect(find.text('Matching job-1'), findsOneWidget);
     });
 
     testWidgets('submits project payload with project-only fields', (
@@ -513,7 +543,8 @@ void main() {
 
       expect(jobs.posts, 1);
       expect(jobs.uploads, 2);
-      expect(find.text('Choose a Tradie job-1'), findsOneWidget);
+      expect(find.byKey(const Key('choose_tradie')), findsOneWidget);
+      expect(find.text('Choose a Tradie'), findsOneWidget);
     });
 
     testWidgets('review card is truthful before and after filling', (

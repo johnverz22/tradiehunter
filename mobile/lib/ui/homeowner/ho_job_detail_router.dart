@@ -9,9 +9,13 @@ import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../feedback/th_state_view.dart';
+import 'ho_booked_screen.dart';
 import 'ho_extra_cost_screen.dart';
+import 'ho_job_detail_fallback_screen.dart';
 import 'ho_job_detail_providers.dart';
 import 'ho_job_detail_state.dart';
+import 'ho_review_completion_screen.dart';
+import 'ho_review_screen.dart';
 
 /// Routes supported v2 states to their dedicated view and injects the v1
 /// screen for states that have no v2 design yet. PR A deliberately sends every
@@ -98,10 +102,31 @@ class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter> {
                   .where((item) => item.isPending)
                   .firstOrNull,
             ),
-            HoJobDetailView.booked ||
-            HoJobDetailView.reviewCompletion ||
-            HoJobDetailView.review ||
-            HoJobDetailView.fallback => widget.v1Fallback(),
+            HoJobDetailView.booked => HoBookedScreen(
+              job: job,
+              tradie: detail.tradie,
+              contact: detail.contact,
+            ),
+            HoJobDetailView.reviewCompletion => HoReviewCompletionScreen(
+              job: job,
+              adjustments: detail.adjustments,
+            ),
+            HoJobDetailView.review => HoReviewScreen(
+              job: job,
+              tradie: detail.tradie,
+              hasReview: detail.hasReview,
+            ),
+            HoJobDetailView.fallback => switch (selection.fallback) {
+              HoJobDetailFallback.cancelled ||
+              HoJobDetailFallback.dispute ||
+              HoJobDetailFallback.unsupportedStatus
+                  when job.status != 'Draft' =>
+                HoJobDetailFallbackScreen(
+                  job: job,
+                  reason: selection.fallback!,
+                ),
+              _ => widget.v1Fallback(),
+            },
           };
         },
       ),

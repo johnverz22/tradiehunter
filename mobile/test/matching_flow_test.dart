@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
@@ -173,6 +174,49 @@ void main() {
   }
 
   group('MatchingScreen', () {
+    testWidgets('request-sent v2 renders server offer facts and actions', (
+      tester,
+    ) async {
+      final repo = MatchRepo()
+        ..pendingOffer = JobOffer(
+          id: 'offer-42',
+          jobId: '42',
+          tradieId: 't1',
+          offeredAtUtc: DateTime.now().toUtc(),
+          expiresAtUtc: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+          response: 'Pending',
+          stage: 'Direct',
+          kind: 'Direct',
+          hourlyRateSnapshot: Decimal.parse('85.50'),
+          message: 'Please call before arriving',
+          tradieName: 'Aroha Plumbing',
+        );
+      await mount(
+        tester,
+        const MatchingScreen(
+          jobId: '42',
+          mode: MatchingScreenMode.requestSent,
+          gstLabel: 'Incl. GST',
+        ),
+        repo: repo,
+        hub: MatchHub(),
+        disableAnimations: true,
+      );
+
+      expect(find.text('You asked Aroha Plumbing'), findsOneWidget);
+      expect(find.textContaining('\$85.50'), findsOneWidget);
+      expect(find.text('Please call before arriving'), findsOneWidget);
+      expect(find.byKey(const Key('pick_someone_else_button')), findsOneWidget);
+      expect(find.byKey(const Key('cancel_request_button')), findsOneWidget);
+      expect(
+        find.textContaining('Aroha Plumbing', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+
     for (final dark in [false, true]) {
       testWidgets('searching state renders without overflow dark=$dark', (
         tester,

@@ -310,9 +310,7 @@ void main() {
       expect(find.byKey(const Key('home_chat_c')), findsNothing);
     });
 
-    testWidgets('booked job card opens chat', (
-      tester,
-    ) async {
+    testWidgets('booked job card opens chat', (tester) async {
       await pump(tester, [
         _job('b', 'Booked', title: 'Hallway', tradie: 'Kiri', tradieId: 't'),
       ]);

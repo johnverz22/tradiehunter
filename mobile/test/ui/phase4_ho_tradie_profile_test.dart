@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
+import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_actions.dart';
@@ -9,9 +10,41 @@ import 'package:fixo/ui/homeowner/ho_tradie_profile_header.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_providers.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_sections.dart';
 import 'package:fixo/ui/design/th_scope.dart';
+import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+
+class _RequestJobsRepository extends JobsRepository {
+  _RequestJobsRepository() : super(Dio(), const FlutterSecureStorage());
+
+  String? requestedJobId;
+  String? requestedTradieId;
+  String? requestedMessage;
+
+  @override
+  Future<JobOffer> requestTradieForJob(
+    String jobId,
+    String tradieId, {
+    String? message,
+  }) async {
+    requestedJobId = jobId;
+    requestedTradieId = tradieId;
+    requestedMessage = message;
+    return JobOffer(
+      id: 'offer-1',
+      jobId: jobId,
+      tradieId: tradieId,
+      offeredAtUtc: DateTime.utc(2026),
+      expiresAtUtc: DateTime.utc(2026, 1, 2),
+      response: 'Pending',
+      stage: 'Auto',
+      kind: 'Direct',
+      message: message,
+    );
+  }
+}
 
 void main() {
   group('tradie profile mapper', () {
@@ -204,6 +237,54 @@ void main() {
     expect(find.byKey(const Key('request_this_tradie_button')), findsOneWidget);
     expect(find.text('Request this tradie'), findsOneWidget);
   });
+
+  testWidgets(
+    'direct request posts job and tradie ids then opens request route',
+    (tester) async {
+      final jobs = _RequestJobsRepository();
+      final router = GoRouter(
+        initialLocation: '/tradie/t1?jobId=j1',
+        routes: [
+          GoRoute(
+            path: '/tradie/:id',
+            builder: (_, state) => Scaffold(
+              body: ThScope(
+                themeMode: ThemeMode.light,
+                child: ThTradieProfileActions(
+                  profileId: state.pathParameters['id']!,
+                  isTradie: true,
+                  viewerRole: 0,
+                  jobId: state.uri.queryParameters['jobId'],
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/jobs/:jobId/request',
+            builder: (_, state) => Scaffold(
+              body: Text('Request sent for ${state.pathParameters['jobId']}'),
+            ),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [jobsRepositoryProvider.overrideWithValue(jobs)],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('request_this_tradie_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send request'));
+      await tester.pumpAndSettle();
+
+      expect(jobs.requestedJobId, 'j1');
+      expect(jobs.requestedTradieId, 't1');
+      expect(jobs.requestedMessage, '');
+      expect(find.text('Request sent for j1'), findsOneWidget);
+    },
+  );
 }
 
 void _noop() {}

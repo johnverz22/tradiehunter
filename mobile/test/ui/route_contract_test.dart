@@ -1,4 +1,5 @@
 import 'package:fixo/router/app_router.dart';
+import 'package:fixo/router/notification_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +15,32 @@ Iterable<String> _paths(Iterable<RouteBase> routes) sync* {
 }
 
 void main() {
+  test('optional route extras reject null and wrong payload types safely', () {
+    expect(routeCategorySeed('Plumbing'), 'Plumbing');
+    expect(routeCategorySeed(null), isNull);
+    expect(routeCategorySeed(42), isNull);
+    expect(routeGstLabel('incl. GST'), 'incl. GST');
+    expect(routeGstLabel(null), isNull);
+    expect(routeGstLabel(const <String>['wrong']), isNull);
+    expect(routeVerificationEmail('person@example.com'), 'person@example.com');
+    expect(routeVerificationEmail('   '), isNull);
+    expect(routeVerificationEmail(42), isNull);
+    expect(
+      routeRoleSelectExtra((userId: 'u-1', registrationToken: 'one-time')),
+      (userId: 'u-1', registrationToken: 'one-time'),
+    );
+    expect(routeRoleSelectExtra(null), isNull);
+    expect(routeRoleSelectExtra('wrong'), isNull);
+  });
+
+  test('notification deep links retain their existing shell destinations', () {
+    expect(routeForMessageType('chat'), '/messages');
+    expect(routeForMessageType('job_status'), '/messages');
+    expect(routeForMessageType('match'), '/jobs');
+    expect(routeForMessageType(null), '/messages');
+    expect(routeForMessageType('unknown'), '/messages');
+  });
+
   test('router path snapshot preserves the mobile route contract', () {
     expect(_paths(appRouter.configuration.routes).toList(), <String>[
       '/',

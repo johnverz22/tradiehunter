@@ -6,11 +6,7 @@ import '../design/th_widgets.dart';
 import 'ho_tradie_profile_mapper.dart';
 
 class ThProfileHeader extends StatelessWidget {
-  const ThProfileHeader({
-    super.key,
-    required this.profile,
-    this.jobEntry,
-  });
+  const ThProfileHeader({super.key, required this.profile, this.jobEntry});
 
   final UserProfile? profile;
   final TradieListEntry? jobEntry;

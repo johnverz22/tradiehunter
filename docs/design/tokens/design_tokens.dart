@@ -74,6 +74,7 @@ abstract class THDurations {
   static const Duration fast = Duration(milliseconds: 150);
   static const Duration base = Duration(milliseconds: 220);
   static const Duration slow = Duration(milliseconds: 320);
+  static const Duration countdownTick = Duration(milliseconds: 1000);
   static const Duration splashIntro = Duration(milliseconds: 2000);
   static const Duration splashCycle = Duration(milliseconds: 2800);
   static const Duration splashRingStagger = Duration(milliseconds: 600);

@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 import 'feedback/fixo_notice.dart';
 import 'router/app_router.dart';
+import 'router/notification_route.dart';
 import 'theme/fixo_theme.dart';
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
 import 'widgets/notification_center.dart'; // notificationCenterProvider (H20)
@@ -159,19 +160,9 @@ class _FixoAppState extends ConsumerState<FixoApp> {
   // Map the notification's `type` data field to a named route.
   // Backend should include `"type": "chat" | "job_status" | "match"` in the data payload.
   void _routeFromMessage(RemoteMessage message) {
-    final type = message.data['type'] as String?;
-    switch (type) {
-      case 'chat':
-      case 'job_status':
-        appRouter.go('/messages');
-      case 'match':
-        appRouter.go('/jobs');
-      default:
-        // Don't try to role-route here — we're in a callback context where
-        // we can't await. Just go to /messages which works for both roles,
-        // or let the shell's profile-based nav pick the right tab bar.
-        appRouter.go('/messages');
-    }
+    final type = message.data['type'];
+    // The shell route itself resolves homeowner/tradie destinations by role.
+    appRouter.go(routeForMessageType(type is String ? type : null));
   }
 
   @override

@@ -52,6 +52,24 @@ void main() {
     expect(find.text('Estimate before this request'), findsOneWidget);
   });
 
+  testWidgets('Booked jobs keep booked status while showing a pending extra', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        HoExtraCostScreen(
+          job: _bookedJob,
+          adjustment: _adjustment,
+          tradie: null,
+        ),
+      ),
+    );
+
+    expect(find.text('Review an extra cost'), findsOneWidget);
+    expect(find.text('Your tradie is booked for this job.'), findsOneWidget);
+    expect(find.text('Extra cost request'), findsOneWidget);
+  });
+
   testWidgets('pending adjustment decision sheet uses the dark v2 theme', (
     tester,
   ) async {
@@ -100,6 +118,17 @@ final _adjustment = JobAdjustment(
   amount: Decimal.parse('48.50'),
   status: JobAdjustment.statusPending,
   createdAtUtc: DateTime.utc(2026, 11, 17),
+);
+
+final _bookedJob = Job(
+  id: 'job-1',
+  title: 'Leaking kitchen tap',
+  category: 'Plumbing',
+  suburb: 'Tauranga',
+  status: 'Booked',
+  stage: 2,
+  address: '14 Marine Parade',
+  matchedTradieName: 'Aroha Plumbing',
 );
 
 const _tradie = UserProfile(

@@ -101,10 +101,14 @@ void main() {
     });
 
     test('all keeps everything in server order', () {
-      expect(
-        thFilterHomeownerJobs(jobs, HoJobsFilter.all).map((j) => j.id),
-        ['req', 'pay', 'dispute', 'done', 'gone', 'late'],
-      );
+      expect(thFilterHomeownerJobs(jobs, HoJobsFilter.all).map((j) => j.id), [
+        'req',
+        'pay',
+        'dispute',
+        'done',
+        'gone',
+        'late',
+      ]);
     });
 
     test('empty-state titles', () {
@@ -317,9 +321,7 @@ void main() {
             jobsRepositoryProvider.overrideWithValue(repo),
             profileRepositoryProvider.overrideWithValue(_ProfileRepo()),
           ],
-          child: const MaterialApp(
-            home: ThJobsRoute(tradieFallback: fallback),
-          ),
+          child: const MaterialApp(home: ThJobsRoute(tradieFallback: fallback)),
         ),
       );
       await tester.pumpAndSettle();
@@ -338,9 +340,7 @@ void main() {
             jobsRepositoryProvider.overrideWithValue(repo),
             profileRepositoryProvider.overrideWithValue(_ProfileRepo(role: 1)),
           ],
-          child: const MaterialApp(
-            home: ThJobsRoute(tradieFallback: fallback),
-          ),
+          child: const MaterialApp(home: ThJobsRoute(tradieFallback: fallback)),
         ),
       );
       await tester.pumpAndSettle();
@@ -359,9 +359,7 @@ void main() {
               _ProfileRepo(role: null),
             ),
           ],
-          child: const MaterialApp(
-            home: ThJobsRoute(tradieFallback: fallback),
-          ),
+          child: const MaterialApp(home: ThJobsRoute(tradieFallback: fallback)),
         ),
       );
       // The pending skeleton pulses forever, so pumpAndSettle never settles.
@@ -381,9 +379,7 @@ void main() {
             jobsRepositoryProvider.overrideWithValue(_JobsRepo(const [])),
             profileRepositoryProvider.overrideWithValue(profileRepo),
           ],
-          child: const MaterialApp(
-            home: ThJobsRoute(tradieFallback: fallback),
-          ),
+          child: const MaterialApp(home: ThJobsRoute(tradieFallback: fallback)),
         ),
       );
       await tester.pumpAndSettle();

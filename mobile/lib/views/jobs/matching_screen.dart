@@ -17,6 +17,8 @@ import '../../widgets/fixo_cards.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../../feedback/fixo_notice.dart';
+import '../../ui/homeowner/ho_request_sent_screen.dart';
+import '../../ui/ui_flags.dart';
 
 /// Which waiting experience this screen runs.
 enum MatchingScreenMode {
@@ -573,8 +575,23 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
   // ── Request-sent UI (v1.7 P12-09) ───────────────────────────────────────────
 
   Widget _buildRequestSent(BuildContext context, ThemeData theme, bool isDark) {
+    if (isV2Screen('ho_request_sent')) {
+      return ThRequestSentScreen(
+        requestChecked: _requestChecked,
+        reconnecting: _reconnecting,
+        request: _request,
+        gstLabel: widget.gstLabel,
+        onPickSomeoneElse: () => _returnToList(
+          'Pick another tradie — the job is still open.',
+        ),
+        onCancelRequest: _cancelRequest,
+        onExpired: () {
+          if (mounted) setState(() {});
+        },
+      );
+    }
     final request = _request;
-    final expired = request != null && request.remaining().isNegative;
+    final expired = request != null && request.remaining() <= Duration.zero;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
@@ -762,12 +779,44 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     ); // AnnotatedRegion
   }
 
+
+  Future<void> _cancelRequest() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel this request?'),
+        content: const Text(
+          'Cancelling closes the whole job request — the tradie will be told and nothing is charged. You can always post it again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep waiting'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cancel request'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    _pollTimer?.cancel();
+    await _leave();
+    await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
+    if (mounted) {
+      context.pushReplacement('/jobs/${widget.jobId}/tradies');
+      FixoNotice.info(context, 'Request cancelled — the job is closed.');
+    }
+  }
+
   String _displayName(JobOffer offer) {
     final name = offer.tradieName?.trim();
     if (name != null && name.isNotEmpty) return name;
     return 'the tradie';
   }
 }
+
 
 /// Snapshot rate card: "their hourly rate for this job" + GST label (D8).
 class _RateCard extends StatelessWidget {

@@ -772,9 +772,7 @@ class THTextField extends StatelessWidget {
                           style: inputStyle,
                           decoration: InputDecoration(
                             hintText: hint,
-                            hintStyle: THType.input.copyWith(
-                              color: c.textSoft,
-                            ),
+                            hintStyle: THType.input.copyWith(color: c.textSoft),
                             errorMaxLines: errorMaxLines,
                             errorStyle: THType.meta.copyWith(
                               color: c.danger,

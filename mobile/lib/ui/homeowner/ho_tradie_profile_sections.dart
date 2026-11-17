@@ -219,10 +219,7 @@ class ThProfileReviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Space.s1),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: THStars(review.rating),
-          ),
+          Align(alignment: Alignment.centerLeft, child: THStars(review.rating)),
           if (comment.isNotEmpty) ...[
             const SizedBox(height: Space.s1_5),
             THText(comment, style: THTextStyle.body),

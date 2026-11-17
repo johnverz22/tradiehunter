@@ -210,11 +210,7 @@ class _Content extends StatelessWidget {
           )
         else
           for (final j in jobs)
-            HoJobCard(
-              key: ValueKey(j.id),
-              job: j,
-              chatKeyPrefix: 'jobs_chat_',
-            ),
+            HoJobCard(key: ValueKey(j.id), job: j, chatKeyPrefix: 'jobs_chat_'),
       ],
     );
   }

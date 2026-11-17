@@ -30,5 +30,5 @@ List<Job> thFilterHomeownerJobs(List<Job> jobs, HoJobsFilter filter) =>
 /// Title of the empty state shown when [filter] matches nothing.
 String thJobsFilterEmptyTitle(HoJobsFilter filter) =>
     filter == HoJobsFilter.completed
-        ? 'No completed jobs yet'
-        : 'No active jobs';
+    ? 'No completed jobs yet'
+    : 'No active jobs';
