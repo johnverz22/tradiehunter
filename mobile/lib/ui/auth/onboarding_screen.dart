@@ -128,6 +128,7 @@ class _ThOnboardingScreenState extends ConsumerState<ThOnboardingScreen> {
                               Text(
                                 slide.title,
                                 style: THType.h2.copyWith(
+                                  fontWeight: FontWeight.w700,
                                   color: c.text,
                                 ),
                               ),
