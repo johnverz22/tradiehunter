@@ -167,6 +167,7 @@ class _DatePickRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
+      identifier: thTestId(key),
       label: '$label date and time',
       child: InkWell(
         onTap: onTap,

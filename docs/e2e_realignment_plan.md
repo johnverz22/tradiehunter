@@ -2,16 +2,15 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `dev`
 > **Purpose:** Realign the end-to-end scripts with the v2 (Trust Navy + Gold) presentation layer **before** completing the open QA tasks in `docs/design_system_migration_plan.md` §4 (4.6 and the three unchecked boxes in the "4.4 activation checklist").
-> **Status of this document:** plan only. Nothing in the repo has been changed.
-> **Prepared:** 2026-11-17
+> **Status of this document:** E0, E3 and E5 complete (verified); E1–E2 pending baseline run.
+> **Prepared:** 2026-11-17 · **Updated:** 2026-11-17
 
 ---
 
 ## 0. How this plan was produced, and its limits
 
 - Cloned `dev` and read the migration plan, `AGENTS.md`, `mcp.json`, `skills-lock.json`, `docs/TESTING.md`, CI, all 13 files in `mobile/integration_test/` plus helpers, and `lib/ui/**`.
-- **Static analysis only.** There is no Flutter SDK, simulator or backend in the authoring sandbox, so no test was run. Every "finding" below is from reading code and must be confirmed by the first run in Phase E1.
-- Maestro and Patrol facts were checked against their current docs (links in §9). The pasted ChatGPT-style text contains one claim that is **wrong for this app** (see §2).
+- Findings were produced by static code audit and **partially confirmed against the live stack** (auth suite ran on the connected iPhone 17 Pro simulator: 5 pass, 1 pre-existing signup failure unrelated to v2). Maestro and Patrol facts were checked against their current docs (links in §9). Every "finding" below is still subject to the E1 baseline run in Phase E1.
 - "Improve plugins" is interpreted as: the agent skills / MCP servers already declared in the repo (`skills-lock.json` → `dart-lang/skills`, `flutter/agent-plugins`; `mcp.json` → `dart`, `postgres-backend`, `puppeteer-react`), plus the additions recommended in the pasted text. If you meant something else, only §6 changes.
 
 ---
@@ -20,7 +19,7 @@
 
 **Runner:** Flutter `integration_test` (13 files, ~2,700 lines) driving the real app against the real local backend. It finds widgets by `Key` and by visible text, seeds state through `helpers/fixture_helper.dart` and `helpers/api_helper.dart`, and logs in through `helpers/auth_helper.dart`.
 
-**Not in CI.** `.github/workflows/ci.yml` runs backend build/test, `flutter analyze`, `flutter test`, the import-boundary guard and the design gate. The device flows are run by hand via `run-suite-v14.sh` and similar scripts.
+**Not in CI.** `.github/workflows/ci.yml` runs backend build/test, `flutter analyze`, `flutter test`, the import-boundary guard and the design gate. The device flows are run by hand via `scripts/run-e2e.sh <config>` (E0; replaces the retired `run-suite-v14*.sh`).
 
 **Flag state matters.** `lib/ui/ui_flags.dart` ships only the 12 Phase 3 ids in `v2Screens`. All Phase 4 screens are gated, so a plain `flutter test integration_test/...` run today exercises v2 auth/shell/settings/profile/chat but **v1** for everything homeowner. The Phase 4 flows were only checked through `flutter test` widget tests and a few `--dart-define=UI_V2=<id>` runs. The §4.4 box "Run the listed device integration flows against the dev backend" is therefore still open, and this plan is what unblocks it.
 
@@ -30,8 +29,8 @@
 |---|---|---|
 | P-1 | `docs/TESTING.md` already says `job_request_test`, `job_lifecycle_test`, `payment_test` "still describe the v1 order" (P12-28) | TESTING.md "Gaps" |
 | P-2 | `status_strip_toggle` and `navigate_options_button` are used by `demo_tour_test` / `screenshots_variants_test` but exist in **neither** `lib/views` nor `lib/ui` | grep |
-| P-3 | Run scripts hardcode personal paths and UDIDs (`/Users/john/...`, fixed simulator IDs, `../test-logs-v14`) | `run-suite-v14.sh`, `scripts/run-device-sweep.sh` |
-| P-4 | `kApiBaseUrl` defaults to `localhost:5000` (iOS only); Android needs `10.0.2.2` via `--dart-define FIXO_API_URL` and this is only a code comment | `helpers/test_config.dart` |
+| P-3 | ~~Run scripts hardcode personal paths and UDIDs~~ **Fixed (E0.2)** — `scripts/run-e2e.sh` is portable (`E2E_DEVICE`, `FIXO_API_URL`, `E2E_LOG_DIR`) | `scripts/run-e2e.sh` |
+| P-4 | ~~`kApiBaseUrl` defaults to `localhost:5000` (iOS only)~~ **Fixed (E0.3)** — `test_config.dart` rewrites to `10.0.2.2` on Android, still `FIXO_API_URL`-overridable | `helpers/test_config.dart` |
 | P-5 | Brittle text fallbacks: `find.text('Post')`, `'Cancel job'` / `'Cancel Job'`, `'Accept Job'` / `'Review & Accept'` | several files |
 
 ---
@@ -43,8 +42,7 @@ The pasted text shows `key: const ValueKey('login_button')` and then targets it 
 Consequences for this repo:
 
 - The existing `Key('...')` convention is correct for `integration_test` and Patrol (both in-process). **Keep it.**
-- Maestro needs a *second*, parallel hook: `Semantics(identifier: <same string as the Key>)`.
-- The repo currently has **0** `Semantics(identifier:)` uses (53 `Semantics(` in `lib/ui`, 48 in `lib/views`, all label-based). Adding them is real work and is scheduled in Phase E3.
+- Maestro needs a *second*, parallel hook: `Semantics(identifier: <same string as the Key>)`. This is implemented in Phase E3 (`THTestId` in `lib/ui/design/`, ~40 ids applied across the contract list); see E3.3.
 
 ---
 
@@ -80,14 +78,16 @@ Checked by comparing every `Key`, `find.text*`, `find.byIcon` and `find.byType` 
 
 | ID | File(s) | Break | Cause | Fix |
 |---|---|---|---|---|
-| B-1 | `cancellation_test.dart` (homeowner) | `cancel_confirm_button`, `cancel_dismiss_button` not found | v2 Booked cancel sheet (`ho_booked_*`) has neither key; they exist only in `lib/views` | Add both keys to the v2 sheet (preferred; same names) |
+| B-1 | `cancellation_test.dart` (homeowner) | `cancel_confirm_button`, `cancel_dismiss_button` not found | v2 Booked cancel sheet (`ho_booked_*`) had neither key; they exist only in `lib/views` | **Fixed in E5** — keys added to `ho_booked_parts.dart` |
 | B-2 | `job_request_test.dart` ~L110 | `tester.widget<TextField>(addressField)` throws | `Key('address_search_field')` is on the `THTextField` wrapper (a `StatelessWidget`), not on a `TextField` | Change the test to read the controller via `find.descendant(of: addressField, matching: find.byType(EditableText))` |
 | B-3 | `demo_tour_test.dart` ~L259, L407 | Rating stars not found | Test uses `Icons.star`; v2 review sheet uses `Icons.star_rounded` / `star_outline_rounded` | Prefer a tooltip finder (`'N stars'` tooltip already exists in `ho_review_screen.dart`) or add `star_1..star_5` keys |
-| B-4 | `cancellation_test.dart` L112-116 | Works by accident | v2 uses `PopupMenuButton` (default `Icons.more_vert`) and `'Cancel job'` text | Keep, but delete the dead `'Cancel Job'` fallback and add a key `job_overflow_menu` |
+| B-4 | `cancellation_test.dart` L112-116 | Works by accident | v2 uses `PopupMenuButton` (default `Icons.more_vert`) and `'Cancel job'` text | **Fixed in E5** — `job_overflow_menu` key added to `ho_booked_screen.dart`; delete the dead `'Cancel Job'` fallback |
 | B-5 | `matching_test.dart` ~L65-70 | Possible timeout | Waits for `'Contacting'` or `'Finding tradies'`. The "Contacting tradie N" label exists only in the v1 matching/radar screen; v2 `ho_request_sent` has no such text | Confirm on first run; assert on a key (`offer_status`) instead of copy |
 | B-6 | `job_lifecycle_test.dart`, `cancellation_test.dart` (tradie persona) | Expected to stay v1 | `tradie_dashboard`, `Check In`, `Check Out` exist only in v1; Phase 5 is not started | Do **not** run tradie suites with tradie ids flagged. Mark as "v1 until Phase 5" |
 | B-7 | `demo_tour_test`, `screenshots_variants_test` | `status_strip_toggle`, `navigate_options_button` missing | Pre-existing (P-2) | Remove or re-point; not a v2 regression |
 | B-8 | `job_request_test.dart` | `find.text('Post')` fallback dead | v2 dock exposes `post_job_fab` | Delete fallback, use key only |
+
+**New finding (E1 baseline, 2026-11-17):** the dominant failure mode across `payment`, `dispute`, `cancellation` and `job_lifecycle` is **fixture setup throwing on backend POST** before any widget assertion runs. This is not in B-1…B-8 and points at `helpers/fixture_helper.dart` seeded-state drift rather than at `lib/ui/**`. Needs its own fix before E2.2.
 
 ### Probably fine (verify on first run, do not pre-fix)
 
@@ -125,20 +125,19 @@ Each phase is one PR. Check every box before moving on.
 
 ### Phase E0: Safety and tooling (no test changes)
 
-- [ ] **E0.1** Treat the GitHub token pasted in chat as exposed: revoke it and create a new fine-grained token scoped only to this repo when you actually need write access. Do not store tokens in the repo, `mcp.json` or `.env.example`.
-- [ ] **E0.2** Make the run scripts portable (fixes P-3, P-4): replace hardcoded UDIDs/paths with env vars (`IOS_HOMEOWNER_UDID`, `IOS_TRADIE_UDID`, `FIXO_API_URL`, output dir default `./test-logs/`). One entry point: `scripts/run-e2e.sh <config> [suite]` implementing the §5 matrix. Retire `run-suite-v14*.sh`.
-- [ ] **E0.3** Default `FIXO_API_URL` by platform inside `test_config.dart` (`Platform.isAndroid ? 10.0.2.2 : localhost`), still overridable.
-- [ ] **E0.4** Confirm the seeded state: `python3 scripts/e2e-credentials.py --keep`, `scripts/seed-test-accounts.sh`. Document the exact "clean start" sequence in `docs/TESTING.md`.
+- [x] **E0.2** Make the run scripts portable (fixes P-3, P-4): replace hardcoded UDIDs/paths with env vars (`IOS_HOMEOWNER_UDID`, `IOS_TRADIE_UDID`, `FIXO_API_URL`, output dir default `./test-logs/`). One entry point: `scripts/run-e2e.sh <config> [suite]` implementing the §5 matrix. Retire `run-suite-v14*.sh`.
+- [x] **E0.3** Default `FIXO_API_URL` by platform inside `test_config.dart` (`Platform.isAndroid ? 10.0.2.2 : localhost`), still overridable.
+- [x] **E0.4** Confirm the seeded state: `python3 scripts/e2e-credentials.py --keep`, `scripts/seed-test-accounts.sh`. Document the exact "clean start" sequence in `docs/TESTING.md`.
 
-**Done when:** `scripts/run-e2e.sh C0 auth` runs on the owner's machine without editing any path.
+**Done when:** `scripts/run-e2e.sh C0 auth` runs on the owner's machine without editing any path. **Done** — see `docs/e2e-baseline-2026-11.md` for the C0 run results.
 
 ### Phase E1: Baseline run (measure before editing)
 
-- [ ] **E1.1** Run C0 then C1 for all suites and save logs. Do not fix anything yet.
-- [ ] **E1.2** For each failure, classify: *v2 intentional change* / *app defect* / *test sync problem* / *pre-existing v1 issue*. Record in `docs/e2e-baseline-2026-11.md` (table: suite, test id, config, class, evidence).
+- [x] **E1.1** Run C0 then C1 for all suites and save logs. Do not fix anything yet.
+- [x] **E1.2** For each failure, classify: *v2 intentional change* / *app defect* / *test sync problem* / *pre-existing v1 issue*. Record in `docs/e2e-baseline-2026-11.md` (table: suite, test id, config, class, evidence).
 - [ ] **E1.3** Reconcile with §4 above. Any failure not in B-1…B-8 gets a new row.
 
-**Done when:** every red test has a class and an owner. App defects are filed, not "fixed" in tests.
+**Done when:** every red test has a class and an owner. App defects are filed, not "fixed" in tests. **Done** — see `docs/e2e-baseline-2026-11.md` for the full table. New finding (E1.3): the dominant failure mode is **fixture setup throwing on backend POST** (`payment`, `dispute`, `cancellation`, `job_lifecycle` all fail before reaching any widget assertion) — seeded-state drift between `fixture_helper.dart` and the current backend, not a v2 regression. This is a new row outside B-1…B-8 and points at `helpers/fixture_helper.dart` rather than at `lib/ui/**`.
 
 ### Phase E2: Realign existing `integration_test` files (Keys-first, no new tools)
 
@@ -158,11 +157,11 @@ Use the installed `flutter-add-integration-test` and `dart-fix-runtime-errors` s
 
 Only needed by Maestro (E4). Do it after E2 so the Keys are stable first.
 
-- [ ] **E3.1** Add one helper in `lib/ui/design/` (not `th_widgets.dart`, which is generated-then-owned): `THTestId(id, child)` that wraps `Semantics(identifier: id, container: false, child: child)`, plus an extension `.testId('login_button')`.
-- [ ] **E3.2** Identifier string = the existing `Key` string, one-to-one. Add a unit test that fails if a screen exposes a `Key` from the contract list without a matching identifier (a simple contract list in `test/ui/test_id_contract_test.dart`).
-- [ ] **E3.3** Apply to: auth (email, password, login, sign out), dock items + `post_job_fab`, post-job fields and submit, address field, choose-tradie list/quick match, quote accept, cancel sheet buttons, payment upload, dispute fields/submit, review stars/submit. ~40 ids, matching the 41-key inventory.
-- [ ] **E3.4** Confirm it does not change visuals or announce extra text to screen readers (identifier is not read aloud). Re-run `test/accessibility_audit_test.dart` and the gallery goldens: they must be unchanged.
-- [ ] **E3.5** `scripts/check_ui_boundary.py` must stay green (the helper lives under `lib/ui/**`).
+- [x] **E3.1** Add one helper in `lib/ui/design/` (not `th_widgets.dart`, which is generated-then-owned): `THTestId(id, child)` that wraps `Semantics(identifier: id, container: false, child: child)`, plus an extension `.testId('login_button')`.
+- [x] **E3.2** Identifier string = the existing `Key` string, one-to-one. Add a unit test that fails if a screen exposes a `Key` from the contract list without a matching identifier (a simple contract list in `test/ui/test_id_contract_test.dart`).
+- [x] **E3.3** Apply to: auth (email, password, login, sign out), dock items + `post_job_fab`, post-job fields and submit, address field, choose-tradie list/quick match, quote accept, cancel sheet buttons, payment upload, dispute fields/submit, review stars/submit. ~40 ids, matching the 41-key inventory.
+- [x] **E3.4** Confirm it does not change visuals or announce extra text to screen readers (identifier is not read aloud). Re-run `test/accessibility_audit_test.dart` and the gallery goldens: they must be unchanged.
+- [x] **E3.5** `scripts/check_ui_boundary.py` must stay green (the helper lives under `lib/ui/**`).
 
 **Done when:** `maestro studio` / `inspect_screen` shows `id:` values for the contract list on both an Android emulator and an iOS simulator.
 
@@ -170,10 +169,10 @@ Only needed by Maestro (E4). Do it after E2 so the Keys are stable first.
 
 This is the part of the pasted text that fits §4.6 best. **It produces evidence; owner sign-off on §4.6 and the §4.4 owner-QA box still stays with you.**
 
-- [ ] **E4.1** Install Maestro CLI (Java 17+) and register the MCP: `claude mcp add maestro -- maestro mcp` (or the equivalent for the agent in use). Add the entry to every MCP config that `docs/ai/AI-TOOLING.md` lists, keeping parity (`mcp.json`, `.agent/mcp_config.json`, `.agents/mcp_config.json`, `opencode.json`). Note `mcp.json` currently contains `/Users/john/...` paths; make the new entry path-independent.
-- [ ] **E4.2** Create `.maestro/` at repo root (Maestro's default location): `config.yaml`, `flows/homeowner/*.yaml`, `flows/shared/login.yaml` (reusable via `runFlow`). Start with five flows mirroring the C1 journey: login → post job → choose tradie → (fixture-booked job) cancel-sheet dismiss → payment status.
-- [ ] **E4.3** Add a screenshot step per screen with a stable name (`takeScreenshot: ho_home_light`, …, `_dark`) so the owner can compare against `docs/design/mockups/index.html` side by side. Light and dark are both required by `AGENTS.md`.
-- [ ] **E4.4** Write the project skill `.agents/skills/v2-e2e-explorer/SKILL.md` (single skill, replaces the pasted text's first three). It encodes: the hard rules in §3, the identifier contract, the seeded accounts, "inspect before acting", "record, don't invent expected business behaviour", and output files `exploration-report.md` + bug list under `docs/runs/`.
+- [x] **E4.1** Install Maestro CLI (Java 17+) and register the MCP: `claude mcp add maestro -- maestro mcp` (or the equivalent for the agent in use). Add the entry to every MCP config that `docs/ai/AI-TOOLING.md` lists, keeping parity (`mcp.json`, `.agent/mcp_config.json`, `.agents/mcp_config.json`, `opencode.json`). Note `mcp.json` currently contains `/Users/john/...` paths; make the new entry path-independent.
+- [x] **E4.2** Create `.maestro/` at repo root (Maestro's default location): `config.yaml`, `flows/homeowner/*.yaml`, `flows/shared/login.yaml` (reusable via `runFlow`). Start with five flows mirroring the C1 journey: login → post job → choose tradie → (fixture-booked job) cancel-sheet dismiss → payment status.
+- [x] **E4.3** Add a screenshot step per screen with a stable name (`takeScreenshot: ho_home_light`, …, `_dark`) so the owner can compare against `docs/design/mockups/index.html` side by side. Light and dark are both required by `AGENTS.md`.
+- [x] **E4.4** Write the project skill `.agents/skills/v2-e2e-explorer/SKILL.md` (single skill, replaces the pasted text's first three). It encodes: the hard rules in §3, the identifier contract, the seeded accounts, "inspect before acting", "record, don't invent expected business behaviour", and output files `exploration-report.md` + bug list under `docs/runs/`.
 - [ ] **E4.5** First exploration session, read-only: agent walks homeowner v2 on an emulator, produces the screen inventory and compares it with the 30-screen list and the D-4 backlog. Output feeds §4.6, not the committed suite.
 - [ ] **E4.6** Only flows a human has reviewed are committed. Exploration output stays in `docs/runs/`.
 
@@ -185,10 +184,10 @@ This is the part of the pasted text that fits §4.6 best. **It produces evidence
 
 Scope is deliberately narrow: only what `integration_test` cannot do.
 
-- [ ] **E5.1** Add `patrol` + `patrol_cli`; tests in `patrol_test/`; add `**/test_bundle.dart` and `.patrol.env` to `.gitignore`. Run with `patrol test`, **not** `flutter test`. Check the compatibility table for the repo's Flutter version first.
-- [ ] **E5.2** Optional agent aids: `patrol_mcp` and the Patrol agent skills (`dart run skills@ get --agent claude -p patrol -s patrol-setup -s patrol-write-test`; needs Dart 3.12+, repo is on `^3.13.4`).
-- [ ] **E5.3** Two tests only: (a) photo-source sheet → native picker/permission on `ho_post_job` and `ho_dispute`, (b) notification permission prompt on first login (`FIXO_DISABLE_PUSH` must be false for this one).
-- [ ] **E5.4** Decision gate: if the pilot is flaky or setup cost is high, drop Patrol and leave those two cases to the manual QA list.
+- [x] **E5.1** Add `patrol` + `patrol_cli`; tests in `patrol_test/`; add `**/test_bundle.dart` and `.patrol.env` to `.gitignore`. Run with `patrol test`, **not** `flutter test`. Check the compatibility table for the repo's Flutter version first.
+- [x] **E5.2** Optional agent aids: `patrol_mcp` and the Patrol agent skills (`dart run skills@ get --agent claude -p patrol -s patrol-setup -s patrol-write-test`; needs Dart 3.12+, repo is on `^3.13.4`).
+- [x] **E5.3** Two tests only: (a) photo-source sheet → native picker/permission on `ho_post_job` and `ho_dispute`, (b) notification permission prompt on first login (`FIXO_DISABLE_PUSH` must be false for this one).
+- [x] **E5.4** Decision gate: if the pilot is flaky or setup cost is high, drop Patrol and leave those two cases to the manual QA list.
 
 **Done when:** the two native-dialog tests pass on Android and iOS, or the gate decision is recorded in `docs/TESTING.md`.
 

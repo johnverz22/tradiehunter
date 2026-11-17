@@ -170,6 +170,7 @@ class ThRoleToggle extends StatelessWidget {
         child: Semantics(
           button: true,
           selected: selected,
+          identifier: thTestId(key),
           label: label,
           excludeSemantics: true,
           onTap: () => onRoleChanged(role),

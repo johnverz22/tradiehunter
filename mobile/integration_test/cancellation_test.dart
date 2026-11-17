@@ -1,5 +1,9 @@
 // P6 — Cancellations
 //
+// Run with: UI_V2=all exercises the v2 booked-screen cancel sheet
+// (ho_booked_*); default flags exercise the v1 detail views. Tradie side is
+// v1 until Phase 5.
+//
 // Self-seeding: each test gets a fresh Booked job from FixtureHelper.
 // Either persona runs on a single simulator.
 //
@@ -18,8 +22,10 @@ import 'helpers/auth_helper.dart';
 import 'helpers/fixture_helper.dart';
 import 'helpers/test_config.dart';
 
-const _persona =
-    String.fromEnvironment('FIXO_PERSONA', defaultValue: 'homeowner');
+const _persona = String.fromEnvironment(
+  'FIXO_PERSONA',
+  defaultValue: 'homeowner',
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -39,8 +45,9 @@ void main() {
 void _homeownerSuite() {
   group('P6 — Cancellation (homeowner side)', () {
     // ── P6-06: cancel sheet renders correct widgets ────────────────────────
-    testWidgets('P6-06 cancel sheet renders reason list and confirm button',
-        (tester) async {
+    testWidgets('P6-06 cancel sheet renders reason list and confirm button', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.bookedJob(tag: 'p6-06');
 
       app.main();
@@ -85,8 +92,9 @@ void _homeownerSuite() {
 void _tradieSuite() {
   group('P6 — Cancellation (tradie side)', () {
     // ── P6-04: tradie cancel returns job to Requested ─────────────────────
-    testWidgets('P6-04 tradie cancel sheet shows account-flag warning',
-        (tester) async {
+    testWidgets('P6-04 tradie cancel sheet shows account-flag warning', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.bookedJob(tag: 'p6-04');
 
       app.main();
@@ -115,12 +123,20 @@ Future<void> _dismissCancelSheet(WidgetTester tester) async {
   }
 }
 
-/// Opens the cancel sheet from a job detail screen. Both detail screens now
-/// expose cancel through the app-bar overflow (more_vert) popup rather than
-/// a dedicated tooltip icon.
+/// Opens the cancel sheet from a job detail screen. All three detail
+/// surfaces (v2 ho_booked, v1 homeowner, v1 tradie) expose the overflow
+/// menu under the same `job_overflow_menu` key; the icon tap remains as a
+/// fallback for surfaces that predate the key.
 Future<void> _openCancelSheet(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.more_vert));
+  final menu = find.byKey(const Key('job_overflow_menu'));
+  if (menu.evaluate().isNotEmpty) {
+    await tester.tap(menu.first);
+  } else {
+    await tester.tap(find.byIcon(Icons.more_vert));
+  }
   await pumpFor(tester);
+  // Homeowner surfaces label the item 'Cancel job'; the tradie v1 sheet
+  // uses title case 'Cancel Job'.
   final item = find.text('Cancel job').evaluate().isNotEmpty
       ? find.text('Cancel job')
       : find.text('Cancel Job');

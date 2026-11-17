@@ -565,33 +565,37 @@ class _TradieJobDetailScreenState extends ConsumerState<TradieJobDetailScreen> {
         showBack: !widget.embedded,
         actions: [
           if ((canCancel && !_busy) || canDispute || canReportNoShow)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
-              onSelected: (value) {
-                if (value == 'dispute') _openDispute();
-                if (value == 'noshow') _reportNoShow();
-                if (value == 'cancel') _showCancelSheet();
-              },
-              itemBuilder: (context) => [
-                if (canReportNoShow)
-                  const PopupMenuItem(
-                    value: 'noshow',
-                    child: Text('Report No-Show'),
-                  ),
-                if (canDispute)
-                  const PopupMenuItem(
-                    value: 'dispute',
-                    child: Text('Open Dispute'),
-                  ),
-                if (canCancel && !_busy)
-                  PopupMenuItem(
-                    value: 'cancel',
-                    child: Text(
-                      'Cancel Job',
-                      style: TextStyle(color: theme.colorScheme.error),
+            Semantics(
+              identifier: 'job_overflow_menu',
+              child: PopupMenuButton<String>(
+                key: const Key('job_overflow_menu'),
+                icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
+                onSelected: (value) {
+                  if (value == 'dispute') _openDispute();
+                  if (value == 'noshow') _reportNoShow();
+                  if (value == 'cancel') _showCancelSheet();
+                },
+                itemBuilder: (context) => [
+                  if (canReportNoShow)
+                    const PopupMenuItem(
+                      value: 'noshow',
+                      child: Text('Report No-Show'),
                     ),
-                  ),
-              ],
+                  if (canDispute)
+                    const PopupMenuItem(
+                      value: 'dispute',
+                      child: Text('Open Dispute'),
+                    ),
+                  if (canCancel && !_busy)
+                    PopupMenuItem(
+                      value: 'cancel',
+                      child: Text(
+                        'Cancel Job',
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
+                    ),
+                ],
+              ),
             ),
         ],
       ),

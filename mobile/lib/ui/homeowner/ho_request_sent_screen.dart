@@ -52,114 +52,117 @@ class ThRequestSentScreen extends StatelessWidget {
         builder: (context) {
           final req = request;
           final expired = req != null && req.remaining() <= Duration.zero;
-    final name = req == null ? null : _displayName(req);
+          final name = req == null ? null : _displayName(req);
 
-    return THScaffold(
-      appBar: const THAppBar(title: 'Request sent'),
-      stickyBar: THStickyBar(
-        children: [
-          THButton(
-            key: const Key('pick_someone_else_button'),
-            label: 'Pick someone else',
-            kind: THButtonKind.secondary,
-            onPressed: req == null || expired ? onPickSomeoneElse : null,
-          ),
-          THButton(
-            key: const Key('cancel_request_button'),
-            label: 'Cancel request',
-            kind: THButtonKind.ghost,
-            onPressed: req == null || expired ? null : onCancelRequest,
-          ),
-        ],
-      ),
-      body: !requestChecked
-          ? const Center(
-              child: CircularProgressIndicator(
-                semanticsLabel: 'Loading request status',
-              ),
-            )
-          : req == null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          return THScaffold(
+            appBar: const THAppBar(title: 'Request sent'),
+            stickyBar: THStickyBar(
               children: [
-                const SizedBox(height: Space.s8),
-                const THIcon(Icons.timer_off_outlined, size: Sizes.iconLg),
-                const SizedBox(height: Space.s4),
-                const THText(
-                  'This request is no longer open',
-                  style: THTextStyle.h2,
-                  align: TextAlign.center,
+                THButton(
+                  key: const Key('pick_someone_else_button'),
+                  label: 'Pick someone else',
+                  kind: THButtonKind.secondary,
+                  onPressed: req == null || expired ? onPickSomeoneElse : null,
                 ),
-                const SizedBox(height: Space.s2),
-                const THText(
-                  'It may have expired or been answered. Pick another tradie to keep going.',
-                  style: THTextStyle.body,
-                  tone: THTone.soft,
-                  align: TextAlign.center,
+                THButton(
+                  key: const Key('cancel_request_button'),
+                  label: 'Cancel request',
+                  kind: THButtonKind.ghost,
+                  onPressed: req == null || expired ? null : onCancelRequest,
                 ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (reconnecting)
-                  const THCard(
-                    padding: Space.s3,
-                    children: [
-                      THText(
-                        'Connection lost — reconnecting…',
-                        style: THTextStyle.meta,
-                        tone: THTone.soft,
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: Space.s4),
-                THText(
-                  'You asked $name',
-                  style: THTextStyle.h1,
-                  align: TextAlign.center,
-                ),
-                const SizedBox(height: Space.s2),
-                const THText(
-                  'We\u2019ll let you know when they reply. If they decline or time runs out, the job stays open and nothing is charged.',
-                  style: THTextStyle.body,
-                  tone: THTone.soft,
-                  align: TextAlign.center,
-                ),
-                const SizedBox(height: Space.s4),
-                THCard(
-                  padding: Space.s4,
-                  children: [
-                    if (req.hourlyRateSnapshot != null)
-                      THKeyValue(
-                        'Rate locked',
-                        '${formatRate(req.hourlyRateSnapshot!)}${gstLabel == null ? '' : ' · $gstLabel'}',
-                        bold: true,
-                      ),
-                    _RequestOfferCountdown(
-                      key: ValueKey(req.expiresAtUtc),
-                      offer: req,
-                      onExpired: onExpired,
-                    ),
-                    if (req.message?.trim().isNotEmpty ?? false)
-                      THKeyValue(
-                        'Your message',
-                        req.message!.trim(),
-                        divider: true,
-                      ),
-                  ],
-                ),
-                if (expired) ...[
-                  const SizedBox(height: Space.s3),
-                  const THText(
-                    'The request has run out of time. Pick another tradie — the job stays open.',
-                    style: THTextStyle.meta,
-                    tone: THTone.soft,
-                    align: TextAlign.center,
-                  ),
-                ],
               ],
             ),
+            body: !requestChecked
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: 'Loading request status',
+                    ),
+                  )
+                : req == null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: Space.s8),
+                      const THIcon(
+                        Icons.timer_off_outlined,
+                        size: Sizes.iconLg,
+                      ),
+                      const SizedBox(height: Space.s4),
+                      const THText(
+                        'This request is no longer open',
+                        style: THTextStyle.h2,
+                        align: TextAlign.center,
+                      ),
+                      const SizedBox(height: Space.s2),
+                      const THText(
+                        'It may have expired or been answered. Pick another tradie to keep going.',
+                        style: THTextStyle.body,
+                        tone: THTone.soft,
+                        align: TextAlign.center,
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (reconnecting)
+                        const THCard(
+                          padding: Space.s3,
+                          children: [
+                            THText(
+                              'Connection lost — reconnecting…',
+                              style: THTextStyle.meta,
+                              tone: THTone.soft,
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: Space.s4),
+                      THText(
+                        'You asked $name',
+                        style: THTextStyle.h1,
+                        align: TextAlign.center,
+                      ),
+                      const SizedBox(height: Space.s2),
+                      const THText(
+                        'We\u2019ll let you know when they reply. If they decline or time runs out, the job stays open and nothing is charged.',
+                        style: THTextStyle.body,
+                        tone: THTone.soft,
+                        align: TextAlign.center,
+                      ),
+                      const SizedBox(height: Space.s4),
+                      THCard(
+                        padding: Space.s4,
+                        children: [
+                          if (req.hourlyRateSnapshot != null)
+                            THKeyValue(
+                              'Rate locked',
+                              '${formatRate(req.hourlyRateSnapshot!)}${gstLabel == null ? '' : ' · $gstLabel'}',
+                              bold: true,
+                            ),
+                          _RequestOfferCountdown(
+                            key: ValueKey(req.expiresAtUtc),
+                            offer: req,
+                            onExpired: onExpired,
+                          ),
+                          if (req.message?.trim().isNotEmpty ?? false)
+                            THKeyValue(
+                              'Your message',
+                              req.message!.trim(),
+                              divider: true,
+                            ),
+                        ],
+                      ),
+                      if (expired) ...[
+                        const SizedBox(height: Space.s3),
+                        const THText(
+                          'The request has run out of time. Pick another tradie — the job stays open.',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                          align: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
           );
         },
       ),

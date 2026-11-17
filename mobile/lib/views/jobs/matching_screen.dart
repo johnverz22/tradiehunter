@@ -581,9 +581,8 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         reconnecting: _reconnecting,
         request: _request,
         gstLabel: widget.gstLabel,
-        onPickSomeoneElse: () => _returnToList(
-          'Pick another tradie — the job is still open.',
-        ),
+        onPickSomeoneElse: () =>
+            _returnToList('Pick another tradie — the job is still open.'),
         onCancelRequest: _cancelRequest,
         onExpired: () {
           if (mounted) setState(() {});
@@ -779,7 +778,6 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     ); // AnnotatedRegion
   }
 
-
   Future<void> _cancelRequest() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -816,7 +814,6 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     return 'the tradie';
   }
 }
-
 
 /// Snapshot rate card: "their hourly rate for this job" + GST label (D8).
 class _RateCard extends StatelessWidget {

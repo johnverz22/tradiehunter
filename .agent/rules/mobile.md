@@ -48,6 +48,7 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
   - v1 → v2 widget mapping: `FixoPrimaryButton` → `THButton(kind: accent or primary)`, `FixoAppBar` → `THAppBar`, `FixoCard` → `THCard`, `FixoNotice` → `THNotice`, `StickyActionBar` → `THStickyBar`, `CustomBottomNavBar` + FAB → `THDock`.
 - **Theme Support**: Both light and dark themes are required. No outdoor variant (removed in v2). Use `THTheme.light` / `THTheme.dark`. Never an `if (isDark)` branch in a view — dark is a token swap.
 - **Brand budget**: One gold (`accent`) CTA per screen. `brand` (navy) for secondary filled actions. Green = verified/done, red = problem/dispute.
+- **Semantics identifiers**: Every interactive element in `lib/ui` that has a `Key` also gets the same `testId` / `identifier` (mirrored automatically by `TH*` primitives or wrapped with `THTestId` / `.testId(id)`).
 
 ## Platform, Runtime & Scope Rules
 

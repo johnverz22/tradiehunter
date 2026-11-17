@@ -202,9 +202,10 @@ class _ModeControl extends StatelessWidget {
                 child: Semantics(
                   button: true,
                   selected: !project,
+                  identifier: 'job_type_hourly',
                   label: 'Quick job hourly',
                   child: GestureDetector(
-                    key: const Key('job_type_${Job.jobTypeHourly}'),
+                    key: const Key('job_type_hourly'),
                     behavior: HitTestBehavior.opaque,
                     onTap: () => onSelected(Job.jobTypeHourly),
                   ),
@@ -214,9 +215,10 @@ class _ModeControl extends StatelessWidget {
                 child: Semantics(
                   button: true,
                   selected: project,
+                  identifier: 'job_type_project',
                   label: 'Project',
                   child: GestureDetector(
-                    key: const Key('job_type_${Job.jobTypeProject}'),
+                    key: const Key('job_type_project'),
                     behavior: HitTestBehavior.opaque,
                     onTap: () => onSelected(Job.jobTypeProject),
                   ),
@@ -260,6 +262,7 @@ class _ServiceField extends StatelessWidget {
       children: [
         Semantics(
           button: true,
+          identifier: 'service_dropdown',
           label: 'Choose a service',
           child: InkWell(
             key: const Key('service_dropdown'),

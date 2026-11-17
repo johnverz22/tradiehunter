@@ -1,0 +1,27 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 3: Choose a Tradie & Request Sent
+- launchApp:
+    clearState: false
+
+# Visual evidence for Choose Tradie screen
+- assertVisible:
+    id: "quick_match_button"
+- takeScreenshot: ho_choose_tradie_light
+
+# Verify filter chips
+- assertVisible:
+    id: "tradie_filter_verified"
+- assertVisible:
+    id: "tradie_filter_insured"
+- assertVisible:
+    id: "tradie_filter_available"
+
+# Tap Quick Match to broadcast request
+- tapOn:
+    id: "quick_match_button"
+
+# Verify Request Sent screen and cancel request button
+- assertVisible:
+    id: "cancel_request_button"
+- takeScreenshot: ho_request_sent_light

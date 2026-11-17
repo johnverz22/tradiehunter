@@ -104,6 +104,7 @@ class _JobRequestBarState extends ConsumerState<_JobRequestBar> {
             ),
             const SizedBox(height: Space.s4),
             THButton(
+              key: const Key('send_request_button'),
               label: 'Send request',
               kind: THButtonKind.accent,
               onPressed: () => Navigator.pop(ctx, controller.text.trim()),

@@ -96,6 +96,7 @@ class HoPendingAdjustmentCard extends StatelessWidget {
         children: [
           Expanded(
             child: THButton(
+              key: const Key('adjustment_decline_button'),
               label: 'Decline',
               kind: THButtonKind.secondary,
               size: THButtonSize.sm,
@@ -104,6 +105,7 @@ class HoPendingAdjustmentCard extends StatelessWidget {
           ),
           Expanded(
             child: THButton(
+              key: const Key('adjustment_approve_button'),
               label: busy ? 'Saving…' : 'Approve',
               kind: THButtonKind.primary,
               size: THButtonSize.sm,
@@ -189,6 +191,7 @@ class _HoAdjustmentDecisionSheetState extends State<HoAdjustmentDecisionSheet> {
                 decoration: const InputDecoration(labelText: 'Note (optional)'),
               ),
               THButton(
+                key: const Key('adjustment_decision_confirm'),
                 label: widget.approve
                     ? 'Approve this extra cost'
                     : 'Decline this extra cost',

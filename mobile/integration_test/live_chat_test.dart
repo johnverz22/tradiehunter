@@ -30,43 +30,44 @@ Future<void> _shot(WidgetTester tester, String name) async {
 
 /// Pumps until [text] is on screen or [timeout] elapses.
 Future<void> _expectWithin(
-    WidgetTester tester, String text, Duration timeout) async {
+  WidgetTester tester,
+  String text,
+  Duration timeout,
+) async {
   final deadline = DateTime.now().add(timeout);
   while (DateTime.now().isBefore(deadline)) {
     await tester.pump(const Duration(milliseconds: 250));
     if (find.text(text).evaluate().isNotEmpty) return;
   }
-  fail('expected "$text" within ${timeout.inSeconds}s — '
-      'hub push/reconnect did not deliver');
+  fail(
+    'expected "$text" within ${timeout.inSeconds}s — '
+    'hub push/reconnect did not deliver',
+  );
 }
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-    'live two-client send + reconnect',
-    (tester) async {
-      app.main();
-      await pumpFor(tester, const Duration(seconds: 2));
-      await loginAs(tester, kTradieEmail, kTradiePassword);
+  testWidgets('live two-client send + reconnect', (tester) async {
+    app.main();
+    await pumpFor(tester, const Duration(seconds: 2));
+    await loginAs(tester, kTradieEmail, kTradiePassword);
 
-      appRouter.go('/chat/$_jobId');
-      await pumpFor(tester, const Duration(seconds: 6));
-      print('__LIVE_READY__');
+    appRouter.go('/chat/$_jobId');
+    await pumpFor(tester, const Duration(seconds: 6));
+    print('__LIVE_READY__');
 
-      // Phase 1 — live hub push while the app is foregrounded.
-      await _expectWithin(tester, _msgOne, const Duration(seconds: 45));
-      print('__LIVE_GOT_ONE__');
-      await _shot(tester, 'tradie/19_chat_live_push');
+    // Phase 1 — live hub push while the app is foregrounded.
+    await _expectWithin(tester, _msgOne, const Duration(seconds: 45));
+    print('__LIVE_GOT_ONE__');
+    await _shot(tester, 'tradie/19_chat_live_push');
 
-      // Phase 2 — host backgrounds the app, sends, and relaunches it.
-      print('__LIVE_BG__');
-      await _expectWithin(tester, _msgTwo, const Duration(seconds: 90));
-      print('__LIVE_GOT_TWO__');
-      await _shot(tester, 'tradie/20_chat_reconnect');
+    // Phase 2 — host backgrounds the app, sends, and relaunches it.
+    print('__LIVE_BG__');
+    await _expectWithin(tester, _msgTwo, const Duration(seconds: 90));
+    print('__LIVE_GOT_TWO__');
+    await _shot(tester, 'tradie/20_chat_reconnect');
 
-      print('__SHOTS_DONE__');
-    },
-    timeout: const Timeout(Duration(minutes: 6)),
-  );
+    print('__SHOTS_DONE__');
+  }, timeout: const Timeout(Duration(minutes: 6)));
 }

@@ -90,16 +90,20 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                   tone: THTone.soft,
                 ),
                 const SizedBox(height: Space.s3),
-                CheckboxListTile(
-                  value: checked,
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const THText(
-                    'I have a written contract with this tradie',
-                    style: THTextStyle.body,
+                Semantics(
+                  identifier: 'written_contract_checkbox',
+                  child: CheckboxListTile(
+                    key: const Key('written_contract_checkbox'),
+                    value: checked,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const THText(
+                      'I have a written contract with this tradie',
+                      style: THTextStyle.body,
+                    ),
+                    onChanged: (value) =>
+                        setSheetState(() => checked = value ?? false),
                   ),
-                  onChanged: (value) =>
-                      setSheetState(() => checked = value ?? false),
                 ),
                 const SizedBox(height: Space.s2),
                 Row(
@@ -114,6 +118,7 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                     const SizedBox(width: Space.s3),
                     Expanded(
                       child: THButton(
+                        key: const Key('contract_confirm_button'),
                         label: 'Confirm & accept',
                         kind: THButtonKind.accent,
                         onPressed: checked

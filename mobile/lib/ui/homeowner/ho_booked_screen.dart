@@ -140,25 +140,38 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
           title: job.title,
           subtitle: 'Booked',
           actions: [
-            PopupMenuButton<String>(
-              enabled: !_busy,
-              onSelected: (value) {
-                if (value == 'cancel') _cancel();
-                if (value == 'dispute') context.push('/jobs/${job.id}/dispute');
-                if (value == 'noshow') _reportNoShow();
-              },
-              itemBuilder: (context) => [
-                if (canReportNoShow)
+            Semantics(
+              identifier: 'job_overflow_menu',
+              child: PopupMenuButton<String>(
+                key: const Key('job_overflow_menu'),
+                enabled: !_busy,
+                onSelected: (value) {
+                  if (value == 'cancel') {
+                    _cancel();
+                  }
+                  if (value == 'dispute') {
+                    context.push('/jobs/${job.id}/dispute');
+                  }
+                  if (value == 'noshow') {
+                    _reportNoShow();
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (canReportNoShow)
+                    const PopupMenuItem(
+                      value: 'noshow',
+                      child: Text('Report no-show'),
+                    ),
                   const PopupMenuItem(
-                    value: 'noshow',
-                    child: Text('Report no-show'),
+                    value: 'dispute',
+                    child: Text('Open dispute'),
                   ),
-                const PopupMenuItem(
-                  value: 'dispute',
-                  child: Text('Open dispute'),
-                ),
-                const PopupMenuItem(value: 'cancel', child: Text('Cancel job')),
-              ],
+                  const PopupMenuItem(
+                    value: 'cancel',
+                    child: Text('Cancel job'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -258,22 +271,28 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                 const HoJobTimelineRow('Approve final amount and pay'),
               ],
             ),
-            ExpansionTile(
-              key: const Key('cancellation_policy_tile'),
-              title: const THText(
-                'Cancellation policy',
-                style: THTextStyle.title,
+            Semantics(
+              identifier: 'cancellation_policy_tile',
+              child: ExpansionTile(
+                key: const Key('cancellation_policy_tile'),
+                title: const THText(
+                  'Cancellation policy',
+                  style: THTextStyle.title,
+                ),
+                tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
+                childrenPadding: const EdgeInsets.fromLTRB(
+                  Space.s4,
+                  0,
+                  Space.s4,
+                  Space.s4,
+                ),
+                children: [
+                  const THText(
+                    bookedCancellationNotice,
+                    style: THTextStyle.body,
+                  ),
+                ],
               ),
-              tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
-              childrenPadding: const EdgeInsets.fromLTRB(
-                Space.s4,
-                0,
-                Space.s4,
-                Space.s4,
-              ),
-              children: [
-                const THText(bookedCancellationNotice, style: THTextStyle.body),
-              ],
             ),
             THButton(
               key: const Key('open_chat_button'),

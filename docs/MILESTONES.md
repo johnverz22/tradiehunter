@@ -53,7 +53,7 @@ Ordered by launch impact.
 
 | # | Item | Owner/gate |
 |---|---|---|
-| 1 | **v1.7 verification:** run `dotnet build`, `dotnet test`, `flutter analyze`, `flutter test` (sandbox that wrote the code had no toolchains), run migration `P12JobFlowV17` dry-run on a copy of the dev DB, run `scripts/p12-smoke.sh`, then QA-14 ([QA.md](QA.md)) | Engineering |
+| 1 | **v1.7 verification:** run `dotnet build`, `dotnet test`, `flutter analyze`, `flutter test`, run migration `P12JobFlowV17` dry-run on a copy of the dev DB, run `scripts/p12-smoke.sh`, then QA-14 ([QA.md](QA.md)) | Engineering |
 | 2 | Flip `JobFlow:Version` to 2 only after item 1 passes | Engineering + product |
 | 3 | **Legal review** before enabling Project jobs in production (Building Act s362F summary is from government guidance, not legal advice) | Legal |
 | 4 | Pre-launch compliance checklist ([PRD §8](PRD.md#8-pre-launch-compliance-open)): FSPR, dispute scheme, AML/CFT, trust account, ToS, Privacy Policy | Business + legal |

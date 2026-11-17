@@ -1,5 +1,8 @@
 // P7 — Disputes
 //
+// Run with: UI_V2=all exercises the v2 ho_dispute screen; default flags
+// exercise the v1 dispute view. Both share the same keys.
+//
 // Self-seeding: each test gets a fresh Booked job from FixtureHelper and
 // navigates straight to /jobs/:id/dispute.
 //
@@ -23,8 +26,9 @@ void main() {
 
   group('P7 — Disputes', () {
     // ── P7-04: dispute screen renders all required fields ─────────────────
-    testWidgets('P7-04 dispute screen renders reason, details and submit',
-        (tester) async {
+    testWidgets('P7-04 dispute screen renders reason, details and submit', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.bookedJob(tag: 'p7-04a');
 
       app.main();
@@ -36,14 +40,17 @@ void main() {
       expect(find.byKey(const Key('dispute_screen')), findsOneWidget);
       // V15-18: reasons are a fixed radio set, not a dropdown.
       expect(
-          find.byKey(const Key('dispute_reason_Poor Quality')), findsOneWidget);
+        find.byKey(const Key('dispute_reason_Poor Quality')),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('dispute_details_field')), findsOneWidget);
       expect(find.byKey(const Key('open_dispute_button')), findsOneWidget);
     });
 
     // ── P7-04: submit without selecting reason is blocked ────────────────
-    testWidgets('P7-04 submitting dispute without details stays on screen',
-        (tester) async {
+    testWidgets('P7-04 submitting dispute without details stays on screen', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.bookedJob(tag: 'p7-04b');
 
       app.main();
@@ -61,8 +68,9 @@ void main() {
     });
 
     // ── P7-04: filled dispute form can be submitted ────────────────────────
-    testWidgets('P7-04 filled dispute form submits and leaves screen',
-        (tester) async {
+    testWidgets('P7-04 filled dispute form submits and leaves screen', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.bookedJob(tag: 'p7-04c');
 
       app.main();

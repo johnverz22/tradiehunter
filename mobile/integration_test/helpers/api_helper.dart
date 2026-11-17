@@ -34,21 +34,29 @@ class ApiHelper {
   static Future<String> get tradieToken =>
       getToken(kTradieEmail, kTradiePassword);
 
-  static Future<String> get staffToken =>
-      getToken(kStaffEmail, kStaffPassword);
+  static Future<String> get staffToken => getToken(kStaffEmail, kStaffPassword);
 
   // ── Jobs ───────────────────────────────────────────────────────────────────
 
   /// Creates a job as the homeowner. Returns the new job's ID.
+  ///
+  /// v1.7/v2 contract: timing defaults to Flexible (no scheduledStartUtc —
+  /// that is only valid for SpecificDate/DateRange), `hours` maps to the
+  /// optional `estimatedHours` guess, and `hourlyRate` is ignored server-side
+  /// (the rate is chosen on Choose-a-Tradie). Pass [jobType] 'Project' plus
+  /// [budgetMin]/[budgetMax] for quote-flow fixtures.
   static Future<int> createJob(
     String token, {
     required String title,
     int serviceId = 1,
     double latitude = -36.8485,
     double longitude = 174.7633,
-    int hours = 2,
-    double hourlyRate = 85.50,
+    int? hours,
     String urgency = 'Medium',
+    String? jobType,
+    double? budgetMin,
+    double? budgetMax,
+    String? scopeNotes,
   }) async {
     final body = await _post('/jobs', {
       'title': title,
@@ -58,10 +66,12 @@ class ApiHelper {
       'longitude': longitude,
       'address': '1 Test St, Auckland',
       'serviceId': serviceId,
-      'scheduledStartUtc':
-          DateTime.now().add(const Duration(days: 2)).toUtc().toIso8601String(),
-      'hours': hours,
-      'hourlyRate': hourlyRate,
+      'timingPreference': 'Flexible',
+      'estimatedHours': ?hours,
+      'jobType': ?jobType,
+      'budgetMin': ?budgetMin,
+      'budgetMax': ?budgetMax,
+      'scopeNotes': ?scopeNotes,
     }, token: token);
     final id = body['id'] as int?;
     if (id == null) throw Exception('createJob failed: $body');
@@ -81,11 +91,14 @@ class ApiHelper {
   /// Returns the pending offer for [jobId] as seen by the tradie token,
   /// or null if there is none (HTTP 204).
   static Future<Map<String, dynamic>?> getPendingOffer(
-      int jobId, String token) async {
+    int jobId,
+    String token,
+  ) async {
     final client = HttpClient();
     try {
-      final req = await client
-          .getUrl(Uri.parse('$kApiBaseUrl/api/jobs/$jobId/offers/pending'));
+      final req = await client.getUrl(
+        Uri.parse('$kApiBaseUrl/api/jobs/$jobId/offers/pending'),
+      );
       req.headers.set('Authorization', 'Bearer $token');
       final resp = await req.close().timeout(const Duration(seconds: 15));
       if (resp.statusCode == 204) return null;
@@ -98,17 +111,28 @@ class ApiHelper {
 
   /// Tradie responds 'Accepted' or 'Declined' to a pending offer.
   static Future<void> respondToOffer(
-          int jobId, int offerId, String response, String token) =>
-      _post('/jobs/$jobId/offers/$offerId/respond', {'response': response},
-          token: token);
+    int jobId,
+    int offerId,
+    String response,
+    String token,
+  ) => _post('/jobs/$jobId/offers/$offerId/respond', {
+    'response': response,
+  }, token: token);
 
   // ── Lifecycle transitions ──────────────────────────────────────────────────
 
   static Future<void> checkIn(int jobId, String tradieToken) =>
       _post('/jobs/$jobId/check-in', const {}, token: tradieToken);
 
-  static Future<void> checkOut(int jobId, String tradieToken) =>
-      _post('/jobs/$jobId/check-out', const {}, token: tradieToken);
+  /// v1.7: check-out requires the actual hours worked (0.25–500) for both
+  /// flow versions — the itemised completion summary is built from it.
+  static Future<void> checkOut(
+    int jobId,
+    String tradieToken, {
+    double finalHours = 2,
+  }) => _post('/jobs/$jobId/check-out', {
+    'finalHours': finalHours,
+  }, token: tradieToken);
 
   /// v1.7 (contract #8): the homeowner approves the itemised completion
   /// summary — the job moves to AwaitingPayment.
@@ -116,12 +140,11 @@ class ApiHelper {
     int jobId,
     String homeownerToken, {
     String? note,
-  }) =>
-      _post(
-        '/jobs/$jobId/approve',
-        note == null ? const {} : {'note': note},
-        token: homeownerToken,
-      );
+  }) => _post(
+    '/jobs/$jobId/approve',
+    note == null ? const {} : {'note': note},
+    token: homeownerToken,
+  );
 
   static Future<void> confirmCompletion(int jobId, String homeownerToken) =>
       _post('/jobs/$jobId/confirm', const {}, token: homeownerToken);
@@ -138,8 +161,9 @@ class ApiHelper {
 
   /// Opens/returns the payment for [jobId] (homeowner token).
   static Future<Map<String, dynamic>> getPayment(
-          int jobId, String homeownerToken) =>
-      _get('/jobs/$jobId/payment', token: homeownerToken);
+    int jobId,
+    String homeownerToken,
+  ) => _get('/jobs/$jobId/payment', token: homeownerToken);
 
   /// Uploads a PNG receipt. Moves the job to PaymentReview.
   ///
@@ -150,12 +174,18 @@ class ApiHelper {
     // receipt dedupe doesn't reject it as a re-used file.
     final png = [
       ...base64Decode(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='),
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      ),
       ...utf8.encode('|fixo-test-${DateTime.now().microsecondsSinceEpoch}'),
     ];
     await _postMultipart(
-        '/jobs/$jobId/payment/upload-receipt', 'receipt', png, 'receipt.png',
-        'image/png', token: homeownerToken);
+      '/jobs/$jobId/payment/upload-receipt',
+      'receipt',
+      png,
+      'receipt.png',
+      'image/png',
+      token: homeownerToken,
+    );
   }
 
   /// Staff verifies a submitted payment — job moves to Booked.
@@ -167,17 +197,149 @@ class ApiHelper {
   /// Sets a tradie's IsAvailable flag (used to park competing tradies so the
   /// test tradie deterministically receives offers).
   static Future<void> setAvailability(
-          String email, String password, bool available) =>
-      getToken(email, password).then((token) =>
-          _post('/profile/availability', {'available': available},
-              token: token));
+    String email,
+    String password,
+    bool available,
+  ) => getToken(email, password).then(
+    (token) =>
+        _post('/profile/availability', {'available': available}, token: token),
+  );
+
+  // ── v1.7 quotes / adjustments / tradie requests ────────────────────────────
+
+  /// The caller's own profile (GET /api/profile) — `id` is the user id used
+  /// as `tradieId`/`profileId` in job and profile routes.
+  static Future<Map<String, dynamic>> getMyProfile(String token) =>
+      _get('/profile', token: token);
+
+  /// Choose-a-Tradie list for [jobId] (GET /api/jobs/:id/tradies). Returns a
+  /// bare JSON array — each entry has `tradieId`, `name`, `score`, etc.
+  static Future<List<Map<String, dynamic>>> getTradieList(
+    int jobId,
+    String token,
+  ) async {
+    final client = HttpClient();
+    try {
+      final req = await client.getUrl(
+        Uri.parse('$kApiBaseUrl/api/jobs/$jobId/tradies'),
+      );
+      req.headers.set('Authorization', 'Bearer $token');
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
+      _throwIfError(resp.statusCode, raw, 'GET /jobs/$jobId/tradies');
+      if (raw.isEmpty) return const [];
+      return (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Direct request for a specific tradie (POST /api/jobs/:id/request).
+  /// Returns the created offer map.
+  static Future<Map<String, dynamic>> requestTradie(
+    int jobId,
+    String tradieId,
+    String homeownerToken, {
+    String? message,
+  }) => _post('/jobs/$jobId/request', {
+    'tradieId': tradieId,
+    if (message != null && message.trim().isNotEmpty) 'message': message.trim(),
+  }, token: homeownerToken);
+
+  /// Tradie submits a quote for a project job (POST /api/jobs/:id/quotes).
+  /// Returns the created quote map (has `id`).
+  static Future<Map<String, dynamic>> submitQuote(
+    int jobId,
+    String tradieToken, {
+    required String pricingModel,
+    double? amount,
+    double? minAmount,
+    double? maxAmount,
+    double? cap,
+    bool materialsIncluded = false,
+    bool gstIncluded = false,
+    String? inclusions,
+    String? exclusions,
+  }) => _post('/jobs/$jobId/quotes', {
+    'pricingModel': pricingModel,
+    'amount': ?amount,
+    'minAmount': ?minAmount,
+    'maxAmount': ?maxAmount,
+    'cap': ?cap,
+    'materialsIncluded': materialsIncluded,
+    'gstIncluded': gstIncluded,
+    'inclusions': ?inclusions,
+    'exclusions': ?exclusions,
+  }, token: tradieToken);
+
+  /// Quote list for the homeowner (GET /api/jobs/:id/quotes) — bare array.
+  static Future<List<Map<String, dynamic>>> getQuotes(
+    int jobId,
+    String homeownerToken,
+  ) async {
+    final client = HttpClient();
+    try {
+      final req = await client.getUrl(
+        Uri.parse('$kApiBaseUrl/api/jobs/$jobId/quotes'),
+      );
+      req.headers.set('Authorization', 'Bearer $homeownerToken');
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
+      _throwIfError(resp.statusCode, raw, 'GET /jobs/$jobId/quotes');
+      if (raw.isEmpty) return const [];
+      return (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Tradie proposes an extra cost (POST /api/jobs/:id/adjustments).
+  /// Returns the created adjustment map (has `id`, `status` = 'Pending').
+  static Future<Map<String, dynamic>> proposeAdjustment(
+    int jobId,
+    String tradieToken, {
+    required String kind,
+    required String description,
+    required double amount,
+  }) => _post('/jobs/$jobId/adjustments', {
+    'kind': kind,
+    'description': description,
+    'amount': amount,
+  }, token: tradieToken);
+
+  /// Adjustment history for the job (GET /api/jobs/:id/adjustments) — array.
+  static Future<List<Map<String, dynamic>>> getAdjustments(
+    int jobId,
+    String token,
+  ) async {
+    final client = HttpClient();
+    try {
+      final req = await client.getUrl(
+        Uri.parse('$kApiBaseUrl/api/jobs/$jobId/adjustments'),
+      );
+      req.headers.set('Authorization', 'Bearer $token');
+      final resp = await req.close().timeout(const Duration(seconds: 15));
+      final raw = await resp
+          .transform(utf8.decoder)
+          .join()
+          .timeout(const Duration(seconds: 15));
+      _throwIfError(resp.statusCode, raw, 'GET /jobs/$jobId/adjustments');
+      if (raw.isEmpty) return const [];
+      return (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+    } finally {
+      client.close();
+    }
+  }
 
   // ── Generic ────────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> _get(
-    String path, {
-    String? token,
-  }) async {
+  static Future<Map<String, dynamic>> _get(String path, {String? token}) async {
     final client = HttpClient();
     try {
       final req = await client.getUrl(Uri.parse('$kApiBaseUrl/api$path'));
@@ -234,11 +396,15 @@ class ApiHelper {
     try {
       final req = await client.postUrl(Uri.parse('$kApiBaseUrl/api$path'));
       if (token != null) req.headers.set('Authorization', 'Bearer $token');
-      req.headers.contentType = ContentType('multipart', 'form-data',
-          parameters: {'boundary': boundary});
+      req.headers.contentType = ContentType(
+        'multipart',
+        'form-data',
+        parameters: {'boundary': boundary},
+      );
       req.add([
         ...utf8.encode(
-            '--$boundary\r\nContent-Disposition: form-data; name="$field"; filename="$filename"\r\nContent-Type: $contentType\r\n\r\n'),
+          '--$boundary\r\nContent-Disposition: form-data; name="$field"; filename="$filename"\r\nContent-Type: $contentType\r\n\r\n',
+        ),
         ...bytes,
         ...utf8.encode('\r\n--$boundary--\r\n'),
       ]);

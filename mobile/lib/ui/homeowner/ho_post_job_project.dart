@@ -126,6 +126,7 @@ class _HoPostJobProjectState extends ConsumerState<HoPostJobProject> {
         Semantics(
           button: true,
           toggled: state.siteVisitWelcome,
+          identifier: 'site_visit_switch',
           label: 'Site visit welcome',
           child: InkWell(
             key: const Key('site_visit_switch'),

@@ -1,5 +1,9 @@
 // P5 — Booked → Completed Lifecycle
 //
+// Run with: UI_V2=all exercises the v2 homeowner review/payment screens;
+// default flags keep the v1 detail views. Tradie side is v1 until Phase 5
+// (tradie screens are not flagged).
+//
 // Self-seeding: fixtures drive a fresh job to the required state via the API
 // (FixtureHelper), so no pre-seeded Booked job is needed and either persona
 // can run on a single simulator.
@@ -20,8 +24,7 @@ import 'helpers/auth_helper.dart';
 import 'helpers/fixture_helper.dart';
 import 'helpers/test_config.dart';
 
-const _persona =
-    String.fromEnvironment('FIXO_PERSONA', defaultValue: 'tradie');
+const _persona = String.fromEnvironment('FIXO_PERSONA', defaultValue: 'tradie');
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -58,13 +61,16 @@ void _tradieSuite() {
       await pollUntil(
         () async =>
             (await ApiHelper.getJobStatus(
-                jobId, await ApiHelper.tradieToken)) ==
+              jobId,
+              await ApiHelper.tradieToken,
+            )) ==
             'InProgress',
       );
     });
 
-    testWidgets('P5-04 tradie can check out on an InProgress job',
-        (tester) async {
+    testWidgets('P5-04 tradie can check out on an InProgress job', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.inProgressJob(tag: 'p5-04');
 
       app.main();
@@ -78,10 +84,22 @@ void _tradieSuite() {
       await tester.tap(find.text('Check Out'));
       await pumpFor(tester, kNetworkSettle);
 
+      // v1.7 check-out sheet: actual hours are required before submit —
+      // the itemised completion summary is built from them.
+      final hoursField = find.byKey(const Key('final_hours_field'));
+      if (hoursField.evaluate().isNotEmpty) {
+        await tester.enterText(hoursField, '2');
+        await pumpFor(tester);
+        await tester.tap(find.byKey(const Key('check_out_submit_button')));
+        await pumpFor(tester, kNetworkSettle);
+      }
+
       await pollUntil(
         () async =>
             (await ApiHelper.getJobStatus(
-                jobId, await ApiHelper.tradieToken)) ==
+              jobId,
+              await ApiHelper.tradieToken,
+            )) ==
             'AwaitingConfirmation',
       );
     });
@@ -95,8 +113,7 @@ void _homeownerSuite() {
     testWidgets('P5-05 homeowner can approve the itemised amount', (
       tester,
     ) async {
-      final jobId =
-          await FixtureHelper.awaitingConfirmationJob(tag: 'p5-05');
+      final jobId = await FixtureHelper.awaitingConfirmationJob(tag: 'p5-05');
 
       app.main();
       await loginAsHomeowner(tester);
@@ -115,13 +132,16 @@ void _homeownerSuite() {
       await pollUntil(
         () async =>
             (await ApiHelper.getJobStatus(
-                jobId, await ApiHelper.homeownerToken)) ==
+              jobId,
+              await ApiHelper.homeownerToken,
+            )) ==
             'AwaitingPayment',
       );
     });
 
-    testWidgets('P5-09 homeowner can leave a review after Completed',
-        (tester) async {
+    testWidgets('P5-09 homeowner can leave a review after Completed', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.completedJob(tag: 'p5-09');
 
       app.main();

@@ -10,7 +10,7 @@
 # tradie-verified matched and homeowner-a as owner.
 set -u
 UDID=$1; JOB=$2; THEME=${3:-light}
-OUT=/Users/john/Develop/tradies/docs/runs/v1.6/screenshots/$THEME
+OUT=${SHOTS_OUT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)/docs/runs/v1.6/screenshots}/$THEME
 mkdir -p "$OUT/tradie"
 
 API=http://localhost:5000/api
@@ -24,7 +24,7 @@ send() { curl -sf -X POST $API/jobs/$JOB/messages -H "Authorization: Bearer $HT"
 
 cd "$(dirname "$0")/../mobile"
 echo "=== live chat: udid=$UDID job=$JOB ==="
-/Users/john/Develop/flutter/bin/flutter test \
+"${FLUTTER_BIN:-flutter}" test \
   integration_test/live_chat_test.dart \
   --device-id "$UDID" --reporter expanded \
   --dart-define LIVE_CHAT_JOB=$JOB \

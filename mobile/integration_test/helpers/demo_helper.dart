@@ -17,14 +17,19 @@ import 'auth_helper.dart';
 class Demo {
   Demo._();
 
-  static const _ctl =
-      String.fromEnvironment('DEMO_CTL', defaultValue: 'http://127.0.0.1:5099');
+  static const _ctl = String.fromEnvironment(
+    'DEMO_CTL',
+    defaultValue: 'http://127.0.0.1:5099',
+  );
 
   /// Seconds each screen is held so a viewer can read it.
   static const pace = int.fromEnvironment('DEMO_PACE', defaultValue: 3);
 
-  static Future<Map<String, dynamic>> _call(String method, String path,
-      [Object? body]) async {
+  static Future<Map<String, dynamic>> _call(
+    String method,
+    String path, [
+    Object? body,
+  ]) async {
     // Retried with hard timeouts — a stalled control request must never hold
     // the tour hostage; losing a signal would deadlock the choreography.
     Object? lastError;
@@ -76,8 +81,11 @@ class Demo {
 
   /// Pumps the UI (so animations and SignalR keep running) until [name] is
   /// signalled by another actor.
-  static Future<void> waitSignal(WidgetTester tester, String name,
-      {Duration timeout = const Duration(minutes: 15)}) async {
+  static Future<void> waitSignal(
+    WidgetTester tester,
+    String name, {
+    Duration timeout = const Duration(minutes: 15),
+  }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       final state = await _call('GET', '/state');
@@ -88,8 +96,11 @@ class Demo {
     fail('timed out waiting for demo signal "$name"');
   }
 
-  static Future<String> waitData(WidgetTester tester, String key,
-      {Duration timeout = const Duration(minutes: 15)}) async {
+  static Future<String> waitData(
+    WidgetTester tester,
+    String key, {
+    Duration timeout = const Duration(minutes: 15),
+  }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       final state = await _call('GET', '/state');
@@ -103,7 +114,10 @@ class Demo {
 
   /// Holds the current screen for [multiplier] x [pace] seconds.
   static Future<void> beat(WidgetTester tester, [double multiplier = 1]) =>
-      pumpFor(tester, Duration(milliseconds: (pace * 1000 * multiplier).round()));
+      pumpFor(
+        tester,
+        Duration(milliseconds: (pace * 1000 * multiplier).round()),
+      );
 
   /// Taps the [n]-th rating star (1-5). v2 stars are `IconButton`s with an
   /// 'N stars' tooltip (rounded icons); v1 stars are plain `Icons.star`.
@@ -132,14 +146,19 @@ class Demo {
 
   /// Types into [finder] one chunk at a time so it reads as typing on camera.
   static Future<void> type(
-      WidgetTester tester, Finder finder, String text) async {
+    WidgetTester tester,
+    Finder finder,
+    String text,
+  ) async {
     await tester.ensureVisible(finder.first);
     await tester.tap(finder.first);
     await tester.pump(const Duration(milliseconds: 300));
     final step = (text.length / 6).ceil().clamp(1, text.length);
     for (var i = step; i < text.length + step; i += step) {
       await tester.enterText(
-          finder.first, text.substring(0, i > text.length ? text.length : i));
+        finder.first,
+        text.substring(0, i > text.length ? text.length : i),
+      );
       await tester.pump(const Duration(milliseconds: 250));
       await Future<void>.delayed(const Duration(milliseconds: 250));
     }
@@ -148,8 +167,10 @@ class Demo {
 
   /// Polls [condition] while keeping the UI live.
   static Future<bool> until(
-      WidgetTester tester, Future<bool> Function() condition,
-      {Duration timeout = const Duration(seconds: 60)}) async {
+    WidgetTester tester,
+    Future<bool> Function() condition, {
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       if (await condition()) return true;

@@ -46,6 +46,9 @@ class CompactProgressBar extends StatelessWidget {
   /// Optional tap handler for the entire caption line (text + trailing).
   final VoidCallback? onCaptionTap;
 
+  /// Key applied to the caption tap target (used by E2E tests).
+  final Key? captionKey;
+
   const CompactProgressBar({
     super.key,
     // v1.6 API
@@ -57,6 +60,7 @@ class CompactProgressBar extends StatelessWidget {
     this.onDark = false,
     this.trailing,
     this.onCaptionTap,
+    this.captionKey,
     // legacy API
     this.status,
     this.stage,
@@ -226,55 +230,61 @@ class CompactProgressBar extends StatelessWidget {
             ),
             const SizedBox(height: Space.s1_5),
             // Caption: "Step X of 4 · Status" + optional trailing widget
-            GestureDetector(
-              onTap: onCaptionTap,
-              behavior: HitTestBehavior.opaque,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: onCaptionTap != null ? Sizes.tapMin : 0.0,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Stack(
-                        children: [
-                          if (_captionSub != null)
-                            Opacity(
-                              opacity: 0,
-                              child: Text(
-                                '$_captionMain · $_captionSub',
-                                style: const TextStyle(fontSize: 1),
-                              ),
-                            ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
+            Semantics(
+              identifier: captionKey is ValueKey
+                  ? (captionKey! as ValueKey).value?.toString()
+                  : null,
+              child: GestureDetector(
+                key: captionKey,
+                onTap: onCaptionTap,
+                behavior: HitTestBehavior.opaque,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: onCaptionTap != null ? Sizes.tapMin : 0.0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Stack(
+                          children: [
+                            if (_captionSub != null)
+                              Opacity(
+                                opacity: 0,
                                 child: Text(
-                                  _captionMain,
-                                  style: captionMainStyle,
-                                  overflow: TextOverflow.ellipsis,
+                                  '$_captionMain · $_captionSub',
+                                  style: const TextStyle(fontSize: 1),
                                 ),
                               ),
-                              if (_captionSub != null) ...[
-                                Text(' · ', style: captionSubStyle),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
                                 Flexible(
                                   child: Text(
-                                    _captionSub!,
-                                    style: captionSubStyle,
+                                    _captionMain,
+                                    style: captionMainStyle,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (_captionSub != null) ...[
+                                  Text(' · ', style: captionSubStyle),
+                                  Flexible(
+                                    child: Text(
+                                      _captionSub!,
+                                      style: captionSubStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    ?trailing,
-                  ],
+                      ?trailing,
+                    ],
+                  ),
                 ),
               ),
             ),

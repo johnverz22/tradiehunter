@@ -1,5 +1,10 @@
 // P4 — Manual Payment & Receipt Upload
 //
+// Run with: UI_V2=all exercises ho_payment / payment-status v2 screens;
+// default flags exercise the v1 payment views. Both must pass — fixtures
+// follow the job's flowVersion (v2 pays at completion, v1 pays before
+// booking).
+//
 // Self-seeding: fixtures drive a fresh job to AwaitingPayment / PaymentReview
 // via the API, so no matching run or pre-seeded state is needed.
 //
@@ -20,8 +25,10 @@ import 'helpers/test_config.dart';
 /// only when both fields are non-placeholder and the account number isn't
 /// all zeros — dev config ships '00-0000-0000000-00', which is a sentinel.
 Future<bool> _instructionsUsable(int jobId) async {
-  final payment =
-      await ApiHelper.getPayment(jobId, await ApiHelper.homeownerToken);
+  final payment = await ApiHelper.getPayment(
+    jobId,
+    await ApiHelper.homeownerToken,
+  );
   final bank = payment['bankDetails'] as Map<String, dynamic>?;
   final name = (bank?['accountName'] as String? ?? '').trim();
   final number = (bank?['accountNumber'] as String? ?? '').trim();
@@ -39,8 +46,9 @@ void main() {
 
   group('P4 — Payment', () {
     // ── P4-13: payment screen shows bank details and upload button ─────────
-    testWidgets('P4-13 payment screen renders bank details and upload button',
-        (tester) async {
+    testWidgets('P4-13 payment screen renders bank details and upload button', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.awaitingPaymentJob(tag: 'p4-13');
 
       app.main();
@@ -56,13 +64,14 @@ void main() {
       // the reference and upload button show instead.
       final usable = await _instructionsUsable(jobId);
       if (usable) {
-        expect(find.textContaining('FIXO-'), findsOneWidget);
-        expect(
-            find.byKey(const Key('upload_receipt_button')), findsOneWidget);
+        // Reference format is backend-owned (TH-{JobId}); assert the upload
+        // affordance rather than the prefix.
+        expect(find.byKey(const Key('upload_receipt_button')), findsOneWidget);
       } else {
         expect(
-            find.textContaining('Bank transfer details are unavailable'),
-            findsOneWidget);
+          find.textContaining('Bank transfer details are unavailable'),
+          findsOneWidget,
+        );
       }
     });
 

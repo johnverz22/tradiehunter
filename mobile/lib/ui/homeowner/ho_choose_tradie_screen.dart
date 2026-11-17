@@ -214,27 +214,30 @@ class _ThChooseTradieScreenState extends ConsumerState<ThChooseTradieScreen> {
     }
     return RefreshIndicator(
       onRefresh: notifier.load,
-      child: ListView.separated(
-        key: const Key('tradie_list'),
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          Sizes.gutter,
-          Space.s2,
-          Sizes.gutter,
-          Sizes.stickyClearance,
+      child: thTestIdWrap(
+        ListView.separated(
+          key: const Key('tradie_list'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            Sizes.gutter,
+            Space.s2,
+            Sizes.gutter,
+            Sizes.stickyClearance,
+          ),
+          itemCount: state.tradies.length,
+          separatorBuilder: (_, _) => const SizedBox(height: Space.s4),
+          itemBuilder: (context, index) {
+            final entry = state.tradies[index];
+            return HoTradieCard(
+              key: ValueKey(entry.tradieId),
+              entry: entry,
+              onTap: () {
+                context.push('/tradie/${entry.tradieId}?jobId=${widget.jobId}');
+              },
+            );
+          },
         ),
-        itemCount: state.tradies.length,
-        separatorBuilder: (_, _) => const SizedBox(height: Space.s4),
-        itemBuilder: (context, index) {
-          final entry = state.tradies[index];
-          return HoTradieCard(
-            key: ValueKey(entry.tradieId),
-            entry: entry,
-            onTap: () {
-              context.push('/tradie/${entry.tradieId}?jobId=${widget.jobId}');
-            },
-          );
-        },
+        const Key('tradie_list'),
       ),
     );
   }

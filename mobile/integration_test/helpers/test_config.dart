@@ -15,30 +15,30 @@ const String _kApiUrlDefine = String.fromEnvironment(
 
 final String kApiBaseUrl = Platform.isAndroid
     ? _kApiUrlDefine
-        .replaceFirst('localhost', '10.0.2.2')
-        .replaceFirst('127.0.0.1', '10.0.2.2')
+          .replaceFirst('localhost', '10.0.2.2')
+          .replaceFirst('127.0.0.1', '10.0.2.2')
     : _kApiUrlDefine;
 
 // ── Test accounts ─────────────────────────────────────────────────────────────
 // Mirror the accounts seeded by scripts/e2e-credentials.py --keep
 // and DemoSeedService. Do NOT use production credentials here.
 
-const kHomeownerEmail    = 'homeowner-a@fixo.test';
+const kHomeownerEmail = 'homeowner-a@fixo.test';
 const kHomeownerPassword = 'Test1234!';
 
-const kTradieEmail    = 'tradie-verified@fixo.test';
+const kTradieEmail = 'tradie-verified@fixo.test';
 const kTradiePassword = 'Test1234!';
 
-const kStaffEmail    = 'staff@fixo.test';
+const kStaffEmail = 'staff@fixo.test';
 const kStaffPassword = 'Test1234!';
 
 /// Unverified account — used to assert OTP gate (P1-06).
-const kUnverifiedEmail    = 'unverified@fixo.test';
+const kUnverifiedEmail = 'unverified@fixo.test';
 const kUnverifiedPassword = 'Test1234!';
 
 /// Demo tradie (DemoSeedService) — competes with kTradieEmail for offers.
 /// Fixtures park it (IsAvailable=false) so the test tradie wins matching.
-const kDemoTradieEmail    = 'tradie@fixo.nz';
+const kDemoTradieEmail = 'tradie@fixo.nz';
 const kDemoTradiePassword = 'Demo1!Fixo';
 
 // ── Timing ────────────────────────────────────────────────────────────────────

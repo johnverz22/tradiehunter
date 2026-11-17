@@ -12,5 +12,14 @@
     "docs/ARCHITECTURE.md",
     "docs/design/design-system.html",
     "docs/design/mockup/"
-  ]
+  ],
+  "mcp": {
+    "maestro": {
+      "type": "local",
+      "command": [
+        "maestro",
+        "mcp"
+      ]
+    }
+  }
 }

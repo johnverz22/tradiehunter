@@ -595,36 +595,40 @@ class _HomeownerJobDetailScreenState
         showBack: !widget.embedded,
         actions: [
           if (hasOverflowItems)
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                color: isDark ? DesignTokens.inkDark : DesignTokens.brand900,
+            Semantics(
+              identifier: 'job_overflow_menu',
+              child: PopupMenuButton<String>(
+                key: const Key('job_overflow_menu'),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: isDark ? DesignTokens.inkDark : DesignTokens.brand900,
+                ),
+                onSelected: (value) {
+                  if (value == 'cancel') _showCancelSheet();
+                  if (value == 'dispute') _openDispute();
+                  if (value == 'noshow') _reportNoShow();
+                  if (value == 'edit') _editJob();
+                },
+                itemBuilder: (context) => [
+                  if (status == 'Draft')
+                    const PopupMenuItem(value: 'edit', child: Text('Edit job')),
+                  if (canReportNoShow)
+                    const PopupMenuItem(
+                      value: 'noshow',
+                      child: Text('Report no-show'),
+                    ),
+                  if (canDispute)
+                    const PopupMenuItem(
+                      value: 'dispute',
+                      child: Text('Open dispute'),
+                    ),
+                  if (canCancel && !_busy)
+                    const PopupMenuItem(
+                      value: 'cancel',
+                      child: Text('Cancel job'),
+                    ),
+                ],
               ),
-              onSelected: (value) {
-                if (value == 'cancel') _showCancelSheet();
-                if (value == 'dispute') _openDispute();
-                if (value == 'noshow') _reportNoShow();
-                if (value == 'edit') _editJob();
-              },
-              itemBuilder: (context) => [
-                if (status == 'Draft')
-                  const PopupMenuItem(value: 'edit', child: Text('Edit job')),
-                if (canReportNoShow)
-                  const PopupMenuItem(
-                    value: 'noshow',
-                    child: Text('Report no-show'),
-                  ),
-                if (canDispute)
-                  const PopupMenuItem(
-                    value: 'dispute',
-                    child: Text('Open dispute'),
-                  ),
-                if (canCancel && !_busy)
-                  const PopupMenuItem(
-                    value: 'cancel',
-                    child: Text('Cancel job'),
-                  ),
-              ],
             ),
         ],
       ),

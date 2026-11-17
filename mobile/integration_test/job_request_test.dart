@@ -1,5 +1,7 @@
 // P2 — Job Request
 //
+// Run with: default flags (post-job is v2 in both C0 and C1).
+//
 // Single-user flow: homeowner posts a job.
 // No tradie simulator needed for these tests.
 //
@@ -34,13 +36,9 @@ void main() {
       await loginAsHomeowner(tester);
 
       // Navigate to Post Job — tap the FAB or the nav item
-      final postJobFab = find.byKey(const Key('post_job_fab'));
-      if (postJobFab.evaluate().isNotEmpty) {
-        await tester.tap(postJobFab);
-      } else {
-        // Fallback: go via bottom nav "Post" tab text
-        await tester.tap(find.text('Post'));
-      }
+      // Both the v1 CustomBottomNavBar and the v2 THDock expose the same
+      // post_job_fab key — no text fallback needed.
+      await tester.tap(find.byKey(const Key('post_job_fab')));
       await pumpFor(tester);
 
       expect(find.byKey(const Key('post_job_screen')), findsOneWidget);
@@ -61,12 +59,7 @@ void main() {
       app.main();
       await loginAsHomeowner(tester);
 
-      final postJobFab = find.byKey(const Key('post_job_fab'));
-      if (postJobFab.evaluate().isNotEmpty) {
-        await tester.tap(postJobFab);
-      } else {
-        await tester.tap(find.text('Post'));
-      }
+      await tester.tap(find.byKey(const Key('post_job_fab')));
       await pumpFor(tester);
 
       // Tap Post Job without filling anything
@@ -82,10 +75,7 @@ void main() {
       (tester) async {
         app.main();
         await loginAsHomeowner(tester);
-        final postJobFab = find.byKey(const Key('post_job_fab'));
-        await tester.tap(
-          postJobFab.evaluate().isNotEmpty ? postJobFab : find.text('Post'),
-        );
+        await tester.tap(find.byKey(const Key('post_job_fab')));
         await pumpFor(tester);
         final addressField = find.byKey(const Key('address_search_field'));
         await tester.ensureVisible(addressField);
@@ -110,8 +100,12 @@ void main() {
           // The key sits on the v2 THTextField wrapper, so read the controller
           // from the EditableText inside it (works for v1 TextField too).
           tester
-              .widget<EditableText>(find.descendant(
-                  of: addressField, matching: find.byType(EditableText)))
+              .widget<EditableText>(
+                find.descendant(
+                  of: addressField,
+                  matching: find.byType(EditableText),
+                ),
+              )
               .controller
               .text,
           'ZZZNoSuchRoadFixture987654 Auckland',
@@ -128,10 +122,7 @@ void main() {
       ) async {
         app.main();
         await loginAsHomeowner(tester);
-        final postJobFab = find.byKey(const Key('post_job_fab'));
-        await tester.tap(
-          postJobFab.evaluate().isNotEmpty ? postJobFab : find.text('Post'),
-        );
+        await tester.tap(find.byKey(const Key('post_job_fab')));
         await pumpFor(tester);
         final addressField = find.byKey(const Key('address_search_field'));
         final container = ProviderScope.containerOf(
@@ -170,7 +161,8 @@ void main() {
             expect(
               services,
               isNotEmpty,
-              reason: 'The service catalog must return at least one service; '
+              reason:
+                  'The service catalog must return at least one service; '
                   'no fixture is invented.',
             );
             await notifier.selectService(services.first);
@@ -197,10 +189,7 @@ void main() {
           FocusManager.instance.primaryFocus?.unfocus();
           await tester.pump();
           expect(container.read(postJobProvider).isValid, isTrue);
-          expect(
-            container.read(postJobProvider).submittedJobId,
-            isNull,
-          );
+          expect(container.read(postJobProvider).submittedJobId, isNull);
           await tester.tap(find.byKey(const Key('post_job_button')));
           await pumpFor(tester, kNetworkSettle);
           createdId = container.read(postJobProvider).submittedJobId;

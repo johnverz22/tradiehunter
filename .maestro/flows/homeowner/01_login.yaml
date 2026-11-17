@@ -1,0 +1,23 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 1: Homeowner Login & Home Dock Verification
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login.yaml
+
+# Verify homeowner dashboard / dock navigation
+- assertVisible:
+    id: "post_job_fab"
+- assertVisible:
+    id: "dock_home"
+- assertVisible:
+    id: "dock_jobs"
+- assertVisible:
+    id: "dock_chat"
+- assertVisible:
+    id: "dock_profile"
+
+# Evidence screenshots for review against docs/design/mockups/index.html
+- takeScreenshot: ho_home_light

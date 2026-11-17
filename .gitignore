@@ -37,6 +37,7 @@ web/**/playwright-report/
 scripts/earnings-tests/bin/
 scripts/earnings-tests/obj/
 docs/runs/*/screenshots/
+!docs/runs/v2/screenshots/
 
 # design2flutter generated output
 tools/design2flutter/output/

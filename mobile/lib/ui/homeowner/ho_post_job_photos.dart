@@ -68,17 +68,19 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _SourceRow(
-                        icon: Icons.camera_alt_outlined,
-                        label: 'Take a photo',
-                        onTap: () => Navigator.pop(ctx, ImageSource.camera),
-                      ),
-                      const SizedBox(height: Space.s2),
-                      _SourceRow(
-                        icon: Icons.photo_library_outlined,
-                        label: 'Choose from gallery',
-                        onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-                      ),
+      _SourceRow(
+        key: const Key('post_job_photos_camera'),
+        icon: Icons.camera_alt_outlined,
+        label: 'Take a photo',
+        onTap: () => Navigator.pop(ctx, ImageSource.camera),
+      ),
+      const SizedBox(height: Space.s2),
+      _SourceRow(
+        key: const Key('post_job_photos_gallery'),
+        icon: Icons.photo_library_outlined,
+        label: 'Choose from gallery',
+        onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+      ),
                     ],
                   ),
                 ),
@@ -115,6 +117,7 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
             button: true,
             label: 'Add photos',
             child: InkWell(
+              key: const Key('post_job_photos_add'),
               onTap: _pickPhoto,
               borderRadius: BorderRadius.circular(Radii.tile),
               child: const THDashBox(
@@ -137,11 +140,12 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
                       ref.read(postJobProvider.notifier).removePhoto(paths[i]),
                 ),
               if (paths.length < thMaxPhotos)
-                Semantics(
-                  button: true,
-                  label: 'Add another photo',
-                  child: InkWell(
-                    onTap: _pickPhoto,
+            Semantics(
+              button: true,
+              label: 'Add another photo',
+              child: InkWell(
+                key: const Key('post_job_photos_add_another'),
+                onTap: _pickPhoto,
                     borderRadius: BorderRadius.circular(Radii.control),
                     child: Container(
                       width: Sizes.avatarLg,
@@ -168,6 +172,7 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
 
 class _SourceRow extends StatelessWidget {
   const _SourceRow({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,

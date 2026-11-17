@@ -127,6 +127,7 @@ class _StatusStripState extends State<StatusStrip>
                     alignment: Alignment.centerRight,
                     child: Semantics(
                       button: true,
+                      identifier: 'status_strip_job_code',
                       label:
                           'Job code: ${widget.referenceCode}, long-press to copy',
                       child: Tooltip(
@@ -171,6 +172,7 @@ class _StatusStripState extends State<StatusStrip>
               muted: muted,
               onDark: true,
               onCaptionTap: _toggle,
+              captionKey: const Key('status_strip_toggle'),
               trailing: Padding(
                 padding: const EdgeInsets.only(left: Space.s1),
                 child: AnimatedRotation(

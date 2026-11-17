@@ -178,18 +178,21 @@ class _Content extends StatelessWidget {
         _Greeting(firstName: firstName),
         if (hasRefreshError) _RefreshNotice(onRetry: onRetry),
         if (hero != null) _AttentionHero(hero: hero!),
-        InkWell(
-          key: const Key('home_search'),
-          borderRadius: BorderRadius.circular(Radii.control),
-          onTap: () => context.push('/find-tradie'),
-          child: Semantics(
-            button: true,
-            label: 'Search for a tradie',
-            excludeSemantics: true,
-            child: const THField(
-              value: 'What needs doing?',
-              icon: Icons.search_rounded,
-              placeholder: true,
+        Semantics(
+          identifier: 'home_search',
+          child: InkWell(
+            key: const Key('home_search'),
+            borderRadius: BorderRadius.circular(Radii.control),
+            onTap: () => context.push('/find-tradie'),
+            child: Semantics(
+              button: true,
+              label: 'Search for a tradie',
+              excludeSemantics: true,
+              child: const THField(
+                value: 'What needs doing?',
+                icon: Icons.search_rounded,
+                placeholder: true,
+              ),
             ),
           ),
         ),

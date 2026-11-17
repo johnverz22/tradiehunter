@@ -1,0 +1,42 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 2: Post a Job (Quick Flow)
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login.yaml
+
+# Navigate to post job
+- tapOn:
+    id: "post_job_fab"
+
+# Visual evidence for Post a Job screen
+- takeScreenshot: ho_post_quick_light
+
+# Fill post job form
+- tapOn:
+    id: "title_field"
+- inputText: "Leaking kitchen tap"
+
+- tapOn:
+    id: "description_field"
+- inputText: "Tap is dripping under the kitchen sink, need repair as soon as possible."
+
+- tapOn:
+    id: "address_search_field"
+- inputText: "10 Queen Street, Auckland"
+
+- runFlow:
+    when:
+      visible: "10 Queen Street"
+    commands:
+      - tapOn: "10 Queen Street"
+
+# Submit post job
+- tapOn:
+    id: "post_job_button"
+
+# Verify transition to choose tradie / matching screen
+- assertVisible:
+    id: "quick_match_button"

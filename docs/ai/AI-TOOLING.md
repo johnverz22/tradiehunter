@@ -25,6 +25,7 @@ Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobS
 | `mockup-to-flutter` | Building or fixing a screen from a v2 screen stub (see `docs/design/flutter/screens/`) |
 | `widget-refactor` | A build method passes ~100 lines, a structure repeats twice, or a lint flags hard-coded values |
 | `ui-audit` | Before committing UI changes; runs the v2 design gate (`node docs/design/tools/build.mjs --check`) |
+| `v2-e2e-explorer` | Autonomous exploration, visual QA evidence generation, and Maestro E2E flow authoring |
 | `docs-sync` | **After any behaviour, scope, schema, config or status change**: routes the edit to the single owning doc |
 
 ## 4. Toolchain commands
@@ -47,9 +48,10 @@ New screen: edit `docs/design/ast/screens.mjs`, rebuild, review `docs/design/moc
 | **Dart / Flutter** | `<flutter-sdk>/bin/dart mcp-server --flutter-sdk <flutter-sdk>` (full path required; bare `dart` is not on PATH) | `analyze_files`, `pub_dev_search`, `dart_format`, `run_tests`, device list, launch/hot reload, widget inspector. Check real Riverpod / go_router / Dio / signalr_netcore APIs before writing code |
 | **PostgreSQL** | `@modelcontextprotocol/server-postgres` → `postgresql://fixo:fixo_dev@localhost:5432/fixo` (dev only; needs `docker compose up -d db`) | Read-only schema inspection, migration state, PostGIS column types (`geometry(Point, 4326)`), validating seeds. Inspect the live schema rather than trusting docs |
 | **Browser / Puppeteer** | `@modelcontextprotocol/server-puppeteer` | Verify the React admin at `:3000`: render, theme toggle, console errors, auth flow. Fallback: `scripts/web/render-probe.py` |
+| **Maestro** | `maestro mcp` | Out-of-process device automation, screen inspection, screenshot capture, and E2E flow execution against Android emulators and iOS simulators |
 | **GitHub** | `@modelcontextprotocol/server-github` (needs `GITHUB_PERSONAL_ACCESS_TOKEN` in the environment) | Issues, PRs, CI status. Scope the token to this repo; never commit it |
 
-Config files by tool: `.kiro/mcp.json` (Kiro), `mcp.json` (OpenCode), `.agents/mcp_config.json` (Antigravity). Known fix: OpenCode and Antigravity configs that use the bare `dart` command are broken; use the full SDK path. Optional: `fetch` MCP (needs `uv`), Playwright MCP for richer E2E. No .NET or Docker MCP exists; use `docker compose` and `dotnet` in the container, and Swagger at `http://localhost:5000/swagger`.
+Config files by tool: `.cursor/mcp.json` (Cursor), `.kiro/mcp.json` (Kiro), `mcp.json` (OpenCode), `.agents/mcp_config.json` (Antigravity). Known fix: OpenCode and Antigravity configs that use the bare `dart` command are broken; use the full SDK path. Optional: `fetch` MCP (needs `uv`), Playwright MCP for richer E2E. No .NET or Docker MCP exists; use `docker compose` and `dotnet` in the container, and Swagger at `http://localhost:5000/swagger`.
 
 | MCP | Permission | Notes |
 |---|---|---|

@@ -268,6 +268,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                             // not re-announced each tick.
                             child: Semantics(
                               button: true,
+                              identifier: 'resend_button',
                               enabled: canResend,
                               label: canResend
                                   ? 'Resend code'

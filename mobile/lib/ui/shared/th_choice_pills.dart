@@ -7,6 +7,7 @@
 // exposed to screen readers through Semantics(button/selected/label).
 import 'package:flutter/material.dart';
 
+import '../design/th_test_id.dart';
 import '../design/th_tokens.dart';
 
 class ThChoicePillItem {
@@ -32,10 +33,13 @@ class ThChoicePills extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: Space.s2,
-      runSpacing: Space.s2,
-      children: [for (final item in items) _Pill(item: item)],
+    return thTestIdWrap(
+      Wrap(
+        spacing: Space.s2,
+        runSpacing: Space.s2,
+        children: [for (final item in items) _Pill(item: item)],
+      ),
+      key,
     );
   }
 }
@@ -55,6 +59,7 @@ class _Pill extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      identifier: thTestId(item.key),
       label: item.label,
       excludeSemantics: true,
       child: Material(

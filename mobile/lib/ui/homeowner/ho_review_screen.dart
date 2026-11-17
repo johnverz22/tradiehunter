@@ -200,6 +200,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
             children: [
               for (var value = 1; value <= 5; value++)
                 IconButton(
+                  key: Key('star_$value'),
                   tooltip: '$value stars',
                   onPressed: () => setState(() => _rating = value),
                   icon: Icon(
@@ -211,7 +212,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                         ? context.th.accent
                         : context.th.textSoft,
                   ),
-                ),
+                ).testId('star_$value'),
             ],
           ),
           THTextField(

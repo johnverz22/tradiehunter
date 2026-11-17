@@ -228,6 +228,12 @@ class _HoCancelJobSheetState extends State<HoCancelJobSheet> {
                             : _notes.text.trim(),
                       )),
               ),
+              THButton(
+                key: const Key('cancel_dismiss_button'),
+                label: 'Keep job',
+                kind: THButtonKind.ghost,
+                onPressed: () => Navigator.pop(context, null),
+              ),
             ],
           ),
         ),

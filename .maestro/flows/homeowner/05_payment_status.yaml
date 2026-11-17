@@ -1,0 +1,43 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 5: Payment & Payment Status Review
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login.yaml
+
+# Navigate to Jobs tab
+- tapOn:
+    id: "dock_jobs"
+
+# Find a job awaiting payment or completed
+- runFlow:
+    when:
+      visible: "Payment due"
+    commands:
+      - tapOn: "Payment due"
+
+- runFlow:
+    when:
+      visible:
+        id: "approve_pay_button"
+    commands:
+      - tapOn:
+          id: "approve_pay_button"
+
+# Evidence screenshot for Payment / Payment Status screen
+- runFlow:
+    when:
+      visible:
+        id: "upload_receipt_button"
+    commands:
+      - takeScreenshot: ho_payment_light
+      - assertVisible:
+          id: "upload_receipt_button"
+
+- runFlow:
+    when:
+      visible: "Payment status"
+    commands:
+      - takeScreenshot: ho_payment_status_light

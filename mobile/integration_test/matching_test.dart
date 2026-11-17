@@ -1,5 +1,8 @@
 // P3 — Matching: Sequential Offers & Timeouts
 //
+// Run with: works under both default flags and UI_V2=all — the matching
+// screen itself is still the v1 view in both configs.
+//
 // Self-seeding: every test creates its own job via ApiHelper/FixtureHelper and
 // polls the API for cross-state assertions, so no pre-seeded data is required.
 // Run each persona on its own simulator (stagger launches — see
@@ -26,7 +29,10 @@ import 'helpers/auth_helper.dart';
 import 'helpers/fixture_helper.dart';
 import 'helpers/test_config.dart';
 
-const _persona = String.fromEnvironment('FIXO_PERSONA', defaultValue: 'homeowner');
+const _persona = String.fromEnvironment(
+  'FIXO_PERSONA',
+  defaultValue: 'homeowner',
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +51,9 @@ void main() {
 
 void _homeownerSuite() {
   group('P3 — Matching (homeowner side)', () {
-    testWidgets('P3-11 matching screen shows progress while offer dispatched',
-        (tester) async {
+    testWidgets('P3-11 matching screen shows progress while offer dispatched', (
+      tester,
+    ) async {
       final jobId = await FixtureHelper.requestedJob(tag: 'p3-11');
       // No explicit dispatch: MatchingScreen subscribes to SignalR then calls
       // triggerMatch itself on entry — same as the real post-job flow.
@@ -72,33 +79,48 @@ void _homeownerSuite() {
       );
     });
 
-    testWidgets('P3-04 job moves to AwaitingPayment after tradie accepts',
-        (tester) async {
-      final (jobId, offerId) =
-          await FixtureHelper.pendingOfferJob(tag: 'p3-04');
+    testWidgets('P3-04 job advances after tradie accepts the offer', (
+      tester,
+    ) async {
+      final (jobId, offerId) = await FixtureHelper.pendingOfferJob(
+        tag: 'p3-04',
+      );
 
       app.main();
       await loginAsHomeowner(tester);
 
+      // Flow v2: accept → Booked (pay at completion). Flow v1:
+      // accept → AwaitingPayment (pay before booking). Assert whichever the
+      // job's stamped flowVersion dictates.
+      final homeowner = await ApiHelper.homeownerToken;
+      final flowVersion =
+          ((await ApiHelper.getJob(jobId, homeowner))['flowVersion'] as num?)
+              ?.toInt() ??
+          1;
+      final expected = flowVersion >= 2 ? 'Booked' : 'AwaitingPayment';
+
       // Tradie accepts the pending offer (API — the tradie-side suite covers
       // the same accept via the UI on its own fixture job).
       await ApiHelper.respondToOffer(
-          jobId, offerId, 'Accepted', await ApiHelper.tradieToken);
+        jobId,
+        offerId,
+        'Accepted',
+        await ApiHelper.tradieToken,
+      );
 
       await pollUntil(
         () async =>
-            (await ApiHelper.getJobStatus(
-                jobId, await ApiHelper.homeownerToken)) ==
-            'AwaitingPayment',
+            (await ApiHelper.getJobStatus(jobId, homeowner)) == expected,
         timeout: kMatchingSettle,
       );
 
       // Dashboard reflects the transition — V15-06 centralized labels render
-      // the human form ("Payment due"), not the raw enum.
+      // the human form, not the raw enum; v2 also shows 'Booked'.
       appRouter.go('/jobs');
       await pumpFor(tester);
       expect(
-        find.text('AwaitingPayment').evaluate().isNotEmpty ||
+        find.text('Booked').evaluate().isNotEmpty ||
+            find.text('AwaitingPayment').evaluate().isNotEmpty ||
             find.text('Awaiting Payment').evaluate().isNotEmpty ||
             find.text('Awaiting payment').evaluate().isNotEmpty ||
             find.text('Payment due').evaluate().isNotEmpty,
@@ -112,8 +134,9 @@ void _homeownerSuite() {
 
 void _tradieSuite() {
   group('P3 — Matching (tradie side)', () {
-    testWidgets('P3-03 tradie sees pending offer with countdown',
-        (tester) async {
+    testWidgets('P3-03 tradie sees pending offer with countdown', (
+      tester,
+    ) async {
       final (jobId, _) = await FixtureHelper.pendingOfferJob(tag: 'p3-03');
 
       app.main();
@@ -131,13 +154,17 @@ void _tradieSuite() {
       expect(
         find.textContaining('Accept'),
         findsWidgets,
-        reason: 'BUG: pending offer has no tradie UI surface — job detail '
+        reason:
+            'BUG: pending offer has no tradie UI surface — job detail '
             'returns not-found for a tradie holding only a pending offer',
       );
     });
 
-    testWidgets('P3-04 tradie accepts offer — job moves to AwaitingPayment',
-        (tester) async {
+    // v1 until Phase 5: the pending-offer accept path below encodes the
+    // known missing tradie UI surface; it is expected to fail until that
+    // defect is fixed. Under flow v2 a successful accept lands on Booked,
+    // not AwaitingPayment.
+    testWidgets('P3-04 tradie accepts offer — job advances', (tester) async {
       final (jobId, _) = await FixtureHelper.pendingOfferJob(tag: 'p3-04t');
 
       app.main();
@@ -149,20 +176,23 @@ void _tradieSuite() {
       final acceptBtn = find.text('Accept Job').evaluate().isNotEmpty
           ? find.text('Accept Job')
           : (find.text('Review & Accept').evaluate().isNotEmpty
-              ? find.text('Review & Accept')
-              : find.textContaining('Accept'));
-      expect(acceptBtn, findsWidgets,
-          reason: 'BUG: pending offer has no tradie UI surface');
+                ? find.text('Review & Accept')
+                : find.textContaining('Accept'));
+      expect(
+        acceptBtn,
+        findsWidgets,
+        reason: 'BUG: pending offer has no tradie UI surface',
+      );
       await tester.tap(acceptBtn.first);
       await pumpFor(tester, kNetworkSettle);
 
-      await pollUntil(
-        () async =>
-            (await ApiHelper.getJobStatus(
-                jobId, await ApiHelper.tradieToken)) ==
-            'AwaitingPayment',
-        timeout: kMatchingSettle,
-      );
+      await pollUntil(() async {
+        final status = await ApiHelper.getJobStatus(
+          jobId,
+          await ApiHelper.tradieToken,
+        );
+        return status == 'Booked' || status == 'AwaitingPayment';
+      }, timeout: kMatchingSettle);
     });
   });
 }

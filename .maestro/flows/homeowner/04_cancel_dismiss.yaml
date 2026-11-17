@@ -1,0 +1,42 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 4: Booked Job Detail & Cancel Sheet Dismiss ("Keep job")
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login.yaml
+
+# Navigate to Jobs tab
+- tapOn:
+    id: "dock_jobs"
+
+# Tap first booked / active job if listed
+- runFlow:
+    when:
+      visible: "Booked"
+    commands:
+      - tapOn: "Booked"
+
+# Evidence screenshot for Job Booked screen
+- takeScreenshot: ho_job_booked_light
+
+# Open overflow actions menu
+- tapOn:
+    id: "job_overflow_menu"
+
+- tapOn: "Cancel job"
+
+# Verify cancel sheet actions
+- assertVisible:
+    id: "cancel_confirm_button"
+- assertVisible:
+    id: "cancel_dismiss_button"
+
+# Dismiss sheet without canceling ("Keep job")
+- tapOn:
+    id: "cancel_dismiss_button"
+
+# Verify job remains booked
+- assertVisible:
+    id: "job_overflow_menu"

@@ -10,7 +10,7 @@
 #     SHOT_INPROGRESS_JOB=133 SHOT_OFFER_JOB=134
 set -u
 PERSONA=$1; THEME=$2; UDID=$3; shift 3
-OUT=${SHOTS_OUT_ROOT:-/Users/john/Develop/tradies/docs/runs/v1.6/screenshots}/$THEME
+OUT=${SHOTS_OUT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)/docs/runs/v2/screenshots}/$THEME
 mkdir -p "$OUT/shared" "$OUT/$PERSONA"
 
 DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true --dart-define "SHOT_THEME=$THEME")
@@ -19,7 +19,7 @@ for kv in "$@"; do DEFINES+=(--dart-define "$kv"); done
 cd "$(dirname "$0")/../mobile"
 SHOT_FILE=${SHOT_FILE:-integration_test/screenshots_test.dart}
 echo "=== persona=$PERSONA theme=$THEME udid=$UDID out=$OUT file=$SHOT_FILE ==="
-/Users/john/Develop/flutter/bin/flutter test \
+"${FLUTTER_BIN:-flutter}" test \
   "$SHOT_FILE" \
   --device-id "$UDID" --reporter expanded "${DEFINES[@]}" 2>&1 | \
 while IFS= read -r line; do

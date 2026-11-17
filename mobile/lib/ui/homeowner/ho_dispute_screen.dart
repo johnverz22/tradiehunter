@@ -103,12 +103,17 @@ class HoDisputeScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   for (final reason in reasons)
-                    RadioListTile<String>(
-                      key: Key('dispute_reason_$reason'),
-                      value: reason,
-                      title: THText(reason),
-                      contentPadding: EdgeInsets.symmetric(horizontal: Space.s2),
-                      activeColor: context.th.brand,
+                    Semantics(
+                      identifier: 'dispute_reason_$reason',
+                      child: RadioListTile<String>(
+                        key: Key('dispute_reason_$reason'),
+                        value: reason,
+                        title: THText(reason),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: Space.s2,
+                        ),
+                        activeColor: context.th.brand,
+                      ),
                     ),
                 ],
               ),
@@ -121,14 +126,17 @@ class HoDisputeScreen extends ConsumerWidget {
             tone: THTone.soft,
           ),
           const SizedBox(height: Space.s2),
-          TextField(
-            key: const Key('dispute_details_field'),
-            maxLines: 5,
-            maxLength: maxDetailsLength,
-            onChanged: notifier.setDetails,
-            decoration: const InputDecoration(
-              hintText: 'Describe the issue…',
-              counterText: '',
+          Semantics(
+            identifier: 'dispute_details_field',
+            child: TextField(
+              key: const Key('dispute_details_field'),
+              maxLines: 5,
+              maxLength: maxDetailsLength,
+              onChanged: notifier.setDetails,
+              decoration: const InputDecoration(
+                hintText: 'Describe the issue…',
+                counterText: '',
+              ),
             ),
           ),
           Align(
@@ -246,6 +254,7 @@ class _AddEvidenceTile extends StatelessWidget {
     button: true,
     label: 'Add evidence photo',
     child: InkWell(
+      key: const Key('dispute_evidence_add'),
       onTap: onTap,
       borderRadius: BorderRadius.circular(Radii.control),
       child: Container(

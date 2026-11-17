@@ -14,11 +14,7 @@ import 'test_config.dart';
 /// dashboard or the OTP screen to appear (up to [kNetworkSettle]).
 ///
 /// Call after `app.main()` + `pumpFor(tester)`.
-Future<void> loginAs(
-  WidgetTester tester,
-  String email,
-  String password,
-) async {
+Future<void> loginAs(WidgetTester tester, String email, String password) async {
   await gotoLogin(tester);
 
   await tester.enterText(find.byKey(const Key('email_field')), email);
@@ -67,8 +63,10 @@ Future<void> gotoLogin(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 500));
   }
 
-  assert(find.byKey(const Key('email_field')).evaluate().isNotEmpty,
-      'gotoLogin: failed to reach login screen from state ${appRouter.state.uri.path}');
+  assert(
+    find.byKey(const Key('email_field')).evaluate().isNotEmpty,
+    'gotoLogin: failed to reach login screen from state ${appRouter.state.uri.path}',
+  );
 }
 
 /// Convenience wrapper — logs in as the default homeowner test account.

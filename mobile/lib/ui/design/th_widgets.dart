@@ -8,6 +8,8 @@ import 'dart:ui' show PathMetric;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'th_test_id.dart';
+export 'th_test_id.dart';
 import 'th_tokens.dart';
 
 // ───────────────────────────── enums ─────────────────────────────
@@ -184,6 +186,7 @@ class THButton extends StatelessWidget {
       child: Semantics(
         button: true,
         label: label,
+        identifier: thTestId(key),
         child: Material(
           color: bg,
           shape: RoundedRectangleBorder(borderRadius: radius, side: side),
@@ -256,6 +259,7 @@ class THIconButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: semanticLabel,
+      identifier: thTestId(key),
       child: Material(
         color: primary ? c.brand : c.surface,
         shape: RoundedRectangleBorder(
@@ -411,18 +415,21 @@ class THCard extends StatelessWidget {
       THCardTone.danger => Border.all(color: c.danger, width: 1.5),
       THCardTone.defaultTone => Border.all(color: c.line),
     };
-    return Container(
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
-        border: border,
-        boxShadow: _cardShadow(context),
+    return thTestIdWrap(
+      Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.card),
+          border: border,
+          boxShadow: _cardShadow(context),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
+      key,
     );
   }
 }
@@ -580,54 +587,62 @@ class THField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return Container(
-      constraints: BoxConstraints(
-        minHeight: math.max(Sizes.input, height ?? 0),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: Space.s3_5,
-        vertical: Space.s2_5,
-      ),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(Radii.control),
-        border: Border.all(color: c.line),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          if (label != null && label!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Text(
-                label!,
-                style: THType.label.copyWith(
-                  fontSize: 10.5,
-                  letterSpacing: 0.6,
-                  color: c.textSoft,
-                ),
-              ),
-            ),
-          Row(
-            spacing: Space.s2_5,
-            children: [
-              if (icon != null)
-                Icon(icon, size: 18, color: placeholder ? c.textSoft : c.text),
-              Expanded(
+    return thTestIdWrap(
+      Container(
+        constraints: BoxConstraints(
+          minHeight: math.max(Sizes.input, height ?? 0),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.s3_5,
+          vertical: Space.s2_5,
+        ),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.control),
+          border: Border.all(color: c.line),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            if (label != null && label!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
-                  value,
-                  style: THType.body.copyWith(
-                    color: placeholder ? c.textSoft : c.text,
+                  label!,
+                  style: THType.label.copyWith(
+                    fontSize: 10.5,
+                    letterSpacing: 0.6,
+                    color: c.textSoft,
                   ),
                 ),
               ),
-              if (trailing != null) Icon(trailing, size: 18, color: c.textSoft),
-            ],
-          ),
-        ],
+            Row(
+              spacing: Space.s2_5,
+              children: [
+                if (icon != null)
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: placeholder ? c.textSoft : c.text,
+                  ),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: THType.body.copyWith(
+                      color: placeholder ? c.textSoft : c.text,
+                    ),
+                  ),
+                ),
+                if (trailing != null)
+                  Icon(trailing, size: 18, color: c.textSoft),
+              ],
+            ),
+          ],
+        ),
       ),
+      key,
     );
   }
 }
@@ -703,110 +718,115 @@ class THTextField extends StatelessWidget {
 
     // Mirrors the mockup `.fld`: a bordered surface, min-height 56, 10/14
     // padding, small-caps label above, then ONE row (icon, value, trailing).
-    return Container(
-      constraints: const BoxConstraints(minHeight: Sizes.input),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(Radii.control),
-        border: Border.all(color: c.line),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsetsDirectional.only(
-                start: Space.s3_5,
-                end: hasTrailing ? 0 : Space.s3_5,
-                top: Space.s2,
-                bottom: Space.s2,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (hasLabel)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        label!.toUpperCase(),
-                        style: THType.label.copyWith(
-                          fontSize: 10.5,
-                          letterSpacing: 0.6,
-                          color: c.textSoft,
-                        ),
-                      ),
-                    ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (icon != null) ...[
-                        SizedBox(
-                          height: lineHeight,
-                          child: Center(
-                            child: Icon(icon, size: 18, color: c.textSoft),
+    return thTestIdWrap(
+      Container(
+        constraints: const BoxConstraints(minHeight: Sizes.input),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Radii.control),
+          border: Border.all(color: c.line),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(
+                  start: Space.s3_5,
+                  end: hasTrailing ? 0 : Space.s3_5,
+                  top: Space.s2,
+                  bottom: Space.s2,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (hasLabel)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Text(
+                          label!.toUpperCase(),
+                          style: THType.label.copyWith(
+                            fontSize: 10.5,
+                            letterSpacing: 0.6,
+                            color: c.textSoft,
                           ),
                         ),
-                        const SizedBox(width: Space.s2_5),
-                      ],
-                      Expanded(
-                        child: TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          enabled: enabled,
-                          autofocus: autofocus,
-                          obscureText: obscure,
-                          keyboardType: keyboardType,
-                          textInputAction: textInputAction,
-                          validator: validator,
-                          onChanged: onChanged,
-                          onFieldSubmitted: onFieldSubmitted,
-                          autofillHints: autofillHints,
-                          inputFormatters: inputFormatters,
-                          maxLength: maxLength,
-                          autocorrect: autocorrect,
-                          enableSuggestions: enableSuggestions,
-                          textCapitalization: textCapitalization,
-                          minLines: minLines,
-                          maxLines: obscure ? 1 : maxLines,
-                          style: inputStyle,
-                          decoration: InputDecoration(
-                            hintText: hint,
-                            hintStyle: THType.input.copyWith(color: c.textSoft),
-                            errorMaxLines: errorMaxLines,
-                            errorStyle: THType.meta.copyWith(
-                              color: c.danger,
-                              height: 1.3,
+                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (icon != null) ...[
+                          SizedBox(
+                            height: lineHeight,
+                            child: Center(
+                              child: Icon(icon, size: 18, color: c.textSoft),
                             ),
-                            isDense: true,
-                            isCollapsed: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            focusedErrorBorder: InputBorder.none,
+                          ),
+                          const SizedBox(width: Space.s2_5),
+                        ],
+                        Expanded(
+                          child: TextFormField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            enabled: enabled,
+                            autofocus: autofocus,
+                            obscureText: obscure,
+                            keyboardType: keyboardType,
+                            textInputAction: textInputAction,
+                            validator: validator,
+                            onChanged: onChanged,
+                            onFieldSubmitted: onFieldSubmitted,
+                            autofillHints: autofillHints,
+                            inputFormatters: inputFormatters,
+                            maxLength: maxLength,
+                            autocorrect: autocorrect,
+                            enableSuggestions: enableSuggestions,
+                            textCapitalization: textCapitalization,
+                            minLines: minLines,
+                            maxLines: obscure ? 1 : maxLines,
+                            style: inputStyle,
+                            decoration: InputDecoration(
+                              hintText: hint,
+                              hintStyle: THType.input.copyWith(
+                                color: c.textSoft,
+                              ),
+                              errorMaxLines: errorMaxLines,
+                              errorStyle: THType.meta.copyWith(
+                                color: c.danger,
+                                height: 1.3,
+                              ),
+                              isDense: true,
+                              isCollapsed: true,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          // The trailing control (password eye) keeps its 44px tap target but
-          // is bottom-aligned so it lines up with the value row, not the label.
-          if (hasTrailing)
-            SizedBox(
-              width: Sizes.buttonSm,
-              height: Sizes.buttonSm,
-              child: Center(child: trailing),
-            ),
-          if (hasTrailing) const SizedBox(width: Space.s1),
-        ],
+            // The trailing control (password eye) keeps its 44px tap target but
+            // is bottom-aligned so it lines up with the value row, not the label.
+            if (hasTrailing)
+              SizedBox(
+                width: Sizes.buttonSm,
+                height: Sizes.buttonSm,
+                child: Center(child: trailing),
+              ),
+            if (hasTrailing) const SizedBox(width: Space.s1),
+          ],
+        ),
       ),
+      key,
     );
   }
 }
@@ -825,43 +845,46 @@ class THPills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return Wrap(
-      spacing: Space.s2,
-      runSpacing: Space.s2,
-      children: [
-        for (final p in items)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Space.s3_5,
-              vertical: 9,
-            ),
-            decoration: BoxDecoration(
-              color: p.selected ? c.brand : c.surface,
-              borderRadius: BorderRadius.circular(Radii.pill),
-              border: Border.all(color: p.selected ? c.brand : c.line),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: Space.s1_5,
-              children: [
-                if (p.icon != null)
-                  Icon(
-                    p.icon,
-                    size: 14,
-                    color: p.selected ? c.onBrand : c.text,
+    return thTestIdWrap(
+      Wrap(
+        spacing: Space.s2,
+        runSpacing: Space.s2,
+        children: [
+          for (final p in items)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.s3_5,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: p.selected ? c.brand : c.surface,
+                borderRadius: BorderRadius.circular(Radii.pill),
+                border: Border.all(color: p.selected ? c.brand : c.line),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: Space.s1_5,
+                children: [
+                  if (p.icon != null)
+                    Icon(
+                      p.icon,
+                      size: 14,
+                      color: p.selected ? c.onBrand : c.text,
+                    ),
+                  Text(
+                    p.label,
+                    style: THType.button.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: p.selected ? c.onBrand : c.text,
+                    ),
                   ),
-                Text(
-                  p.label,
-                  style: THType.button.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: p.selected ? c.onBrand : c.text,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
+      key,
     );
   }
 }
@@ -883,39 +906,42 @@ class THSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return Container(
-      padding: const EdgeInsets.all(Space.s1),
-      decoration: BoxDecoration(
-        color: c.surfaceAlt,
-        borderRadius: BorderRadius.circular(Radii.control),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onSelected == null ? null : () => onSelected!(i),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selected ? c.surface : null,
-                    borderRadius: BorderRadius.circular(Radii.control - 4),
-                  ),
-                  child: Text(
-                    items[i],
-                    style: THType.button.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: i == selected ? c.text : c.textSoft,
+    return thTestIdWrap(
+      Container(
+        padding: const EdgeInsets.all(Space.s1),
+        decoration: BoxDecoration(
+          color: c.surfaceAlt,
+          borderRadius: BorderRadius.circular(Radii.control),
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onSelected == null ? null : () => onSelected!(i),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: i == selected ? c.surface : null,
+                      borderRadius: BorderRadius.circular(Radii.control - 4),
+                    ),
+                    child: Text(
+                      items[i],
+                      style: THType.button.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: i == selected ? c.text : c.textSoft,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
+      key,
     );
   }
 }
@@ -928,30 +954,33 @@ class THSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return Semantics(
-      toggled: on,
-      child: GestureDetector(
-        onTap: onChanged == null ? null : () => onChanged!(!on),
-        child: AnimatedContainer(
-          duration: THDurations.fast,
-          width: 52,
-          height: 30,
-          padding: const EdgeInsets.all(3),
-          alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-          decoration: BoxDecoration(
-            color: on ? c.success : c.track,
-            borderRadius: BorderRadius.circular(Radii.pill),
-          ),
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+    return thTestIdWrap(
+      Semantics(
+        toggled: on,
+        child: GestureDetector(
+          onTap: onChanged == null ? null : () => onChanged!(!on),
+          child: AnimatedContainer(
+            duration: THDurations.fast,
+            width: 52,
+            height: 30,
+            padding: const EdgeInsets.all(3),
+            alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: on ? c.success : c.track,
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
         ),
       ),
+      key,
     );
   }
 }
@@ -1067,6 +1096,7 @@ class _THOtpInputState extends State<THOtpInput> {
     return Semantics(
       label: 'One-time code, ${widget.length} digits',
       textField: true,
+      identifier: thTestId(widget.key),
       child: Stack(
         children: [
           // Real input, painted transparent, on top so the caret and
@@ -1413,58 +1443,61 @@ class THListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return Container(
-      padding: const EdgeInsets.all(Space.s3),
-      decoration: BoxDecoration(
-        color: flat ? null : c.surface,
-        borderRadius: flat ? null : BorderRadius.circular(Radii.card),
-        border: flat
-            ? (divider ? Border(top: BorderSide(color: c.line)) : null)
-            : Border.all(color: c.line),
-      ),
-      child: Row(
-        spacing: Space.s3,
-        children: [
-          Container(
-            width: Sizes.buttonSm,
-            height: Sizes.buttonSm,
-            decoration: BoxDecoration(
-              color: c.tintBrand,
-              borderRadius: BorderRadius.circular(Radii.control - 2),
-            ),
-            child: Icon(icon, size: 20, color: c.textBrand),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: THType.title.copyWith(fontSize: 15)),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: THType.meta.copyWith(color: c.textSoft),
-                  ),
-              ],
-            ),
-          ),
-          if (badge != null)
-            THBadge(
-              badge!,
-              kind: badge == 'Verified' ? THBadgeKind.ok : THBadgeKind.accent,
-            )
-          else if (unread)
+    return thTestIdWrap(
+      Container(
+        padding: const EdgeInsets.all(Space.s3),
+        decoration: BoxDecoration(
+          color: flat ? null : c.surface,
+          borderRadius: flat ? null : BorderRadius.circular(Radii.card),
+          border: flat
+              ? (divider ? Border(top: BorderSide(color: c.line)) : null)
+              : Border.all(color: c.line),
+        ),
+        child: Row(
+          spacing: Space.s3,
+          children: [
             Container(
-              width: 9,
-              height: 9,
+              width: Sizes.buttonSm,
+              height: Sizes.buttonSm,
               decoration: BoxDecoration(
-                color: c.accent,
-                shape: BoxShape.circle,
+                color: c.tintBrand,
+                borderRadius: BorderRadius.circular(Radii.control - 2),
               ),
-            )
-          else
-            Icon(Icons.chevron_right_rounded, size: 18, color: c.textSoft),
-        ],
+              child: Icon(icon, size: 20, color: c.textBrand),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: THType.title.copyWith(fontSize: 15)),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: THType.meta.copyWith(color: c.textSoft),
+                    ),
+                ],
+              ),
+            ),
+            if (badge != null)
+              THBadge(
+                badge!,
+                kind: badge == 'Verified' ? THBadgeKind.ok : THBadgeKind.accent,
+              )
+            else if (unread)
+              Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: c.accent,
+                  shape: BoxShape.circle,
+                ),
+              )
+            else
+              Icon(Icons.chevron_right_rounded, size: 18, color: c.textSoft),
+          ],
+        ),
       ),
+      key,
     );
   }
 }
@@ -2035,47 +2068,53 @@ class THAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => Navigator.maybePop(context),
               )
             : null);
-    return Material(
-      color: c.paper,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Sizes.gutter,
-            Space.s1_5,
-            Sizes.gutter,
-            Space.s2_5,
-          ),
-          child: Row(
-            spacing: Space.s3,
-            children: [
-              ?start,
-              Expanded(
-                // FittedBox keeps large accessibility text scales inside the
-                // fixed 64dp bar (identity at 1.0x — content always fits and
-                // stays left-aligned exactly as before).
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(title, style: THType.title.copyWith(color: c.text)),
-                      if (subtitle != null)
+    return thTestIdWrap(
+      Material(
+        color: c.paper,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Sizes.gutter,
+              Space.s1_5,
+              Sizes.gutter,
+              Space.s2_5,
+            ),
+            child: Row(
+              spacing: Space.s3,
+              children: [
+                ?start,
+                Expanded(
+                  // FittedBox keeps large accessibility text scales inside the
+                  // fixed 64dp bar (identity at 1.0x — content always fits and
+                  // stays left-aligned exactly as before).
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          subtitle!,
-                          style: THType.meta.copyWith(color: c.textSoft),
+                          title,
+                          style: THType.title.copyWith(color: c.text),
                         ),
-                    ],
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            style: THType.meta.copyWith(color: c.textSoft),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              ...actions,
-            ],
+                ...actions,
+              ],
+            ),
           ),
         ),
       ),
+      key,
     );
   }
 }
@@ -2139,11 +2178,19 @@ class THDock extends StatelessWidget {
       final on = t == active;
       final count = badges[t] ?? 0;
       final badge = count > 0 ? (count > 99 ? '99+' : '$count') : null;
+      final (dockKey, dockId) = switch (t) {
+        THDockTab.home => (const Key('dock_home'), 'dock_home'),
+        THDockTab.jobs => (const Key('dock_jobs'), 'dock_jobs'),
+        THDockTab.chat => (const Key('dock_chat'), 'dock_chat'),
+        THDockTab.profile => (const Key('dock_profile'), 'dock_profile'),
+      };
       return Semantics(
         button: true,
         selected: on,
+        identifier: dockId,
         label: count > 0 ? '$label, $count unread' : label,
         child: InkWell(
+          key: dockKey,
           onTap: onSelected == null ? null : () => onSelected!(t),
           borderRadius: BorderRadius.circular(Radii.control),
           child: SizedBox(
@@ -2202,6 +2249,7 @@ class THDock extends StatelessWidget {
 
     final fab = Semantics(
       button: true,
+      identifier: 'post_job_fab',
       label: 'New request',
       child: GestureDetector(
         // Same key as the v1 FAB (Key('post_job_fab')) so integration
@@ -2300,28 +2348,33 @@ class THScaffold extends StatelessWidget {
       ),
       child: body,
     );
-    final scaffold = Scaffold(
-      backgroundColor: heroBackground ? Colors.transparent : c.paper,
-      appBar: appBar,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: SafeArea(
-              bottom: false,
-              child: scrollable ? SingleChildScrollView(child: padded) : padded,
+    final scaffold = thTestIdWrap(
+      Scaffold(
+        backgroundColor: heroBackground ? Colors.transparent : c.paper,
+        appBar: appBar,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: SafeArea(
+                bottom: false,
+                child: scrollable
+                    ? SingleChildScrollView(child: padded)
+                    : padded,
+              ),
             ),
-          ),
-          if (dock != null)
-            Positioned(
-              left: Space.s3_5,
-              right: Space.s3_5,
-              bottom: Space.s4,
-              child: SafeArea(top: false, child: dock!),
-            ),
-          if (stickyBar != null)
-            Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
-        ],
+            if (dock != null)
+              Positioned(
+                left: Space.s3_5,
+                right: Space.s3_5,
+                bottom: Space.s4,
+                child: SafeArea(top: false, child: dock!),
+              ),
+            if (stickyBar != null)
+              Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
+          ],
+        ),
       ),
+      key,
     );
     if (!heroBackground) return scaffold;
     return Container(
