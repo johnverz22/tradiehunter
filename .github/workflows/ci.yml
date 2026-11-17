@@ -55,7 +55,9 @@ jobs:
       with:
         node-version: '20'
     - name: Design tokens, screens and WCAG contrast gate
-      run: node docs/design/tools/build.mjs --check
+      run: node docs/design/mobile/tools/build.mjs --check
+    - name: Web design tokens, kit lint and WCAG contrast gate
+      run: node docs/design/web/tools/build.mjs --check
 
   web-build-test:
     runs-on: ubuntu-latest

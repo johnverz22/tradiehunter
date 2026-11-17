@@ -11,7 +11,7 @@ How AI coding agents work in this repo: rules, skills, MCP servers and the desig
 | `agent/skills/` | Skills (below). Claude Code users can symlink `.claude/skills` → `agent/skills` |
 | `agent/Makefile`, `agent/setup.sh`, `package.json` | Toolchain entry points |
 | `tools/design2flutter/` | HTML mockup → Flutter AST transpiler (Node + parse5), `th_components.dart` widget contract |
-| `docs/design/` | v2 design system: tokens (`tokens.json` master source), AST screens, Flutter widgets, generated mockups. Build with `node docs/design/tools/build.mjs` |
+| `docs/design/mobile/`, `docs/design/web/` | Design systems (web extends the mobile tokens). Mobile v2: tokens (`tokens.json` master source), AST screens, Flutter widgets, generated mockups. Build with `node docs/design/mobile/tools/build.mjs` |
 | `scripts/` | Verification scripts ([TESTING.md](../TESTING.md)) |
 
 ## 2. Rules in one paragraph
@@ -22,7 +22,7 @@ Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobS
 
 | Skill | Use when |
 |---|---|
-| `mockup-to-flutter` | Building or fixing a screen from a v2 screen stub (see `docs/design/flutter/screens/`) |
+| `mockup-to-flutter` | Building or fixing a screen from a v2 screen stub (see `docs/design/mobile/flutter/screens/`) |
 | `widget-refactor` | A build method passes ~100 lines, a structure repeats twice, or a lint flags hard-coded values |
 | `ui-audit` | Before committing UI changes; runs the v2 design gate (`node docs/design/tools/build.mjs --check`) |
 | `v2-e2e-explorer` | Autonomous exploration, visual QA evidence generation, and Maestro E2E flow authoring |
@@ -31,15 +31,16 @@ Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobS
 ## 4. Toolchain commands
 
 ```bash
-node docs/design/tools/build.mjs          # regenerate tokens, Flutter stubs, HTML mockups
-node docs/design/tools/build.mjs --check  # CI gate: contrast + stale-output + unknown nodes
+node docs/design/mobile/tools/build.mjs          # regenerate tokens, Flutter stubs, HTML mockups
+node docs/design/mobile/tools/build.mjs --check  # CI gate: contrast + stale-output + unknown nodes
+node docs/design/web/tools/build.mjs --check     # web admin gate: contrast (text + non-text), kit lint, stale-output
 make -C agent flutter                      # dart format + flutter analyze + flutter test
 npm run verify                            # build check + flutter
 ```
 
 Requires Node ≥ 18. No Python dependencies for the v2 design pipeline.
 
-New screen: edit `docs/design/ast/screens.mjs`, rebuild, review `docs/design/mockups/index.html`, copy the generated stub into `mobile/lib/views/`, bind data, run `flutter analyze`.
+New screen: edit `docs/design/mobile/ast/screens.mjs`, rebuild, review `docs/design/mobile/mockups/index.html`, copy the generated stub into `mobile/lib/views/`, bind data, run `flutter analyze`.
 
 ## 5. MCP servers
 

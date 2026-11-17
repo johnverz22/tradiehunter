@@ -7,7 +7,7 @@ import 'screens.dart';
 /// Debug-only index of the 30 generated v2 design screens (static sample data).
 ///
 /// Visual baseline for Phase 2.7 goldens and for QA against
-/// `docs/design/mockups/index.html`. These are NOT the real screens.
+/// `docs/design/mobile/mockups/index.html`. These are NOT the real screens.
 /// Route: `/debug/screen-gallery[?screen=<id>&theme=light|dark]`.
 class ScreenGalleryPage extends StatefulWidget {
   const ScreenGalleryPage({

@@ -1,4 +1,4 @@
-// THTextField geometry vs the mockup `.fld` (docs/design/mockups/index.html):
+// THTextField geometry vs the mockup `.fld` (docs/design/mobile/mockups/index.html):
 // bordered surface, min-height 56, label on top, then ONE row where the icon
 // and the value/hint share a vertical centre. Regression test for the
 // "icon drops below the hint / field grows past 56" mismatch.

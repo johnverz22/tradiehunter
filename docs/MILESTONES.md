@@ -65,6 +65,7 @@ Ordered by launch impact.
 | 10 | Email: pick SMTP relay (SES Sydney suggested), publish SPF/DKIM/DMARC, host the logo on the CDN, set `Brand:FrontendBaseUrl` once deep links resolve, supply registered postal address | Infra |
 | 11 | Real bank account details in `PaymentOptions` for production (missing/sentinel details correctly show a "support" state) | Business |
 | 12 | Admin Playwright spec for payouts (`e2e/payouts.spec.ts`) and mobile integration tests for P10 and v1.7 flows | QA |
+| 13 | **Web admin design system v1** is designed and generated (`docs/design/web/`) but `web/src` still runs legacy v1.7 tokens. Migrate by file per DESIGN_GUIDE §10; decisions made: `--hue` knob dropped, fonts self-hosted (files already in `docs/design/web/fonts/`). Mockups are not yet compared against the running admin | Engineering + design |
 
 ## Conflicts found while consolidating
 

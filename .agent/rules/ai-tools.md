@@ -21,14 +21,14 @@ Before generating or modifying any code, the agent must perform the following pr
 | **Stack Rules** | `.agent/rules/mobile.md`<br>`.agent/rules/backend.md`<br>`.agent/rules/frontend.md` | Align with layer responsibilities, prohibited patterns, and styling rules for the target platform. |
 | **Scope Boundaries** | `docs/MVP.md`<br>`docs/PRD.md` | Verify feature tier (Tier 1/2/3). **Do not invent scope** (e.g., in-app payments, automated disputes, ML matching are strictly out of scope for MVP). |
 | **System Architecture** | `docs/ARCHITECTURE.md`<br>`AGENTS.md` | Confirm cross-cutting conventions (UTC timestamps, `decimal` currency, SignalR status events). |
-| **Design System** | `docs/design/DESIGN_GUIDE.md`<br>`docs/design/tokens/tokens.json`<br>`docs/design/mockups/index.html`<br>`docs/DESIGN.md` | v2 token file is the master source. `tokens.json` → `design_tokens.dart` (copy to `mobile/lib/theme/`). `mockups/index.html` is the visual reference (30 screens, light + dark). DESIGN.md documents component vocabulary, CTA rules, feedback notices. Both light and dark themes are required. No outdoor variant. |
+| **Design System** | `docs/design/mobile/DESIGN_GUIDE.md`<br>`docs/design/mobile/tokens/tokens.json`<br>`docs/design/mobile/mockups/index.html`<br>`docs/DESIGN.md` | v2 token file is the master source. `tokens.json` → `design_tokens.dart` (copy to `mobile/lib/theme/`). `mockups/index.html` is the visual reference (30 screens, light + dark). DESIGN.md documents component vocabulary, CTA rules, feedback notices. Both light and dark themes are required. No outdoor variant. |
 
 ### v2 screen integration
 
-- Each screen has a generated stub at `docs/design/flutter/screens/<id>_screen.dart` and a route in `thScreenBuilders`.
+- Each screen has a generated stub at `docs/design/mobile/flutter/screens/<id>_screen.dart` and a route in `thScreenBuilders`.
 - Preview a screen: `thScreenBuilders['<id>']!(context)` from a debug-only gallery route.
 - When building a screen: start from the stub, bind real ViewModel data, keep the widget tree structure, replace sample copy, run `flutter analyze`.
-- Run the design gate before committing UI changes: `node docs/design/tools/build.mjs --check`.
+- Run the design gate before committing UI changes: `node docs/design/mobile/tools/build.mjs --check`.
 
 ---
 
@@ -52,7 +52,7 @@ Agents equipped with Model Context Protocol (MCP) servers must leverage them to 
 Agents must construct software from tested, modular building blocks:
 
 - **Atomic Components First**:
-  - Build standalone, reusable UI components (e.g., buttons, form fields, badges) against `docs/design/design-system.html` and `docs/DESIGN.md` before creating full screens. Use the v1.7 frame files as the visual reference; never legacy mockups.
+  - Build standalone, reusable UI components (e.g., buttons, form fields, badges) against the design system (mobile: `docs/design/mobile/`, `docs/DESIGN.md`; web admin: `docs/design/web/`) before creating full screens. Use the v2 mockups as the visual reference; never the archived v1.7 files.
   - Every component must render correctly in both light and dark theme.
   - Build reusable domain services and validation logic before assembling controllers or hubs.
 - **Isolated Testing**:

@@ -1,25 +1,25 @@
 # TradieHunter — Design System
 
-Visual and interaction source of truth for the Flutter app. Web (React admin) is excluded from this doc. Layout and behaviour contracts are in [SPECS §10](SPECS.md#10-mobile-ux-contract-v15--v16); this file covers tokens, components, tooling and feedback. Current system version: **v2.0.0** (Trust Navy + Gold — Lexend + Source Sans 3).
+Visual and interaction source of truth for the Flutter app (sections 1–9) and a pointer to the React admin design system (section 10). Layout and behaviour contracts are in [SPECS §10](SPECS.md#10-mobile-ux-contract-v15--v16); this file covers tokens, components, tooling and feedback. Current system version: **v2.0.0** (Trust Navy + Gold — Lexend + Source Sans 3).
 
 ## 1. Source of truth
 
 | Path | What |
 |---|---|
-| `docs/design/tokens/tokens.json` | **Master source of truth.** Light + dark colour, type, space, radii, size, motion |
-| `docs/design/tokens/tokens.css` | Generated CSS variables for mockups |
-| `docs/design/tokens/design_tokens.dart` | Generated Dart: `Space`, `Radii`, `Sizes`, `THType`, `THColors`, `THTheme` |
-| `docs/design/tokens/contrast-report.txt` | WCAG AA gate results (38 pairs, all passing) |
-| `docs/design/DESIGN_GUIDE.md` | Canonical human-readable design guide (§1–§12) |
+| `docs/design/mobile/tokens/tokens.json` | **Master source of truth.** Light + dark colour, type, space, radii, size, motion |
+| `docs/design/mobile/tokens/tokens.css` | Generated CSS variables for mockups |
+| `docs/design/mobile/tokens/design_tokens.dart` | Generated Dart: `Space`, `Radii`, `Sizes`, `THType`, `THColors`, `THTheme` |
+| `docs/design/mobile/tokens/contrast-report.txt` | WCAG AA gate results (38 pairs, all passing) |
+| `docs/design/mobile/DESIGN_GUIDE.md` | Canonical human-readable design guide (§1–§12) |
 | `docs/design/COLOUR.md` | Colour token table, contrast summary, pairing rules |
 | `docs/design/TYPOGRAPHY.md` | Type scale, font families, `pubspec.yaml` font setup |
 | `docs/design/COMPONENTS.md` | Component vocabulary, v1→v2 widget mapping, screen inventory |
-| `docs/design/flutter/th_widgets.dart` | Hand-written component library (~1,040 lines) |
-| `docs/design/flutter/screens/` | Generated screen widgets (30 screens + route table) |
-| `docs/design/mockups/index.html` | Generated light + dark HTML mockups (visual reference) |
-| `docs/design/ast/screens.mjs` | 30 screen definitions (AST) |
-| `docs/design/tools/build.mjs` | Generator pipeline (Node 18+, no deps) |
-| `mobile/lib/theme/design_tokens.dart` | Dart tokens consumed by the app (copy from `docs/design/tokens/`) |
+| `docs/design/mobile/flutter/th_widgets.dart` | Hand-written component library (~1,040 lines) |
+| `docs/design/mobile/flutter/screens/` | Generated screen widgets (30 screens + route table) |
+| `docs/design/mobile/mockups/index.html` | Generated light + dark HTML mockups (visual reference) |
+| `docs/design/mobile/ast/screens.mjs` | 30 screen definitions (AST) |
+| `docs/design/mobile/tools/build.mjs` | Generator pipeline (Node 18+, no deps) |
+| `mobile/lib/theme/design_tokens.dart` | Dart tokens consumed by the app (copy from `docs/design/mobile/tokens/`) |
 
 > [!NOTE]
 > Brand assets (wordmarks, app icon, map pins, notification icon) are archived at `docs/archive/design-legacy-v1/assets/brand/` pending a formal v2 brand pass. Illustrations and textures are in the same archive. Do not copy from there for new UI work without owner sign-off.
@@ -38,13 +38,13 @@ Visual and interaction source of truth for the Flutter app. Web (React admin) is
 
 ## 3. Colour
 
-See [COLOUR.md](design/COLOUR.md) for the full token table, contrast results and pairing rules.
+See [COLOUR.md](design/mobile/COLOUR.md) for the full token table, contrast results and pairing rules.
 
-Colours are accessed via `context.th.<name>` (Flutter) or `var(--<name>)` (CSS). **Never hardcode hex.** The build enforces WCAG AA (4.5:1) for all 19 text/background pairs per theme — `node docs/design/tools/build.mjs --check` fails if any pair regresses.
+Colours are accessed via `context.th.<name>` (Flutter) or `var(--<name>)` (CSS). **Never hardcode hex.** The build enforces WCAG AA (4.5:1) for all 19 text/background pairs per theme — `node docs/design/mobile/tools/build.mjs --check` fails if any pair regresses.
 
 ## 4. Typography
 
-See [TYPOGRAPHY.md](design/TYPOGRAPHY.md) for the full type scale and `pubspec.yaml` setup.
+See [TYPOGRAPHY.md](design/mobile/TYPOGRAPHY.md) for the full type scale and `pubspec.yaml` setup.
 
 Fonts: **Lexend** (headings, money, controls) and **Source Sans 3** (body). Bundled as assets in `pubspec.yaml` (not `google_fonts`). Minimum text size: 11 px (`label`). Respect text scaling to 2.0.
 
@@ -61,7 +61,7 @@ Screen gutter: 20. Elevation: cards use a two-layer soft shadow in light and a 1
 
 ## 6. Component vocabulary
 
-See [COMPONENTS.md](design/COMPONENTS.md) for the full component table, v1→v2 widget mapping, and screen inventory.
+See [COMPONENTS.md](design/mobile/COMPONENTS.md) for the full component table, v1→v2 widget mapping, and screen inventory.
 
 | v2 widget | Role |
 |---|---|
@@ -91,7 +91,7 @@ Architecture: `THNoticeHost` → `THNoticeController` (Riverpod `StateNotifier`)
 ## 8. Regression gates (design changes must pass)
 
 ```bash
-node docs/design/tools/build.mjs --check
+node docs/design/mobile/tools/build.mjs --check
 ```
 
 This runs:
@@ -102,7 +102,7 @@ This runs:
 After passing the build gate:
 - `flutter analyze` clean
 - `flutter test` green
-- Visual QA against `docs/design/mockups/index.html` (light + dark)
+- Visual QA against `docs/design/mobile/mockups/index.html` (light + dark)
 
 ## 9. Build pipeline
 
@@ -117,3 +117,19 @@ Requires Node ≥ 18. No other dependencies.
 **Change a colour/size:** edit `tokens/tokens.json`, rebuild. Contrast gate tells you if accessibility broke.
 **Change a screen:** edit `ast/screens.mjs`, rebuild, review `mockups/index.html`, commit generated files.
 **Add a widget:** add to `ast/dsl.mjs`, register in `tools/build.mjs`, add to `flutter/th_widgets.dart`.
+
+## 10. Web admin design system
+
+The React admin has its own system in `docs/design/web/` (v1.0.0, Trust Navy + Gold). It **extends the mobile master tokens**: colour, fonts, space, radii and motion are defined once in `docs/design/mobile/tokens/tokens.json`, and web adds density, layout, sidebar, focus and elevation roles on top.
+
+| Path | What |
+|---|---|
+| `docs/design/web/DESIGN_GUIDE.md` | Principles, mobile inheritance table, layout, patterns, accessibility, integration and legacy-token mapping |
+| `docs/design/web/tokens/tokens.json` | Web layer (`=path` reads the mobile master, `@name` aliases a colour) |
+| `docs/design/web/tokens/tokens.css`, `theme.css` | Generated CSS variables and Tailwind v4 theme |
+| `docs/design/web/css/kit.css` | Component kit, tokens only (linted) |
+| `docs/design/web/COMPONENTS.md`, `COLOUR.md`, `TYPOGRAPHY.md` | Specs, colour roles, type scale |
+| `docs/design/web/fonts/` | Self-hosted Lexend and Source Sans 3 (latin + latin-ext for macrons), generated `fonts.css` |
+| `docs/design/web/mockups/index.html`, `system.html` | 18 frames in light and dark, and every component state |
+
+Gate: `node docs/design/web/tools/build.mjs --check` (36 text pairs at 4.5:1 and 9 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: designed and generated; `web/src/theme/` still runs the legacy v1.7 tokens (see [MILESTONES](MILESTONES.md) open items).
