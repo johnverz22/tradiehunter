@@ -62,12 +62,12 @@ See [COMPONENTS.md](COMPONENTS.md) for the specification of each component (purp
 - **Detail page**: breadcrumb, header with status badge and page actions (gold last), job stepper where relevant, `side` grid of cards. Money in a `dl` with the total on a `total` row.
 - **Confirm dialog**: the dialog repeats the facts being acted on (job, person, amount, reference). Footer is Cancel (secondary) then the commit button (gold, or danger when destructive). Initial focus goes to Cancel for destructive dialogs.
 - **Forms**: label above, help below, errors say what is wrong and how to fix it. Required is the default; mark optional fields.
-- **Feedback**: banners are inline and stay until the cause is gone or the user dismisses them. Toasts confirm short successes. Errors and warnings are never toast-only and never auto-dismiss.
+- **Feedback**: banners are inline, flat and persistent: a small tone icon tile carries the meaning, with a hairline border only for warn and danger. There are no side stripes and no tinted fills. Toasts are inverse snackbars (ink background) for short confirmations. Errors and warnings are never toast-only and never auto-dismiss.
 - **Empty and error states**: say what is empty and what to do next; errors give a Retry.
 
 ## 9. Accessibility
 
-- Contrast gate in the build: 36 text pairs at 4.5:1 and 9 non-text pairs at 3:1 per theme (`tokens/contrast-report.txt`). Form control borders use `line-strong`, not `line`, to meet SC 1.4.11.
+- Contrast gate in the build: 47 text pairs at 5.0:1 (AA is 4.5:1, plus margin) and 16 non-text pairs at 3:1 per theme (`tokens/contrast-report.txt`). Form control borders use `line-strong`, not `line`, to meet SC 1.4.11.
 - Visible focus: 2 px `--focus` outline, 2 px offset, on every interactive element. Never `outline: none` without a replacement.
 - Keyboard: dialogs trap focus, close on Esc and return focus to their trigger; menus use arrow keys; table sort buttons are real buttons with `aria-sort` on the header.
 - Targets: 44 px minimum on coarse pointers.

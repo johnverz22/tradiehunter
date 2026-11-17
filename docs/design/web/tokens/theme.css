@@ -32,6 +32,7 @@
   --color-line-strong: var(--line-strong);
   --color-focus: var(--focus);
   --color-on-danger: var(--on-danger);
+  --color-success-ink: var(--success-ink);
   --color-sidebar: var(--sidebar);
   --color-on-sidebar: var(--on-sidebar);
   --color-on-sidebar-soft: var(--on-sidebar-soft);

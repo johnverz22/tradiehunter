@@ -132,4 +132,4 @@ The React admin has its own system in `docs/design/web/` (v1.0.0, Trust Navy + G
 | `docs/design/web/fonts/` | Self-hosted Lexend and Source Sans 3 (latin + latin-ext for macrons), generated `fonts.css` |
 | `docs/design/web/mockups/index.html`, `system.html` | 18 frames in light and dark, and every component state |
 
-Gate: `node docs/design/web/tools/build.mjs --check` (36 text pairs at 4.5:1 and 9 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: designed and generated; `web/src/theme/` still runs the legacy v1.7 tokens (see [MILESTONES](MILESTONES.md) open items).
+Gate: `node docs/design/web/tools/build.mjs --check` (47 text pairs at 5.0:1 and 16 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: designed and generated; `web/src/theme/` still runs the legacy v1.7 tokens (see [MILESTONES](MILESTONES.md) open items).

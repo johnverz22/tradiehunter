@@ -25,8 +25,8 @@
 | **Tabs** `.tabs` | Switch panels | none | `aria-selected`, underline | `role="tablist"`, arrow-key roving |
 | **Chip** `.chip` | Toggle a filter | none | `aria-pressed` | Button |
 | **Badge** `.badge` | Short status or count | `badge-neutral` (default), `-info`, `-ok`, `-warn`, `-danger`; `dot`; `badge-lg` for page headers | static | Text carries the meaning; `forced-colors` adds a border |
-| **Banner** `.banner` | Persistent inline message | `banner-info`, `-ok`, `-warn`, `-danger` | Optional action button; stays until cause is gone or dismissed | `role="alert"` for danger, `role="status"` otherwise. Icon + title + text |
-| **Toast** `.toast` | Short confirmation | `toast-ok`, `-danger`, `-warn`, default info | Success and info auto-dismiss (3 s, matching mobile). Errors and warnings do not auto-dismiss (WCAG 2.2.1) and also appear inline | Live region; never the only place an error appears |
+| **Banner** `.banner` | Persistent inline message | `banner-info`, `-ok`, `-warn`, `-danger`. Anatomy: icon tile, title, one line of text, optional action, optional dismiss | Flat surface with a `line-strong` border; warn and danger use a tone border. No side stripe, no tinted fill. Stays until the cause is gone or dismissed | `role="alert"` for danger, `role="status"` otherwise. Icon + title + text, so tone is never colour-only |
+| **Toast** `.toast` | Short confirmation | `toast-ok`, `-danger`, `-warn`, default info. Inverse surface (`ink` background, `surface` text) so it never looks like a banner | Always has a dismiss button, no action link. Success and info auto-dismiss (3 s, matching mobile). Errors and warnings do not auto-dismiss (WCAG 2.2.1) and also appear inline | Live region; never the only place an error appears |
 | **Empty state** `.empty` | Say what is empty and what to do | with or without action | static | Heading + text |
 | **Skeleton**, **Spinner** | Loading | `.skeleton` rows, `.spinner` | shimmer disabled under reduced motion | Container gets `aria-busy` |
 | **Card** `.card` | Group related content | `tone-accent` (needs attention), `tone-danger`, `flush` (table inside) | Optional `.card-head` with title and one action | Title is an `h2` |
@@ -37,7 +37,7 @@
 | **Pagination** `.pagination` | Move between pages | none | current page `aria-current`, prev disabled on first | Buttons have `aria-label` for Previous and Next |
 | **Modal** `.scrim` > `.modal` | Confirm or collect input that blocks the page | `modal-sm` 400, default 560, `modal-lg` 720 | Opens with a short pop; bottom sheet below 640 px | `role="dialog"`, `aria-modal`, `aria-labelledby`; trap focus; Esc closes; return focus; destructive dialogs focus Cancel first |
 | **Menu** `.menu` | Account and row menus | none | item hover | `role="menu"` / `menuitem`, arrow keys, Esc |
-| **Stepper** `.stepper` | Job lifecycle | item states `done`, `current`, `halt`, todo. Vertical below 768 px | check icon for done, cross for halt | `<ol>`, `aria-current="step"` |
+| **Stepper** `.stepper` | Job lifecycle | item states `done`, `current`, `halt`, todo. Vertical below 768 px | check icon for done, cross for halt. Each step draws one connector to the next, so the line is continuous at any label height; the connector turns red into a halted step. Pending dots and connectors use `line-strong` | `<ol>`, `aria-current="step"` |
 | **Timeline** `.timeline` | Status and audit history | item tones `done`, `warn`, `danger` | none | `<ol>` with `<time>` |
 | **Avatar** `.avatar` | Identify a person | `-sm` 32, default 40, `-lg` 56 | none | Decorative; name appears beside it |
 | **Sidebar** `.sidebar` | Primary navigation | full 240, `is-rail` 64, `is-drawer` | current page `aria-current="page"` + gold marker; counts as `.nav-count` | `aria-label="Admin navigation"`; rail keeps labels in the DOM |

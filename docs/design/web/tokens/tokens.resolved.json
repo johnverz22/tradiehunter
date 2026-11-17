@@ -36,9 +36,10 @@
    "line-strong": "#7C89A3",
    "focus": "#1E3A8A",
    "on-danger": "#FFFFFF",
+   "success-ink": "#126B33",
    "sidebar": "#1E3A8A",
    "on-sidebar": "#FFFFFF",
-   "on-sidebar-soft": "#FFFFFFCC",
+   "on-sidebar-soft": "#FFFFFFE6",
    "sidebar-hover": "#FFFFFF1F",
    "sidebar-active": "#FFFFFF2E",
    "scrim": "#0A101E8C"
@@ -74,9 +75,10 @@
    "line-strong": "#62729C",
    "focus": "#8FA8F2",
    "on-danger": "#1A0505",
+   "success-ink": "#4ADE80",
    "sidebar": "#17255C",
    "on-sidebar": "#FFFFFF",
-   "on-sidebar-soft": "#FFFFFFCC",
+   "on-sidebar-soft": "#FFFFFFE6",
    "sidebar-hover": "#FFFFFF1A",
    "sidebar-active": "#FFFFFF29",
    "scrim": "#05080FB3"
