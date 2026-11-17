@@ -117,7 +117,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: Space.s4,
+                  spacing: Space.s3,
                   children: [
                     THWordmark(),
                     const SizedBox(height: Space.s3),
@@ -167,6 +167,11 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                       autofillHints: const [AutofillHints.password],
                       onFieldSubmitted: (_) => _login(),
                       trailing: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: Sizes.buttonSm,
+                          height: Sizes.buttonSm,
+                        ),
                         tooltip: _obscurePassword
                             ? 'Show password'
                             : 'Hide password',

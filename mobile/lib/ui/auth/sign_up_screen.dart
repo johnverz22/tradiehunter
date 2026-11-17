@@ -222,6 +222,11 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
                       onChanged: (_) => setState(() {}),
                       onFieldSubmitted: (_) => _signup(),
                       trailing: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: Sizes.buttonSm,
+                          height: Sizes.buttonSm,
+                        ),
                         tooltip: _obscurePassword
                             ? 'Show password'
                             : 'Hide password',

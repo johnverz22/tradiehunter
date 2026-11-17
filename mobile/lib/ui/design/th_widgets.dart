@@ -693,10 +693,7 @@ class THTextField extends StatelessWidget {
     final c = context.th;
     return Container(
       constraints: const BoxConstraints(minHeight: Sizes.input),
-      padding: const EdgeInsets.symmetric(
-        horizontal: Space.s3_5,
-        vertical: Space.s2_5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: Space.s3_5),
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: BorderRadius.circular(Radii.control),
@@ -711,7 +708,7 @@ class THTextField extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: Space.s1),
               child: Text(
-                label!,
+                label!.toUpperCase(),
                 style: THType.label.copyWith(
                   fontSize: 10.5,
                   letterSpacing: 0.6,
@@ -738,10 +735,10 @@ class THTextField extends StatelessWidget {
             textCapitalization: textCapitalization,
             minLines: minLines,
             maxLines: obscure ? 1 : maxLines,
-            style: THType.body.copyWith(color: enabled ? c.text : c.textSoft),
+            style: THType.input.copyWith(color: enabled ? c.text : c.textSoft),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: THType.body.copyWith(color: c.textSoft),
+              hintStyle: THType.input.copyWith(color: c.textSoft),
               errorMaxLines: errorMaxLines,
               errorStyle: THType.meta.copyWith(color: c.danger, height: 1.3),
               isDense: true,
@@ -750,7 +747,15 @@ class THTextField extends StatelessWidget {
                   ? null
                   : Icon(icon, size: 18, color: c.textSoft),
               prefixIconColor: c.textSoft,
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: Sizes.buttonSm,
+                minHeight: Sizes.buttonSm,
+              ),
               suffixIcon: trailing,
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: Sizes.buttonSm,
+                minHeight: Sizes.buttonSm,
+              ),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               disabledBorder: InputBorder.none,

@@ -22,7 +22,7 @@ Scope: verify Phase 3 work in [`design_system_migration_plan.md`](../../design_s
 
 ## Phase 3 quality fixes
 
-- [x] Match the mockup's editable field treatment: `THTextField` keeps its small-caps label inside the outlined field; 10.5 px label type and control radius match `.fld`.
+- [x] Match the mockup's editable field treatment: `THTextField` keeps an uppercase small-caps label inside the outlined field, uses tokenized 16 px input text, and removes excess vertical inset around compact icon slots; control radius matches `.fld`.
 - [x] Replace chat date-divider and quick-reply `FittedBox` scaling with wrapping. Quick replies expose button semantics and labels.
 - [x] Preserve and verify semantics on auth role controls. Add 2× text-scale coverage for inbox and notification ellipsis rows.
 - [x] Keep unread counts visible in the dock and exposed in its semantics; navigation buttons and icon actions meet the shared minimum target size.

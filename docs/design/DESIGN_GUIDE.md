@@ -60,6 +60,7 @@ Lexend for headings, money and controls. Source Sans 3 for reading text. Fallbac
 | `moneyLg` | Lexend | 34 / 600 | Final amount, earnings, countdown |
 | `label` | Lexend | 11 / 600, +1.2 tracking, caps | Eyebrows (`NEEDS YOUR ATTENTION`) |
 | `body` | Source Sans 3 | 15 / 400 | Paragraphs |
+| `input` | Source Sans 3 | 16 / 400 | Editable field values and hints |
 | `meta` | Source Sans 3 | 13 / 400 | Secondary lines, captions |
 
 Add the fonts to `pubspec.yaml` (bundled assets, weights 400 to 800 for Lexend, 400 to 700 for Source Sans 3) or load them with `google_fonts` and keep the family names `Lexend` and `Source Sans 3`.
@@ -69,6 +70,7 @@ Add the fonts to `pubspec.yaml` (bundled assets, weights 400 to 800 for Lexend, 
 4pt scale: `s1` 4, `s1_5` 6, `s2` 8, `s2_5` 10, `s3` 12, `s3_5` 14, `s4` 16, `s5` 20, `s6` 24, `s7` 32.
 Radii: control 16, tile 18, card 20, hero 28, sheet 32, pill 999.
 Screen gutter 20. Button 54 (sm 44). Input 56. Tap target never below 44. Dock 68, FAB 56.
+Editable field labels use the small-caps uppercase treatment shown in the mockups; field labels and values sit inside the same outlined surface.
 Elevation: cards use a two-layer soft shadow in light mode and a 1px border only in dark mode. Hero cards use the gradient and a gold glow circle. No other shadows.
 Motion: 150 / 220 / 320 ms (`THDurations.fast/base/slow`). Use for toggles, dots, progress.
 

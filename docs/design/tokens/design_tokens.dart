@@ -163,6 +163,13 @@ abstract class THType {
     height: 1.45,
     letterSpacing: 0,
   );
+  static TextStyle get input => const TextStyle(
+    fontFamily: THFonts.body,
+    fontSize: 16.0,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    letterSpacing: 0,
+  );
   static TextStyle get meta => const TextStyle(
     fontFamily: THFonts.body,
     fontSize: 13.0,
