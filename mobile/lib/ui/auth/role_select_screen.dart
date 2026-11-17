@@ -70,9 +70,9 @@ class _ThRoleSelectScreenState extends ConsumerState<ThRoleSelectScreen> {
               bottomNavigationBar: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    Space.s6,
+                    Sizes.gutter,
                     Space.s2,
-                    Space.s6,
+                    Sizes.gutter,
                     Space.s4,
                   ),
                   child: Column(
@@ -107,7 +107,7 @@ class _ThRoleSelectScreenState extends ConsumerState<ThRoleSelectScreen> {
                     ),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: Space.s6,
+                        horizontal: Sizes.gutter,
                         vertical: Space.s8,
                       ),
                       child: Column(

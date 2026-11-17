@@ -18,6 +18,9 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../feedback/th_notice.dart';
 
+/// Mockup spacer between the wordmark and the heading (sign_in, 28px).
+const double _kAfterWordmark = 28.0;
+
 class ThSignInScreen extends ConsumerStatefulWidget {
   const ThSignInScreen({super.key});
 
@@ -108,9 +111,9 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
           body: SafeArea(
             child: ThAuthScroll(
               padding: const EdgeInsets.fromLTRB(
-                Space.s6,
-                Space.s9,
-                Space.s6,
+                Sizes.gutter,
+                Space.s7,
+                Sizes.gutter,
                 Space.s6,
               ),
               child: Form(
@@ -120,7 +123,8 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                   spacing: Space.s3,
                   children: [
                     THWordmark(),
-                    const SizedBox(height: Space.s3),
+                    // Mockup spacers (12 column gap + 28 / 4 / 20 spacer divs).
+                    const SizedBox(height: _kAfterWordmark),
                     Semantics(
                       header: true,
                       child: Text(
@@ -131,11 +135,12 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: Space.s1),
                     Text(
                       'Sign in to manage your jobs.',
                       style: THType.body.copyWith(color: context.th.textSoft),
                     ),
-                    const SizedBox(height: Space.s2),
+                    const SizedBox(height: Space.s5),
                     if (authState.error != null)
                       ThAuthErrorBanner(message: authState.error!),
                     THTextField(
@@ -197,6 +202,9 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                         onPressed: _forgotPassword,
                         style: TextButton.styleFrom(
                           minimumSize: const Size(Sizes.tapMin, Sizes.tapMin),
+                          // Flush with the field edge like the mockup.
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerRight,
                         ),
                         child: Text(
                           'Forgot password?',

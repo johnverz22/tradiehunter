@@ -335,6 +335,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 *THTextField follow-up (2026-11-17): the first fix still left the icon on a separate line from the hint, because the icon was an `InputDecoration.prefixIcon` forced to 44px tall, which stretched the input row and the field past 56px. `THTextField` now builds the mockup `.fld` structure directly: bordered 56px surface, 10/14 padding, small-caps label, then one row (18px icon, 10px gap, value/hint); the password toggle keeps its 44px tap target, bottom-aligned with the value row. Geometry is pinned by `test/ui/th_text_field_layout_test.dart`.*
 
+*Auth spacing follow-up (2026-11-17): side-by-side with the mockup showed type, button (54) and field (56) tokens already match the mockup CSS exactly; what made v2 look smaller was layout. Auth screens used a 24px side padding instead of the 20px `Sizes.gutter`, and `sign_in` omitted the mockup's spacer divs (28 after the wordmark, 4 under the heading, 20 before the fields) and indented "Forgot password?" from the field edge. Fixed in `sign_in`, `sign_up`, `role_select` and `ThAuthScroll`; no token values changed. `verify_otp` and later screens still need the same side-by-side pass.*
+
 ---
 
 ### Phase 4 — Homeowner Flows

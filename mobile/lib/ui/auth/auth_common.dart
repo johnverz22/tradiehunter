@@ -22,7 +22,7 @@ class ThAuthScroll extends StatelessWidget {
   const ThAuthScroll({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.symmetric(horizontal: Space.s6),
+    this.padding = const EdgeInsets.symmetric(horizontal: Sizes.gutter),
   });
 
   @override

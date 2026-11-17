@@ -127,9 +127,9 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Space.s6,
+                  Sizes.gutter,
                   Space.s2,
-                  Space.s6,
+                  Sizes.gutter,
                   Space.s4,
                 ),
                 child: THButton(
@@ -144,9 +144,9 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
           body: SafeArea(
             child: ThAuthScroll(
               padding: const EdgeInsets.fromLTRB(
-                Space.s6,
+                Sizes.gutter,
                 Space.s8,
-                Space.s6,
+                Sizes.gutter,
                 Space.s6,
               ),
               child: Form(
