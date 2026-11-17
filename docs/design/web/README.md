@@ -8,6 +8,8 @@ tokens/tokens.css            GENERATED  CSS variables, light + dark, type classe
 tokens/theme.css             GENERATED  Tailwind v4 @theme mapping and t-* utilities
 tokens/tokens.resolved.json  GENERATED  every resolved value, for tooling
 tokens/contrast-report.txt   GENERATED  WCAG gate results (36 text + 9 non-text pairs per theme)
+fonts/                       self-hosted woff2 (Lexend, Source Sans 3; latin + latin-ext) and OFL licences
+fonts/fonts.css              GENERATED  @font-face rules
 css/kit.css                  hand-written component kit (tokens only, linted)
 ast/dsl.mjs                  node builders + STATUS tone map
 ast/screens.mjs              18 admin frames as AST (14 screens + 4 responsive)

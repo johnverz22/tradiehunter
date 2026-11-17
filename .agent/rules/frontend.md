@@ -43,7 +43,7 @@ The frontend is organized by functional feature modules with a strict separation
 - **Brand budget:** one gold (`btn-accent`) commit action per view or dialog. Navy `btn-primary` for other filled actions, danger red only for destructive ones. Status is never colour-only.
 - **Theme support:** light and dark are required and are a token swap (`:root`, `[data-theme="dark"]`, and the OS preference when `data-theme` is unset). A theme `if` inside a component is a bug.
 - **Accessibility:** WCAG 2.2 AA. Visible focus (`--focus`), 44 px targets on coarse pointers, `line-strong` for control borders, `prefers-reduced-motion` respected, dialogs trap focus and return it.
-- **Migration status:** `web/src/theme/` still holds the legacy v1.7 tokens (`--hue`, Space Grotesk, IBM Plex). New and touched admin UI moves to the v1 web system using the mapping in `docs/design/web/DESIGN_GUIDE.md` §10. Do not mix both in one component.
+- **Migration status:** `web/src/theme/` still holds the legacy v1.7 tokens (`--hue`, Space Grotesk, IBM Plex, Google Fonts). The `--hue` knob is retired and fonts are self-hosted from `docs/design/web/fonts/`. New and touched admin UI moves to the v1 web system using the mapping in `docs/design/web/DESIGN_GUIDE.md` §10. Do not mix both in one component.
 - **Design gate:** `node docs/design/web/tools/build.mjs --check` (contrast, kit lint, stale outputs) before committing design changes.
 
 ## Scope & Access Control

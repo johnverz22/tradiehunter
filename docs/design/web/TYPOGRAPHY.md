@@ -29,6 +29,15 @@ Fallback for the first two is `system-ui, sans-serif`.
 
 Field text rises to 16 px on coarse pointers so iOS does not zoom on focus. Minimum text size is 12 px.
 
-## Loading fonts
+## Fonts are self-hosted
 
-The mockups link Google Fonts: `Lexend` 400–800 and `Source Sans 3` 400–700. For the app, either keep that `<link>` in `web/index.html` (current behaviour) or self-host woff2 files; self-hosting is not decided (see DESIGN_GUIDE §12). Family names must stay exactly `Lexend` and `Source Sans 3`.
+`fonts/` holds the woff2 files and the generated `fonts/fonts.css` (`@font-face` rules, `font-display: swap`, `unicode-range`). No request goes to a font CDN.
+
+| Family | Weights | Subsets |
+|---|---|---|
+| Lexend | 400, 500, 600, 700, 800 | latin, latin-ext |
+| Source Sans 3 | 400, 500, 600, 700 | latin, latin-ext |
+
+`latin-ext` is required, not optional: Māori macrons (ā ē ī ō ū) are U+0100 and above and exist only in those files. The browser fetches a subset only when a character from it appears. Files come from `@fontsource/lexend` 5.3.0 and `@fontsource/source-sans-3` 5.3.1 (SIL OFL 1.1; licences beside the files). They were copied once; there is no npm dependency. To update, replace the woff2 files from a newer release and rebuild.
+
+The family names must stay exactly `Lexend` and `Source Sans 3`. In the app, copy `fonts/` to `web/public/fonts/` (or `web/src/assets/fonts/`) and import `fonts.css` before `tokens.css`. Mobile bundles its own ttf files separately (`mobile/assets/fonts/v2/`).

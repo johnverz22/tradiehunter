@@ -82,7 +82,7 @@ The design system is documented and generated here; `web/src` still runs the leg
 
 1. Copy `tokens/tokens.css` and `tokens/theme.css` to `web/src/theme/` and `css/kit.css` to `web/src/theme/components.css` (replaces `design-tokens.css` and the old `components.css`). Import order in `index.css`: `@import 'tailwindcss'; @import './theme/tokens.css'; @import './theme/theme.css'; @import './theme/components.css';`. Remove the old `@theme` block and `@custom-variant` (now in `theme.css`).
 2. Keep the existing blocking theme script in `index.html` (it writes `data-theme`). Update `theme-color` and the page title.
-3. Load fonts (see TYPOGRAPHY.md).
+3. Copy `fonts/` to `web/public/fonts/` and import `fonts.css` first (see TYPOGRAPHY.md). Remove the Google Fonts `<link>` tags from `index.html`.
 4. Migrate by file, building after each: see the mapping below.
 5. Verify with `npm run lint`, `npm run build` and `scripts/web/render-probe.py` for the touched page; compare against `mockups/index.html`.
 
@@ -119,8 +119,8 @@ The gate fails on: contrast regression, an unresolved `=path` or `@alias`, a raw
 
 ## 12. Assumptions, decisions and gaps
 
-- **Decision to confirm: the `--hue` white-label knob is dropped.** The mobile system is a fixed palette; web inherits it. If per-tenant branding returns, it should be a token override layer for `brand`, `accent` and the hero/sidebar set, with the contrast gate run per tenant.
-- **Decision to confirm: fonts.** Mockups load Lexend and Source Sans 3 from Google Fonts (as the current `index.html` does). Mobile bundles the files. Self-hosting for web needs a dependency (`@fontsource`) or committed woff2 files; not decided here.
+- **Decided: the `--hue` white-label knob is dropped.** Web inherits the fixed mobile palette. If per-tenant branding returns, it should be a token override layer for `brand`, `accent` and the hero/sidebar set, with the contrast gate run per tenant.
+- **Decided: fonts are self-hosted** (woff2 in `fonts/`, no CDN), including latin-ext for Māori macrons. See TYPOGRAPHY.md.
 - Sample names, ids, counts and amounts in the mockups are illustrative. The commission figure follows the v1.7 spec (labour only, configurable).
 - The settings screen is a form-pattern demonstration, not a statement of which settings exist.
 - Icons in the mockups are simplified strokes; the app uses `lucide-react` (names listed in `tools/build.mjs` `ICONS`).
