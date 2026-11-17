@@ -36,5 +36,3 @@ Contrast is **enforced by the build** — 19 text/background pairs per theme mus
 - **Gold as text:** use `accentText`, not `accent`, when gold is used as the colour of text on a surface.
 - **Status is never colour-only.** Badges carry text; timelines carry icons.
 - **One gold action per screen.** `accent` is the single primary CTA. `brand` (navy) is for secondary-importance filled actions.
-</Content>
-</invoke>

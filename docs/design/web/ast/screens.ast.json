@@ -1,0 +1,2905 @@
+{
+ "version": "1.0.0",
+ "screens": [
+  {
+   "shell": "none",
+   "w": 1280,
+   "h": 760,
+   "id": "login",
+   "title": "Sign in",
+   "route": "/login",
+   "body": [
+    {
+     "t": "auth",
+     "c": [
+      {
+       "t": "stack",
+       "slot": "aside",
+       "c": [
+        {
+         "t": "wordmark",
+         "lg": true
+        },
+        {
+         "t": "stack",
+         "gap": 12,
+         "c": [
+          {
+           "t": "text",
+           "v": "Marketplace operations, in one place.",
+           "s": "display"
+          },
+          {
+           "t": "text",
+           "v": "Verify tradies, review bank payments and settle disputes.",
+           "s": "body",
+           "tone": "onHeroSoft"
+          }
+         ]
+        },
+        {
+         "t": "text",
+         "v": "Staff access only.",
+         "s": "meta",
+         "tone": "onHeroSoft"
+        }
+       ]
+      },
+      {
+       "t": "stack",
+       "slot": "main",
+       "c": [
+        {
+         "t": "text",
+         "v": "Sign in",
+         "s": "h1"
+        },
+        {
+         "t": "text",
+         "v": "Use your staff account to continue.",
+         "s": "body",
+         "tone": "soft"
+        },
+        {
+         "t": "field",
+         "label": "Email",
+         "v": "staff@tradiehunter.co.nz",
+         "ic": "mail"
+        },
+        {
+         "t": "field",
+         "label": "Password",
+         "v": "••••••••••",
+         "ic": "lock",
+         "help": "At least 8 characters."
+        },
+        {
+         "t": "btn",
+         "v": "Sign in",
+         "k": "accent",
+         "sz": "lg",
+         "w": "block"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 1000,
+   "id": "dashboard",
+   "title": "Dashboard",
+   "route": "/dashboard",
+   "nav": "dashboard",
+   "h1": "Dashboard",
+   "sub": "Marketplace operations overview",
+   "badge": {
+    "t": "badge",
+    "v": "Admin",
+    "tone": "info"
+   },
+   "body": [
+    {
+     "t": "banner",
+     "tone": "warn",
+     "title": "Payments waiting more than 24 hours",
+     "v": "2 bank-transfer receipts still need verification.",
+     "action": {
+      "t": "btn",
+      "v": "Open payment queue",
+      "k": "ghost",
+      "sz": "sm"
+     }
+    },
+    {
+     "t": "grid",
+     "cols": 4,
+     "c": [
+      {
+       "t": "stat",
+       "label": "Pending verifications",
+       "value": "5",
+       "ic": "shield",
+       "tone": "warn",
+       "hint": "Needs action",
+       "attention": true
+      },
+      {
+       "t": "stat",
+       "label": "Payments to verify",
+       "value": "3",
+       "ic": "wallet"
+      },
+      {
+       "t": "stat",
+       "label": "Payouts due",
+       "value": "4",
+       "ic": "bank"
+      },
+      {
+       "t": "stat",
+       "label": "Open disputes",
+       "value": "2",
+       "ic": "alert",
+       "tone": "danger"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Recent disputes",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Job ID",
+         "k": "mono"
+        },
+        {
+         "h": "Issue"
+        },
+        {
+         "h": "Reported by"
+        },
+        {
+         "h": "Date"
+        },
+        {
+         "h": "Status",
+         "k": "status"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         "JOB-1042",
+         "Work not completed as described",
+         "Mere Tane",
+         "14 Nov 2026",
+         "Escalated",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-1017",
+         "Tradie did not arrive",
+         "Hemi Parata",
+         "12 Nov 2026",
+         "Open",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-0988",
+         "Extra cost not agreed",
+         "Aroha Walker",
+         "9 Nov 2026",
+         "Resolved",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Pending verifications",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Name",
+         "k": "link"
+        },
+        {
+         "h": "Trade"
+        },
+        {
+         "h": "Email"
+        },
+        {
+         "h": "Applied"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         {
+          "v": "Kiri Walker"
+         },
+         "Painter",
+         "kiri@kiripainters.co.nz",
+         "14 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Tane Rewi"
+         },
+         "Electrician",
+         "tane@rewielectric.co.nz",
+         "13 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Ana Fifita"
+         },
+         "Plumber",
+         "ana@fifitaplumbing.co.nz",
+         "11 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 880,
+   "id": "users",
+   "title": "Users",
+   "route": "/users",
+   "nav": "users",
+   "h1": "Users",
+   "sub": "Homeowners, tradies and staff",
+   "body": [
+    {
+     "t": "filterbar",
+     "c": [
+      {
+       "t": "search",
+       "ph": "Search by name or email"
+      },
+      {
+       "t": "select",
+       "v": "All roles"
+      },
+      {
+       "t": "select",
+       "v": "All statuses"
+      }
+     ]
+    },
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Name",
+       "k": "link"
+      },
+      {
+       "h": "Role",
+       "k": "status"
+      },
+      {
+       "h": "Status",
+       "k": "status"
+      },
+      {
+       "h": "Verification",
+       "k": "status"
+      },
+      {
+       "h": "Joined"
+      },
+      {
+       "h": "Actions",
+       "k": "actions",
+       "sr": true
+      }
+     ],
+     "rows": [
+      [
+       {
+        "v": "Mere Tane",
+        "sub": "mere@example.co.nz"
+       },
+       "Homeowner",
+       "Active",
+       "Verified",
+       "3 Oct 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Kiri Walker",
+        "sub": "kiri@kiripainters.co.nz"
+       },
+       "Tradie",
+       "Active",
+       "Unverified",
+       "3 Oct 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Aroha Walker",
+        "sub": "aroha@arohaplumbing.co.nz"
+       },
+       "Tradie",
+       "Active",
+       "Verified",
+       "28 Sep 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Hemi Parata",
+        "sub": "hemi@example.co.nz"
+       },
+       "Homeowner",
+       "Inactive",
+       "Verified",
+       "21 Sep 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Tane Rewi",
+        "sub": "tane@rewielectric.co.nz"
+       },
+       "Tradie",
+       "Active",
+       "Unverified",
+       "19 Sep 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Sam Harris",
+        "sub": "sam@tradiehunter.co.nz"
+       },
+       "Staff",
+       "Active",
+       "Verified",
+       "1 Sep 2026",
+       [
+        {
+         "t": "btn",
+         "v": "View",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ]
+     ],
+     "pager": {
+      "t": "pager",
+      "from": 1,
+      "to": 6,
+      "total": 126,
+      "page": 1,
+      "pages": 21
+     }
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 960,
+   "id": "user_detail",
+   "title": "User detail",
+   "route": "/users/:id",
+   "nav": "users",
+   "crumbs": [
+    [
+     "Users",
+     "/users"
+    ],
+    [
+     "Kiri Walker"
+    ]
+   ],
+   "h1": "Kiri Walker",
+   "sub": "Painter · joined 3 Oct 2026",
+   "badge": {
+    "t": "badge",
+    "v": "Tradie",
+    "tone": "info",
+    "dot": true,
+    "lg": true
+   },
+   "actions": [
+    {
+     "t": "btn",
+     "v": "Deactivate account",
+     "k": "dangerOutline"
+    },
+    {
+     "t": "btn",
+     "v": "Verify tradie",
+     "k": "accent",
+     "ic": "check"
+    }
+   ],
+   "body": [
+    {
+     "t": "banner",
+     "tone": "warn",
+     "title": "Verification pending",
+     "v": "2 documents are waiting for review. This tradie cannot be verified until both are checked."
+    },
+    {
+     "t": "grid",
+     "cols": "side",
+     "c": [
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "Profile",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Email",
+             "v": "kiri@kiripainters.co.nz"
+            },
+            {
+             "l": "Phone",
+             "v": "Not provided",
+             "soft": true
+            },
+            {
+             "l": "Trade",
+             "v": "Painter"
+            },
+            {
+             "l": "Service area",
+             "v": "Tauranga and Mt Maunganui"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Credentials",
+         "flush": true,
+         "c": [
+          {
+           "t": "table",
+           "cols": [
+            {
+             "h": "Document"
+            },
+            {
+             "h": "Submitted"
+            },
+            {
+             "h": "Status",
+             "k": "status"
+            },
+            {
+             "h": "Actions",
+             "k": "actions",
+             "sr": true
+            }
+           ],
+           "rows": [
+            [
+             "Trade certificate",
+             "14 Nov 2026",
+             "Unverified",
+             [
+              {
+               "t": "btn",
+               "v": "Review",
+               "k": "secondary",
+               "sz": "sm"
+              }
+             ]
+            ],
+            [
+             "Public liability insurance",
+             "14 Nov 2026",
+             "Unverified",
+             [
+              {
+               "t": "btn",
+               "v": "Review",
+               "k": "secondary",
+               "sz": "sm"
+              }
+             ]
+            ]
+           ],
+           "compact": true
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Activity",
+         "c": [
+          {
+           "t": "timeline",
+           "items": [
+            {
+             "t": "14 Nov, 9:12 am",
+             "v": "Submitted 2 credential documents",
+             "s": "warn"
+            },
+            {
+             "t": "3 Oct, 2:30 pm",
+             "v": "Account created",
+             "meta": "Signed up as tradie",
+             "s": "done"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "Account",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Role",
+             "badge": {
+              "t": "badge",
+              "v": "Tradie",
+              "tone": "info",
+              "dot": true
+             }
+            },
+            {
+             "l": "Status",
+             "badge": {
+              "t": "badge",
+              "v": "Active",
+              "tone": "ok",
+              "dot": true
+             }
+            },
+            {
+             "l": "Verification",
+             "badge": {
+              "t": "badge",
+              "v": "Unverified",
+              "tone": "warn",
+              "dot": true
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Jobs",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Completed",
+             "v": "12",
+             "money": true
+            },
+            {
+             "l": "In progress",
+             "v": "1",
+             "money": true
+            },
+            {
+             "l": "Disputes",
+             "v": "0",
+             "money": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 900,
+   "id": "jobs",
+   "title": "Jobs",
+   "route": "/jobs",
+   "nav": "jobs",
+   "h1": "Jobs",
+   "sub": "Live job list and status monitoring",
+   "body": [
+    {
+     "t": "filterbar",
+     "c": [
+      {
+       "t": "search",
+       "ph": "Search by job, homeowner or tradie"
+      },
+      {
+       "t": "select",
+       "v": "All statuses"
+      },
+      {
+       "t": "select",
+       "v": "Any date"
+      }
+     ]
+    },
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Job ID",
+       "k": "link"
+      },
+      {
+       "h": "Description"
+      },
+      {
+       "h": "Homeowner"
+      },
+      {
+       "h": "Tradie"
+      },
+      {
+       "h": "Status",
+       "k": "status"
+      },
+      {
+       "h": "Posted"
+      }
+     ],
+     "rows": [
+      [
+       {
+        "v": "JOB-1042"
+       },
+       "Repaint hallway",
+       "Mere Tane",
+       "Kiri Walker",
+       "InProgress",
+       "12 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1041"
+       },
+       "Leaking kitchen tap",
+       "Hemi Parata",
+       "Aroha Walker",
+       "AwaitingConfirmation",
+       "12 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1040"
+       },
+       "Replace outdoor lights",
+       "Sam Harris",
+       "Tane Rewi",
+       "Booked",
+       "11 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1039"
+       },
+       "Fix gate latch",
+       "Mere Tane",
+       "Unassigned",
+       "Requested",
+       "11 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1038"
+       },
+       "Deck repair",
+       "Aroha Walker",
+       "Kiri Walker",
+       "Completed",
+       "9 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1017"
+       },
+       "Bathroom regrout",
+       "Hemi Parata",
+       "Aroha Walker",
+       "Disputed",
+       "8 Nov 2026"
+      ],
+      [
+       {
+        "v": "JOB-1012"
+       },
+       "Lawn and hedge trim",
+       "Sam Harris",
+       "Unassigned",
+       "Expired",
+       "4 Nov 2026"
+      ]
+     ],
+     "pager": {
+      "t": "pager",
+      "from": 1,
+      "to": 7,
+      "total": 342,
+      "page": 1,
+      "pages": 49
+     }
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 1060,
+   "id": "job_detail",
+   "title": "Job detail",
+   "route": "/jobs/:id",
+   "nav": "jobs",
+   "crumbs": [
+    [
+     "Jobs",
+     "/jobs"
+    ],
+    [
+     "Repaint hallway"
+    ]
+   ],
+   "h1": "Repaint hallway",
+   "sub": "JOB-1042 · Posted 12 Nov 2026",
+   "badge": {
+    "t": "badge",
+    "v": "InProgress",
+    "tone": "info",
+    "dot": true,
+    "lg": true
+   },
+   "actions": [
+    {
+     "t": "btn",
+     "v": "View audit trail",
+     "k": "secondary"
+    }
+   ],
+   "body": [
+    {
+     "t": "stepper",
+     "items": [
+      {
+       "v": "Requested",
+       "sub": "12 Nov",
+       "s": "done"
+      },
+      {
+       "v": "Booked",
+       "sub": "13 Nov",
+       "s": "done"
+      },
+      {
+       "v": "In progress",
+       "sub": "Since 14 Nov",
+       "s": "current"
+      },
+      {
+       "v": "Awaiting confirmation",
+       "s": "todo"
+      },
+      {
+       "v": "Completed",
+       "s": "todo"
+      }
+     ],
+     "card": true
+    },
+    {
+     "t": "banner",
+     "tone": "info",
+     "title": "Extra cost awaiting approval",
+     "v": "The tradie requested $45.00 incl. GST. The homeowner has not responded."
+    },
+    {
+     "t": "grid",
+     "cols": "side",
+     "c": [
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "Job details",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Service",
+             "v": "Painting"
+            },
+            {
+             "l": "Address",
+             "v": "14 Marine Parade, Mt Maunganui"
+            },
+            {
+             "l": "When",
+             "v": "Flexible"
+            },
+            {
+             "l": "Description",
+             "v": "Repaint hallway walls and ceiling, two coats. Paint supplied by homeowner."
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Money · NZD incl. GST",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Hourly rate",
+             "v": "$70.00 / hr",
+             "money": true
+            },
+            {
+             "l": "Hours so far",
+             "v": "3.0 h",
+             "money": true
+            },
+            {
+             "l": "Approved extras",
+             "v": "$0.00",
+             "money": true
+            },
+            {
+             "l": "Total so far",
+             "v": "$210.00",
+             "money": true,
+             "total": true
+            },
+            {
+             "l": "Commission (labour only)",
+             "v": "$21.00",
+             "money": true
+            },
+            {
+             "l": "Tradie receives",
+             "v": "$189.00",
+             "money": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "People",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Homeowner",
+             "v": "Mere Tane",
+             "link": true
+            },
+            {
+             "l": "Tradie",
+             "v": "Kiri Walker",
+             "link": true
+            },
+            {
+             "l": "Tradie status",
+             "badge": {
+              "t": "badge",
+              "v": "Verified",
+              "tone": "ok",
+              "dot": true
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Status history",
+         "c": [
+          {
+           "t": "timeline",
+           "items": [
+            {
+             "t": "14 Nov, 9:12 am",
+             "v": "Check-in recorded",
+             "meta": "Kiri Walker",
+             "s": "done"
+            },
+            {
+             "t": "13 Nov, 4:40 pm",
+             "v": "Booked",
+             "meta": "Homeowner chose Kiri Walker",
+             "s": "done"
+            },
+            {
+             "t": "12 Nov, 8:05 am",
+             "v": "Requested",
+             "meta": "Mere Tane",
+             "s": "done"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 640,
+   "id": "credentials",
+   "title": "Credential queue",
+   "route": "/credentials",
+   "nav": "credentials",
+   "h1": "Credential queue",
+   "sub": "Tradie documents waiting for review",
+   "body": [
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Tradie",
+       "k": "link"
+      },
+      {
+       "h": "Trade"
+      },
+      {
+       "h": "Document"
+      },
+      {
+       "h": "Submitted"
+      },
+      {
+       "h": "Waiting",
+       "k": "status"
+      },
+      {
+       "h": "Actions",
+       "k": "actions",
+       "sr": true
+      }
+     ],
+     "rows": [
+      [
+       {
+        "v": "Kiri Walker"
+       },
+       "Painter",
+       "Trade certificate",
+       "14 Nov 2026",
+       "Unverified",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Kiri Walker"
+       },
+       "Painter",
+       "Public liability insurance",
+       "14 Nov 2026",
+       "Unverified",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Tane Rewi"
+       },
+       "Electrician",
+       "Registration card",
+       "13 Nov 2026",
+       "Unverified",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Ana Fifita"
+       },
+       "Plumber",
+       "Trade certificate",
+       "11 Nov 2026",
+       "Unverified",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 700,
+   "id": "payments",
+   "title": "Payment queue",
+   "route": "/payments",
+   "nav": "payments",
+   "h1": "Payment queue",
+   "sub": "Manual bank transfers awaiting verification",
+   "overlay": {
+    "t": "modal",
+    "title": "Verify payment",
+    "body": [
+     {
+      "t": "text",
+      "v": "Check that the transfer on the bank statement matches this receipt before you verify.",
+      "s": "bodySm",
+      "tone": "soft"
+     },
+     {
+      "t": "dl",
+      "items": [
+       {
+        "l": "Job",
+        "v": "JOB-1042",
+        "mono": true
+       },
+       {
+        "l": "Homeowner",
+        "v": "Mere Tane"
+       },
+       {
+        "l": "Amount",
+        "v": "$261.00 incl. GST",
+        "money": true
+       },
+       {
+        "l": "Reference",
+        "v": "FX-4821",
+        "mono": true
+       }
+      ]
+     }
+    ],
+    "foot": [
+     {
+      "t": "btn",
+      "v": "Cancel",
+      "k": "secondary"
+     },
+     {
+      "t": "btn",
+      "v": "Verify payment",
+      "k": "accent"
+     }
+    ],
+    "size": "sm"
+   },
+   "body": [
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Job",
+       "k": "link"
+      },
+      {
+       "h": "Homeowner"
+      },
+      {
+       "h": "Amount",
+       "k": "money"
+      },
+      {
+       "h": "Reference",
+       "k": "mono"
+      },
+      {
+       "h": "Submitted"
+      },
+      {
+       "h": "Waiting",
+       "k": "status"
+      },
+      {
+       "h": "Actions",
+       "k": "actions",
+       "sr": true
+      }
+     ],
+     "rows": [
+      [
+       {
+        "v": "JOB-1042"
+       },
+       "Mere Tane",
+       "$261.00",
+       "FX-4821",
+       "14 Nov, 9:40 am",
+       {
+        "t": "badge",
+        "v": "26 h",
+        "tone": "warn",
+        "dot": true
+       },
+       [
+        {
+         "t": "btn",
+         "v": "Verify",
+         "k": "primary",
+         "sz": "sm"
+        },
+        {
+         "t": "btn",
+         "v": "Reject",
+         "k": "dangerOutline",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "JOB-1038"
+       },
+       "Aroha Walker",
+       "$480.00",
+       "FX-4790",
+       "14 Nov, 8:15 am",
+       {
+        "t": "badge",
+        "v": "27 h",
+        "tone": "warn",
+        "dot": true
+       },
+       [
+        {
+         "t": "btn",
+         "v": "Verify",
+         "k": "primary",
+         "sz": "sm"
+        },
+        {
+         "t": "btn",
+         "v": "Reject",
+         "k": "dangerOutline",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "JOB-1036"
+       },
+       "Hemi Parata",
+       "$95.00",
+       "FX-4811",
+       "15 Nov, 3:02 pm",
+       {
+        "t": "badge",
+        "v": "3 h",
+        "tone": "neutral"
+       },
+       [
+        {
+         "t": "btn",
+         "v": "Verify",
+         "k": "primary",
+         "sz": "sm"
+        },
+        {
+         "t": "btn",
+         "v": "Reject",
+         "k": "dangerOutline",
+         "sz": "sm"
+        }
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 620,
+   "id": "payouts",
+   "title": "Payout queue",
+   "route": "/payouts",
+   "nav": "payouts",
+   "h1": "Payout queue",
+   "sub": "Tradie payouts due",
+   "body": [
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Tradie",
+       "k": "link"
+      },
+      {
+       "h": "Job"
+      },
+      {
+       "h": "Gross",
+       "k": "money"
+      },
+      {
+       "h": "Fee",
+       "k": "money"
+      },
+      {
+       "h": "Net",
+       "k": "money"
+      },
+      {
+       "h": "Bank"
+      },
+      {
+       "h": "Status",
+       "k": "status"
+      },
+      {
+       "h": "Age"
+      },
+      {
+       "h": "Actions",
+       "k": "actions",
+       "sr": true
+      }
+     ],
+     "rows": [
+      [
+       {
+        "v": "Aroha Walker"
+       },
+       "JOB-1038",
+       "$480.00",
+       "$48.00",
+       "$432.00",
+       {
+        "t": "mono",
+        "v": "12-3456-•••••89-00"
+       },
+       "Open",
+       "2 days",
+       [
+        {
+         "t": "btn",
+         "v": "Process",
+         "k": "primary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Kiri Walker"
+       },
+       "JOB-1030",
+       "$320.00",
+       "$32.00",
+       "$288.00",
+       {
+        "t": "badge",
+        "v": "No bank details",
+        "tone": "warn",
+        "dot": true
+       },
+       "Open",
+       "4 days",
+       [
+        {
+         "t": "btn",
+         "v": "Process",
+         "k": "primary",
+         "sz": "sm",
+         "disabled": true
+        }
+       ]
+      ],
+      [
+       {
+        "v": "Tane Rewi"
+       },
+       "JOB-1027",
+       "$150.00",
+       "$15.00",
+       "$135.00",
+       {
+        "t": "mono",
+        "v": "02-0201-•••••12-00"
+       },
+       "Open",
+       "5 days",
+       [
+        {
+         "t": "btn",
+         "v": "Process",
+         "k": "primary",
+         "sz": "sm"
+        }
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 600,
+   "id": "disputes",
+   "title": "Disputes",
+   "route": "/disputes",
+   "nav": "disputes",
+   "h1": "Disputes",
+   "sub": "Flagged jobs under review",
+   "body": [
+    {
+     "t": "tabs",
+     "items": [
+      "Open",
+      "Escalated",
+      "Resolved"
+     ],
+     "on": 0
+    },
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Job ID",
+       "k": "mono"
+      },
+      {
+       "h": "Issue"
+      },
+      {
+       "h": "Reported by"
+      },
+      {
+       "h": "Date"
+      },
+      {
+       "h": "Status",
+       "k": "status"
+      },
+      {
+       "h": "Actions",
+       "k": "actions",
+       "sr": true
+      }
+     ],
+     "rows": [
+      [
+       "JOB-1042",
+       "Work not completed as described",
+       "Mere Tane",
+       "14 Nov 2026",
+       "Escalated",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       "JOB-1017",
+       "Tradie did not arrive",
+       "Hemi Parata",
+       "12 Nov 2026",
+       "Open",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ],
+      [
+       "JOB-0988",
+       "Extra cost not agreed",
+       "Aroha Walker",
+       "9 Nov 2026",
+       "Resolved",
+       [
+        {
+         "t": "btn",
+         "v": "Review",
+         "k": "secondary",
+         "sz": "sm"
+        }
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 960,
+   "id": "dispute_detail",
+   "title": "Dispute detail",
+   "route": "/disputes/:jobId",
+   "nav": "disputes",
+   "crumbs": [
+    [
+     "Disputes",
+     "/disputes"
+    ],
+    [
+     "JOB-1042"
+    ]
+   ],
+   "h1": "Repaint hallway",
+   "sub": "JOB-1042 · Reported 14 Nov 2026",
+   "badge": {
+    "t": "badge",
+    "v": "Escalated",
+    "tone": "danger",
+    "dot": true,
+    "lg": true
+   },
+   "body": [
+    {
+     "t": "banner",
+     "tone": "danger",
+     "title": "Escalated",
+     "v": "The homeowner and tradie disagree about whether the work was completed."
+    },
+    {
+     "t": "grid",
+     "cols": "side",
+     "c": [
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "Reported issue",
+         "c": [
+          {
+           "t": "text",
+           "v": "Work not completed as described. Hallway ceiling still has uneven patches and the second coat was not applied.",
+           "s": "bodySm"
+          },
+          {
+           "t": "grid",
+           "cols": 3,
+           "c": [
+            {
+             "t": "tile",
+             "ic": "cam"
+            },
+            {
+             "t": "tile",
+             "ic": "cam"
+            },
+            {
+             "t": "tile",
+             "ic": "cam"
+            }
+           ]
+          },
+          {
+           "t": "text",
+           "v": "3 photos from the homeowner",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Timeline",
+         "c": [
+          {
+           "t": "timeline",
+           "items": [
+            {
+             "t": "14 Nov, 11:20 am",
+             "v": "Escalated to staff",
+             "s": "danger"
+            },
+            {
+             "t": "14 Nov, 10:05 am",
+             "v": "Dispute opened",
+             "meta": "Mere Tane",
+             "s": "warn"
+            },
+            {
+             "t": "14 Nov, 9:50 am",
+             "v": "Tradie sent job for approval",
+             "meta": "Kiri Walker",
+             "s": "done"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "card",
+       "title": "Resolution",
+       "c": [
+        {
+         "t": "field",
+         "label": "Outcome",
+         "v": "Choose an outcome",
+         "kind": "select",
+         "ph": true
+        },
+        {
+         "t": "field",
+         "label": "Resolution note",
+         "v": "",
+         "kind": "textarea",
+         "ph": "Explain the decision for the audit log.",
+         "help": "Saved to the audit log."
+        },
+        {
+         "t": "btn",
+         "v": "Resolve dispute",
+         "k": "accent",
+         "w": "block"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 820,
+   "id": "audit_logs",
+   "title": "Audit logs",
+   "route": "/audit-logs",
+   "nav": "audit-logs",
+   "h1": "Audit logs",
+   "sub": "Every staff action, newest first",
+   "body": [
+    {
+     "t": "filterbar",
+     "c": [
+      {
+       "t": "search",
+       "ph": "Search by actor or target"
+      },
+      {
+       "t": "select",
+       "v": "All actions"
+      },
+      {
+       "t": "select",
+       "v": "Last 7 days"
+      }
+     ]
+    },
+    {
+     "t": "table",
+     "cols": [
+      {
+       "h": "Time",
+       "k": "mono"
+      },
+      {
+       "h": "Actor"
+      },
+      {
+       "h": "Action"
+      },
+      {
+       "h": "Target",
+       "k": "mono"
+      },
+      {
+       "h": "Details"
+      }
+     ],
+     "rows": [
+      [
+       "15 Nov 3:12 pm",
+       "Sam Harris",
+       "Payment verified",
+       "JOB-1036",
+       "Reference FX-4811"
+      ],
+      [
+       "15 Nov 2:48 pm",
+       "Sam Harris",
+       "Credential approved",
+       "USR-0412",
+       "Trade certificate"
+      ],
+      [
+       "15 Nov 11:02 am",
+       "Priya Nair",
+       "Payout processed",
+       "JOB-1030",
+       "Net $288.00"
+      ],
+      [
+       "14 Nov 4:30 pm",
+       "Sam Harris",
+       "Dispute escalated",
+       "JOB-1042",
+       "Reason recorded"
+      ],
+      [
+       "14 Nov 9:55 am",
+       "Priya Nair",
+       "User deactivated",
+       "USR-0388",
+       "Requested by user"
+      ],
+      [
+       "13 Nov 5:10 pm",
+       "Sam Harris",
+       "Payment rejected",
+       "JOB-1031",
+       "Amount mismatch"
+      ]
+     ],
+     "compact": true,
+     "pager": {
+      "t": "pager",
+      "from": 1,
+      "to": 6,
+      "total": 214,
+      "page": 1,
+      "pages": 36
+     }
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 900,
+   "id": "settings",
+   "title": "Settings",
+   "route": "/settings",
+   "nav": "settings",
+   "h1": "Settings",
+   "sub": "Platform configuration",
+   "actions": [
+    {
+     "t": "btn",
+     "v": "Save changes",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "card",
+     "title": "General",
+     "c": [
+      {
+       "t": "grid",
+       "cols": 2,
+       "c": [
+        {
+         "t": "field",
+         "label": "Brand name",
+         "v": "TradieHunter"
+        },
+        {
+         "t": "field",
+         "label": "Support email",
+         "v": "support@tradiehunter.co.nz",
+         "ic": "mail"
+        }
+       ]
+      },
+      {
+       "t": "field",
+       "label": "Expire unanswered requests after",
+       "v": "48 hours",
+       "kind": "select"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Notifications",
+     "c": [
+      {
+       "t": "choice",
+       "kind": "switch",
+       "label": "Email staff when a dispute is escalated",
+       "on": true
+      },
+      {
+       "t": "choice",
+       "kind": "switch",
+       "label": "Email staff when a payment waits more than 24 hours",
+       "on": true
+      },
+      {
+       "t": "choice",
+       "kind": "switch",
+       "label": "Daily summary email",
+       "on": false
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Danger zone",
+     "tone": "danger",
+     "c": [
+      {
+       "t": "row",
+       "between": true,
+       "c": [
+        {
+         "t": "stack",
+         "gap": 4,
+         "c": [
+          {
+           "t": "text",
+           "v": "Pause new job requests",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "Homeowners see a notice and cannot post until you resume.",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "btn",
+         "v": "Pause requests",
+         "k": "dangerOutline"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "full",
+   "w": 1280,
+   "h": 560,
+   "id": "forbidden",
+   "title": "No access",
+   "route": "/403",
+   "nav": "dashboard",
+   "h1": "Access denied",
+   "body": [
+    {
+     "t": "card",
+     "c": [
+      {
+       "t": "empty",
+       "ic": "lock",
+       "title": "You don’t have access to this area",
+       "v": "The admin dashboard is for staff accounts. Ask a superadmin to update your role.",
+       "action": {
+        "t": "btn",
+        "v": "Back to sign in",
+        "k": "primary"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "rail",
+   "w": 820,
+   "h": 1000,
+   "id": "dashboard_rail",
+   "title": "Dashboard · tablet (icon rail)",
+   "route": "/dashboard",
+   "nav": "dashboard",
+   "h1": "Dashboard",
+   "sub": "Marketplace operations overview",
+   "badge": {
+    "t": "badge",
+    "v": "Admin",
+    "tone": "info"
+   },
+   "body": [
+    {
+     "t": "banner",
+     "tone": "warn",
+     "title": "Payments waiting more than 24 hours",
+     "v": "2 bank-transfer receipts still need verification.",
+     "action": {
+      "t": "btn",
+      "v": "Open payment queue",
+      "k": "ghost",
+      "sz": "sm"
+     }
+    },
+    {
+     "t": "grid",
+     "cols": 4,
+     "c": [
+      {
+       "t": "stat",
+       "label": "Pending verifications",
+       "value": "5",
+       "ic": "shield",
+       "tone": "warn",
+       "hint": "Needs action",
+       "attention": true
+      },
+      {
+       "t": "stat",
+       "label": "Payments to verify",
+       "value": "3",
+       "ic": "wallet"
+      },
+      {
+       "t": "stat",
+       "label": "Payouts due",
+       "value": "4",
+       "ic": "bank"
+      },
+      {
+       "t": "stat",
+       "label": "Open disputes",
+       "value": "2",
+       "ic": "alert",
+       "tone": "danger"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Recent disputes",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Job ID",
+         "k": "mono"
+        },
+        {
+         "h": "Issue"
+        },
+        {
+         "h": "Reported by"
+        },
+        {
+         "h": "Date"
+        },
+        {
+         "h": "Status",
+         "k": "status"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         "JOB-1042",
+         "Work not completed as described",
+         "Mere Tane",
+         "14 Nov 2026",
+         "Escalated",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-1017",
+         "Tradie did not arrive",
+         "Hemi Parata",
+         "12 Nov 2026",
+         "Open",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-0988",
+         "Extra cost not agreed",
+         "Aroha Walker",
+         "9 Nov 2026",
+         "Resolved",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Pending verifications",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Name",
+         "k": "link"
+        },
+        {
+         "h": "Trade"
+        },
+        {
+         "h": "Email"
+        },
+        {
+         "h": "Applied"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         {
+          "v": "Kiri Walker"
+         },
+         "Painter",
+         "kiri@kiripainters.co.nz",
+         "14 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Tane Rewi"
+         },
+         "Electrician",
+         "tane@rewielectric.co.nz",
+         "13 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Ana Fifita"
+         },
+         "Plumber",
+         "ana@fifitaplumbing.co.nz",
+         "11 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "phone",
+   "w": 390,
+   "h": 1100,
+   "id": "dashboard_phone",
+   "title": "Dashboard · phone",
+   "route": "/dashboard",
+   "nav": "dashboard",
+   "h1": "Dashboard",
+   "sub": "Marketplace operations overview",
+   "badge": {
+    "t": "badge",
+    "v": "Admin",
+    "tone": "info"
+   },
+   "body": [
+    {
+     "t": "banner",
+     "tone": "warn",
+     "title": "Payments waiting more than 24 hours",
+     "v": "2 bank-transfer receipts still need verification.",
+     "action": {
+      "t": "btn",
+      "v": "Open payment queue",
+      "k": "ghost",
+      "sz": "sm"
+     }
+    },
+    {
+     "t": "grid",
+     "cols": 4,
+     "c": [
+      {
+       "t": "stat",
+       "label": "Pending verifications",
+       "value": "5",
+       "ic": "shield",
+       "tone": "warn",
+       "hint": "Needs action",
+       "attention": true
+      },
+      {
+       "t": "stat",
+       "label": "Payments to verify",
+       "value": "3",
+       "ic": "wallet"
+      },
+      {
+       "t": "stat",
+       "label": "Payouts due",
+       "value": "4",
+       "ic": "bank"
+      },
+      {
+       "t": "stat",
+       "label": "Open disputes",
+       "value": "2",
+       "ic": "alert",
+       "tone": "danger"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Recent disputes",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Job ID",
+         "k": "mono"
+        },
+        {
+         "h": "Issue"
+        },
+        {
+         "h": "Reported by"
+        },
+        {
+         "h": "Date"
+        },
+        {
+         "h": "Status",
+         "k": "status"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         "JOB-1042",
+         "Work not completed as described",
+         "Mere Tane",
+         "14 Nov 2026",
+         "Escalated",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-1017",
+         "Tradie did not arrive",
+         "Hemi Parata",
+         "12 Nov 2026",
+         "Open",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-0988",
+         "Extra cost not agreed",
+         "Aroha Walker",
+         "9 Nov 2026",
+         "Resolved",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Pending verifications",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Name",
+         "k": "link"
+        },
+        {
+         "h": "Trade"
+        },
+        {
+         "h": "Email"
+        },
+        {
+         "h": "Applied"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         {
+          "v": "Kiri Walker"
+         },
+         "Painter",
+         "kiri@kiripainters.co.nz",
+         "14 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Tane Rewi"
+         },
+         "Electrician",
+         "tane@rewielectric.co.nz",
+         "13 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Ana Fifita"
+         },
+         "Plumber",
+         "ana@fifitaplumbing.co.nz",
+         "11 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "drawer",
+   "w": 390,
+   "h": 760,
+   "id": "nav_drawer",
+   "title": "Navigation drawer · phone",
+   "route": "/dashboard",
+   "nav": "dashboard",
+   "h1": "Dashboard",
+   "sub": "Marketplace operations overview",
+   "badge": {
+    "t": "badge",
+    "v": "Admin",
+    "tone": "info"
+   },
+   "body": [
+    {
+     "t": "banner",
+     "tone": "warn",
+     "title": "Payments waiting more than 24 hours",
+     "v": "2 bank-transfer receipts still need verification.",
+     "action": {
+      "t": "btn",
+      "v": "Open payment queue",
+      "k": "ghost",
+      "sz": "sm"
+     }
+    },
+    {
+     "t": "grid",
+     "cols": 4,
+     "c": [
+      {
+       "t": "stat",
+       "label": "Pending verifications",
+       "value": "5",
+       "ic": "shield",
+       "tone": "warn",
+       "hint": "Needs action",
+       "attention": true
+      },
+      {
+       "t": "stat",
+       "label": "Payments to verify",
+       "value": "3",
+       "ic": "wallet"
+      },
+      {
+       "t": "stat",
+       "label": "Payouts due",
+       "value": "4",
+       "ic": "bank"
+      },
+      {
+       "t": "stat",
+       "label": "Open disputes",
+       "value": "2",
+       "ic": "alert",
+       "tone": "danger"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Recent disputes",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Job ID",
+         "k": "mono"
+        },
+        {
+         "h": "Issue"
+        },
+        {
+         "h": "Reported by"
+        },
+        {
+         "h": "Date"
+        },
+        {
+         "h": "Status",
+         "k": "status"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         "JOB-1042",
+         "Work not completed as described",
+         "Mere Tane",
+         "14 Nov 2026",
+         "Escalated",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-1017",
+         "Tradie did not arrive",
+         "Hemi Parata",
+         "12 Nov 2026",
+         "Open",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         "JOB-0988",
+         "Extra cost not agreed",
+         "Aroha Walker",
+         "9 Nov 2026",
+         "Resolved",
+         [
+          {
+           "t": "btn",
+           "v": "Review",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "title": "Pending verifications",
+     "action": {
+      "t": "btn",
+      "v": "View all",
+      "k": "ghost",
+      "sz": "sm"
+     },
+     "flush": true,
+     "c": [
+      {
+       "t": "table",
+       "cols": [
+        {
+         "h": "Name",
+         "k": "link"
+        },
+        {
+         "h": "Trade"
+        },
+        {
+         "h": "Email"
+        },
+        {
+         "h": "Applied"
+        },
+        {
+         "h": "Actions",
+         "k": "actions",
+         "sr": true
+        }
+       ],
+       "rows": [
+        [
+         {
+          "v": "Kiri Walker"
+         },
+         "Painter",
+         "kiri@kiripainters.co.nz",
+         "14 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Tane Rewi"
+         },
+         "Electrician",
+         "tane@rewielectric.co.nz",
+         "13 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ],
+        [
+         {
+          "v": "Ana Fifita"
+         },
+         "Plumber",
+         "ana@fifitaplumbing.co.nz",
+         "11 Nov 2026",
+         [
+          {
+           "t": "btn",
+           "v": "Verify",
+           "k": "secondary",
+           "sz": "sm"
+          }
+         ]
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "shell": "phone",
+   "w": 390,
+   "h": 1300,
+   "id": "job_detail_phone",
+   "title": "Job detail · phone (vertical stepper)",
+   "route": "/jobs/:id",
+   "nav": "jobs",
+   "crumbs": [
+    [
+     "Jobs",
+     "/jobs"
+    ],
+    [
+     "Repaint hallway"
+    ]
+   ],
+   "h1": "Repaint hallway",
+   "sub": "JOB-1042 · Posted 12 Nov 2026",
+   "badge": {
+    "t": "badge",
+    "v": "InProgress",
+    "tone": "info",
+    "dot": true,
+    "lg": true
+   },
+   "actions": [
+    {
+     "t": "btn",
+     "v": "View audit trail",
+     "k": "secondary"
+    }
+   ],
+   "body": [
+    {
+     "t": "stepper",
+     "items": [
+      {
+       "v": "Requested",
+       "sub": "12 Nov",
+       "s": "done"
+      },
+      {
+       "v": "Booked",
+       "sub": "13 Nov",
+       "s": "done"
+      },
+      {
+       "v": "In progress",
+       "sub": "Since 14 Nov",
+       "s": "current"
+      },
+      {
+       "v": "Awaiting confirmation",
+       "s": "todo"
+      },
+      {
+       "v": "Completed",
+       "s": "todo"
+      }
+     ],
+     "card": true
+    },
+    {
+     "t": "banner",
+     "tone": "info",
+     "title": "Extra cost awaiting approval",
+     "v": "The tradie requested $45.00 incl. GST. The homeowner has not responded."
+    },
+    {
+     "t": "grid",
+     "cols": "side",
+     "c": [
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "Job details",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Service",
+             "v": "Painting"
+            },
+            {
+             "l": "Address",
+             "v": "14 Marine Parade, Mt Maunganui"
+            },
+            {
+             "l": "When",
+             "v": "Flexible"
+            },
+            {
+             "l": "Description",
+             "v": "Repaint hallway walls and ceiling, two coats. Paint supplied by homeowner."
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Money · NZD incl. GST",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Hourly rate",
+             "v": "$70.00 / hr",
+             "money": true
+            },
+            {
+             "l": "Hours so far",
+             "v": "3.0 h",
+             "money": true
+            },
+            {
+             "l": "Approved extras",
+             "v": "$0.00",
+             "money": true
+            },
+            {
+             "l": "Total so far",
+             "v": "$210.00",
+             "money": true,
+             "total": true
+            },
+            {
+             "l": "Commission (labour only)",
+             "v": "$21.00",
+             "money": true
+            },
+            {
+             "l": "Tradie receives",
+             "v": "$189.00",
+             "money": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "stack",
+       "c": [
+        {
+         "t": "card",
+         "title": "People",
+         "c": [
+          {
+           "t": "dl",
+           "items": [
+            {
+             "l": "Homeowner",
+             "v": "Mere Tane",
+             "link": true
+            },
+            {
+             "l": "Tradie",
+             "v": "Kiri Walker",
+             "link": true
+            },
+            {
+             "l": "Tradie status",
+             "badge": {
+              "t": "badge",
+              "v": "Verified",
+              "tone": "ok",
+              "dot": true
+             }
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "card",
+         "title": "Status history",
+         "c": [
+          {
+           "t": "timeline",
+           "items": [
+            {
+             "t": "14 Nov, 9:12 am",
+             "v": "Check-in recorded",
+             "meta": "Kiri Walker",
+             "s": "done"
+            },
+            {
+             "t": "13 Nov, 4:40 pm",
+             "v": "Booked",
+             "meta": "Homeowner chose Kiri Walker",
+             "s": "done"
+            },
+            {
+             "t": "12 Nov, 8:05 am",
+             "v": "Requested",
+             "meta": "Mere Tane",
+             "s": "done"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

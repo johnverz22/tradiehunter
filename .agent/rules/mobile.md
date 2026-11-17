@@ -29,7 +29,7 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
 
 ## Design System & Branding
 
-- **Source of truth:** `docs/design/DESIGN_GUIDE.md` and `docs/design/tokens/tokens.json`. Visual reference: `docs/design/mockups/index.html` (30 screens, light + dark). Full design contract: `docs/DESIGN.md`.
+- **Source of truth:** `docs/design/mobile/DESIGN_GUIDE.md` and `docs/design/mobile/tokens/tokens.json`. Visual reference: `docs/design/mobile/mockups/index.html` (30 screens, light + dark). Full design contract: `docs/DESIGN.md`.
 - **Functional preservation**: Preserve hourly pricing, manual bank-transfer review, disputes, booking transitions, permissions, role views, existing routes/callbacks, shared ViewModels/repositories, Decimal money, UTC timestamps and SignalR synchronization. Never fabricate identity, ratings, badges, metrics, distances, contact or financial data. Unapproved provider/data/functional decisions remain gated.
 - **Token Usage**:
   - Colour via `context.th.<name>` (the `THTheme` extension). Never `Theme.of(context).extension<THColors>()!` with a raw class name in view files.
@@ -43,7 +43,7 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
     - **Durations**: Use `THDurations.fast` (150 ms) / `.base` (220 ms) / `.slow` (320 ms). Never `Duration(milliseconds: N)` raw.
     - **Letter spacing**: Use `Tracking.*` tokens. Never `letterSpacing: N` raw.
     - **Component sizes**: Use `Sizes.button` (54), `Sizes.buttonSm` (44), `Sizes.input` (56), `Sizes.dock` (68), `Sizes.fab` (56), `Sizes.tapMin` (44). Never raw heights/widths for buttons, inputs, dock.
-    - If a needed token doesn't exist, **add it to `design_tokens.dart` and `docs/design/tokens/tokens.json`** rather than inlining the value.
+    - If a needed token doesn't exist, **add it to `design_tokens.dart` and `docs/design/mobile/tokens/tokens.json`** rather than inlining the value.
   - **Reusable widgets**: Use `TH*` family before creating anything new. Existing library: `THAppBar`, `THButton` (kinds: accent/primary/secondary/ghost/inverse/danger), `THCard`, `THHero`, `THDock`, `THStickyBar`, `THBadge`, `THProgress`, `THAvatar`, `THNotice`, `THText`, `THIcon`, `THField`, `THPills`, `THKeyValue`, `THTimeline`, `THDashBox`, `THRing`, `THSwitch`, `THBubble`, `THListRow`, `THDivider`, `THWordmark`. Do not re-inline patterns these already cover.
   - v1 → v2 widget mapping: `FixoPrimaryButton` → `THButton(kind: accent or primary)`, `FixoAppBar` → `THAppBar`, `FixoCard` → `THCard`, `FixoNotice` → `THNotice`, `StickyActionBar` → `THStickyBar`, `CustomBottomNavBar` + FAB → `THDock`.
 - **Theme Support**: Both light and dark themes are required. No outdoor variant (removed in v2). Use `THTheme.light` / `THTheme.dark`. Never an `if (isDark)` branch in a view — dark is a token swap.

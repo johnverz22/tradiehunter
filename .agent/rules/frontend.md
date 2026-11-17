@@ -20,7 +20,7 @@ The frontend is organized by functional feature modules with a strict separation
    - Manage loading, error, and pagination states within hooks/query wrappers.
 2. **Dumb, Reusable UI Components**:
    - UI elements must be presentation-only, receiving data via props and emitting user interactions via callbacks.
-   - Components must strictly replicate specifications from `docs/DESIGN.md` (web admin scope only; mobile v2 design system does not apply here).
+   - Components must follow `docs/design/web/COMPONENTS.md` (web design system v1).
 3. **Directory Structure**:
    - Organize by feature folder:
      ```text
@@ -37,10 +37,14 @@ The frontend is organized by functional feature modules with a strict separation
 
 ## Design System & Theming
 
-- **Tokens & Variables**: Design tokens for the React admin come from `web/src/theme/design-tokens.css`. Use it as the single CSS token file — import it in `index.css`. The v2 mobile design system (`docs/design/`) does not apply to the web admin. Existing mockups are historical only; do not match, update or replace them.
-- **Brand Color**: The primary theme is driven dynamically by the `--hue` CSS custom property (dev brand "Fixo", `--hue: 209`). Never hardcode hex color values.
-- **Theme Support**: Both light and dark themes are required. The token file provides `@media (prefers-color-scheme: dark)` overrides and a `[data-theme="dark"]` manual toggle. If only one theme is present, add the other.
-- **Consistency**: Use design system typography scales, border radii, elevation shadows, and spacing units across all admin components.
+- **Source of truth:** `docs/design/web/` (v1, Trust Navy + Gold). Tokens are `docs/design/web/tokens/tokens.json`, which **extends the mobile master** `docs/design/mobile/tokens/tokens.json`; components are `docs/design/web/css/kit.css`; specs are in `docs/design/web/COMPONENTS.md`; the visual reference is `docs/design/web/mockups/index.html` (frames) and `system.html` (every component state). Colour changes are made in the mobile master, never in a web copy.
+- **Tokens only:** colour via `var(--ink)`, `var(--surface)`, `var(--brand)` … or the Tailwind utilities from `theme.css` (`bg-surface`, `text-ink-soft`, `border-line`). Space `--sp-*`, radii `--r-*`, sizes `--sz-*`, type `.t-*` / `--ty-*`, shadows `--sh-*`. Never hardcode hex or `rgb()`. A missing token goes into `docs/design/web/tokens/tokens.json` (web-only) or the mobile master (shared), then rebuild.
+- **Reuse before create:** `Banner`, `ConfirmModal`, `DataTable`, `DescriptionList`, `FilterBar`, `Modal`, `PageHeader`, `Pagination`, `StatCard`, `StatusBadge`, `JobProgressStepper`. Status tone comes from the STATUS map in `docs/design/web/ast/dsl.mjs`.
+- **Brand budget:** one gold (`btn-accent`) commit action per view or dialog. Navy `btn-primary` for other filled actions, danger red only for destructive ones. Status is never colour-only.
+- **Theme support:** light and dark are required and are a token swap (`:root`, `[data-theme="dark"]`, and the OS preference when `data-theme` is unset). A theme `if` inside a component is a bug.
+- **Accessibility:** WCAG 2.2 AA. Visible focus (`--focus`), 44 px targets on coarse pointers, `line-strong` for control borders, `prefers-reduced-motion` respected, dialogs trap focus and return it.
+- **Migration status:** `web/src/theme/` still holds the legacy v1.7 tokens (`--hue`, Space Grotesk, IBM Plex). New and touched admin UI moves to the v1 web system using the mapping in `docs/design/web/DESIGN_GUIDE.md` §10. Do not mix both in one component.
+- **Design gate:** `node docs/design/web/tools/build.mjs --check` (contrast, kit lint, stale outputs) before committing design changes.
 
 ## Scope & Access Control
 
