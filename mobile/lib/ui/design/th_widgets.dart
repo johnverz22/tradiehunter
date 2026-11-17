@@ -718,8 +718,8 @@ class THTextField extends StatelessWidget {
               padding: EdgeInsetsDirectional.only(
                 start: Space.s3_5,
                 end: hasTrailing ? 0 : Space.s3_5,
-                top: Space.s2_5,
-                bottom: Space.s2_5,
+                top: Space.s2,
+                bottom: Space.s2,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

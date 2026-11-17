@@ -15,6 +15,7 @@ import 'package:fixo/ui/homeowner/ho_home_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_home_screen.dart';
 import 'package:fixo/ui/homeowner/ho_job_navigation.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
+import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
