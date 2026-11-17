@@ -1,15 +1,23 @@
 // ignore_for_file: avoid_print
 
+import 'dart:io' show Platform;
+
 /// Test configuration for integration tests.
 ///
-/// iOS simulator shares the host network — use localhost.
-/// Android emulator uses 10.0.2.2 as the host alias.
-/// Override by setting FIXO_API_URL before running tests.
-const String kApiBaseUrl = String.fromEnvironment(
+/// Set FIXO_API_URL (--dart-define) to override. Default is
+/// http://localhost:5000; on an Android emulator "localhost"/"127.0.0.1" are
+/// rewritten to 10.0.2.2 (the host alias), mirroring the app's own rule in
+/// viewmodels/auth_viewmodel.dart. iOS simulators share the host network.
+const String _kApiUrlDefine = String.fromEnvironment(
   'FIXO_API_URL',
-  defaultValue: 'http://localhost:5000', // iOS simulator default
+  defaultValue: 'http://localhost:5000',
 );
-// const String kApiBaseUrl = 'http://10.0.2.2:5000'; // Android emulator
+
+final String kApiBaseUrl = Platform.isAndroid
+    ? _kApiUrlDefine
+        .replaceFirst('localhost', '10.0.2.2')
+        .replaceFirst('127.0.0.1', '10.0.2.2')
+    : _kApiUrlDefine;
 
 // ── Test accounts ─────────────────────────────────────────────────────────────
 // Mirror the accounts seeded by scripts/e2e-credentials.py --keep

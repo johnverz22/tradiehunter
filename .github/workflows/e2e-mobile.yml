@@ -1,0 +1,64 @@
+# Nightly / manual device e2e (docs/e2e_realignment_plan.md, phase E6).
+# NOT part of the PR gate: needs the docker stack plus an Android emulator.
+# Untested on CI as of authoring — expect to tune timeouts on the first run.
+name: E2E Mobile (Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Config from scripts/run-e2e.sh (C0, C1, C2, C3:<ids>)"
+        default: "C1"
+      suites:
+        description: "Optional space-separated suite names (default: all for the config)"
+        default: ""
+  schedule:
+    - cron: "0 15 * * *" # 15:00 UTC daily (runs on the default branch only)
+
+jobs:
+  android-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start backend stack
+        run: |
+          docker compose up -d
+          for i in $(seq 1 60); do
+            curl -s -o /dev/null --max-time 3 http://localhost:5000 && exit 0
+            sleep 5
+          done
+          echo "API did not come up"; docker compose logs --tail=100; exit 1
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Flutter deps
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Run e2e on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          script: >
+            E2E_DEVICE=emulator-5554 E2E_SEED=1
+            E2E_LOG_DIR=${{ github.workspace }}/test-logs
+            bash scripts/run-e2e.sh "${{ inputs.config || 'C1' }}" ${{ inputs.suites }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: test-logs/

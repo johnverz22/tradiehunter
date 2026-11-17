@@ -216,6 +216,7 @@ class _HoCancelJobSheetState extends State<HoCancelJobSheet> {
               ),
               THTextField(controller: _notes, maxLines: 3),
               THButton(
+                key: const Key('cancel_confirm_button'),
                 label: 'Confirm cancellation',
                 kind: THButtonKind.danger,
                 onPressed: _reason == null

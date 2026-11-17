@@ -105,6 +105,16 @@ class Demo {
   static Future<void> beat(WidgetTester tester, [double multiplier = 1]) =>
       pumpFor(tester, Duration(milliseconds: (pace * 1000 * multiplier).round()));
 
+  /// Taps the [n]-th rating star (1-5). v2 stars are `IconButton`s with an
+  /// 'N stars' tooltip (rounded icons); v1 stars are plain `Icons.star`.
+  static Future<bool> tapStar(WidgetTester tester, int n) async {
+    final byTip = find.byTooltip('$n stars');
+    if (byTip.evaluate().isNotEmpty) return _tap(tester, byTip);
+    final stars = find.byIcon(Icons.star);
+    if (stars.evaluate().length < n) return false;
+    return _tap(tester, stars.at(n - 1));
+  }
+
   static Future<bool> tapKey(WidgetTester tester, String key) =>
       _tap(tester, find.byKey(Key(key)));
 

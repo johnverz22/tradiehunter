@@ -51,9 +51,9 @@ void _homeownerSuite() {
 
       await _openCancelSheet(tester);
 
-      // Cancel sheet should be visible with confirm and dismiss buttons
+      // Cancel sheet should be visible with a confirm button. The v1 sheet
+      // also has a "Keep Job" button; the v2 sheet is dismissed by its barrier.
       expect(find.byKey(const Key('cancel_confirm_button')), findsOneWidget);
-      expect(find.byKey(const Key('cancel_dismiss_button')), findsOneWidget);
 
       // P6-06: fee warning is shown to homeowner
       expect(find.textContaining('fee'), findsWidgets);
@@ -71,8 +71,7 @@ void _homeownerSuite() {
 
       await _openCancelSheet(tester);
 
-      // Dismiss with "Keep Job"
-      await tester.tap(find.byKey(const Key('cancel_dismiss_button')));
+      await _dismissCancelSheet(tester);
       await pumpFor(tester);
 
       // Still on the job detail screen for a Booked job
@@ -103,6 +102,17 @@ void _tradieSuite() {
       expect(find.byKey(const Key('cancel_confirm_button')), findsOneWidget);
     });
   });
+}
+
+/// Dismisses the cancel sheet: "Keep Job" on v1, tap outside the sheet on v2
+/// (which has no dismiss button).
+Future<void> _dismissCancelSheet(WidgetTester tester) async {
+  final keep = find.byKey(const Key('cancel_dismiss_button'));
+  if (keep.evaluate().isNotEmpty) {
+    await tester.tap(keep);
+  } else {
+    await tester.tapAt(const Offset(10, 10));
+  }
 }
 
 /// Opens the cancel sheet from a job detail screen. Both detail screens now

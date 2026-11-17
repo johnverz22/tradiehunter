@@ -47,6 +47,19 @@ flutter test integration_test/ --device-id "iPhone 17 Pro"        # single-devic
 
 **Two-device suites** (`matching_test`, `job_lifecycle_test`, `cancellation_test`): start the homeowner simulator, wait for "Xcode build done", then start the tradie simulator with a different device ID (two simultaneous iOS builds share `mobile/build` and the second fails). Each side self-seeds fixture jobs through the API (`helpers/fixture_helper.dart`).
 
+**Running the v1/v2 matrix (recommended):** `scripts/run-e2e.sh` runs suites sequentially and prints a pass/fail summary. See `docs/e2e_realignment_plan.md` §5 for what each config proves.
+
+```sh
+export E2E_DEVICE="<id from: scripts/run-e2e.sh --list-devices>"
+export E2E_TRADIE_DEVICE="<second simulator id>"   # optional
+scripts/run-e2e.sh C0 --seed        # shipped flags (Phase 3 v2 + v1 homeowner)
+scripts/run-e2e.sh C1               # UI_V2=all, homeowner persona (the §4.4 gate)
+scripts/run-e2e.sh C2               # UI_V2=all, tradie persona (tradie still v1)
+scripts/run-e2e.sh "C3:ho_post_job" job_request   # isolate one screen
+```
+
+The v2 Booked cancel sheet has no "Keep job" button; `cancellation_test` dismisses it by tapping outside the sheet.
+
 | File | Covers |
 |---|---|
 | `auth_test` | login, OTP, signup |

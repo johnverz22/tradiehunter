@@ -43,3 +43,4 @@ tools/design2flutter/output/
 
 # Golden failure diffs (test/ui run artifacts)
 mobile/test/ui/failures/
+test-logs/

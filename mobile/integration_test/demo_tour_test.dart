@@ -256,11 +256,7 @@ Future<void> _leaveReview(WidgetTester tester, String text) async {
     await Demo.note(_ho, 'review button not shown');
     return;
   }
-  final stars = find.byIcon(Icons.star);
-  if (stars.evaluate().length >= 5) {
-    await tester.tap(stars.at(4));
-    await Demo.beat(tester, 0.5);
-  }
+  await Demo.tapStar(tester, 5);
   final comment = find.byType(TextField);
   if (comment.evaluate().isNotEmpty) {
     await Demo.type(tester, comment, text);
@@ -404,11 +400,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
   // Scroll to show the completed job summary and ratings prompt.
   await Demo.scrollScreen(tester, pixels: 350);
   if (await Demo.tapKey(tester, 'rate_homeowner_button')) {
-    final stars = find.byIcon(Icons.star);
-    if (stars.evaluate().length >= 5) {
-      await tester.tap(stars.at(4));
-      await Demo.beat(tester, 0.5);
-    }
+    await Demo.tapStar(tester, 5);
     await Demo.tapText(tester, 'Submit Review');
     await Demo.beat(tester, 1.5);
   }

@@ -107,7 +107,13 @@ void main() {
           'ZZZNoSuchRoadFixture987654 Auckland',
         );
         expect(
-          tester.widget<TextField>(addressField).controller!.text,
+          // The key sits on the v2 THTextField wrapper, so read the controller
+          // from the EditableText inside it (works for v1 TextField too).
+          tester
+              .widget<EditableText>(find.descendant(
+                  of: addressField, matching: find.byType(EditableText)))
+              .controller
+              .text,
           'ZZZNoSuchRoadFixture987654 Auckland',
         );
         await pumpFor(tester, kNetworkSettle);
