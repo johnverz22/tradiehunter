@@ -60,7 +60,7 @@ Lexend for headings, money and controls. Source Sans 3 for reading text. Fallbac
 | `moneyLg` | Lexend | 34 / 600 | Final amount, earnings, countdown |
 | `label` | Lexend | 11 / 600, +1.2 tracking, caps | Eyebrows (`NEEDS YOUR ATTENTION`) |
 | `body` | Source Sans 3 | 15 / 400 | Paragraphs |
-| `input` | Source Sans 3 | 16 / 400 | Editable field values and hints |
+| `input` | Source Sans 3 | 15 / 400 | Editable field values and hints |
 | `meta` | Source Sans 3 | 13 / 400 | Secondary lines, captions |
 
 Add the fonts to `pubspec.yaml` (bundled assets, weights 400 to 800 for Lexend, 400 to 700 for Source Sans 3) or load them with `google_fonts` and keep the family names `Lexend` and `Source Sans 3`.

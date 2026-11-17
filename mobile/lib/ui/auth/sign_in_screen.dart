@@ -130,7 +130,6 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                       child: Text(
                         'Welcome back',
                         style: THType.h1.copyWith(
-                          fontWeight: FontWeight.w700,
                           color: context.th.text,
                         ),
                       ),
@@ -209,6 +208,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                         child: Text(
                           'Forgot password?',
                           style: THType.button.copyWith(
+                            fontSize: 13.0, // mockup s-title 13px
                             color: context.th.textBrand,
                             fontWeight: FontWeight.w600,
                           ),

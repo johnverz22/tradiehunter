@@ -118,7 +118,6 @@ class _ThRoleSelectScreenState extends ConsumerState<ThRoleSelectScreen> {
                             'How will you use\nTradieHunter?',
                             style: THType.h1.copyWith(
                               color: c.text,
-                              fontWeight: FontWeight.w700,
                               height: 1.2,
                             ),
                           ),

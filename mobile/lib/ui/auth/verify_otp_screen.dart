@@ -152,7 +152,6 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                           Text(
                             'Check your email',
                             style: THType.h1.copyWith(
-                              fontWeight: FontWeight.w700,
                               color: th.text,
                             ),
                           ),
