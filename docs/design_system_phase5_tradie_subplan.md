@@ -91,6 +91,8 @@ For each screen, in this order:
 | `check_in_button`, `check_out_button`, `check_out_submit_button`, `navigate_button`, `call_homeowner_button`, `message_homeowner_button`, `rate_homeowner_button`, `request_extra_cost_button`, `extra_cost_amount_field`, `extra_cost_description_field`, `extra_cost_submit_button`, `final_hours_field`, `adjustment_withdraw_<id>`, `status_strip_job_code` | job detail + sheets | `tradie_job_detail_test`, flow tests |
 | `upload_document_button`, `day:<weekday>` | onboarding | `tradie_onboarding_wizard_test` |
 
+> **Test-id contract (added upstream in `541629b`, after this plan was drafted):** `test/ui/test_id_contract_test.dart` requires that every id the e2e suite locates by `Key` also exists as a `Key('…')` under `lib/ui` and is exposed as `Semantics(identifier:)`. The shared `TH*` primitives mirror a `ValueKey<String>` into the identifier automatically (`lib/ui/design/th_test_id.dart`); for anything else use `THTestId` / `.testId()`. So for every Key in the table above: (1) put it as a **`ValueKey<String>`/`Key('…')` on a `TH*` widget** where possible, (2) wrap raw widgets with `.testId()`, (3) when a tradie id is used by `integration_test/**`, add it to `contractIds` in that test. Re-read that test file before starting 5.1 and follow its current rules.
+
 > `status_strip_job_code` is the v1 `StatusStrip` job-code chip. v2 has no status strip; render the job reference as a `THBadge` / `THKeyValue` row and put the same Key on it, or update the test with a one-line note in the PR (decide once, apply everywhere).
 
 ### 2.3 Engineering rules (from the skills, aligned with Phase 3/4 code)
