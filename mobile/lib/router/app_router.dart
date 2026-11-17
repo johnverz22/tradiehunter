@@ -43,6 +43,7 @@ import '../ui/auth/sign_up_screen.dart';
 import '../ui/auth/verify_otp_screen.dart';
 import '../ui/auth/role_select_screen.dart';
 import '../ui/homeowner/ho_home_screen.dart';
+import '../ui/homeowner/ho_jobs_screen.dart';
 import '../ui/shared/th_shell.dart';
 import '../ui/shared/chat_screen.dart';
 import '../ui/shared/messages_list_screen.dart';
@@ -335,7 +336,13 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/jobs',
-          builder: (context, state) => const JobsListScreen(),
+          // Shared with tradies: v2 `ho_jobs` is homeowner-only, tradies keep
+          // the v1 list until Phase 5 (ThJobsRoute does the role split).
+          builder: (context, state) => _pick(
+            'ho_jobs',
+            const JobsListScreen(),
+            const ThJobsRoute(tradieFallback: JobsListScreen()),
+          ),
         ),
         GoRoute(
           path: '/messages',
