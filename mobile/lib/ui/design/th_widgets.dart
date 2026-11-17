@@ -691,79 +691,122 @@ class THTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
+    final hasLabel = label != null && label!.isNotEmpty;
+    final inputStyle = THType.input.copyWith(
+      color: enabled ? c.text : c.textSoft,
+    );
+    // One text line. The icon sits in a box this tall so it centres on the
+    // value line (mockup `.fv`: icon + value on one row, gap 10), even when an
+    // error message grows the column below it.
+    final lineHeight = inputStyle.fontSize! * inputStyle.height!;
+    final hasTrailing = trailing != null;
+
+    // Mirrors the mockup `.fld`: a bordered surface, min-height 56, 10/14
+    // padding, small-caps label above, then ONE row (icon, value, trailing).
     return Container(
       constraints: const BoxConstraints(minHeight: Sizes.input),
-      padding: const EdgeInsets.symmetric(horizontal: Space.s3_5),
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: BorderRadius.circular(Radii.control),
         border: Border.all(color: c.line),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (label != null && label!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Space.s1),
-              child: Text(
-                label!.toUpperCase(),
-                style: THType.label.copyWith(
-                  fontSize: 10.5,
-                  letterSpacing: 0.6,
-                  color: c.textSoft,
-                ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: Space.s3_5,
+                end: hasTrailing ? 0 : Space.s3_5,
+                top: Space.s2_5,
+                bottom: Space.s2_5,
               ),
-            ),
-          TextFormField(
-            controller: controller,
-            focusNode: focusNode,
-            enabled: enabled,
-            autofocus: autofocus,
-            obscureText: obscure,
-            keyboardType: keyboardType,
-            textInputAction: textInputAction,
-            validator: validator,
-            onChanged: onChanged,
-            onFieldSubmitted: onFieldSubmitted,
-            autofillHints: autofillHints,
-            inputFormatters: inputFormatters,
-            maxLength: maxLength,
-            autocorrect: autocorrect,
-            enableSuggestions: enableSuggestions,
-            textCapitalization: textCapitalization,
-            minLines: minLines,
-            maxLines: obscure ? 1 : maxLines,
-            style: THType.input.copyWith(color: enabled ? c.text : c.textSoft),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: THType.input.copyWith(color: c.textSoft),
-              errorMaxLines: errorMaxLines,
-              errorStyle: THType.meta.copyWith(color: c.danger, height: 1.3),
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-              prefixIcon: icon == null
-                  ? null
-                  : Icon(icon, size: 18, color: c.textSoft),
-              prefixIconColor: c.textSoft,
-              prefixIconConstraints: const BoxConstraints(
-                minWidth: Sizes.buttonSm,
-                minHeight: Sizes.buttonSm,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (hasLabel)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        label!.toUpperCase(),
+                        style: THType.label.copyWith(
+                          fontSize: 10.5,
+                          letterSpacing: 0.6,
+                          color: c.textSoft,
+                        ),
+                      ),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (icon != null) ...[
+                        SizedBox(
+                          height: lineHeight,
+                          child: Center(
+                            child: Icon(icon, size: 18, color: c.textSoft),
+                          ),
+                        ),
+                        const SizedBox(width: Space.s2_5),
+                      ],
+                      Expanded(
+                        child: TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          enabled: enabled,
+                          autofocus: autofocus,
+                          obscureText: obscure,
+                          keyboardType: keyboardType,
+                          textInputAction: textInputAction,
+                          validator: validator,
+                          onChanged: onChanged,
+                          onFieldSubmitted: onFieldSubmitted,
+                          autofillHints: autofillHints,
+                          inputFormatters: inputFormatters,
+                          maxLength: maxLength,
+                          autocorrect: autocorrect,
+                          enableSuggestions: enableSuggestions,
+                          textCapitalization: textCapitalization,
+                          minLines: minLines,
+                          maxLines: obscure ? 1 : maxLines,
+                          style: inputStyle,
+                          decoration: InputDecoration(
+                            hintText: hint,
+                            hintStyle: THType.input.copyWith(
+                              color: c.textSoft,
+                            ),
+                            errorMaxLines: errorMaxLines,
+                            errorStyle: THType.meta.copyWith(
+                              color: c.danger,
+                              height: 1.3,
+                            ),
+                            isDense: true,
+                            isCollapsed: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              suffixIcon: trailing,
-              suffixIconConstraints: const BoxConstraints(
-                minWidth: Sizes.buttonSm,
-                minHeight: Sizes.buttonSm,
-              ),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              focusedErrorBorder: InputBorder.none,
             ),
           ),
+          // The trailing control (password eye) keeps its 44px tap target but
+          // is bottom-aligned so it lines up with the value row, not the label.
+          if (hasTrailing)
+            SizedBox(
+              width: Sizes.buttonSm,
+              height: Sizes.buttonSm,
+              child: Center(child: trailing),
+            ),
+          if (hasTrailing) const SizedBox(width: Space.s1),
         ],
       ),
     );

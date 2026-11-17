@@ -333,6 +333,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 *Widget audit against `docs/design/mockups/index.html` (2026-11-17): Phase 2's display `THField` and button dimensions/type sizes match the mockup (`56px` input, `54px`/`15px` regular button, `44px`/`14px` small button). The editable `THTextField` added in Phase 3 was the mismatch: it rendered its label outside the border and Flutter's default icon slot made the control too tall. It now keeps uppercase small-caps labels and editable input inside one bordered surface, constrains icon slots, uses 16px input text, and follows the mockup's field radius.*
 
+*THTextField follow-up (2026-11-17): the first fix still left the icon on a separate line from the hint, because the icon was an `InputDecoration.prefixIcon` forced to 44px tall, which stretched the input row and the field past 56px. `THTextField` now builds the mockup `.fld` structure directly: bordered 56px surface, 10/14 padding, small-caps label, then one row (18px icon, 10px gap, value/hint); the password toggle keeps its 44px tap target, bottom-aligned with the value row. Geometry is pinned by `test/ui/th_text_field_layout_test.dart`.*
+
 ---
 
 ### Phase 4 — Homeowner Flows
