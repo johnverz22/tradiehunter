@@ -42,8 +42,11 @@ import '../ui/auth/sign_in_screen.dart';
 import '../ui/auth/sign_up_screen.dart';
 import '../ui/auth/verify_otp_screen.dart';
 import '../ui/auth/role_select_screen.dart';
+import '../ui/homeowner/ho_choose_tradie_screen.dart';
 import '../ui/homeowner/ho_home_screen.dart';
 import '../ui/homeowner/ho_jobs_screen.dart';
+import '../ui/homeowner/ho_post_job_screen.dart';
+import '../ui/homeowner/ho_tradie_profile_screen.dart';
 import '../ui/shared/th_shell.dart';
 import '../ui/shared/chat_screen.dart';
 import '../ui/shared/messages_list_screen.dart';
@@ -187,7 +190,8 @@ final GoRouter appRouter = GoRouter(
     // 06-post-job
     GoRoute(
       path: '/jobs/new',
-      builder: (context, state) => const PostJobScreen(),
+      builder: (context, state) =>
+          _pick('ho_post_job', const PostJobScreen(), const ThPostJobScreen()),
     ),
     // 07-matching — dual-mode waiting screen (v1.7 P12-08/P12-09):
     //   /jobs/:id/matching = quick-match radar (POST /match + SignalR)
@@ -210,8 +214,11 @@ final GoRouter appRouter = GoRouter(
     // (extra: gstLabel is not needed; the list rows carry their own).
     GoRoute(
       path: '/jobs/:jobId/tradies',
-      builder: (context, state) =>
-          TradieListScreen(jobId: state.pathParameters['jobId']!),
+      builder: (context, state) => _pick(
+        'ho_choose_tradie',
+        TradieListScreen(jobId: state.pathParameters['jobId']!),
+        ThChooseTradieScreen(jobId: state.pathParameters['jobId']!),
+      ),
     ),
     // v1.7 P12-24: homeowner quote comparison for Project jobs.
     GoRoute(
@@ -300,11 +307,24 @@ final GoRouter appRouter = GoRouter(
     // (POST /api/jobs/:id/request). Without it the screen is unchanged.
     GoRoute(
       path: '/tradie/:id',
-      builder: (context, state) => PublicProfileScreen(
-        profileId: state.pathParameters['id']!,
-        isTradie: true,
-        jobId: state.uri.queryParameters['jobId'],
-      ),
+      builder: (context, state) {
+        final profileId = state.pathParameters['id']!;
+        final jobId = state.uri.queryParameters['jobId'];
+        final v1 = PublicProfileScreen(
+          profileId: profileId,
+          isTradie: true,
+          jobId: jobId,
+        );
+        return _pick(
+          'ho_tradie_profile',
+          v1,
+          ThTradieProfileRoute(
+            profileId: profileId,
+            jobId: jobId,
+            fallback: v1,
+          ),
+        );
+      },
     ),
     // 15-homeowner-profile (public)
     GoRoute(
