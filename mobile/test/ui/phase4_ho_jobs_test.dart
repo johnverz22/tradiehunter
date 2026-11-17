@@ -364,7 +364,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // The pending skeleton pulses forever, so pumpAndSettle never settles.
+      await tester.pump();
+      await tester.pump();
       expect(find.byKey(const Key('homeowner_jobs_pending')), findsOneWidget);
       expect(repo.loads, 0);
     });
