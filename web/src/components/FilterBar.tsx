@@ -1,8 +1,7 @@
 /**
  * FilterBar — responsive filter container.
  *
- * Desktop:  flex row (unchanged from current inline layout)
- * Tablet:   wrapping 2-column grid; search spans full width
+ * Tablet/desktop: kit `.filterbar` (wrapping row, `role="search"`)
  * Phone:    search always visible + "Filters" button that opens a
  *           bottom sheet (via Modal) with all other filters stacked;
  *           Apply closes the sheet, Clear resets the badge count.
@@ -17,9 +16,11 @@
  * The first child is treated as the "search" on phone (always shown).
  * All other children go into the bottom sheet.
  */
-import React, { useId, useState } from 'react';
+import React, { useState } from 'react';
 import { Filter } from 'lucide-react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { Badge } from './Badge';
+import { Button } from './Button';
 import { Modal } from './Modal';
 
 interface FilterBarProps {
@@ -37,12 +38,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   const { isPhone } = useBreakpoint();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const btnId = useId();
 
   if (!isPhone) {
-    // Tablet: wrapping 2-column grid; Desktop: flex row
+    // Kit `.filterbar`: wrapping row, search grows (max 360), selects and chips follow.
     return (
-      <div className="flex flex-wrap items-center gap-3 sm:grid sm:grid-cols-2 lg:flex">
+      <div className="filterbar" role="search">
         {children}
       </div>
     );
@@ -56,31 +56,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   return (
     <>
-      <div className="flex gap-2 items-center w-full">
+      <div className="flex gap-2 items-center w-full" role="search">
         {/* Search input — always visible, takes remaining width */}
         <div className="flex-1 min-w-0">{searchChild}</div>
 
         {/* Filters button */}
         {hasOthers && (
-          <button
-            id={btnId}
+          <Button
+            kind="secondary"
+            icon={<Filter size={18} />}
             onClick={() => setSheetOpen(true)}
             aria-expanded={sheetOpen}
             aria-haspopup="dialog"
-            className="btn btn-ghost shrink-0 relative min-h-[44px] !px-3"
+            className="shrink-0"
           >
-            <Filter size={16} aria-hidden="true" />
-            <span className="sr-only">Filters</span>
-            <span aria-hidden="true" className="text-sm">Filters</span>
+            Filters
             {activeFiltersCount > 0 && (
-              <span
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--brand-700)] text-white text-[10px] font-bold flex items-center justify-center"
-                aria-label={`${activeFiltersCount} active filters`}
-              >
+              <Badge tone="info">
                 {activeFiltersCount}
-              </span>
+                <span className="sr-only"> active filters</span>
+              </Badge>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -90,29 +87,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         onClose={() => setSheetOpen(false)}
         title="Filters"
         footer={
-          <div className="flex gap-2">
+          <>
             {onClear && (
-              <button
-                className="btn btn-ghost flex-1"
-                onClick={() => { onClear(); setSheetOpen(false); }}
+              <Button
+                kind="secondary"
+                onClick={() => {
+                  onClear();
+                  setSheetOpen(false);
+                }}
               >
                 Clear all
-              </button>
+              </Button>
             )}
-            <button
-              className="btn btn-primary flex-1"
-              onClick={() => setSheetOpen(false)}
-            >
+            <Button kind="accent" onClick={() => setSheetOpen(false)}>
               Apply
-            </button>
-          </div>
+            </Button>
+          </>
         }
       >
-        <div className="space-y-4">
-          {otherChildren.map((child, i) => (
-            <div key={i} className="w-full">{child}</div>
-          ))}
-        </div>
+        {otherChildren.map((child, i) => (
+          <div key={i} className="w-full">
+            {child}
+          </div>
+        ))}
       </Modal>
     </>
   );

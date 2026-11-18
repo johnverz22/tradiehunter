@@ -64,8 +64,13 @@ Existing components (keep names and props)
   - **Open decision D9 (needs owner):** DESIGN_GUIDE §6 / COMPONENTS.md say tables on phones *scroll inside their wrapper* (min 640 px); the app renders a **card list** under 640 px (with a "More" menu and 44 px actions). Removing it changes behaviour, so I kept it. Options: (a) keep the card list and add it to the design system as a phone pattern (recommended: better for the thumb-driven queues), (b) drop it and let the table scroll as designed (then delete `CardList`, `mobileCard` and the "More" menu in a follow-up). Does not block other tasks.
   - Known visual deltas for the manual pass: header cells are now the kit's uppercase label style on `--surface-alt`; row height `--sz-table-row`; the sort icon only shows on the active column (unchanged); pagination (still legacy-styled until 2.10) now sits inside the bordered wrapper; row-action danger buttons are outline, not filled.
   - [~] Deferred (manual): visual check of a queue and a list page against the `jobs` / `credentials` / `payments` frames in light + dark at 1280/820/390 (table scroll inside wrapper at 820; phone card list at 390); keyboard check of sort buttons (Enter/Space, `aria-sort` announcement) and the "More" menu.
-- [ ] **2.9** `FilterBar` (`role="search"`, chips `aria-pressed`) (S)
-- [ ] **2.10** `Pagination` (`aria-current`, labelled prev/next) (S)
+- [x] **2.9** `FilterBar` (`role="search"`, chips `aria-pressed`) (S)
+  - Done: `components/FilterBar.tsx`: tablet/desktop render the kit `.filterbar` with `role="search"` (replaces the flex/2-column-grid Tailwind classes); phone keeps search + "Filters" button + bottom sheet (`role="search"` on the row; button is a kit `Button` secondary with the count as a `Badge` plus sr-only "active filters", no longer an absolutely positioned colour-only circle on `--brand-700`). Sheet footer is now bare `Button`s (Clear all secondary, Apply gold) so the kit's stacked phone footer applies (closes the `Modal` follow-up for `FilterBar`). Props unchanged (`children`, `activeFiltersCount`, `onClear`). Chips are page-supplied children: the `aria-pressed` chip markup (`.chip`) is applied when each page is migrated, `FilterBar` has no chip logic.
+  - [~] Deferred (manual): visual check against the `jobs` frame filter bar (search grows to 360, selects follow, wraps at 820) and the phone sheet at 390, light + dark.
+- [x] **2.10** `Pagination` (`aria-current`, labelled prev/next) (S)
+  - Done: `components/Pagination.tsx` renders `nav.pagination[aria-label="Pagination"]` with `.page-buttons`/`.page-btn`; prev/next are chevron icon buttons with `aria-label` (were `<`/`>` text), `type="button"` on all, `aria-current="page"` and prev-disabled-on-first unchanged, numbered buttons keep `aria-label="Page N"`. Props, summary text, page-window logic and the `totalCount === 0` early return unchanged.
+  - [~] Deferred (manual): visual check of the pagination bar inside the table wrapper (`jobs` frame) in light + dark, incl. focus ring on page buttons and the 44 px coarse-pointer size.
+  - Both: legacy baseline 263 → 262 uses (36 → 35 files); no e2e selector changed.
 - [ ] **2.11** `PageHeader` + breadcrumb (S)
 - [ ] **2.12** `StatCard` / `StatGrid` (attention variant, link label) (S)
 - [ ] **2.13** `DescriptionList` / `InfoRow` (`dl`, `total` row, stacks < 640) (S)
@@ -127,6 +132,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, tasks 2.9–2.10: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (263 → 262 uses, 35 files), design gate (126/126) pass.
 - 2026-11-18, task 2.8: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (276 → 263 uses, 36 files), design gate (126/126) pass.
 - 2026-11-18, task 2.7: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (283 → 276 uses, 37 files), design gate (126/126) pass.
 - 2026-11-18, task 2.6: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (289 → 283 uses, 39 files), design gate (126/126) pass.
