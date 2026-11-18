@@ -42,6 +42,7 @@ const Set<String> nonGalleryV2Screens = <String>{
   'settings',
   // Phase 4 non-gallery screens (wired via MatchingScreen / view builders)
   'ho_radar', // quick-match radar — add to v2Screens after pair images
+  'ho_job_detail', // job detail router (booked, inProgress, completion, fallback)
 };
 
 /// Pure resolver, parameterised so it can be unit-tested without

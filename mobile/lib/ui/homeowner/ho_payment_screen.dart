@@ -10,6 +10,8 @@ import '../../models/payment.dart';
 import '../../utils/money.dart';
 import '../../viewmodels/locale_viewmodel.dart';
 import '../../viewmodels/payment_viewmodel.dart';
+import '../../viewmodels/theme_mode_viewmodel.dart';
+import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 
@@ -60,64 +62,67 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
     final payment = state.payment;
     final bank = payment?.bankDetails;
     final bankReady = bank?.isAvailable ?? false;
-    return THScaffold(
-      key: const Key('payment_screen'),
-      appBar: THAppBar(title: 'Payment', subtitle: payment?.jobTitle),
-      stickyBar: payment?.canUploadReceipt == true
-          ? THStickyBar(
-              children: [
-                if (!bankReady) ...[
-                  const THText(
-                    'Upload is available once valid bank details are shown.',
-                    key: Key('upload_disabled_hint'),
-                    style: THTextStyle.meta,
-                    align: TextAlign.center,
+    return ThScope(
+      themeMode: ref.watch(themeModeProvider),
+      child: THScaffold(
+        key: const Key('payment_screen'),
+        appBar: THAppBar(title: 'Payment', subtitle: payment?.jobTitle),
+        stickyBar: payment?.canUploadReceipt == true
+            ? THStickyBar(
+                children: [
+                  if (!bankReady) ...[
+                    const THText(
+                      'Upload is available once valid bank details are shown.',
+                      key: Key('upload_disabled_hint'),
+                      style: THTextStyle.meta,
+                      align: TextAlign.center,
+                    ),
+                    const SizedBox(height: Space.s2),
+                    THButton(
+                      label: state.isLoading
+                          ? 'Refreshing…'
+                          : 'Refresh payment details',
+                      loading: state.isLoading,
+                      onPressed: () => ref
+                          .read(paymentViewModelProvider(widget.jobId).notifier)
+                          .load(),
+                    ),
+                  ] else
+                    THButton(
+                      key: const Key('upload_receipt_button'),
+                      label: state.isUploading
+                          ? 'Uploading…'
+                          : 'Upload bank receipt',
+                      kind: THButtonKind.accent,
+                      loading: state.isUploading,
+                      onPressed: _upload,
+                    ),
+                ],
+              )
+            : null,
+        scrollable: true,
+        body: state.isLoading && payment == null
+            ? const Center(child: CircularProgressIndicator())
+            : payment == null
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  THText(
+                    state.error ?? 'Payment details are unavailable.',
+                    tone: THTone.danger,
                   ),
-                  const SizedBox(height: Space.s2),
+                  const SizedBox(height: Space.s3),
                   THButton(
-                    label: state.isLoading
-                        ? 'Refreshing…'
-                        : 'Refresh payment details',
-                    loading: state.isLoading,
+                    label: 'Try again',
+                    kind: THButtonKind.secondary,
                     onPressed: () => ref
                         .read(paymentViewModelProvider(widget.jobId).notifier)
                         .load(),
                   ),
-                ] else
-                  THButton(
-                    key: const Key('upload_receipt_button'),
-                    label: state.isUploading
-                        ? 'Uploading…'
-                        : 'Upload bank receipt',
-                    kind: THButtonKind.accent,
-                    loading: state.isUploading,
-                    onPressed: _upload,
-                  ),
-              ],
-            )
-          : null,
-      scrollable: true,
-      body: state.isLoading && payment == null
-          ? const Center(child: CircularProgressIndicator())
-          : payment == null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                THText(
-                  state.error ?? 'Payment details are unavailable.',
-                  tone: THTone.danger,
-                ),
-                const SizedBox(height: Space.s3),
-                THButton(
-                  label: 'Try again',
-                  kind: THButtonKind.secondary,
-                  onPressed: () => ref
-                      .read(paymentViewModelProvider(widget.jobId).notifier)
-                      .load(),
-                ),
-              ],
-            )
-          : _details(context, state, payment, bankReady),
+                ],
+              )
+            : _details(context, state, payment, bankReady),
+      ),
     );
   }
 
@@ -345,88 +350,95 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
         : stage == PaymentStage.rejected || stage == PaymentStage.expired
         ? THBadgeKind.danger
         : THBadgeKind.accent;
-    return THScaffold(
-      key: const Key('payment_status_screen'),
-      appBar: const THAppBar(title: 'Payment status'),
-      stickyBar: payment == null
-          ? null
-          : THStickyBar(
-              children: [
-                if (stage == PaymentStage.rejected)
+    return ThScope(
+      themeMode: ref.watch(themeModeProvider),
+      child: THScaffold(
+        key: const Key('payment_status_screen'),
+        appBar: const THAppBar(title: 'Payment status'),
+        stickyBar: payment == null
+            ? null
+            : THStickyBar(
+                children: [
+                  if (stage == PaymentStage.rejected)
+                    THButton(
+                      label: 'Upload again',
+                      kind: THButtonKind.accent,
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.push('/jobs/${widget.jobId}/payment');
+                        }
+                      },
+                    ),
+                  if (stage == PaymentStage.expired && isV2)
+                    THButton(
+                      label: 'Contact support',
+                      onPressed: () => context.push('/settings'),
+                    ),
                   THButton(
-                    label: 'Upload again',
-                    kind: THButtonKind.accent,
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.push('/jobs/${widget.jobId}/payment');
-                      }
-                    },
-                  ),
-                if (stage == PaymentStage.expired && isV2)
-                  THButton(
-                    label: 'Contact support',
-                    onPressed: () => context.push('/settings'),
-                  ),
-                THButton(
-                  label: 'Back to job',
-                  kind: THButtonKind.secondary,
-                  onPressed: () => context.go('/jobs/${widget.jobId}/detail'),
-                ),
-              ],
-            ),
-      scrollable: true,
-      body: payment == null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                THText(
-                  state.error ?? 'Loading payment status…',
-                  tone: state.error == null ? THTone.soft : THTone.danger,
-                ),
-                if (state.error != null)
-                  THButton(
-                    label: 'Try again',
+                    label: 'Back to job',
                     kind: THButtonKind.secondary,
-                    onPressed: () => ref
-                        .read(paymentViewModelProvider(widget.jobId).notifier)
-                        .load(),
+                    onPressed: () => context.go('/jobs/${widget.jobId}/detail'),
                   ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: Space.s3,
-              children: [
-                const SizedBox(height: Space.s3),
-                THBadge(title, kind: kind),
-                THText(description, style: THTextStyle.body, tone: THTone.soft),
-                THCard(
-                  children: [
-                    THKeyValue(
-                      'Amount',
-                      formatMoney(payment.amount),
-                      bold: true,
+                ],
+              ),
+        scrollable: true,
+        body: payment == null
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  THText(
+                    state.error ?? 'Loading payment status…',
+                    tone: state.error == null ? THTone.soft : THTone.danger,
+                  ),
+                  if (state.error != null)
+                    THButton(
+                      label: 'Try again',
+                      kind: THButtonKind.secondary,
+                      onPressed: () => ref
+                          .read(paymentViewModelProvider(widget.jobId).notifier)
+                          .load(),
                     ),
-                    THKeyValue(
-                      'Reference',
-                      payment.reference,
-                      bold: true,
-                      divider: true,
-                    ),
-                    THKeyValue(
-                      'Status',
-                      payment.stage.label,
-                      badge: stage == PaymentStage.verified
-                          ? THBadgeKind.ok
-                          : kind,
-                      divider: true,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: Space.s3,
+                children: [
+                  const SizedBox(height: Space.s3),
+                  THBadge(title, kind: kind),
+                  THText(
+                    description,
+                    style: THTextStyle.body,
+                    tone: THTone.soft,
+                  ),
+                  THCard(
+                    children: [
+                      THKeyValue(
+                        'Amount',
+                        formatMoney(payment.amount),
+                        bold: true,
+                      ),
+                      THKeyValue(
+                        'Reference',
+                        payment.reference,
+                        bold: true,
+                        divider: true,
+                      ),
+                      THKeyValue(
+                        'Status',
+                        payment.stage.label,
+                        badge: stage == PaymentStage.verified
+                            ? THBadgeKind.ok
+                            : kind,
+                        divider: true,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

@@ -136,7 +136,57 @@ void main() {
     );
     expect(find.text('This job was cancelled'), findsOneWidget);
     expect(find.byKey(const Key('back_to_jobs_button')), findsOneWidget);
+
+    await tester.pumpWidget(
+      _app(
+        HoJobDetailFallbackScreen(
+          job: _disputedJob,
+          reason: HoJobDetailFallback.dispute,
+        ),
+      ),
+    );
+    expect(find.text('This job has an active dispute'), findsOneWidget);
+    expect(find.byKey(const Key('view_dispute_button')), findsOneWidget);
+    expect(find.text('Back to jobs'), findsOneWidget);
   });
+
+  testWidgets(
+    'awaiting payment, review, and expired fallback states render actions',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          HoJobDetailFallbackScreen(
+            job: _awaitingPaymentJob,
+            reason: HoJobDetailFallback.unsupportedStatus,
+          ),
+        ),
+      );
+      expect(find.text('Payment is due'), findsOneWidget);
+      expect(find.text('Continue to payment'), findsOneWidget);
+
+      await tester.pumpWidget(
+        _app(
+          HoJobDetailFallbackScreen(
+            job: _paymentReviewJob,
+            reason: HoJobDetailFallback.unsupportedStatus,
+          ),
+        ),
+      );
+      expect(find.text('Payment is under review'), findsOneWidget);
+      expect(find.text('View payment status'), findsOneWidget);
+
+      await tester.pumpWidget(
+        _app(
+          HoJobDetailFallbackScreen(
+            job: _expiredJob,
+            reason: HoJobDetailFallback.unsupportedStatus,
+          ),
+        ),
+      );
+      expect(find.text('This request has expired'), findsOneWidget);
+      expect(find.text('Back to jobs'), findsOneWidget);
+    },
+  );
 }
 
 Widget _app(Widget child) => ProviderScope(
@@ -176,6 +226,43 @@ final _cancelledJob = Job(
   suburb: 'Tauranga',
   status: 'Cancelled',
   stage: 5,
+);
+
+final _disputedJob = Job(
+  id: 'job-1',
+  title: 'Repair kitchen tap',
+  category: 'Plumbing',
+  suburb: 'Tauranga',
+  status: 'Disputed',
+  disputeStatus: 'Open',
+  stage: 3,
+);
+
+final _awaitingPaymentJob = Job(
+  id: 'job-1',
+  title: 'Repair kitchen tap',
+  category: 'Plumbing',
+  suburb: 'Tauranga',
+  status: 'AwaitingPayment',
+  stage: 4,
+);
+
+final _paymentReviewJob = Job(
+  id: 'job-1',
+  title: 'Repair kitchen tap',
+  category: 'Plumbing',
+  suburb: 'Tauranga',
+  status: 'PaymentReview',
+  stage: 4,
+);
+
+final _expiredJob = Job(
+  id: 'job-1',
+  title: 'Repair kitchen tap',
+  category: 'Plumbing',
+  suburb: 'Tauranga',
+  status: 'Expired',
+  stage: 0,
 );
 
 final _pendingAdjustment = JobAdjustment(
