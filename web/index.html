@@ -15,7 +15,8 @@
          Sets data-theme from localStorage, falling back to OS preference. -->
     <script>
       (function () {
-        var stored = localStorage.getItem('fixo-theme');
+        var stored =
+          localStorage.getItem('tradiehunter-theme') || localStorage.getItem('fixo-theme');
         var theme =
           stored === 'light' || stored === 'dark'
             ? stored

@@ -21,7 +21,7 @@ export interface PageHeaderProps {
   actions?: React.ReactNode;
   /** Parent page for the breadcrumb above the title (the current crumb is `title`). */
   backLink?: { to: string; label: string };
-  /** Small badge next to the title (e.g. "Admin" pill). */
+  /** Small badge next to the title (e.g. "Admin"). */
   badge?: React.ReactNode;
 }
 

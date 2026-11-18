@@ -275,17 +275,24 @@ Detail
 
 ## Phase 6 — Cutover and cleanup
 
-- [ ] **6.1** Grep proves zero legacy names outside `legacy-compat.css`; delete `legacy-compat.css`; remove guard allow-list (M)
-- [ ] **6.2** Remove dead CSS, unused assets (`react.svg`, `vite.svg`) and unused components (S); includes `components/InfoRow.tsx` (2.13); `Charts.tsx` and `MetricsCard.tsx` were deleted in 3.3
-- [ ] **6.3** Rename `TradieFixo` → `TradieHunter` in `index.html` and `useBrandConfig`; handle `fixo-theme` key per D4 (S)
-- [ ] **6.4** Update docs via `docs-sync`: `docs/design/web/DESIGN_GUIDE.md` §10/§12 + `README.md`, `docs/DESIGN.md`, `docs/MILESTONES.md`, `docs/ai/AI-TOOLING.md`, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, `docs/README.md` (M)
-- [ ] **6.5** Remove this todo and the plan file (fold lasting content into the docs above) (S)
-- [ ] **6.6** Merge `design-web-migration` → `dev`; tag `web-design-v1` (S)
+- [x] **6.1** Grep proves zero legacy names outside `legacy-compat.css`; delete `legacy-compat.css`; remove guard allow-list (M)
+  - Done: grepped `web/src` and `index.html` for every variable, Tailwind colour and class the shim defined (not only the guard's patterns): no uses (the word "surface" appears only in comments). Deleted `src/theme/legacy-compat.css`, its import in `index.css` and `scripts/legacy-baseline.json`; removed the last guard hit (a comment in `PageHeader.tsx`). `scripts/check-legacy-names.mjs` is now strict (any use fails, no baseline, no exempt file), the `design:legacy:update` script is gone and the CI step is renamed "No legacy design names". Build, lint and the design gate unchanged.
+  - [~] Deferred (manual): a visual pass for anything the shim styled implicitly (it had no users, so none is expected).
+- [x] **6.2** Remove dead CSS, unused assets (`react.svg`, `vite.svg`) and unused components (S); includes `components/InfoRow.tsx` (2.13); `Charts.tsx` and `MetricsCard.tsx` were deleted in 3.3
+  - Done: removed `components/InfoRow.tsx` (the app uses the `DescriptionList` one), `src/assets/{react.svg,vite.svg,hero.png}` and `public/icons.svg` (Vite template leftovers with no reference; `hero.png` and `icons.svg` go beyond the two named in the task), the unused `slide-up` / `slide-in-left` animation rules in `index.css` (the kit has its own) and five unused shell variables (`--topbar-height`, `--sidebar-width`, `--rail-width`, `--drawer-width`, `--safe-left/right`). No `--hue` remnants were left. `--safe-top` / `--safe-bottom` stay (used).
+- [x] **6.3** Rename `TradieFixo` → `TradieHunter` in `index.html` and `useBrandConfig`; handle `fixo-theme` key per D4 (S)
+  - Done: `useBrandConfig` fallback `appName` is `TradieHunter` and `supportEmail` is `support@tradiehunter.nz` (the address in the repo's backend config); the `splitBrandName` comment example updated; `index.html` already said TradieHunter. D4: the theme key is now `tradiehunter-theme` in `AdminLayout` and the blocking script in `index.html`; both read the old `fixo-theme` once if the new key is empty, and `AdminLayout` then removes the old key. `e2e/admin-shots.mjs` writes the new key. Left alone on purpose: the `staff@fixo.test` test account in the e2e fixtures (a seed value, not UI) and the `fixoadmin` package name.
+  - [~] Deferred (manual): load the admin with an old `fixo-theme` value set and check the theme carries over; check the tab title and the sign-in wordmark show TradieHunter.
+- [x] **6.4** Update docs via `docs-sync`: `docs/design/web/DESIGN_GUIDE.md` §10/§12 + `README.md`, `docs/DESIGN.md`, `docs/MILESTONES.md`, `docs/ai/AI-TOOLING.md`, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, `docs/README.md` (M)
+  - Done: `docs/design/web/DESIGN_GUIDE.md` §10 (now describes the synced copies, the three checks and the rules; the old-to-new table is kept as "Retired names") and §12 (app-level additions, frame/app differences, DataTable phone list) and `README.md`; `docs/DESIGN.md` status; `docs/MILESTONES.md` row 13 (applied, verified by scripts only, what is manual); `docs/ai/AI-TOOLING.md` commands; `AGENTS.md`, `CLAUDE.md` and `.agent/rules/frontend.md` (the shared web rules that `GEMINI.md` points to, so `GEMINI.md` needed no change). `docs/README.md` needed no change (it does not link the plan). `build.mjs --check` still passes.
+- [~] **6.5** Remove this todo and the plan file (fold lasting content into the docs above) (S) — **held on purpose:** the todo is the list of manual checks still to do; delete both files after the local test pass. Lasting content is already in the docs from 6.4
+- [~] **6.6** Merge `design-web-migration` → `dev`; tag `web-design-v1` (S) — **held:** after the local test pass, and `dev` has moved on (mobile commits), so merge `dev` in first and re-run the gates
 
 ---
 
 ## Verification log
 
+- 2026-11-18, tasks 6.1–6.4: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (0 uses, strict guard), design gate (126/126) pass. 6.5 and 6.6 held until the manual pass.
 - 2026-11-18, tasks 5.2–5.3: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (1 use, 1 file, unchanged), design gate (126/126) pass. 5.1 and 5.4 deferred (browser and live API).
 - 2026-11-18, task 3.3: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (23 → 1 use, 1 file: `PageHeader.tsx`), design gate (126/126) pass. **Deferred (manual):** dashboard visual and keyboard checks, see task 3.3.
 - 2026-11-18, tasks 4.7–4.11: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (94 → 23 uses, 4 files left: dashboard and PageHeader), design gate (126/126) pass. **Deferred (manual):** detail-page and dialog visual, keyboard and e2e checks, see the tasks.

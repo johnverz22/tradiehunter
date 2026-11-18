@@ -2,7 +2,6 @@
 @import './theme/tokens.css';
 @import './theme/theme.css';
 @import './theme/components.css';
-@import './theme/legacy-compat.css'; /* temporary: removed in Phase 6 of the web design migration */
 
 /* ── Base reset ─────────────────────────────────────── */
 *, *::before, *::after {
@@ -176,39 +175,8 @@ hr {
 
 /* ── Shell tokens ───────────────────────────────────── */
 :root {
-  --topbar-height: var(--sz-topbar);
-  --sidebar-width: var(--sz-sidebar);
-  --rail-width: var(--sz-rail);
-  --drawer-width: min(85vw, var(--sz-drawer));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-}
-
-/* ── Bottom sheet animation ─────────────────────────── */
-@keyframes slide-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
-
-@keyframes slide-in-left {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
-
-.motion-safe\:animate-slide-up {
-  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .motion-safe\:animate-slide-up { animation: none; }
-}
-
-.motion-safe\:animate-slide-in-left {
-  animation: slide-in-left 0.26s cubic-bezier(0.32, 0.72, 0, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .motion-safe\:animate-slide-in-left { animation: none; }
 }
 
 /* Receipt preview in the payment review dialog (app-level; tokens only). */

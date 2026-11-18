@@ -73,7 +73,7 @@ jobs:
     - name: Web design files match docs/design/web
       run: npm run design:check
       working-directory: ./web
-    - name: Legacy design names do not grow
+    - name: No legacy design names
       run: npm run design:legacy
       working-directory: ./web
     - name: Lint

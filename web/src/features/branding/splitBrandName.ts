@@ -1,6 +1,6 @@
 /**
  * Splits a brand name so its final segment can carry the accent colour:
- * "TradieFixo" → ["Tradie", "Fixo"], "Acme Trade" → ["Acme", "Trade"].
+ * "TradieHunter" → ["Tradie", "Hunter"], "Acme Trade" → ["Acme", "Trade"].
  * Works for any partner name rather than assuming this one's shape.
  */
 export function splitBrandName(name: string): [string, string] {

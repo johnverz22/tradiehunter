@@ -33,6 +33,9 @@ Money `decimal`, time UTC, spatial LINQ only, every status change through `IJobS
 node docs/design/mobile/tools/build.mjs          # regenerate tokens, Flutter stubs, HTML mockups
 node docs/design/mobile/tools/build.mjs --check  # CI gate: contrast + stale-output + unknown nodes
 node docs/design/web/tools/build.mjs --check     # web admin gate: contrast (text + non-text), kit lint, stale-output
+(cd web && npm run design:sync)           # copy tokens, kit and fonts from docs/design/web into web/
+(cd web && npm run design:check)          # fails if web/src/theme or web/public/fonts drifted from docs/design/web
+(cd web && npm run design:legacy)         # fails on any retired v1.7 design name in web/src
 make -C agent flutter                      # dart format + flutter analyze + flutter test
 npm run verify                            # build check + flutter
 ```

@@ -78,15 +78,19 @@ See [COMPONENTS.md](COMPONENTS.md) for the specification of each component (purp
 
 ## 10. Integration into `web/`
 
-The design system is documented and generated here; `web/src` still runs the legacy v1.7 tokens until it is migrated. To adopt:
+`web/src` runs this system. `web/src/theme/tokens.css`, `theme.css` and `components.css` are **copies** of `tokens/tokens.css`, `tokens/theme.css` and `css/kit.css`, and `web/public/fonts/` is a copy of `fonts/`. Never edit the copies. To change the design, change it here, run `node tools/build.mjs`, then from `web/` run `npm run design:sync`.
 
-1. Copy `tokens/tokens.css` and `tokens/theme.css` to `web/src/theme/` and `css/kit.css` to `web/src/theme/components.css` (replaces `design-tokens.css` and the old `components.css`). Import order in `index.css`: `@import 'tailwindcss'; @import './theme/tokens.css'; @import './theme/theme.css'; @import './theme/components.css';`. Remove the old `@theme` block and `@custom-variant` (now in `theme.css`).
-2. Keep the existing blocking theme script in `index.html` (it writes `data-theme`). Update `theme-color` and the page title.
-3. Copy `fonts/` to `web/public/fonts/` and import `fonts.css` first (see TYPOGRAPHY.md). Remove the Google Fonts `<link>` tags from `index.html`.
-4. Migrate by file, building after each: see the mapping below.
-5. Verify with `npm run lint`, `npm run build` and `scripts/web/render-probe.py` for the touched page; compare against `mockups/index.html`.
+Checks (all run in CI):
 
-| Legacy (v1.7 web) | v1 web system |
+- `node docs/design/web/tools/build.mjs --check` for the design system itself.
+- `npm run design:check` in `web/` fails if the copies differ from this folder.
+- `npm run design:legacy` in `web/` fails on any use of the retired v1.7 names listed below.
+
+Rules for app code: tokens and kit classes only; app-level CSS in `web/src/index.css` is for what the kit lacks (see §12) and uses tokens only; shared components in `web/src/components` keep the names and props in COMPONENTS.md. Verify a page with `npm run lint`, `npm run build`, its Playwright spec and `scripts/web/render-probe.py`, and compare it with `mockups/index.html`.
+
+Retired v1.7 names and what replaced them (the guard rejects the left column):
+
+| Retired (v1.7 web) | v1 web system |
 |---|---|
 | `--paper`, `--ink`, `--ink-soft`, `--surface` | same names, new values |
 | `--paper-line` | `--line` (decorative) or `--line-strong` (control borders) |
@@ -126,4 +130,7 @@ The gate fails on: contrast regression, an unresolved `=path` or `@alias`, a raw
 - Icons in the mockups are simplified strokes; the app uses `lucide-react` (names listed in `tools/build.mjs` `ICONS`).
 - Refunds, payout batches, batch detail and credential review dialogs reuse the queue and dialog patterns and have no separate frame.
 - Not designed: charts, bulk selection bars, date-range pickers, tooltips and popovers beyond the menu, print styles, high-contrast beyond `forced-colors`, a tenant-branded login.
-- The mockup CSS and markup were checked in a headless browser at 1280, 820 and 390 px in light and dark; the React components in `web/src` have not been migrated or tested against this system.
+- The mockup CSS and markup were checked in a headless browser at 1280, 820 and 390 px in light and dark. The React admin was migrated onto this system with scripted gates only (lint, build, sync, legacy guard, this gate); the side-by-side frame comparison, keyboard and screen-reader walks and the Playwright run are manual.
+- App-level additions in `web/src/index.css` for what the kit lacks (candidates for the kit): sign-in layout fixes and brand-on-card, skip link, sidebar footer buttons, receipt image, photo grid and tiles, long-text block, scrolling region, phone action bar and its "More" disclosure, evidence item, code block, section heading, link-styled button.
+- Differences between frames and the app that are data or behaviour, kept as the app has them: dispute outcome buttons (the frame has a select), no money card on job detail, no credentials table on user detail, no payment-count cards on the dashboard.
+- The phone card list in `DataTable` (under 640 px) is an app pattern the kit does not define; the `<details>` "More" menus have no arrow-key roving.

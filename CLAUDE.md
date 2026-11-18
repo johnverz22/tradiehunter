@@ -26,7 +26,7 @@ TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tr
 - **Feedback:** use `THNotice` + `NoticeCopy`; no raw `SnackBar`.
 
 ## Web UI rules (React admin)
-- **Tokens only** from `docs/design/web/` (extends the mobile master): `var(--ink)` / Tailwind `bg-surface`, `--sp-*`, `--r-*`; no hex. Reuse the existing shared components. One gold `btn-accent` per view or dialog. Light and dark are a token swap. `web/src/theme/` is still legacy v1.7 until migrated: follow `.agent/rules/frontend.md`.
+- **Tokens only** from `docs/design/web/` (extends the mobile master): `var(--ink)` / Tailwind `bg-surface`, `--sp-*`, `--r-*`; no hex. Reuse the existing shared components. One gold `btn-accent` per view or dialog. Light and dark are a token swap. `web/src/theme/` is synced from `docs/design/web/` (never hand-edit; `npm run design:sync`, checked by `npm run design:check`), no retired v1.7 names (`npm run design:legacy`): follow `.agent/rules/frontend.md`.
 
 ## Workflows
 - New or fixed screen: start from `docs/design/mobile/flutter/screens/<id>_screen.dart` stub, bind data, run `flutter analyze`. Widget extraction: `widget-refactor`. Design gate: `node docs/design/mobile/tools/build.mjs --check`.
