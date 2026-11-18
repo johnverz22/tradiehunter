@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'helpers/auth_helper.dart';
+import 'helpers/exception_log.dart';
 import 'helpers/test_config.dart';
 
 const _persona = String.fromEnvironment(
@@ -44,6 +45,7 @@ Future<void> _shot(
   String name, {
   Duration settle = const Duration(seconds: 5),
 }) async {
+  ExceptionLog.mark(name);
   await pumpFor(tester, settle);
   print('__SHOT__ $name');
   await Future<void>.delayed(const Duration(seconds: 4));
@@ -57,6 +59,7 @@ Future<void> _push(
   String name, {
   Duration settle = const Duration(seconds: 5),
 }) async {
+  ExceptionLog.mark(name);
   appRouter.push(location);
   await _shot(tester, name, settle: settle);
 }
@@ -65,6 +68,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('capture $_persona variants', (tester) async {
+    ExceptionLog.install();
     app.main();
     await pumpFor(tester, const Duration(seconds: 2));
 
@@ -243,6 +247,7 @@ void main() {
       }
     }
 
+    ExceptionLog.finish();
     print('__SHOTS_DONE__');
   }, timeout: const Timeout(Duration(minutes: 12)));
 }

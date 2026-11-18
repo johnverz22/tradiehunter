@@ -21,6 +21,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/auth_helper.dart';
+import 'helpers/exception_log.dart';
 import 'helpers/test_config.dart';
 
 const _persona = String.fromEnvironment(
@@ -76,6 +77,7 @@ Future<void> _shot(
   String name, {
   Duration settle = const Duration(seconds: 5),
 }) async {
+  ExceptionLog.mark(name);
   await pumpFor(tester, settle);
   print('__SHOT__ $name');
   await Future<void>.delayed(_shotHold);
@@ -101,6 +103,7 @@ Future<void> _go(
   Object? extra,
   Duration settle = const Duration(seconds: 5),
 }) async {
+  ExceptionLog.mark(name);
   appRouter.go(location, extra: extra);
   await pumpFor(tester, settle);
   _expectForcedTheme(tester);
@@ -113,6 +116,7 @@ void main() {
 
   testWidgets('capture all $_persona screens', (tester) async {
     // ThemeMode index: 0 system, 1 light, 2 dark (read by ThemeModeNotifier).
+    ExceptionLog.install();
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('theme_mode', _theme == 'dark' ? 2 : 1);
@@ -267,6 +271,7 @@ void main() {
       await _shot(tester, 'tradie/05_active_job_booked');
     }
 
+    ExceptionLog.finish();
     print('__SHOTS_DONE__');
   }, timeout: const Timeout(Duration(minutes: 12)));
 }

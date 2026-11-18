@@ -14,6 +14,9 @@
 # (`UI_V2=ho_home,ho_jobs ./scripts/run-shots.sh ...`), `UI_V2=` (empty,
 # i.e. the shipped default flags) or an extra `UI_V2=...` argument.
 # `SHOT_TEXT_SCALE` (default 1.0) is passed through and recorded.
+# Framework exceptions raised during the run are attributed to the screen being
+# captured (`__EXCEPTION__` lines from helpers/exception_log.dart) and collected
+# in `<theme>/<persona>/exceptions.txt` for the P-03 triage.
 # Every run writes a `run.json` next to the PNGs (flag, commit, device,
 # theme, text scale) into `<theme>/<persona>/` and `<theme>/shared/`.
 set -u
@@ -58,11 +61,15 @@ cd "$(dirname "$0")/../mobile"
 SHOT_FILE=${SHOT_FILE:-integration_test/screenshots_test.dart}
 echo "=== persona=$PERSONA theme=$THEME udid=$UDID out=$OUT file=$SHOT_FILE ==="
 echo "=== UI_V2=${UI_V2_VALUE:-<default flags>} text_scale=$TEXT_SCALE commit=$COMMIT device=$DEVICE_NAME ==="
+: > "$OUT/$PERSONA/exceptions.txt"
 "${FLUTTER_BIN:-flutter}" test \
   "$SHOT_FILE" \
   --device-id "$UDID" --reporter expanded "${DEFINES[@]}" 2>&1 | \
 while IFS= read -r line; do
   echo "$line"
+  if [[ "$line" == __EXCEPTION__* ]]; then
+    echo "${line#__EXCEPTION__ }" >> "$OUT/$PERSONA/exceptions.txt"
+  fi
   if [[ "$line" =~ __SHOT__[[:space:]]+([^[:space:]]+) ]]; then
     name="${BASH_REMATCH[1]}"
     mkdir -p "$OUT/$(dirname "$name")"
@@ -70,3 +77,4 @@ while IFS= read -r line; do
       && echo "  [captured] $name.png" || echo "  [CAPTURE FAILED] $name"
   fi
 done
+echo "=== exceptions: $(grep -c . "$OUT/$PERSONA/exceptions.txt") distinct (see $OUT/$PERSONA/exceptions.txt) ==="
