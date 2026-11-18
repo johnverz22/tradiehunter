@@ -111,29 +111,6 @@
 }
 .stat-pill strong { font: var(--ty-mono); font-weight: 600; color: var(--ink); }
 
-/* Legacy stepper markup (.stepper > .step …). Scoped so the kit's own .stepper is untouched. */
-.stepper:has(> .step) {
-  display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-6);
-  background: var(--surface); border-radius: var(--r-card); box-shadow: var(--sh-card);
-}
-.step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
-.step-line { position: absolute; top: 8px; left: 50%; width: 100%; height: 3px; background: var(--track); z-index: 0; }
-.step:last-child .step-line { display: none; }
-.step-line.step-line--filled { background: var(--brand); }
-.step-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--track); border: 3px solid var(--track); z-index: 1; }
-.step-dot.step-dot--done { background: var(--brand); border-color: var(--brand); }
-.step-dot.step-dot--active { background: var(--success); border-color: var(--success); }
-.step-dot.step-dot--cancelled { background: var(--danger); border-color: var(--danger); }
-.step-dot.step-dot--expired { background: var(--accent); border-color: var(--accent); }
-.step-dot.step-dot--disputed { background: var(--danger); border-color: var(--accent); }
-.step-label { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-align: center; }
-.step-label.step-label--past { color: var(--ink-soft); }
-.step-label.step-label--active, .step-label.step-label--done { color: var(--success-ink); }
-.step-label.step-label--cancelled, .step-label.step-label--disputed { color: var(--danger); }
-.step-label.step-label--expired { color: var(--accent-ink); }
-.step-sublabel { margin-top: 2px; font-size: 11px; font-weight: 400; }
-.step-updated-caption { font-size: 12px; color: var(--ink-soft); text-align: right; }
-
 /* Legacy timeline markup (.timeline > .timeline-item …). */
 .timeline:has(> .timeline-item) { margin-top: var(--sp-2); }
 .timeline-item { display: flex; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
