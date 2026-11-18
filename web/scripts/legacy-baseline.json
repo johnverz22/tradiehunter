@@ -6,7 +6,6 @@
   "src/features/dashboard/components/MetricsCard.tsx": 4,
   "src/features/dashboard/pages/DashboardPage.tsx": 16,
   "src/features/disputes/pages/DisputeDetailPage.tsx": 15,
-  "src/features/disputes/pages/DisputesPage.tsx": 9,
   "src/features/jobs/pages/JobDetailPage.tsx": 22,
   "src/features/payments/components/PaymentReviewModal.tsx": 7,
   "src/features/payments/pages/OverduePayments.tsx": 15,
@@ -17,6 +16,5 @@
   "src/features/payouts/pages/PayoutQueue.tsx": 14,
   "src/features/refunds/components/ProcessRefundModal.tsx": 7,
   "src/features/refunds/pages/RefundQueue.tsx": 8,
-  "src/features/settings/pages/SettingsPage.tsx": 7,
   "src/features/users/pages/UserDetailPage.tsx": 22
 }

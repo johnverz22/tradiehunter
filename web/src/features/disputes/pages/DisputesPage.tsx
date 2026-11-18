@@ -11,6 +11,8 @@ const PAGE_SIZE = 20;
 
 const DISPUTE_STATUSES = ['All', 'Open', 'Resolved', 'Escalated'];
 
+const tabId = (status: string) => `dispute-tab-${status.toLowerCase()}`;
+
 const formatJobId = (id: number) => `JOB-${String(id).padStart(5, '0')}`;
 
 export const DisputesPage: React.FC = () => {
@@ -23,6 +25,11 @@ export const DisputesPage: React.FC = () => {
     page,
     pageSize: PAGE_SIZE,
   });
+
+  const selectStatus = (s: string) => {
+    setDisputeStatus(s);
+    setPage(1);
+  };
 
   const columns: ColumnDef<AdminDisputeListItem>[] = [
     {
@@ -43,11 +50,9 @@ export const DisputesPage: React.FC = () => {
       priority: 'primary',
       cell: (d) => (
         <div>
-          <span className="block max-w-xs truncate font-medium text-[var(--ink)]">
-            {d.jobTitle}
-          </span>
+          <span className="block max-w-xs truncate">{d.jobTitle}</span>
           {d.flagReason && (
-            <span className="block max-w-xs truncate text-xs cell-muted">
+            <span className="block max-w-xs truncate t-meta muted">
               {d.flagReason}
             </span>
           )}
@@ -58,17 +63,17 @@ export const DisputesPage: React.FC = () => {
       key: 'homeowner',
       header: 'Homeowner',
       priority: 'detail',
-      cell: (d) => <span className="cell-muted">{d.homeownerName}</span>,
+      cell: (d) => <span className="muted">{d.homeownerName}</span>,
     },
     {
       key: 'tradie',
       header: 'Tradie',
       priority: 'detail',
-      cell: (d) => <span className="cell-muted">{d.tradieName ?? '—'}</span>,
+      cell: (d) => <span className="muted">{d.tradieName ?? '—'}</span>,
     },
     {
       key: 'jobStatus',
-      header: 'Job Status',
+      header: 'Job status',
       priority: 'detail',
       cell: (d) => <StatusBadge status={d.status} />,
     },
@@ -83,7 +88,7 @@ export const DisputesPage: React.FC = () => {
       header: 'Flagged',
       priority: 'secondary',
       cell: (d) => (
-        <span className="cell-muted">
+        <span className="muted">
           {new Date(d.flaggedAtUtc).toLocaleDateString()}
         </span>
       ),
@@ -99,40 +104,36 @@ export const DisputesPage: React.FC = () => {
     },
   ];
 
-  return (
-    <div className="space-y-5">
-      {/* Header */}
-      <PageHeader
-        title="Disputes"
-        meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <strong>{data.totalCount.toLocaleString()}</strong> {disputeStatus.toLowerCase()}
-              </div>
-              <div className="stat-pill">
-                <strong>{data.items.length}</strong> on this page
-              </div>
-            </>
-          )
-        }
-      />
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = DISPUTE_STATUSES.length - 1;
+    let next = -1;
+    if (e.key === 'ArrowRight') next = index === last ? 0 : index + 1;
+    else if (e.key === 'ArrowLeft') next = index === 0 ? last : index - 1;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = last;
+    if (next < 0) return;
+    e.preventDefault();
+    selectStatus(DISPUTE_STATUSES[next]);
+    document.getElementById(tabId(DISPUTE_STATUSES[next]))?.focus();
+  };
 
-      {/* Status filter tabs - scrollable segmented control on mobile */}
-      <div className="flex gap-1 border-b border-[var(--paper-line)] overflow-x-auto whitespace-nowrap">
-        {DISPUTE_STATUSES.map((s) => (
+  return (
+    <>
+      <PageHeader title="Disputes" description="Flagged jobs under review" />
+
+      {/* Status tabs (kit `.tabs`, scroll sideways on phones) */}
+      <div className="tabs" role="tablist" aria-label="Dispute status">
+        {DISPUTE_STATUSES.map((s, i) => (
           <button
             key={s}
-            onClick={() => {
-              setDisputeStatus(s);
-              setPage(1);
-            }}
-            className={[
-              'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors min-h-[44px] shrink-0',
-              disputeStatus === s
-                ? 'border-[var(--brand-500)] text-[var(--brand-700)]'
-                : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]',
-            ].join(' ')}
+            type="button"
+            role="tab"
+            id={tabId(s)}
+            aria-selected={disputeStatus === s}
+            aria-controls="disputes-panel"
+            tabIndex={disputeStatus === s ? 0 : -1}
+            onClick={() => selectStatus(s)}
+            onKeyDown={(e) => onTabKeyDown(e, i)}
           >
             {s}
           </button>
@@ -140,27 +141,29 @@ export const DisputesPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <DataTable
-        columns={columns}
-        rows={data?.items}
-        getRowKey={(d) => d.jobId}
-        onRowClick={(d) => navigate(`/disputes/${d.jobId}`)}
-        isLoading={isLoading}
-        rowActions={rowActions}
-        empty={`No disputes ${disputeStatus !== 'All' ? `with status "${disputeStatus}"` : ''}.`}
-        pagination={
-          data ? (
-            <Pagination
-              page={data.page}
-              totalPages={data.totalPages}
-              pageSize={data.pageSize}
-              totalCount={data.totalCount}
-              itemLabel="disputes"
-              onPageChange={setPage}
-            />
-          ) : undefined
-        }
-      />
-    </div>
+      <div role="tabpanel" id="disputes-panel" aria-labelledby={tabId(disputeStatus)}>
+        <DataTable
+          columns={columns}
+          rows={data?.items}
+          getRowKey={(d) => d.jobId}
+          onRowClick={(d) => navigate(`/disputes/${d.jobId}`)}
+          isLoading={isLoading}
+          rowActions={rowActions}
+          empty={`No disputes ${disputeStatus !== 'All' ? `with status "${disputeStatus}"` : ''}.`}
+          pagination={
+            data ? (
+              <Pagination
+                page={data.page}
+                totalPages={data.totalPages}
+                pageSize={data.pageSize}
+                totalCount={data.totalCount}
+                itemLabel="disputes"
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
+        />
+      </div>
+    </>
   );
 };
