@@ -154,37 +154,46 @@ public class OffersController : ControllerBase
         if (offer.Response != OfferResponse.Pending)
             return Conflict(new { error = $"Offer is already in state '{offer.Response}'." });
 
-        // Cancel the Hangfire timeout job since the tradie responded in time (P3-07 AC).
-        if (!string.IsNullOrEmpty(offer.HangfireJobId))
+        // Accept is owned end-to-end by OfferService.AcceptOfferAsync: it cancels
+        // the timeout, records the response, books the job and emits the lifecycle
+        // event. It also rejects any offer that is no longer Pending, so the
+        // response must NOT be recorded here first or every accept fails with
+        // 409 "Offer is already in state 'Accepted'" (same scoped DbContext).
+        // Declines are handled inline below.
+        if (parsedResponse != OfferResponse.Accepted)
         {
-            try { _hangfire.Delete(offer.HangfireJobId); }
-            catch (Exception ex)
+            // Cancel the Hangfire timeout job since the tradie responded in time (P3-07 AC).
+            if (!string.IsNullOrEmpty(offer.HangfireJobId))
             {
-                _logger.LogWarning(ex, "Could not cancel Hangfire job {HangfireJobId} for offer {OfferId}.",
-                    offer.HangfireJobId, offerId);
+                try { _hangfire.Delete(offer.HangfireJobId); }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not cancel Hangfire job {HangfireJobId} for offer {OfferId}.",
+                        offer.HangfireJobId, offerId);
+                }
             }
+
+            offer.Response = parsedResponse;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Offer {OfferId} for job {JobId}: tradie {TradieId} responded {Response}.",
+                offerId, jobId, userId, parsedResponse);
+
+            // Emit SignalR lifecycle event for homeowner + this tradie (P3-10).
+            const string eventType = "OfferDeclined";
+            var lifeCyclePayload = new OfferLifecyclePayload
+            {
+                EventType    = eventType,
+                JobId        = jobId,
+                OfferId      = offerId,
+                TradieId     = userId,
+                ExpiresAtUtc = offer.ExpiresAtUtc,
+                JobTitle     = offer.Job.Title,
+            };
+            await _jobHub.Clients.Group(JobHub.GroupName(jobId))
+                .SendAsync("OfferLifecycleEvent", lifeCyclePayload);
         }
-
-        offer.Response = parsedResponse;
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation(
-            "Offer {OfferId} for job {JobId}: tradie {TradieId} responded {Response}.",
-            offerId, jobId, userId, parsedResponse);
-
-        // Emit SignalR lifecycle event for homeowner + this tradie (P3-10).
-        var eventType = parsedResponse == OfferResponse.Accepted ? "OfferAccepted" : "OfferDeclined";
-        var lifeCyclePayload = new OfferLifecyclePayload
-        {
-            EventType    = eventType,
-            JobId        = jobId,
-            OfferId      = offerId,
-            TradieId     = userId,
-            ExpiresAtUtc = offer.ExpiresAtUtc,
-            JobTitle     = offer.Job.Title,
-        };
-        await _jobHub.Clients.Group(JobHub.GroupName(jobId))
-            .SendAsync("OfferLifecycleEvent", lifeCyclePayload);
 
         try
         {
