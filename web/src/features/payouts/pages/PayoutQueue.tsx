@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { CircleAlert, Layers, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
@@ -94,13 +95,11 @@ export const PayoutQueue: React.FC = () => {
       priority: 'primary',
       cell: (payout) => (
         <div>
-          <Link to={`/users/${payout.tradieId}`} className="cell-link font-medium">
+          <Link to={`/users/${payout.tradieId}`} className="cell-link">
             {payout.tradieName}
           </Link>
           {!payout.hasBankDetails && (
-            <span className="block text-xs text-[var(--red)] font-normal mt-0.5">
-              No bank details on file
-            </span>
+            <span className="block t-meta c-danger">No bank details on file</span>
           )}
         </div>
       ),
@@ -115,7 +114,7 @@ export const PayoutQueue: React.FC = () => {
             {payout.jobTitle}
           </Link>
           {payout.jobReferenceCode && (
-            <span className="block text-xs cell-muted font-mono">
+            <span className="block t-meta muted mono">
               {payout.jobReferenceCode}
             </span>
           )}
@@ -126,16 +125,16 @@ export const PayoutQueue: React.FC = () => {
       key: 'gross',
       header: 'Gross',
       priority: 'detail',
-      cell: (payout) => <span className="font-mono">{money(payout.grossAmount)}</span>,
+      cell: (payout) => <span className="money">{money(payout.grossAmount)}</span>,
     },
     {
       key: 'fee',
       header: 'Fee',
       priority: 'detail',
       cell: (payout) => (
-        <span className="font-mono cell-muted">
+        <span className="money muted">
           −{money(payout.commissionAmount)}
-          <span className="block text-xs">{payout.commissionPercent}%</span>
+          <span className="block t-meta">{payout.commissionPercent}%</span>
         </span>
       ),
     },
@@ -144,7 +143,7 @@ export const PayoutQueue: React.FC = () => {
       header: 'Net',
       priority: 'secondary',
       cell: (payout) => (
-        <span className="font-mono font-semibold">{money(payout.netAmount)}</span>
+        <span className="money">{money(payout.netAmount)}</span>
       ),
     },
     {
@@ -152,14 +151,14 @@ export const PayoutQueue: React.FC = () => {
       header: 'Bank',
       priority: 'detail',
       cell: (payout) => (
-        <div className="font-mono">
+        <div className="mono">
           {payout.hasBankDetails ? (
             <>····{payout.bankAccountLast4 ?? '????'}</>
           ) : (
-            <span className="pill pill-red">No details</span>
+            <Badge tone="danger" dot>No details</Badge>
           )}
           {payout.bankAccountName && (
-            <span className="block text-xs cell-muted">{payout.bankAccountName}</span>
+            <span className="block t-meta muted">{payout.bankAccountName}</span>
           )}
         </div>
       ),
@@ -174,7 +173,7 @@ export const PayoutQueue: React.FC = () => {
       key: 'createdAt',
       header: 'Age',
       priority: 'detail',
-      cell: (payout) => <span className="cell-muted">{createdAgo(payout.createdAtUtc)}</span>,
+      cell: (payout) => <span className="muted">{createdAgo(payout.createdAtUtc)}</span>,
     },
   ];
 
@@ -189,29 +188,21 @@ export const PayoutQueue: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       <PageHeader
-        title="Payout Queue"
+        title="Payout queue"
         description="Tradie payouts created when a job completed. Move the money in your banking platform, then record the transfer reference here so the tradie is notified and the row clears."
+        actions={
+          <Link to="/payouts/batches" className="btn btn-secondary">
+            Payout batches
+          </Link>
+        }
         meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <Wallet size={13} aria-hidden="true" />
-                <strong>{data.totalCount.toLocaleString()}</strong> awaiting payout
-              </div>
-              <div className="stat-pill">
-                <strong>
-                  {money(allItems.reduce((sum, p) => sum + p.netAmount, 0))}
-                </strong>{' '}
-                owed on this page
-              </div>
-              <Link to="/payouts/batches" className="stat-pill action-link">
-                <Layers size={13} aria-hidden="true" />
-                Payout batches
-              </Link>
-            </>
-          )
+          data && allItems.length > 0 ? (
+            <Badge>
+              {money(allItems.reduce((sum, p) => sum + p.netAmount, 0))} owed on this page
+            </Badge>
+          ) : undefined
         }
       />
 
@@ -233,21 +224,16 @@ export const PayoutQueue: React.FC = () => {
       )}
 
       {missingDetails > 0 && (
-        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 text-sm text-[var(--amber-dark)]">
-          <CircleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <span className="flex-1 min-w-0">
-            {missingDetails} payout{missingDetails === 1 ? '' : 's'} on this page have no bank
-            account on file. They're skipped by the weekly batch until the tradie supplies details.
-          </span>
-          <button
-            type="button"
-            className="action-link shrink-0 cursor-pointer"
-            aria-pressed={onlyMissing}
-            onClick={() => setOnlyMissing((v) => !v)}
-          >
-            {onlyMissing ? 'Show all' : 'Show missing only'}
-          </button>
-        </div>
+        <Banner
+          variant="warn"
+          action={{
+            label: onlyMissing ? 'Show all' : 'Show missing only',
+            onClick: () => setOnlyMissing((v) => !v),
+          }}
+        >
+          {missingDetails} payout{missingDetails === 1 ? '' : 's'} on this page have no bank
+          account on file. They're skipped by the weekly batch until the tradie supplies details.
+        </Banner>
       )}
 
       <DataTable
@@ -264,7 +250,8 @@ export const PayoutQueue: React.FC = () => {
                 <>
                   No payouts left on this page.{' '}
                   <button
-                    className="action-link"
+                    type="button"
+                    className="cell-link"
                     onClick={() => setPage(Math.max(1, data.totalPages))}
                   >
                     Go to page {Math.max(1, data.totalPages)}
@@ -287,8 +274,8 @@ export const PayoutQueue: React.FC = () => {
         }
       />
 
-      <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
-        <Wallet size={12} aria-hidden="true" />
+      <p className="t-meta c-soft row">
+        <Wallet size={16} aria-hidden="true" />
         Only the last four digits of each account are shown. A payout created without bank details
         stays in the queue and is excluded from the weekly batch until the tradie supplies them.
       </p>
@@ -303,6 +290,6 @@ export const PayoutQueue: React.FC = () => {
           onCancel={closeProcess}
         />
       )}
-    </div>
+    </>
   );
 };
