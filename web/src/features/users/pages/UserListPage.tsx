@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, CheckCircle, XCircle } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
 import { FilterBar } from '../../../components/FilterBar';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
@@ -66,7 +66,7 @@ export const UserListPage: React.FC = () => {
       priority: 'primary',
       sortable: true,
       cell: (user) => (
-        <Link to={`/users/${user.id}`} className="cell-link flex items-center gap-2">
+        <Link to={`/users/${user.id}`} className="cell-link">
           {user.fullName || '—'}
         </Link>
       ),
@@ -76,7 +76,7 @@ export const UserListPage: React.FC = () => {
       header: 'Email',
       priority: 'detail',
       sortable: true,
-      cell: (user) => <span className="mono cell-muted">{user.email}</span>,
+      cell: (user) => <span className="mono muted">{user.email}</span>,
     },
     {
       key: 'role',
@@ -91,7 +91,7 @@ export const UserListPage: React.FC = () => {
       priority: 'detail',
       sortable: true,
       cell: (user) => (
-        <span className="cell-muted">
+        <span className="muted">
           {new Date(user.createdAtUtc).toLocaleDateString()}
         </span>
       ),
@@ -108,16 +108,7 @@ export const UserListPage: React.FC = () => {
       key: 'verified',
       header: 'Verified',
       priority: 'secondary',
-      cell: (user) =>
-        user.isVerified ? (
-          <span className="pill pill-green">
-            <CheckCircle size={12} className="inline -mt-0.5" /> Verified
-          </span>
-        ) : (
-          <span className="pill pill-amber">
-            <XCircle size={12} className="inline -mt-0.5" /> Unverified
-          </span>
-        ),
+      cell: (user) => <StatusBadge status={user.isVerified ? 'Verified' : 'Unverified'} />,
     },
   ];
 
@@ -142,23 +133,8 @@ export const UserListPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <PageHeader
-        title="Users"
-        meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <strong>{data.totalCount.toLocaleString()}</strong> {role || 'All roles'}
-              </div>
-              <div className="stat-pill">
-                <strong>{data.items.length}</strong> on this page
-              </div>
-            </>
-          )
-        }
-      />
+    <>
+      <PageHeader title="Users" description="Homeowners, tradies and staff" />
 
       {/* Filters */}
       <FilterBar
@@ -169,11 +145,12 @@ export const UserListPage: React.FC = () => {
           setPage(1);
         }}
       >
-        <div className="relative flex-1 min-w-48">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]" />
+        <label className="input-icon">
+          <span className="sr-only">Search users by name or email</span>
+          <Search size={20} aria-hidden="true" />
           <input
             type="search"
-            className="field field-search"
+            className="field"
             placeholder="Search name or email…"
             value={search}
             onChange={(e) => {
@@ -181,10 +158,10 @@ export const UserListPage: React.FC = () => {
               setPage(1);
             }}
           />
-        </div>
+        </label>
         <span className="select-wrap">
           <select
-            className="select-field"
+            className="select"
             value={role}
             onChange={(e) => {
               setRole(e.target.value);
@@ -199,17 +176,17 @@ export const UserListPage: React.FC = () => {
             <option value="Tradie">Tradie</option>
           </select>
         </span>
-        <label className="flex items-center gap-2 text-sm text-[var(--ink)] cursor-pointer">
+        <label className="choice">
           <input
             type="checkbox"
+            className="check"
             checked={flaggedOnly}
             onChange={(e) => {
               setFlaggedOnly(e.target.checked);
               setPage(1);
             }}
-            className="rounded border-gray-300 text-[var(--brand-500)] focus:ring-[var(--brand-500)]"
           />
-          Flagged Accounts Only
+          Flagged accounts only
         </label>
       </FilterBar>
 
@@ -256,6 +233,6 @@ export const UserListPage: React.FC = () => {
         onConfirm={handleConfirm}
         onCancel={() => setConfirmAction(null)}
       />
-    </div>
+    </>
   );
 };
