@@ -5,6 +5,7 @@
 > **Source:** `th-design-v2/` (Trust Navy + Gold, v2.0.0)
 > **Replaces:** `docs/design/` (Space Grotesk + IBM Plex + Amber, v1.7)
 > **Revision 2026-11-16:** Phases 2–6 rewritten as a side-by-side rebuild of the presentation layer (see §4.0). Phase 1, §1–§3 and §5 are unchanged.
+> **Companion (2026-11-18):** `docs/todos/02_design_system_fix_plan.md` covers what this plan marked done too early or never listed: visual QA of Phase 3–4 screens, the tradie side, missing-design screens and the capture harness. Where the two disagree on status, the fix plan wins.
 
 ---
 
@@ -235,10 +236,15 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 | G-10 | `ho_post_*` | materials by, site visit, scope notes, address, photos, hours (both modes) | In v1 / required by validation; not drawn in the mockup. | **Kept all (owner, 2026-11-17)**; `needs-design`. |
 | G-11 | `ho_post_*` | "Review your job" card | In v1; absent from the mockup. | **Kept and redesigned (owner, 2026-11-17)** with `THCard`/`THKeyValue`; v1 strings unchanged; `needs-design`. |
 | G-12 | `ho_post_project` | ASAP timing | Mockup omits it for projects; v1 allows it. | **Kept** in both modes (backend contract accepts `Asap`); revisit only if the API rejects it. |
+| G-13 | `ho_home` | "Top rated near you" (two tradie cards) | Dropped under G-5 as "no supporting endpoint"; the browse-tradies search does return rating, rate and distance. | **Default (fix plan D-7, owner may override):** build it from the existing tradie search when the address is known, hide it otherwise. Supersedes the `ho_home` part of G-5. |
+| G-14 | `ho_review` | "What stood out" chips | The review API has no tags. | **Default (fix plan D-9):** drop the chips and amend the mockup (`ast/screens.mjs`); no API change. |
+| G-15 | `ho_dispute` | "What would be fair?" field and reason pills | The API takes a reason enum and details only. | **Default (fix plan D-10):** present the API's reason values as pills; omit the fair-amount field and amend the mockup. |
+| G-16 | `tr_home` | "Response rate" stat | No endpoint returns it. | **Default:** omit; derive only if a real source appears (fix plan T-01). |
+| G-17 | `tr_lead` | Commission / "you keep" figures | Source not verified. | **Verify before building:** show only figures from backend config; never hard-code a commission rate (fix plan T-02). |
 
 ### 4.2 Screens in the app with no v2 design (not in the 30)
 
-`signup`, `settings`, `messages_list`, `categories`, `browse_tradies` (`/find-tradie`), homeowner public profile (`/users/:id`), quick-match radar (`/jobs/:id/matching`), cancel-job / schedule / rating sheets, designed empty/error states, wide-screen nav rail, and any admin screens. Compose them from `TH*` widgets per `DESIGN_GUIDE.md`, label PRs `needs-design`, and feed them to the D-4 design pass. These are **not** blockers for Phases 2–5.
+`signup`, `settings`, `messages_list`, `categories`, `browse_tradies` (`/find-tradie`), homeowner public profile (`/users/:id`), quick-match radar (`/jobs/:id/matching`) and its failure state, cancel-job / schedule / rating sheets, designed empty/error states, wide-screen nav rail, the payment-status states (review / verified / rejected / expired / bank details unavailable), the tradie quote submission form, the tradie jobs list, tradie request expired / unavailable, and any admin screens (full list: fix plan §3.2). Compose them from `TH*` widgets per `DESIGN_GUIDE.md`, label PRs `needs-design`, and feed them to the D-4 design pass. These are **not** blockers for Phases 2–5.
 
 ---
 
@@ -379,7 +385,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [x] **4.3** Screens without a v2 design (listed above, plus cancel / schedule / rating sheets, `/users/:id`, wide-layout rail) are composed from `TH*` widgets following `DESIGN_GUIDE.md`, flagged `needs-design` in the PR, and added to the D-4 design-pass backlog.
 - [x] **4.4** Preserve post-job navigation (`/jobs/new` → `/jobs/:id/tradies` | `/matching` | `/request`) and all `extra` payload types in `app_router.dart` unchanged. Push-notification deep links must keep working.
 - [x] **4.5** Widget tests per screen; run the matching existing flow tests (`job_request_test`, `matching_test`, `payment_test`, `dispute_test`, `job_lifecycle_test`) with v2 enabled.
-- [ ] **4.6** Visual QA against `docs/design/mockups/index.html`. *(Skipped per instruction for this increment)*
+- [ ] **4.6** Visual QA against `docs/design/mockups/index.html`. *Reopened 2026-11-18 (was skipped). Run per `docs/todos/02_design_system_fix_plan.md` Fix-2 and §8: capture with `UI_V2=all`, pair image (mockup | app) per screen, light + dark, 100% and 200% text, no unexplained deviation.*
 
 *4.2 progress (2026-11-17, PR A): added `ThJobDetailRouter`, the auto-dispose job/profile/contact/adjustments loader, a total detail-state selector and the v2 status presentation copy; `/jobs/:jobId/detail` now selects the router through `_pick('ho_job_detail', …)`, preserving the route and `job_detail_<id>` key. Every selector result still injects the v1 detail screen, so the flag-on path is behavior-preserving while the state views are built in PRs B–E. Status/selector tests cover known and unknown statuses, pending adjustments, terminal-vs-dispute priority, and v1 table parity. The 4.4 route snapshot baseline is also in place and confirms `/jobs/:jobId/edit` remains unregistered (F-3). `flutter analyze --no-pub`, the focused state and route tests, and `scripts/check_ui_boundary.py` pass. Extra-payload tests and the post-job journey remain outstanding; PRs B–E remain outstanding; `ho_job_detail` remains absent from `v2Screens`.*
 
@@ -399,16 +405,16 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 *4.1 progress (2026-11-17, #10): **`ho_dispute` ported** as `HoDisputeScreen` (`lib/ui/homeowner/ho_dispute_screen.dart`, 227 lines) with the same four reason values, 4,000-char text cap, five-photo evidence upload, and the existing completion navigation. It reuses the existing `disputeProvider`/`DisputeNotifier` (multi-step submit order preserved: create dispute → evidence text → files; partial failure surfaces which step failed and never loses typed content), the existing `open_dispute` / `uploadDisputeEvidence` repository calls, and the existing `dispute_screen` / `dispute_reason_*` / `dispute_details_field` / `open_dispute_button` Keys. The v2 skin is composed from `TH*` (`THScaffold`, `THAppBar`, `THCard`, `THText`, `THIcon`, `THButton.kind: danger`, `THStickyBar`) with the info card, radio reason group, multi-line details field with live counter, evidence grid (`_EvidenceThumb` + `_AddEvidenceTile`), and the sticky submit bar. `THNotice`/`FixoNotice` success toast and `pop`/`go('/jobs/$jobId/detail')` fallback preserved. Wired in `app_router.dart` as `_pick('ho_dispute', DisputeScreen(…), HoDisputeScreen(…))` at the unchanged `/jobs/:jobId/dispute` route; **not added to `v2Screens`** pending owner visual QA. Verification on Flutter 3.47.5: `flutter analyze --no-pub --fatal-infos` clean, `scripts/check_ui_boundary.py` passes, `test/ui/phase4_ho_dispute_test.dart` 1/1 (reason selection, details counter, evidence entry), `flutter test --dart-define=UI_V2=ho_dispute integration_test/dispute_test.dart` 3/3 (render, validation-blocks-submit, filled-submit-navigates-away). Remaining Phase 4 items: none — #1–#10 all ported; activation checklist (§4.4) and `v2Screens` flip await owner visual QA.*
 
-*4.5 progress (2026-11-17 wrap-up): All 10 homeowner screens (#1 through #10) plus interim compositions (`ho_categories`, `ho_browse_tradies`, fallback states and action sheets) are fully implemented, tested, and routed behind `isV2Screen(...)`. Cleaned up import boundary in `lib/views/jobs/matching_screen.dart` by moving `ThScope` into `ThRequestSentScreen` (`scripts/check_ui_boundary.py` passes with 0 violations). Resolved prohibited `ScaffoldMessenger.of / SnackBar` in `ho_payment_screen.dart` with `FixoNotice` (`test/fixo_notice_test.dart` passes). `node docs/design/tools/build.mjs --check` passes (30 screens, 36 files, contrast 38/38 pass). `flutter analyze --no-pub --fatal-infos` reports 0 issues. Full mobile test suite passes with `--dart-define=UI_V2=all` (1,013/1,013 tests green). Visual QA and device QA skipped per user instruction.*
+*4.5 progress (2026-11-17 wrap-up): All 10 homeowner screens (#1 through #10) plus interim compositions (`ho_categories`, `ho_browse_tradies`, fallback states and action sheets) are fully implemented, tested, and routed behind `isV2Screen(...)`. Cleaned up import boundary in `lib/views/jobs/matching_screen.dart` by moving `ThScope` into `ThRequestSentScreen` (`scripts/check_ui_boundary.py` passes with 0 violations). Resolved prohibited `ScaffoldMessenger.of / SnackBar` in `ho_payment_screen.dart` with `FixoNotice` (`test/fixo_notice_test.dart` passes). `node docs/design/tools/build.mjs --check` passes (30 screens, 36 files, contrast 38/38 pass). `flutter analyze --no-pub --fatal-infos` reports 0 issues. Full mobile test suite passes with `--dart-define=UI_V2=all` (1,013/1,013 tests green). Visual QA and device QA skipped per user instruction. **Reopened 2026-11-18: implementation complete, visual QA outstanding; see `docs/todos/02_design_system_fix_plan.md` Fix-2.** The earlier screenshot runs rendered v1 for every Phase 4 screen (no `UI_V2` flag), so none of these screens has been looked at yet.*
 
 #### 4.4 activation checklist (keep `ho_job_detail` and other Phase 4 ids gated)
 
 - [x] Finish the remaining Phase 4 v2 screens and composed states, including 4.1 #6–#10 and the D-4 items that are in scope.
 - [x] Pass the route snapshot, optional-extra type tests, notification destination tests, and the post → choose/match → request router journey.
 - [x] Pass focused widget tests and the full Flutter suite with default flags and with the Phase 4 ids enabled.
-- [ ] Run the listed device integration flows against the dev backend. *(Skipped per instruction)*
-- [ ] Owner completes light/dark, 200% text, narrow/wide layout, and real navigation visual QA. *(Skipped per instruction)*
-- [ ] Only then add the reviewed screen ids to `v2Screens`. *(Waiting on owner visual QA)*
+- [ ] Run the listed device integration flows against the dev backend. *(Reopened 2026-11-18; fix plan Fix-0 / Fix-2 C1 run. Needs the fixture and capture harness from Fix-0.)*
+- [ ] Owner completes light/dark, 200% text, narrow/wide layout, and real navigation visual QA. *(Reopened 2026-11-18; the pair images from 4.6 are the evidence.)*
+- [ ] Only then add the reviewed screen ids to `v2Screens`, one id at a time, **with the pair images attached** (light + dark, 100% and 200% text) and the matching flow test passing with that id enabled. *(Waiting on owner visual QA)*
 
 #### D-4 Phase 4 design-pass backlog (`needs-design`)
 
@@ -423,7 +429,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 ✅ **Phase 4 done when:** the full homeowner journey (post → choose/match → book → adjust → confirm → pay → review/dispute) runs on v2 screens only with the flag at `all`, and the listed flow tests pass.
 
-*Done 2026-11-17 (excluding visual and device QA tasks skipped per instruction). All 10 homeowner screens (#1 through #10) and interim compositions are fully implemented under `lib/ui/homeowner/` and routed in `app_router.dart` behind `isV2Screen(...)`. UI import-boundary guard is clean (0 violations). `flutter analyze --no-pub --fatal-infos` clean. All 1,013 tests in the full test suite pass with `--dart-define=UI_V2=all`.*
+*Done 2026-11-17 (excluding visual and device QA tasks skipped per instruction). All 10 homeowner screens (#1 through #10) and interim compositions are fully implemented under `lib/ui/homeowner/` and routed in `app_router.dart` behind `isV2Screen(...)`. UI import-boundary guard is clean (0 violations). `flutter analyze --no-pub --fatal-infos` clean. All 1,013 tests in the full test suite pass with `--dart-define=UI_V2=all`. **Implementation complete, visual QA outstanding; see `docs/todos/02_design_system_fix_plan.md` Fix-2** (4.6 and the activation boxes below are reopened).*
 
 ---
 
@@ -443,10 +449,16 @@ The backend API is the contract. **No backend change is planned by default.** Wh
   | 6 | `tr_earnings` | earnings section of `tradie_dashboard_view.dart` | `GET /api/tradie/earnings` (see **G-1**) |
   | 7 | `tr_onboarding` | `tradie/tradie_onboarding_wizard.dart` (1,657 lines) | `/api/tradie/services`, `/rates`, `/credentials`, `/schedule` |
 
+  > **Earnings placement (fix plan D-12, default):** the mockup highlights the Profile dock tab for `tr_earnings`, so the Profile tab shows an Earnings summary row that opens the full earnings page. Totals and the payouts list only; no bar chart until D-11 adds `DailyNet[]` (G-1).
+
 - [ ] **5.2** Keep `tradie_onboarding_viewmodel` (708 lines) and `offer_responder` untouched; only the presentation is recreated. Split the dashboard and job-detail files into per-section widgets rather than porting them 1:1.
 - [ ] **5.3** Confirm the tradie dock has **no** centre action (`THDock(role: THDockRole.tradie)`, `onNewRequest` null). The earlier draft's `fab: false` parameter does not exist in `th_widgets.dart`.
 - [ ] **5.4** Run `offer_countdown` and offer-response behaviour tests with v2 enabled.
 - [ ] **5.5** Visual QA against `docs/design/mockups/index.html`.
+- [ ] **5.6** Tradie quote submission form for project jobs (`POST /api/jobs/:id/quotes`): pricing model, amounts, inclusions / exclusions, start / duration. No mockup, so compose from `TH*` and label `needs-design` (fix plan T-08).
+- [ ] **5.7** Tradie jobs list at `/jobs` (reuse the `ho_jobs` card pattern with tradie statuses, Active / Completed) (fix plan T-09).
+- [ ] **5.8** Tradie own profile, settings and public-profile views: availability, services / rates, credentials status, earnings entry, rating (fix plan T-12).
+- [ ] **5.9** Tradie request expired / unavailable states, navigate options and cancel sheet, from `ThStateView` / the sheet pattern (fix plan T-10, T-11).
 
 ✅ **Phase 5 done when:** the full tradie journey (onboard → go online → receive offer/lead → accept/quote → check in → adjust → check out → earnings) runs on v2 screens only.
 
@@ -468,7 +480,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [ ] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mockups/index.html`.
 - [ ] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
 
-✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, and a release build passes on iOS and Android.
+✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, no capture run raises a missing-asset exception (and the `il-05` v1 workaround is deleted), and a release build passes on iOS and Android.
 
 ---
 
