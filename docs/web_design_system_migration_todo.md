@@ -71,9 +71,15 @@ Existing components (keep names and props)
   - Done: `components/Pagination.tsx` renders `nav.pagination[aria-label="Pagination"]` with `.page-buttons`/`.page-btn`; prev/next are chevron icon buttons with `aria-label` (were `<`/`>` text), `type="button"` on all, `aria-current="page"` and prev-disabled-on-first unchanged, numbered buttons keep `aria-label="Page N"`. Props, summary text, page-window logic and the `totalCount === 0` early return unchanged.
   - [~] Deferred (manual): visual check of the pagination bar inside the table wrapper (`jobs` frame) in light + dark, incl. focus ring on page buttons and the 44 px coarse-pointer size.
   - Both: legacy baseline 263 → 262 uses (36 → 35 files); no e2e selector changed.
-- [ ] **2.11** `PageHeader` + breadcrumb (S)
-- [ ] **2.12** `StatCard` / `StatGrid` (attention variant, link label) (S)
-- [ ] **2.13** `DescriptionList` / `InfoRow` (`dl`, `total` row, stacks < 640) (S)
+- [x] **2.11** `PageHeader` + breadcrumb (S)
+  - Done: `components/PageHeader.tsx`: optional `nav.breadcrumb` (parent link from `backLink`, chevron, current crumb = `title` with `aria-current="page"`) above `.page-header` (`h1` + `badge` in `.row`, `.sub` for `description`, `.page-actions` for `actions`, still full width below the title on phones), `meta` row kept underneath; wrapped in the kit `.stack`. Props unchanged. The `ChevronLeft` back link became a breadcrumb: only one page uses `backLink` (`PayoutBatchDetail`, label "Payout batches"), so no label change is needed.
+  - [~] Deferred (manual): visual check of the header and breadcrumb against the `user_detail` / `job_detail` frames, light + dark, 1280/390.
+- [x] **2.12** `StatCard` / `StatGrid` (attention variant, link label) (S)
+  - Done: `StatCard` renders `.card.stat` (+ `.stat-top`, `.tile tile-sm` tone from `accent`, `.stat-label`, `.stat-value`, `row between nowrap`); `hint` is now the attention variant (`tone-accent`, or `tone-danger` with `accent="red"`) with a warn/danger `Badge` carrying the hint text (was amber text, no border). Link variant keeps its full `aria-label`. Props unchanged; `color` still overrides the value colour (DashboardPage passes legacy `--amber-ink` / `--red-ink`, fixed when the page is migrated in 3.3). `StatGrid` renders `.grid c2|c3|c4`: 4 → 2 → 1 columns per the design (was 2 columns on phones); `cols.phone` is now ignored (no call site passes `cols`).
+  - [~] Deferred (manual): check the dashboard stat row against the `dashboard` frame at 1280/820/390 (1 column on phones is a visible delta from the old 2), light + dark.
+- [x] **2.13** `DescriptionList` / `InfoRow` (`dl`, `total` row, stacks < 640) (S)
+  - Done: `DescriptionList` renders a real `<dl class="dl">`; `InfoRow` renders `<div><dt/><dd/></div>` (label left / value right from 640 px, stacked below, from the kit); added optional `total` (the `.total` row for money lists). `valueClassName` now goes on the `<dd>`. Props otherwise unchanged. Note: the standalone `components/InfoRow.tsx` (`value`/`mono` props, legacy `text-ink-soft`) is imported nowhere: left for task 6.2 (remove unused components).
+  - [~] Deferred (manual): check the job and user detail definition lists against the `job_detail` / `user_detail` frames (label column width, `.mono` / urgent value colour) in light + dark.
 - [ ] **2.14** `JobProgressStepper` (continuous connectors, vertical < 768); update the 7 `.step-label` e2e assertions to role/aria (D6) (M)
 - [ ] **2.15** `ThemeToggle` (S)
 
@@ -132,6 +138,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, tasks 2.11–2.13: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (262 → 253 uses, 33 files), design gate (126/126) pass.
 - 2026-11-18, tasks 2.9–2.10: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (263 → 262 uses, 35 files), design gate (126/126) pass.
 - 2026-11-18, task 2.8: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (276 → 263 uses, 36 files), design gate (126/126) pass.
 - 2026-11-18, task 2.7: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (283 → 276 uses, 37 files), design gate (126/126) pass.

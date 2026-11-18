@@ -1,13 +1,13 @@
 /**
- * DescriptionList / InfoRow — responsive label-value pairs.
+ * DescriptionList / InfoRow — label-value pairs as a real <dl> (design system: kit `.dl`).
  *
- * Phone:  label above value (flex-col)
- * sm+:    label left, value right (matches existing .detail-row behaviour)
+ * Label left and value right of it from 640 px up; stacked below 640 px (kit CSS).
+ * `total` marks the summed row (bolder, used in money lists).
  *
  * Usage:
  *   <DescriptionList>
  *     <InfoRow label="Email">{user.email}</InfoRow>
- *     <InfoRow label="Joined">{date}</InfoRow>
+ *     <InfoRow label="Total" total>{amount}</InfoRow>
  *   </DescriptionList>
  */
 import React from 'react';
@@ -15,16 +15,16 @@ import React from 'react';
 interface InfoRowProps {
   label: string;
   children: React.ReactNode;
-  /** Extra class on the value span. */
+  /** Extra class on the value element (e.g. `mono`, `money`). */
   valueClassName?: string;
+  /** The summed row of a money list. */
+  total?: boolean;
 }
 
-export const InfoRow: React.FC<InfoRowProps> = ({ label, children, valueClassName = '' }) => (
-  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 py-[10px] border-b border-[var(--paper-line)] last:border-b-0">
-    <span className="text-[13px] text-[var(--ink)] opacity-60 shrink-0">{label}</span>
-    <span className={`text-[14px] font-medium text-[var(--ink)] sm:text-right ${valueClassName}`}>
-      {children}
-    </span>
+export const InfoRow: React.FC<InfoRowProps> = ({ label, children, valueClassName = '', total }) => (
+  <div className={total ? 'total' : undefined}>
+    <dt>{label}</dt>
+    <dd className={valueClassName || undefined}>{children}</dd>
   </div>
 );
 
@@ -34,7 +34,5 @@ interface DescriptionListProps {
 }
 
 export const DescriptionList: React.FC<DescriptionListProps> = ({ children, className = '' }) => (
-  <div className={className}>
-    {children}
-  </div>
+  <dl className={`dl ${className}`.trim()}>{children}</dl>
 );

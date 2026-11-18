@@ -1,26 +1,25 @@
 /**
- * PageHeader — unified page title + meta + actions slot for every admin page.
+ * PageHeader — page title + meta + actions slot for every admin page (design system:
+ * COMPONENTS.md "Page header", frames `.breadcrumb` + `.page-header`).
  *
- * Desktop/tablet: title left, actions right.
- * Phone: title stacks, actions render full-width below.
- *
- * Replaces the hand-rolled <h1> + stat-pills + action buttons scattered
- * across every page. Desktop layout is visually identical to what was there.
+ * Optional breadcrumb above (parent link, then the current title with aria-current="page"),
+ * `h1` with an optional badge, optional `.sub` line, `.page-actions` on the right (full width
+ * below the title on phones), optional meta row underneath.
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 export interface PageHeaderProps {
-  /** Page title — rendered as <h1> with display font. */
+  /** Page title — rendered as <h1>. */
   title: string;
   /** Optional sub-line below the title. */
   description?: string;
-  /** Stat pills row (rendered below title). */
+  /** Row of small stat/badge elements (rendered below the header). */
   meta?: React.ReactNode;
   /** Button(s) slot — desktop: right of title; phone: full-width below. */
   actions?: React.ReactNode;
-  /** Breadcrumb back link above the title. */
+  /** Parent page for the breadcrumb above the title (the current crumb is `title`). */
   backLink?: { to: string; label: string };
   /** Small badge next to the title (e.g. "Admin" pill). */
   badge?: React.ReactNode;
@@ -34,46 +33,28 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   backLink,
   badge,
 }) => (
-  <div className="space-y-3">
+  <div className="stack">
     {backLink && (
-      <Link
-        to={backLink.to}
-        className="inline-flex items-center gap-1 text-[13px] text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors"
-      >
-        <ChevronLeft size={14} aria-hidden="true" />
-        {backLink.label}
-      </Link>
+      <nav className="breadcrumb" aria-label="Breadcrumb">
+        <Link to={backLink.to}>{backLink.label}</Link>
+        <ChevronRight size={14} aria-hidden="true" />
+        <span aria-current="page">{title}</span>
+      </nav>
     )}
 
-    {/* Title row */}
-    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+    <div className="page-header">
       <div className="min-w-0">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1
-            className="text-[22px] sm:text-[28px] font-bold text-[var(--ink)] leading-tight m-0"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            {title}
-          </h1>
+        <div className="row">
+          <h1>{title}</h1>
           {badge}
         </div>
-
-        {description && (
-          <p className="text-sm text-[var(--ink-soft)] mt-1">{description}</p>
-        )}
+        {description && <div className="sub">{description}</div>}
       </div>
 
       {/* Actions: right on sm+, full-width stacked below on phone */}
-      {actions && (
-        <div className="flex flex-wrap gap-2 shrink-0 sm:items-start w-full sm:w-auto">
-          {actions}
-        </div>
-      )}
+      {actions && <div className="page-actions w-full sm:w-auto">{actions}</div>}
     </div>
 
-    {/* Stat pills */}
-    {meta && (
-      <div className="flex flex-wrap gap-3">{meta}</div>
-    )}
+    {meta && <div className="flex flex-wrap gap-3">{meta}</div>}
   </div>
 );
