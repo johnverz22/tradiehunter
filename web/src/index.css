@@ -353,3 +353,11 @@ hr {
   border-radius: var(--r-control);
   min-width: 0;
 }
+
+/* Section heading outside a card, e.g. "Marketplace health" on the dashboard (app-level;
+   tokens only). The kit has card titles but no standalone section heading. */
+.dash-title {
+  margin: 0;
+  font: var(--ty-title);
+  color: var(--ink);
+}

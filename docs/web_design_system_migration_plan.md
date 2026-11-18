@@ -188,7 +188,7 @@ Pages with **no frame** (refunds, batches, batch detail, credential review dialo
 | # | Decision | Needed by | Approved default |
 |---|---|---|---|
 | D1 | Strategy: B (in place + shim) vs A (moved directory) vs flagged `src/ui/` tree | Phase 0 | **B** |
-| D2 | Dashboard **charts** (`Charts.tsx`) are not designed (DESIGN_GUIDE §12) | Phase 3 | Recolour with chart tokens, add a small chart spec to the design system before restyling |
+| D2 | Dashboard **charts** (`Charts.tsx`) are not designed (DESIGN_GUIDE §12) | Phase 3 | **Revised 2026-11-18 (owner approved):** the dashboard shows no charts and the chart components were unused, so no chart spec; `Charts.tsx` and `MetricsCard.tsx` deleted in 3.3. Spec charts in `docs/design/web` first if they are wanted later |
 | D3 | Layout/type/safe-area variables with no new equivalent: `--topbar-height`, `--drawer-width`, `--safe-top/bottom`, `--text-body/-display/-h2/-h3` | Phase 1 | Keep as app-level layout variables in `index.css`; map `--text-*` to the `t-*` classes in TYPOGRAPHY.md |
 | D4 | Rename `fixo-theme` localStorage key to a TradieHunter key | Phase 6 | Rename and read the old key once for migration |
 | D5 | White-label `--hue` is dropped; confirm no tenant needs per-brand colour | Phase 0 | Confirm dropped (design decision already recorded) |
