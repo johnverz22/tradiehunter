@@ -20,8 +20,6 @@ class RoleSelectScreen extends StatelessWidget {
           children: [
           const SizedBox(height: 24.0),
           THText('How will you use TradieHunter?', style: THTextStyle.h1),
-          const SizedBox(height: 6.0),
-          THText('You can switch later in settings.', style: THTextStyle.body, tone: THTone.soft),
           const SizedBox(height: 20.0),
           THCard(
             tone: THCardTone.accent, padding: 18.0,

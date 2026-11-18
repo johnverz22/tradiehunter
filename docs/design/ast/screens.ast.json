@@ -104,16 +104,6 @@
     },
     {
      "t": "gap",
-     "n": 6
-    },
-    {
-     "t": "text",
-     "v": "You can switch later in settings.",
-     "s": "body",
-     "tone": "soft"
-    },
-    {
-     "t": "gap",
      "n": 20
     },
     {

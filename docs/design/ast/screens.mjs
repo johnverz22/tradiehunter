@@ -19,7 +19,7 @@ screen({ id: 'onboarding', title: 'Onboarding', route: '/onboarding', role: 'sha
   illus('search'), gap(24), T('Post a job in minutes', 'h1'), gap(8), T('Describe what you need, choose a local tradie, and pay only when the work is approved.', 'body', { tone: 'soft' }), spacer(),
   dots(3, 0, { align: 'center' }), gap(20), btn('Next', 'primary'), btn('Skip', 'ghost')),
 screen({ id: 'role_select', title: 'Choose your role', route: '/role-select', role: 'shared' },
-  gap(24), T('How will you use TradieHunter?', 'h1'), gap(6), T('You can switch later in settings.', 'body', { tone: 'soft' }), gap(20),
+  gap(24), T('How will you use TradieHunter?', 'h1'), gap(20),
   card({ tone: 'accent', pad: 18 }, row({ gap: 14 }, tile('home', '', { big: true }), col({ x: true, gap: 2 }, T('I need a tradie', 'title'), T('Post jobs, compare rates, pay after approval.', 'meta', { tone: 'soft' })), icon('check', { tone: 'accent' }))),
   gap(12), card({ pad: 18 }, row({ gap: 14 }, tile('ham', '', { big: true }), col({ x: true, gap: 2 }, T('I’m a tradie', 'title'), T('Get leads, set your rate, get paid.', 'meta', { tone: 'soft' })))),
   spacer(), btn('Continue', 'primary')),
