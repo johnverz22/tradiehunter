@@ -59,9 +59,11 @@ class HoTradieCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: Space.s1,
                     children: [
+                      // Two lines, not one: at 200% text a one-line ellipsis
+                      // cut the name the homeowner is choosing by (H-06).
                       Text(
                         entry.displayName,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: THType.title.copyWith(color: c.text),
                       ),
@@ -78,7 +80,7 @@ class HoTradieCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               score ?? meta,
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: THType.meta.copyWith(
                                 color: c.text,
@@ -92,7 +94,7 @@ class HoTradieCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 meta,
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: THType.meta.copyWith(color: c.textSoft),
                               ),
