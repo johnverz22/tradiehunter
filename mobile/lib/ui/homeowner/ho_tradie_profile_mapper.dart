@@ -23,11 +23,12 @@ String thProfileName(UserProfile? profile) {
   return name.isEmpty ? 'Name unavailable' : name;
 }
 
-String thProfileSubtitle(UserProfile? profile) {
+String thProfileSubtitle(UserProfile? profile, {bool isTradie = true}) {
   final business = profile?.businessName?.trim() ?? '';
   if (business.isNotEmpty) return business;
   final trade = profile?.tradeType?.trim() ?? '';
-  return trade.isEmpty ? 'Tradie' : trade;
+  if (trade.isNotEmpty) return trade;
+  return isTradie ? 'Tradie' : 'Homeowner';
 }
 
 String? thProfileRegistration(UserProfile? profile) {

@@ -6,10 +6,16 @@ import '../design/th_widgets.dart';
 import 'ho_tradie_profile_mapper.dart';
 
 class ThProfileHeader extends StatelessWidget {
-  const ThProfileHeader({super.key, required this.profile, this.jobEntry});
+  const ThProfileHeader({
+    super.key,
+    required this.profile,
+    this.jobEntry,
+    this.isTradie = true,
+  });
 
   final UserProfile? profile;
   final TradieListEntry? jobEntry;
+  final bool isTradie;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,9 @@ class ThProfileHeader extends StatelessWidget {
           spacing: Space.s3_5,
           children: [
             THAvatar(
-              profile?.initials.isNotEmpty == true ? profile!.initials : 'T',
+              profile?.initials.isNotEmpty == true
+                  ? profile!.initials
+                  : (isTradie ? 'T' : 'H'),
               size: THAvatarSize.lg,
               inverse: true,
             ),
@@ -40,24 +48,25 @@ class ThProfileHeader extends StatelessWidget {
                     tone: THTone.onHero,
                   ),
                   THText(
-                    thProfileSubtitle(profile),
+                    thProfileSubtitle(profile, isTradie: isTradie),
                     style: THTextStyle.meta,
                     tone: THTone.onHeroSoft,
                   ),
-                  Wrap(
-                    spacing: Space.s2,
-                    runSpacing: Space.s2,
-                    children: [
-                      if (profile?.isVerified == true)
-                        const THBadge(
-                          'Verified',
-                          kind: THBadgeKind.glass,
-                          icon: Icons.verified_user_rounded,
-                        ),
-                      if (profile?.hasInsurance == true)
-                        const THBadge('Insured', kind: THBadgeKind.glass),
-                    ],
-                  ),
+                  if (isTradie)
+                    Wrap(
+                      spacing: Space.s2,
+                      runSpacing: Space.s2,
+                      children: [
+                        if (profile?.isVerified == true)
+                          const THBadge(
+                            'Verified',
+                            kind: THBadgeKind.glass,
+                            icon: Icons.verified_user_rounded,
+                          ),
+                        if (profile?.hasInsurance == true)
+                          const THBadge('Insured', kind: THBadgeKind.glass),
+                      ],
+                    ),
                 ],
               ),
             ),

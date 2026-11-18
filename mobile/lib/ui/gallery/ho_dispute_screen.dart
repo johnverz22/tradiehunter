@@ -46,7 +46,7 @@ class HoDisputeScreen extends StatelessWidget {
                   ),
                   Expanded(
                     child: THText(
-                      'Payment is paused while we review. Our team replies within 2 business days.',
+                      'Our team reviews the dispute and evidence from both sides. We will notify you in the app.',
                       style: THTextStyle.meta,
                     ),
                   ),
@@ -57,9 +57,9 @@ class HoDisputeScreen extends StatelessWidget {
           THText('WHAT’S WRONG', style: THTextStyle.label, tone: THTone.soft),
           THPills(
             items: [
-              THPillItem('Hours too high', selected: true),
-              THPillItem('Work incomplete'),
-              THPillItem('Unapproved extra'),
+              THPillItem('Poor Quality'),
+              THPillItem('Damage to Property'),
+              THPillItem('Overcharged', selected: true),
               THPillItem('Other'),
             ],
           ),
@@ -67,10 +67,6 @@ class HoDisputeScreen extends StatelessWidget {
             label: 'DETAILS',
             value: 'Tradie was on site about 1.5 hours, not 2.5.',
             height: 90.0,
-          ),
-          THField(
-            label: 'WHAT WOULD BE FAIR?',
-            value: '1.5 h × \$85 = \$127.50',
           ),
           THDashBox(icon: Icons.photo_camera_rounded, title: 'Add evidence'),
         ],

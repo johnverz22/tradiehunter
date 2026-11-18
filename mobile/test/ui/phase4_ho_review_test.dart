@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fixo/models/marketplace.dart';
+import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/ui/design/th_scope.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
@@ -123,6 +124,51 @@ void main() {
     );
   });
 
+  testWidgets(
+    'submitReview sends rating and comment and renders review submitted card',
+    (tester) async {
+      final reviews = _ReviewsFixture();
+      await tester.pumpWidget(
+        _app(
+          HoReviewScreen(job: _completedJob, tradie: _tradie, hasReview: false),
+          reviews: reviews,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('leave_review_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('star_5')));
+      await tester.enterText(
+        find.byType(TextFormField),
+        'Great job fixing the tap on time.',
+      );
+      await tester.tap(find.byKey(const Key('submit_review_button')));
+      await tester.pumpAndSettle();
+
+      expect(reviews.submitted, [
+        'job-1|5|Great job fixing the tap on time.|tradie-1',
+      ]);
+      expect(find.text('Review submitted'), findsOneWidget);
+      expect(find.byKey(const Key('leave_review_button')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'completed job with hasReview: true displays review submitted card directly and no button',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          HoReviewScreen(job: _completedJob, tradie: _tradie, hasReview: true),
+        ),
+      );
+
+      expect(find.text('Job completed'), findsOneWidget);
+      expect(find.text('Review submitted'), findsOneWidget);
+      expect(find.byKey(const Key('leave_review_button')), findsNothing);
+    },
+  );
+
   testWidgets('cancelled and disputed fallback states keep safe navigation', (
     tester,
   ) async {
@@ -189,10 +235,28 @@ void main() {
   );
 }
 
-Widget _app(Widget child) => ProviderScope(
-  overrides: [themeModeProvider.overrideWith((ref) => ThemeModeNotifier())],
+Widget _app(Widget child, {ReviewsRepository? reviews}) => ProviderScope(
+  overrides: [
+    themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
+    if (reviews != null) reviewsRepositoryProvider.overrideWithValue(reviews),
+  ],
   child: MaterialApp(home: ThScope(child: child)),
 );
+
+class _ReviewsFixture extends ReviewsRepository {
+  _ReviewsFixture() : super(Dio(), const FlutterSecureStorage());
+  final List<String> submitted = [];
+
+  @override
+  Future<void> submitReview(
+    String jobId,
+    int rating,
+    String? comment, {
+    required String revieweeId,
+  }) async {
+    submitted.add('$jobId|$rating|$comment|$revieweeId');
+  }
+}
 
 final _completionJob = Job(
   id: 'job-1',

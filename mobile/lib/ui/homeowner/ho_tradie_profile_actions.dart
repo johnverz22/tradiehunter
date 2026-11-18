@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
+import '../../network/api_error.dart';
+import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
+import '../../widgets/rating_sheet.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
@@ -327,5 +331,121 @@ class _ContextualActionsState extends ConsumerState<_ContextualActions> {
         ),
       ],
     );
+  }
+}
+
+Future<void> thLeaveReview(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+  String viewerId,
+) async {
+  List<Job> jobs;
+  try {
+    jobs = await ref.read(jobsRepositoryProvider).getMyJobs();
+  } catch (_) {
+    if (context.mounted) {
+      THNotice.error(context, 'Could not check completed jobs. Try again.');
+    }
+    return;
+  }
+  final job = thCompletedSharedJob(
+    jobs,
+    viewerId: viewerId,
+    profileId: profileId,
+  );
+  if (!context.mounted) return;
+  if (job == null) {
+    THNotice.info(context, NoticeCopy.reviewsLocked);
+    return;
+  }
+  await RatingSheet.show(
+    context,
+    jobId: job.id,
+    jobTitle: job.title,
+    onSubmit: (rating, comment) => ref
+        .read(reviewsRepositoryProvider)
+        .submitReview(job.id, rating, comment, revieweeId: profileId),
+  );
+}
+
+Future<void> thReportUser(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+) async {
+  final reasonController = TextEditingController();
+  final reason = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Report abuse'),
+      content: TextField(
+        controller: reasonController,
+        decoration: const InputDecoration(
+          hintText: 'What happened? (optional)',
+        ),
+        maxLines: 3,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, reasonController.text.trim()),
+          child: const Text('Report'),
+        ),
+      ],
+    ),
+  );
+  if (reason == null) return;
+  try {
+    await ref
+        .read(profileRepositoryProvider)
+        .reportUser(profileId, reason: reason);
+    if (!context.mounted) return;
+    THNotice.success(context, NoticeCopy.reportSent);
+  } catch (e) {
+    if (!context.mounted) return;
+    final message = e is DioException
+        ? friendlyDioError(e, tag: 'PublicProfile.report')
+        : e.toString();
+    THNotice.errorDynamic(context, message);
+  }
+}
+
+Future<void> thBlockUser(
+  BuildContext context,
+  WidgetRef ref,
+  String profileId,
+) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Block user?'),
+      content: const Text('You will no longer be matched with this user.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Block'),
+        ),
+      ],
+    ),
+  );
+  if (confirm != true) return;
+  try {
+    await ref.read(profileRepositoryProvider).blockUser(profileId);
+    if (!context.mounted) return;
+    THNotice.info(context, NoticeCopy.userBlocked);
+  } catch (e) {
+    if (!context.mounted) return;
+    final message = e is DioException
+        ? friendlyDioError(e, tag: 'PublicProfile.block')
+        : e.toString();
+    THNotice.errorDynamic(context, message);
   }
 }

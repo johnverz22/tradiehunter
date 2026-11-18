@@ -48,6 +48,7 @@ import '../ui/homeowner/ho_home_screen.dart';
 import '../ui/homeowner/ho_jobs_screen.dart';
 import '../ui/homeowner/ho_post_job_screen.dart';
 import '../ui/homeowner/ho_tradie_profile_screen.dart';
+import '../ui/homeowner/ho_public_profile_screen.dart';
 import '../ui/homeowner/ho_categories_screen.dart';
 import '../ui/homeowner/ho_browse_tradies_screen.dart';
 import '../ui/homeowner/ho_job_detail_router.dart';
@@ -408,10 +409,14 @@ final GoRouter appRouter = GoRouter(
     // 15-homeowner-profile (public)
     GoRoute(
       path: '/users/:id',
-      builder: (context, state) => PublicProfileScreen(
-        profileId: state.pathParameters['id']!,
-        isTradie: false,
-      ),
+      builder: (context, state) {
+        final profileId = state.pathParameters['id']!;
+        return _pick(
+          'ho_user_profile',
+          PublicProfileScreen(profileId: profileId, isTradie: false),
+          HoPublicProfileScreen(profileId: profileId),
+        );
+      },
     ),
 
     ShellRoute(

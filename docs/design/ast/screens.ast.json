@@ -2515,34 +2515,6 @@
      ]
     },
     {
-     "t": "text",
-     "v": "WHAT STOOD OUT",
-     "s": "label",
-     "tone": "soft"
-    },
-    {
-     "t": "pills",
-     "items": [
-      {
-       "v": "On time",
-       "on": true
-      },
-      {
-       "v": "Fair price",
-       "on": true
-      },
-      {
-       "v": "Tidy"
-      },
-      {
-       "v": "Clear updates"
-      },
-      {
-       "v": "Quality work"
-      }
-     ]
-    },
-    {
      "t": "field",
      "l": "COMMENT",
      "v": "Arrived on time, quote matched the final bill. Would book again.",
@@ -2586,7 +2558,7 @@
         },
         {
          "t": "text",
-         "v": "Payment is paused while we review. Our team replies within 2 business days.",
+         "v": "Our team reviews the dispute and evidence from both sides. We will notify you in the app.",
          "s": "meta",
          "x": true
         }
@@ -2604,14 +2576,14 @@
      "t": "pills",
      "items": [
       {
-       "v": "Hours too high",
+       "v": "Poor Quality"
+      },
+      {
+       "v": "Damage to Property"
+      },
+      {
+       "v": "Overcharged",
        "on": true
-      },
-      {
-       "v": "Work incomplete"
-      },
-      {
-       "v": "Unapproved extra"
       },
       {
        "v": "Other"
@@ -2623,11 +2595,6 @@
      "l": "DETAILS",
      "v": "Tradie was on site about 1.5 hours, not 2.5.",
      "h": 90
-    },
-    {
-     "t": "field",
-     "l": "WHAT WOULD BE FAIR?",
-     "v": "1.5 h × $85 = $127.50"
     },
     {
      "t": "dash",

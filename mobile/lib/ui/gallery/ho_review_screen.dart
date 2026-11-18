@@ -42,16 +42,6 @@ class HoReviewScreen extends StatelessWidget {
               THStars(5, size: 36.0),
             ],
           ),
-          THText('WHAT STOOD OUT', style: THTextStyle.label, tone: THTone.soft),
-          THPills(
-            items: [
-              THPillItem('On time', selected: true),
-              THPillItem('Fair price', selected: true),
-              THPillItem('Tidy'),
-              THPillItem('Clear updates'),
-              THPillItem('Quality work'),
-            ],
-          ),
           THField(
             label: 'COMMENT',
             value: 'Arrived on time, quote matched the final bill. Would book again.',

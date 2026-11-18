@@ -43,6 +43,9 @@ const Set<String> nonGalleryV2Screens = <String>{
   // Phase 4 non-gallery screens (wired via MatchingScreen / view builders)
   'ho_radar', // quick-match radar — add to v2Screens after pair images
   'ho_job_detail', // job detail router (booked, inProgress, completion, fallback)
+  'categories', // service catalog category picker (interim composition N-01)
+  'browse_tradies', // browse/find tradies search (interim composition N-01)
+  'ho_user_profile', // homeowner public profile /users/:id (N-02)
 };
 
 /// Pure resolver, parameterised so it can be unit-tested without

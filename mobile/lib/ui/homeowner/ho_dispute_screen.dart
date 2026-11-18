@@ -5,12 +5,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../feedback/fixo_notice.dart';
+import '../feedback/th_notice.dart';
+import '../../models/marketplace.dart';
 import '../../viewmodels/dispute_viewmodel.dart';
+import '../../viewmodels/jobs_viewmodel.dart';
+import '../../viewmodels/theme_mode_viewmodel.dart';
+import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import '../shared/th_choice_pills.dart';
 
-/// v2 presentation of the existing manual dispute and evidence submission flow.
+/// Fetches the job title for the dispute header subtitle if available.
+final disputeJobProvider = FutureProvider.autoDispose.family<Job?, String>((
+  ref,
+  jobId,
+) async {
+  try {
+    return await ref.read(jobsRepositoryProvider).getJobById(jobId);
+  } catch (_) {
+    return null;
+  }
+});
+
+/// v2 presentation of the manual dispute and evidence submission flow.
 class HoDisputeScreen extends ConsumerWidget {
   const HoDisputeScreen({super.key, required this.jobId});
 
@@ -28,156 +45,178 @@ class HoDisputeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(disputeProvider);
     final notifier = ref.read(disputeProvider.notifier);
-    return THScaffold(
-      key: const Key('dispute_screen'),
-      appBar: const THAppBar(title: 'Open dispute'),
-      scrollable: true,
-      stickyBar: THStickyBar(
-        children: [
-          THButton(
-            key: const Key('open_dispute_button'),
-            label: 'Submit dispute',
-            kind: THButtonKind.danger,
-            loading: state.isSubmitting,
-            onPressed: state.isSubmitting
-                ? null
-                : () async {
-                    final success = await notifier.submitDispute(jobId);
-                    if (!context.mounted) return;
-                    if (success) {
-                      FixoNotice.success(
-                        context,
-                        'Dispute submitted for review.',
-                      );
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/jobs/$jobId/detail');
-                      }
-                    }
-                  },
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (state.error != null) ...[
-            THCard(
-              tone: THCardTone.danger,
-              children: [THText(state.error!, tone: THTone.danger)],
-            ),
-            const SizedBox(height: Space.s3),
-          ],
-          THCard(
-            tone: THCardTone.accent,
+    final jobAsync = ref.watch(disputeJobProvider(jobId));
+    final jobTitle = jobAsync.valueOrNull?.title;
+
+    return ThScope(
+      themeMode: ref.watch(themeModeProvider),
+      child: Builder(
+        builder: (context) => THScaffold(
+          key: const Key('dispute_screen'),
+          appBar: THAppBar(title: 'Open dispute', subtitle: jobTitle),
+          scrollable: true,
+          stickyBar: THStickyBar(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: Space.s2_5,
+              THButton(
+                key: const Key('open_dispute_button'),
+                label: 'Submit dispute',
+                kind: THButtonKind.danger,
+                loading: state.isSubmitting,
+                onPressed: state.isSubmitting
+                    ? null
+                    : () async {
+                        final success = await notifier.submitDispute(jobId);
+                        if (!context.mounted) return;
+                        if (success) {
+                          THNotice.success(
+                            context,
+                            'Dispute submitted for review.',
+                          );
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          } else {
+                            try {
+                              context.go('/jobs/$jobId/detail');
+                            } catch (_) {}
+                          }
+                        }
+                      },
+              ),
+            ],
+          ),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.error != null) ...[
+                THCard(
+                  tone: THCardTone.danger,
+                  children: [THText(state.error!, tone: THTone.danger)],
+                ),
+                const SizedBox(height: Space.s3),
+              ],
+              THCard(
+                tone: THCardTone.accent,
                 children: [
-                  const THIcon(Icons.info_outline_rounded, tone: THTone.accent),
-                  const Expanded(
-                    child: THText(
-                      'Our team reviews the dispute and evidence from both sides. The job stays disputed until a decision is made; we will notify you in the app.',
-                      style: THTextStyle.meta,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: Space.s2_5,
+                    children: [
+                      const THIcon(
+                        Icons.info_outline_rounded,
+                        tone: THTone.accent,
+                      ),
+                      const Expanded(
+                        child: THText(
+                          'Our team reviews the dispute and evidence from both sides. The job stays disputed until a decision is made; we will notify you in the app.',
+                          style: THTextStyle.meta,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: Space.s4),
-          const THText(
-            'WHAT WENT WRONG?',
-            style: THTextStyle.label,
-            tone: THTone.soft,
-          ),
-          const SizedBox(height: Space.s2),
-          _ReasonCard(
-            child: RadioGroup<String>(
-              groupValue: state.reason,
-              onChanged: (value) {
-                if (value != null) notifier.setReason(value);
-              },
-              child: Column(
-                children: [
+              const SizedBox(height: Space.s4),
+              const THText(
+                'WHAT’S WRONG',
+                style: THTextStyle.label,
+                tone: THTone.soft,
+              ),
+              const SizedBox(height: Space.s2),
+              ThChoicePills(
+                items: [
                   for (final reason in reasons)
-                    Semantics(
-                      identifier: 'dispute_reason_$reason',
-                      child: RadioListTile<String>(
-                        key: Key('dispute_reason_$reason'),
-                        value: reason,
-                        title: THText(reason),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: Space.s2,
-                        ),
-                        activeColor: context.th.brand,
-                      ),
+                    ThChoicePillItem(
+                      key: Key('dispute_reason_$reason'),
+                      label: reason,
+                      selected: state.reason == reason,
+                      onSelected: () => notifier.setReason(reason),
                     ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: Space.s4),
-          const THText(
-            'TELL US WHAT HAPPENED',
-            style: THTextStyle.label,
-            tone: THTone.soft,
-          ),
-          const SizedBox(height: Space.s2),
-          Semantics(
-            identifier: 'dispute_details_field',
-            child: TextField(
-              key: const Key('dispute_details_field'),
-              maxLines: 5,
-              maxLength: maxDetailsLength,
-              onChanged: notifier.setDetails,
-              decoration: const InputDecoration(
-                hintText: 'Describe the issue…',
-                counterText: '',
+              const SizedBox(height: Space.s4),
+              const THText(
+                'TELL US WHAT HAPPENED',
+                style: THTextStyle.label,
+                tone: THTone.soft,
               ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: THText(
-              '${state.details.length}/$maxDetailsLength',
-              style: THTextStyle.meta,
-              tone: THTone.soft,
-            ),
-          ),
-          const SizedBox(height: Space.s4),
-          const THText(
-            'EVIDENCE PHOTOS (OPTIONAL)',
-            style: THTextStyle.label,
-            tone: THTone.soft,
-          ),
-          const SizedBox(height: Space.s2),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: Space.s2,
-            crossAxisSpacing: Space.s2,
-            children: [
-              for (var i = 0; i < state.photoPaths.length; i++)
-                _EvidenceThumb(
-                  path: state.photoPaths[i],
-                  index: i,
-                  onRemove: () => notifier.removePhoto(state.photoPaths[i]),
+              const SizedBox(height: Space.s2),
+              Container(
+                decoration: BoxDecoration(
+                  color: context.th.surface,
+                  borderRadius: BorderRadius.circular(Radii.control),
+                  border: Border.all(color: context.th.line),
                 ),
-              if (state.photoPaths.length < maxPhotos)
-                _AddEvidenceTile(onTap: () => _pickEvidence(context, notifier)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.s3_5,
+                  vertical: Space.s2,
+                ),
+                child: Semantics(
+                  identifier: 'dispute_details_field',
+                  child: TextField(
+                    key: const Key('dispute_details_field'),
+                    maxLines: 5,
+                    maxLength: maxDetailsLength,
+                    onChanged: notifier.setDetails,
+                    style: THType.body.copyWith(color: context.th.text),
+                    decoration: InputDecoration(
+                      hintText: 'Describe the issue…',
+                      hintStyle: THType.body.copyWith(
+                        color: context.th.textSoft,
+                      ),
+                      counterText: '',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Space.s1),
+              Align(
+                alignment: Alignment.centerRight,
+                child: THText(
+                  '${state.details.length}/$maxDetailsLength',
+                  style: THTextStyle.meta,
+                  tone: THTone.soft,
+                ),
+              ),
+              const SizedBox(height: Space.s4),
+              const THText(
+                'EVIDENCE PHOTOS (OPTIONAL)',
+                style: THTextStyle.label,
+                tone: THTone.soft,
+              ),
+              const SizedBox(height: Space.s2),
+              GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: Space.s2,
+                crossAxisSpacing: Space.s2,
+                children: [
+                  for (var i = 0; i < state.photoPaths.length; i++)
+                    _EvidenceThumb(
+                      path: state.photoPaths[i],
+                      index: i,
+                      onRemove: () => notifier.removePhoto(state.photoPaths[i]),
+                    ),
+                  if (state.photoPaths.length < maxPhotos)
+                    _AddEvidenceTile(
+                      onTap: () => _pickEvidence(context, notifier),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Space.s2),
+              const THText(
+                'Up to 5 photos.',
+                style: THTextStyle.meta,
+                tone: THTone.soft,
+              ),
             ],
           ),
-          const SizedBox(height: Space.s2),
-          const THText(
-            'Up to 5 photos.',
-            style: THTextStyle.meta,
-            tone: THTone.soft,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -197,7 +236,7 @@ class HoDisputeScreen extends ConsumerWidget {
       }
     } catch (_) {
       if (context.mounted) {
-        FixoNotice.error(context, 'Could not open photos. Try again.');
+        THNotice.error(context, 'Could not open photos. Try again.');
       }
     }
   }
@@ -269,43 +308,4 @@ class _AddEvidenceTile extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// Bordered card shell with a [Material] inside so [RadioListTile] ink
-/// splashes and focus ripple paint on a real Material ancestor. The card's
-/// border/shadow come from the outer [Container]; the inner [Material] only
-/// supplies the surface colour and the InkWidget ancestor the tiles need.
-class _ReasonCard extends StatelessWidget {
-  const _ReasonCard({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.th;
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(Radii.control),
-        border: Border.all(color: c.line),
-        boxShadow: [
-          BoxShadow(
-            color: c.line.withValues(alpha: 0.35),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-          BoxShadow(
-            color: c.textBrand.withValues(alpha: 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(Space.s2),
-      child: Material(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(Radii.control),
-        child: child,
-      ),
-    );
-  }
 }
