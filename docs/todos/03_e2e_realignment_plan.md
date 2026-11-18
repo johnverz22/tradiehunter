@@ -1,7 +1,7 @@
 # E2E Realignment Plan: v2 Design System Migration
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `dev`
-> **Purpose:** Realign the end-to-end scripts with the v2 (Trust Navy + Gold) presentation layer **before** completing the open QA tasks in `docs/design_system_migration_plan.md` §4 (4.6 and the three unchecked boxes in the "4.4 activation checklist").
+> **Purpose:** Realign the end-to-end scripts with the v2 (Trust Navy + Gold) presentation layer **before** completing the open QA tasks in `docs/todos/01_design_system_migration_plan.md` §4 (4.6 and the three unchecked boxes in the "4.4 activation checklist").
 > **Status of this document:** E0, E3 and E5 complete (verified); E1–E2 pending baseline run.
 > **Prepared:** 2026-11-17 · **Updated:** 2026-11-17
 
@@ -129,15 +129,15 @@ Each phase is one PR. Check every box before moving on.
 - [x] **E0.3** Default `FIXO_API_URL` by platform inside `test_config.dart` (`Platform.isAndroid ? 10.0.2.2 : localhost`), still overridable.
 - [x] **E0.4** Confirm the seeded state: `python3 scripts/e2e-credentials.py --keep`, `scripts/seed-test-accounts.sh`. Document the exact "clean start" sequence in `docs/TESTING.md`.
 
-**Done when:** `scripts/run-e2e.sh C0 auth` runs on the owner's machine without editing any path. **Done** — see `docs/e2e-baseline-2026-11.md` for the C0 run results.
+**Done when:** `scripts/run-e2e.sh C0 auth` runs on the owner's machine without editing any path. **Done** — see `docs/runs/v2/e2e-baseline-2026-11.md` for the C0 run results.
 
 ### Phase E1: Baseline run (measure before editing)
 
 - [x] **E1.1** Run C0 then C1 for all suites and save logs. Do not fix anything yet.
-- [x] **E1.2** For each failure, classify: *v2 intentional change* / *app defect* / *test sync problem* / *pre-existing v1 issue*. Record in `docs/e2e-baseline-2026-11.md` (table: suite, test id, config, class, evidence).
+- [x] **E1.2** For each failure, classify: *v2 intentional change* / *app defect* / *test sync problem* / *pre-existing v1 issue*. Record in `docs/runs/v2/e2e-baseline-2026-11.md` (table: suite, test id, config, class, evidence).
 - [ ] **E1.3** Reconcile with §4 above. Any failure not in B-1…B-8 gets a new row.
 
-**Done when:** every red test has a class and an owner. App defects are filed, not "fixed" in tests. **Done** — see `docs/e2e-baseline-2026-11.md` for the full table. New finding (E1.3): the dominant failure mode is **fixture setup throwing on backend POST** (`payment`, `dispute`, `cancellation`, `job_lifecycle` all fail before reaching any widget assertion) — seeded-state drift between `fixture_helper.dart` and the current backend, not a v2 regression. This is a new row outside B-1…B-8 and points at `helpers/fixture_helper.dart` rather than at `lib/ui/**`.
+**Done when:** every red test has a class and an owner. App defects are filed, not "fixed" in tests. **Done** — see `docs/runs/v2/e2e-baseline-2026-11.md` for the full table. New finding (E1.3): the dominant failure mode is **fixture setup throwing on backend POST** (`payment`, `dispute`, `cancellation`, `job_lifecycle` all fail before reaching any widget assertion) — seeded-state drift between `fixture_helper.dart` and the current backend, not a v2 regression. This is a new row outside B-1…B-8 and points at `helpers/fixture_helper.dart` rather than at `lib/ui/**`.
 
 ### Phase E2: Realign existing `integration_test` files (Keys-first, no new tools)
 
@@ -207,7 +207,7 @@ Scope is deliberately narrow: only what `integration_test` cannot do.
 
 | File | Update |
 |---|---|
-| `docs/design_system_migration_plan.md` §4.4 | After E2 passes C1, tick "Run the listed device integration flows". Leave the owner-QA boxes for you. Add a one-line pointer to this plan under 4.6 |
+| `docs/todos/01_design_system_migration_plan.md` §4.4 | After E2 passes C1, tick "Run the listed device integration flows". Leave the owner-QA boxes for you. Add a one-line pointer to this plan under 4.6 |
 | `docs/TESTING.md` | Replace the v1-order "Gaps" note (P-1); add the §5 matrix, `scripts/run-e2e.sh`, the Maestro and Patrol sections and the hard rules from §3 |
 | `docs/QA.md` | Link the screenshot set from E4.3 as the visual-QA input |
 | `docs/ai/AI-TOOLING.md` | Add Maestro MCP, the `v2-e2e-explorer` skill, optional Patrol MCP/skills; keep config parity |

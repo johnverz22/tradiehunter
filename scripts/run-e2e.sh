@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/run-e2e.sh — run the Flutter integration_test suites against the
-# local stack in one of the v1/v2 configurations (docs/e2e_realignment_plan.md §5).
+# local stack in one of the v1/v2 configurations (docs/todos/03_e2e_realignment_plan.md §5).
 #
 #   scripts/run-e2e.sh <config> [suite ...]
 #   scripts/run-e2e.sh --list-devices

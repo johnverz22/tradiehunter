@@ -1,4 +1,4 @@
-# Nightly / manual device e2e (docs/e2e_realignment_plan.md, phase E6).
+# Nightly / manual device e2e (docs/todos/03_e2e_realignment_plan.md, phase E6).
 # NOT part of the PR gate: needs the docker stack plus an Android emulator.
 # Untested on CI as of authoring — expect to tune timeouts on the first run.
 name: E2E Mobile (Android)

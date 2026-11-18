@@ -1,10 +1,10 @@
 # TradieHunter — v2 Design Fix & Completion Plan
 
-> **Companion to:** `docs/design_system_migration_plan.md` (the "migration plan"). This file does not replace it. It adds the tasks the migration plan is missing or marked done too early, and it covers every screen and flow.
+> **Companion to:** `docs/todos/01_design_system_migration_plan.md` (the "migration plan"). This file does not replace it. It adds the tasks the migration plan is missing or marked done too early, and it covers every screen and flow.
 > **Branch:** `dev` @ `541629b` · **Prepared:** 2026-11-17
 > **Scope:** mobile only (web excluded, as in the migration plan).
 > **Design reference:** `docs/design/mockups/index.html` (30 screens, light + dark) and `docs/design/ast/screens.mjs`.
-> **Evidence reviewed:** `docs/runs/v2/screenshots/{light,dark}/{shared,homeowner}` (24 images per theme), the migration plan, `docs/e2e-baseline-2026-11.md`, `docs/e2e_realignment_plan.md`, `lib/router/app_router.dart`, `lib/ui/**`, `lib/ui/ui_flags.dart`, `scripts/run-shots.sh`, `integration_test/screenshots_test.dart`.
+> **Evidence reviewed:** `docs/runs/v2/screenshots/{light,dark}/{shared,homeowner}` (24 images per theme), the migration plan, `docs/runs/v2/e2e-baseline-2026-11.md`, `docs/todos/03_e2e_realignment_plan.md`, `lib/router/app_router.dart`, `lib/ui/**`, `lib/ui/ui_flags.dart`, `scripts/run-shots.sh`, `integration_test/screenshots_test.dart`.
 
 ---
 
@@ -325,9 +325,9 @@ Every flow below must run on v2 only (with `UI_V2=all` until Phase 6), light and
 
 ---
 
-## 9. Edits to apply to `docs/design_system_migration_plan.md`
+## 9. Edits to apply to `docs/todos/01_design_system_migration_plan.md`
 
-- Phase 4 "Done 2026-11-17" notes: add "implementation complete, **visual QA outstanding**; see `design_system_fix_plan.md` Fix-2" so the plan no longer reads as verified.
+- Phase 4 "Done 2026-11-17" notes: add "implementation complete, **visual QA outstanding**; see `docs/todos/02_design_system_fix_plan.md` Fix-2" so the plan no longer reads as verified.
 - Reopen **4.6**; keep the two unchecked activation boxes; add "pair images attached" to the third.
 - §4.1 gap register: add G-13…G-17 (D-14).
 - §4.2: add tradie quote form, tradie jobs list, request expired/unavailable, payment states, radar failure.

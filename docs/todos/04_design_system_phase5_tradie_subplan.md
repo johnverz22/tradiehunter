@@ -1,8 +1,8 @@
 # Phase 5 Sub-Plan — Tradie Screen Migration (Design System v2)
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `dev` (HEAD `d3225d7` when this was written)
-> **Parent plan:** `docs/design_system_migration_plan.md` → **Phase 5 — Tradie Flows** (tasks 5.1–5.5)
-> **Suggested location:** `docs/design_system_phase5_tradie_subplan.md`
+> **Parent plan:** `docs/todos/01_design_system_migration_plan.md` → **Phase 5 — Tradie Flows** (tasks 5.1–5.5)
+> **Location:** `docs/todos/04_design_system_phase5_tradie_subplan.md`
 > **Prepared:** 2026-11-18 · **Revised:** 2026-11-18 after owner answers on D-P5-1…5 (see §3.1) · **Status:** plan only; this file is the only change
 > **Audience:** the implementing model. Every work package says *what to create, what to copy from, what to wire to, which Keys to keep, what to test, and when it is done*, so no further discovery is needed.
 
@@ -395,7 +395,7 @@ Compose from `TH*` (`THPills`/`ThChoicePills` filters, `THCard`/`THListRow`/`THB
 
 ## 6. Parent-plan bookkeeping after each package
 
-1. Tick the matching box in `docs/design_system_migration_plan.md` Phase 5 and add a dated progress note in the same style as Phase 4 (what was ported, parity kept, deviations, verification commands and results, "not added to `v2Screens`").
+1. Tick the matching box in `docs/todos/01_design_system_migration_plan.md` Phase 5 and add a dated progress note in the same style as Phase 4 (what was ported, parity kept, deviations, verification commands and results, "not added to `v2Screens`").
 2. Append rows G-13…G-25 (§3.2) to parent §4.1; record D-P5-1…5 (resolved 2026-11-18, §3.1) in parent §5; add 5.8, 5.10 and 5.11 as sub-tasks under parent Phase 5; mark the D-4 backlog rows for the wide layout and `/users/:id` as "design on demand".
 3. When 5.1–5.8 are done, set Phase 5 ✅ with the same wording as Phase 4 ("excluding visual and device QA").
 4. Use the `docs-sync` skill after any behaviour/scope change.
