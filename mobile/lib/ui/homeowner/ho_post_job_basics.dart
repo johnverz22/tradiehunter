@@ -19,10 +19,8 @@ class HoPostJobBasics extends ConsumerStatefulWidget {
 class _HoPostJobBasicsState extends ConsumerState<HoPostJobBasics> {
   late final TextEditingController _title;
   late final TextEditingController _description;
-  late final TextEditingController _hours;
   final _titleFocus = FocusNode();
   final _descriptionFocus = FocusNode();
-  final _hoursFocus = FocusNode();
 
   @override
   void initState() {
@@ -30,21 +28,14 @@ class _HoPostJobBasicsState extends ConsumerState<HoPostJobBasics> {
     final state = ref.read(postJobProvider);
     _title = TextEditingController(text: state.title);
     _description = TextEditingController(text: state.description);
-    _hours = TextEditingController(
-      text: state.estimatedHours == null
-          ? ''
-          : thFormatHours(state.estimatedHours!),
-    );
   }
 
   @override
   void dispose() {
     _title.dispose();
     _description.dispose();
-    _hours.dispose();
     _titleFocus.dispose();
     _descriptionFocus.dispose();
-    _hoursFocus.dispose();
     super.dispose();
   }
 
@@ -59,11 +50,6 @@ class _HoPostJobBasicsState extends ConsumerState<HoPostJobBasics> {
     ref.listen<PostJobState>(postJobProvider, (previous, next) {
       _sync(_title, _titleFocus, next.title);
       _sync(_description, _descriptionFocus, next.description);
-      _sync(
-        _hours,
-        _hoursFocus,
-        next.estimatedHours == null ? '' : thFormatHours(next.estimatedHours!),
-      );
     });
 
     final state = ref.watch(postJobProvider);
@@ -119,7 +105,7 @@ class _HoPostJobBasicsState extends ConsumerState<HoPostJobBasics> {
             LengthLimitingTextInputFormatter(thDescriptionMaxLength),
           ],
           onChanged: notifier.setDescription,
-          onFieldSubmitted: (_) => _hoursFocus.requestFocus(),
+          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
         ),
         if (thShowCounter(state.description.length, thDescriptionMaxLength))
           _Counter(
@@ -135,7 +121,56 @@ class _HoPostJobBasicsState extends ConsumerState<HoPostJobBasics> {
               tone: THTone.danger,
             ),
           ),
-        const SizedBox(height: Space.s3),
+      ],
+    );
+  }
+}
+
+/// Estimated hours. Split out of [HoPostJobBasics] so the screen can place it
+/// after WHEN, as in the mockup (`ho_post_quick`: title, service, description,
+/// when, hours, address, photos). Same Key and viewmodel call as before.
+class HoPostJobHours extends ConsumerStatefulWidget {
+  const HoPostJobHours({super.key});
+
+  @override
+  ConsumerState<HoPostJobHours> createState() => _HoPostJobHoursState();
+}
+
+class _HoPostJobHoursState extends ConsumerState<HoPostJobHours> {
+  late final TextEditingController _hours;
+  final _hoursFocus = FocusNode();
+
+  static String _text(double? hours) =>
+      hours == null ? '' : thFormatHours(hours);
+
+  @override
+  void initState() {
+    super.initState();
+    _hours = TextEditingController(
+      text: _text(ref.read(postJobProvider).estimatedHours),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hours.dispose();
+    _hoursFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<PostJobState>(postJobProvider, (previous, next) {
+      final value = _text(next.estimatedHours);
+      if (_hoursFocus.hasFocus || _hours.text == value) return;
+      _hours.text = value;
+      _hours.selection = TextSelection.collapsed(offset: value.length);
+    });
+
+    final notifier = ref.read(postJobProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         THTextField(
           key: const Key('hours_field'),
           label: 'ESTIMATED HOURS · OPTIONAL',

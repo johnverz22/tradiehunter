@@ -412,12 +412,52 @@ void main() {
       expect(notifier.state.timingPreference, 'SpecificDate');
       expect(find.byKey(const Key('scheduled_start_field')), findsOneWidget);
 
+      // Urgency now sits in the "More details" group below the mockup fields.
+      await tester.ensureVisible(find.text('Emergency'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Emergency'));
       await tester.pumpAndSettle();
       expect(notifier.state.urgency, 'Emergency');
       expect(
         find.text('Immediate response · needed today or ASAP'),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('quick field order follows the mockup (H-05)', (tester) async {
+      await _pumpScreen(tester, jobs: _JobsFake(), addresses: _AddressFake());
+      double y(Finder f) => tester.getTopLeft(f).dy;
+
+      final order = [
+        y(find.byKey(const Key('title_field'))),
+        y(find.byKey(const Key('service_dropdown'))),
+        y(find.byKey(const Key('description_field'))),
+        y(find.text('Flexible')),
+        y(find.byKey(const Key('hours_field'))),
+        y(find.byKey(const Key('address_search_field'))),
+        y(find.text('MORE DETAILS')),
+        y(find.text('URGENCY')),
+        y(find.text('REVIEW YOUR JOB')),
+      ];
+      expect(order, orderedEquals([...order]..sort()));
+      expect(order.toSet().length, order.length);
+    });
+
+    testWidgets('project budget follows the scope, before WHEN (H-05)', (
+      tester,
+    ) async {
+      await _pumpScreen(tester, jobs: _JobsFake(), addresses: _AddressFake());
+      _notifier(tester, ThPostJobScreen).setJobType(Job.jobTypeProject);
+      await tester.pumpAndSettle();
+      double y(Finder f) => tester.getTopLeft(f).dy;
+
+      expect(
+        y(find.byKey(const Key('description_field'))),
+        lessThan(y(find.byKey(const Key('budget_min_field')))),
+      );
+      expect(
+        y(find.byKey(const Key('budget_min_field'))),
+        lessThan(y(find.text('Flexible'))),
       );
     });
 

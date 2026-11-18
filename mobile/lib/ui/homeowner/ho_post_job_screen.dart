@@ -55,16 +55,34 @@ class ThPostJobScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Field order follows the mockup (`ho_post_quick`,
+                      // `ho_post_project`); kept extras follow in a labelled
+                      // "More details" group (fix plan H-05).
                       const HoPostJobBasics(),
+                      if (state.isProject) ...[
+                        const SizedBox(height: Space.s6),
+                        const HoPostJobProject(),
+                      ],
+                      const SizedBox(height: Space.s6),
+                      const HoPostJobTiming(),
+                      const SizedBox(height: Space.s5),
+                      const HoPostJobHours(),
                       const SizedBox(height: Space.s6),
                       const HoPostJobAddress(),
                       const SizedBox(height: Space.s6),
-                      const HoPostJobTiming(),
-                      const SizedBox(height: Space.s6),
                       const HoPostJobPhotos(),
                       const SizedBox(height: Space.s6),
-                      const HoPostJobProject(),
-                      if (state.isProject) const SizedBox(height: Space.s6),
+                      Semantics(
+                        header: true,
+                        child: THText(
+                          'MORE DETAILS',
+                          style: THTextStyle.label,
+                          tone: THTone.soft,
+                        ),
+                      ),
+                      const SizedBox(height: Space.s3),
+                      const HoPostJobUrgency(),
+                      const SizedBox(height: Space.s6),
                       THText(
                         'REVIEW YOUR JOB',
                         style: THTextStyle.label,

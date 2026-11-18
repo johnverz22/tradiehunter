@@ -119,7 +119,29 @@ class HoPostJobTiming extends ConsumerWidget {
             ),
           ),
         ],
-        const SizedBox(height: Space.s5),
+      ],
+    );
+  }
+
+  String _format(BuildContext context, DateTime value) {
+    final localizations = MaterialLocalizations.of(context);
+    final time = localizations.formatTimeOfDay(TimeOfDay.fromDateTime(value));
+    return '${localizations.formatFullDate(value)} · $time';
+  }
+}
+
+/// Urgency pills. Kept (G-8..G-12) but not part of the mockup's field list, so
+/// the screen shows it in the "More details" group after the mockup fields.
+class HoPostJobUrgency extends ConsumerWidget {
+  const HoPostJobUrgency({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(postJobProvider);
+    final notifier = ref.read(postJobProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         THText('URGENCY', style: THTextStyle.label, tone: THTone.soft),
         const SizedBox(height: Space.s2),
         ThChoicePills(
@@ -140,12 +162,6 @@ class HoPostJobTiming extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  String _format(BuildContext context, DateTime value) {
-    final localizations = MaterialLocalizations.of(context);
-    final time = localizations.formatTimeOfDay(TimeOfDay.fromDateTime(value));
-    return '${localizations.formatFullDate(value)} · $time';
   }
 }
 
