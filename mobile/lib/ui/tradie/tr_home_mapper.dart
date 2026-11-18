@@ -68,38 +68,43 @@ class TrHomeGroups {
     final leads = jobs.where((j) => j.status == 'Requested').toList();
 
     // Overdue: booked jobs whose schedule is strictly before today.
-    final overdue = jobs
-        .where((j) => kBookedWorkStatuses.contains(j.status) && thIsOverdue(j, now))
-        .toList()
-      ..sort((a, b) {
-        final aT = a.scheduledStartUtc;
-        final bT = b.scheduledStartUtc;
-        if (aT == null && bT == null) return 0;
-        if (aT == null) return 1;
-        if (bT == null) return -1;
-        return aT.compareTo(bT);
-      });
+    final overdue =
+        jobs
+            .where(
+              (j) =>
+                  kBookedWorkStatuses.contains(j.status) && thIsOverdue(j, now),
+            )
+            .toList()
+          ..sort((a, b) {
+            final aT = a.scheduledStartUtc;
+            final bT = b.scheduledStartUtc;
+            if (aT == null && bT == null) return 0;
+            if (aT == null) return 1;
+            if (bT == null) return -1;
+            return aT.compareTo(bT);
+          });
 
     // Today: booked jobs scheduled exactly for today (not overdue).
-    final today = jobs
-        .where(
-          (j) =>
-              kBookedWorkStatuses.contains(j.status) &&
-              thIsScheduledToday(j, now) &&
-              !thIsOverdue(j, now),
-        )
-        .toList()
-      ..sort((a, b) {
-        final aReq = thIsTradieActionRequired(a.status);
-        final bReq = thIsTradieActionRequired(b.status);
-        if (aReq != bReq) return aReq ? -1 : 1;
-        final aTime = a.scheduledStartUtc;
-        final bTime = b.scheduledStartUtc;
-        if (aTime == null && bTime == null) return 0;
-        if (aTime == null) return 1;
-        if (bTime == null) return -1;
-        return aTime.compareTo(bTime);
-      });
+    final today =
+        jobs
+            .where(
+              (j) =>
+                  kBookedWorkStatuses.contains(j.status) &&
+                  thIsScheduledToday(j, now) &&
+                  !thIsOverdue(j, now),
+            )
+            .toList()
+          ..sort((a, b) {
+            final aReq = thIsTradieActionRequired(a.status);
+            final bReq = thIsTradieActionRequired(b.status);
+            if (aReq != bReq) return aReq ? -1 : 1;
+            final aTime = a.scheduledStartUtc;
+            final bTime = b.scheduledStartUtc;
+            if (aTime == null && bTime == null) return 0;
+            if (aTime == null) return 1;
+            if (bTime == null) return -1;
+            return aTime.compareTo(bTime);
+          });
 
     final upcoming = jobs
         .where(
@@ -140,11 +145,17 @@ TrStatusBadge thTradieStatusBadge(String status, {bool isOverdue = false}) {
   }
   return switch (status) {
     'Requested' => const TrStatusBadge('Requested', THBadgeKind.accent),
-    'AwaitingPayment' => const TrStatusBadge('Awaiting payment', THBadgeKind.accent),
+    'AwaitingPayment' => const TrStatusBadge(
+      'Awaiting payment',
+      THBadgeKind.accent,
+    ),
     'PaymentReview' => const TrStatusBadge('Under review', THBadgeKind.brand),
     'Booked' => const TrStatusBadge('Booked', THBadgeKind.ok),
     'InProgress' => const TrStatusBadge('In progress', THBadgeKind.brand),
-    'AwaitingConfirmation' => const TrStatusBadge('Action needed', THBadgeKind.accent),
+    'AwaitingConfirmation' => const TrStatusBadge(
+      'Action needed',
+      THBadgeKind.accent,
+    ),
     'Completed' => const TrStatusBadge('Completed', THBadgeKind.ok),
     'Cancelled' => const TrStatusBadge('Cancelled', THBadgeKind.brand),
     'Expired' => const TrStatusBadge('Expired', THBadgeKind.brand),
@@ -154,7 +165,8 @@ TrStatusBadge thTradieStatusBadge(String status, {bool isOverdue = false}) {
 }
 
 /// Progress mapping (0 to 3 of 4 stages: Requested -> Booked -> InProgress -> Completed).
-({int steps, int done, int current})? thTradieProgress(Job job) {
+({int steps, int done, bool current})? thTradieProgress(Job job) {
+  const steps = 4;
   final stage = switch (job.status) {
     'Requested' => 0,
     'Booked' => 1,
@@ -164,7 +176,7 @@ TrStatusBadge thTradieStatusBadge(String status, {bool isOverdue = false}) {
     _ => null,
   };
   if (stage == null) return null;
-  return (steps: 4, done: stage, current: stage);
+  return (steps: steps, done: stage + 1, current: stage + 1 < steps);
 }
 
 /// Subtitle for tradie job cards (e.g. "Plumbing · Tauranga · Today 1:30 pm").

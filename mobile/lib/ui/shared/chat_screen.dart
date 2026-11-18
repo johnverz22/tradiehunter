@@ -480,9 +480,7 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
                                       padding: const EdgeInsets.only(
                                         bottom: Space.s3,
                                       ),
-                                      child: _ThChatSystemCard(
-                                        text: item.text,
-                                      ),
+                                      child: _ThChatSystemCard(text: item.text),
                                     );
                                   }
                                   final mi = item as _MessageItem;
@@ -614,17 +612,18 @@ List<_ListItem> _buildChatItems(
   final oldestLoaded = messages.isEmpty ? null : messages.first.sentAtUtc;
   final events =
       <_SystemEventItem>[
-        for (final a in adjustments)
-          if (a.isApproved)
-            _SystemEventItem(
-              id: a.id,
-              timestamp: a.respondedAtUtc ?? a.createdAtUtc,
-              text: 'Extra cost ${formatMoney(a.amount)} approved',
-            ),
-      ].where((e) {
-        if (!hasMore) return true;
-        return oldestLoaded != null && !e.timestamp.isBefore(oldestLoaded);
-      }).toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          for (final a in adjustments)
+            if (a.isApproved)
+              _SystemEventItem(
+                id: a.id,
+                timestamp: a.respondedAtUtc ?? a.createdAtUtc,
+                text: 'Extra cost ${formatMoney(a.amount)} approved',
+              ),
+        ].where((e) {
+          if (!hasMore) return true;
+          return oldestLoaded != null && !e.timestamp.isBefore(oldestLoaded);
+        }).toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
   final items = <_ListItem>[];
   DateTime? lastSeparatorTime;

@@ -136,8 +136,7 @@ class _JobsRepo extends JobsRepository {
     : super(Dio(), const FlutterSecureStorage());
 
   @override
-  Future<List<JobAdjustment>> getAdjustments(String jobId) async =>
-      adjustments;
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async => adjustments;
 
   @override
   Future<Job?> getJobById(String jobId) async => job;
@@ -537,9 +536,8 @@ void main() {
         container: container,
         child: MaterialApp(
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(2.0)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(2.0)),
             child: child!,
           ),
           home: const ThChatScreen(jobId: '7'),

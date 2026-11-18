@@ -190,7 +190,10 @@ class _TrLeadCardState extends State<TrLeadCard> {
             child: TextButton(
               onPressed: widget.onOpen,
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: Space.s2, vertical: Space.s1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.s2,
+                  vertical: Space.s1,
+                ),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),

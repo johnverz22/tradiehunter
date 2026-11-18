@@ -17,29 +17,25 @@ import 'package:flutter/material.dart';
 import 'package:patrol/patrol.dart';
 
 void main() {
-  patrolTest(
-    'E5.3b — FCM notification permission on first login',
-    ($) async {
-      // ── 1. Launch the app (push ENABLED by default) ─────────────────────
-      app.main();
+  patrolTest('E5.3b — FCM notification permission on first login', ($) async {
+    // ── 1. Launch the app (push ENABLED by default) ─────────────────────
+    app.main();
 
-      // ── 2. Grant native FCM permission if dialog appears ────────────────
-      // The prompt is fire-and-forget from main(), so wait briefly for it.
-      await Future<void>.delayed(const Duration(seconds: 2));
+    // ── 2. Grant native FCM permission if dialog appears ────────────────
+    // The prompt is fire-and-forget from main(), so wait briefly for it.
+    await Future<void>.delayed(const Duration(seconds: 2));
 
-      if (await $.platform.mobile.isPermissionDialogVisible()) {
-        await $.platform.mobile.grantPermissionWhenInUse();
-      }
+    if (await $.platform.mobile.isPermissionDialogVisible()) {
+      await $.platform.mobile.grantPermissionWhenInUse();
+    }
 
-      // ── 3. Log in as homeowner (Keys from auth/sign_in screen) ──────────
-      await $(const Key('email_field')).enterText('homeowner-a@fixo.test');
-      await $(const Key('password_field')).enterText('Test1234!');
-      await $(const Key('login_button')).tap();
+    // ── 3. Log in as homeowner (Keys from auth/sign_in screen) ──────────
+    await $(const Key('email_field')).enterText('homeowner-a@fixo.test');
+    await $(const Key('password_field')).enterText('Test1234!');
+    await $(const Key('login_button')).tap();
 
-      // ── 4. Verify we reach the homeowner dashboard ──────────────────────
-      await $(const Key('homeowner_dashboard')).waitUntilVisible(
-        timeout: const Duration(seconds: 15),
-      );
-    },
-  );
+    // ── 4. Verify we reach the homeowner dashboard ──────────────────────
+    await $(const Key('homeowner_dashboard'))
+        .waitUntilVisible(timeout: const Duration(seconds: 15));
+  });
 }

@@ -392,12 +392,12 @@ void main() {
       await _pumpScreen(tester, jobs: _JobsFake(), addresses: _AddressFake());
       final notifier = _notifier(tester, ThPostJobScreen);
 
-      await tester.tap(find.byKey(const Key('job_type_Project')));
+      await tester.tap(find.byKey(const Key('job_type_project')));
       await tester.pumpAndSettle();
       expect(notifier.state.isProject, isTrue);
       expect(find.text('PROJECT SUMMARY'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('job_type_Hourly')));
+      await tester.tap(find.byKey(const Key('job_type_hourly')));
       await tester.pumpAndSettle();
       expect(notifier.state.isProject, isFalse);
 

@@ -21,39 +21,35 @@ import 'package:flutter/material.dart';
 import 'package:patrol/patrol.dart';
 
 void main() {
-  patrolTest(
-    'E5.3a — photo picker on ho_post_job',
-    ($) async {
-      // ── 1. Launch the app ──────────────────────────────────────────────
-      app.main();
+  patrolTest('E5.3a — photo picker on ho_post_job', ($) async {
+    // ── 1. Launch the app ──────────────────────────────────────────────
+    app.main();
 
-      // ── 2. Grant native image-picker permission ────────────────────────
-      await $.platform.mobile.grantPermissionWhenInUse();
+    // ── 2. Grant native image-picker permission ────────────────────────
+    await $.platform.mobile.grantPermissionWhenInUse();
 
-      // ── 3. Log in as homeowner (Keys from auth/sign_in screen) ─────────
-      // Using the default test accounts from test_config.dart.
-      $(const Key('email_field')).enterText('homeowner-a@fixo.test');
-      $(const Key('password_field')).enterText('Test1234!');
-      $(const Key('login_button')).tap();
-      $(const Key('homeowner_dashboard')).waitUntilVisible();
+    // ── 3. Log in as homeowner (Keys from auth/sign_in screen) ─────────
+    // Using the default test accounts from test_config.dart.
+    $(const Key('email_field')).enterText('homeowner-a@fixo.test');
+    $(const Key('password_field')).enterText('Test1234!');
+    $(const Key('login_button')).tap();
+    $(const Key('homeowner_dashboard')).waitUntilVisible();
 
-      // ── 4. Navigate to Post Job screen ─────────────────────────────────
-      await $(const Key('post_job_fab')).tap();
-      await $(const Key('post_job_screen')).waitUntilVisible();
+    // ── 4. Navigate to Post Job screen ─────────────────────────────────
+    await $(const Key('post_job_fab')).tap();
+    await $(const Key('post_job_screen')).waitUntilVisible();
 
-      // ── 5. Open photos source sheet ────────────────────────────────────
-      await $(const Key('post_job_photos_add')).tap();
+    // ── 5. Open photos source sheet ────────────────────────────────────
+    await $(const Key('post_job_photos_add')).tap();
 
-      // ── 6. Choose from gallery (native ImagePicker) ────────────────────
-      await $('Choose from gallery').tap();
+    // ── 6. Choose from gallery (native ImagePicker) ────────────────────
+    await $('Choose from gallery').tap();
 
-      // ── 7. Verify photo count badge updated ────────────────────────────
-      await $('1/5 photos added').waitUntilVisible(
-        timeout: const Duration(seconds: 5),
-      );
+    // ── 7. Verify photo count badge updated ────────────────────────────
+    await $('1/5 photos added')
+        .waitUntilVisible(timeout: const Duration(seconds: 5));
 
-      // ── 8. Log out ─────────────────────────────────────────────────────
-      await $(const Key('sign_out_button')).tap();
-    },
-  );
+    // ── 8. Log out ─────────────────────────────────────────────────────
+    await $(const Key('sign_out_button')).tap();
+  });
 }

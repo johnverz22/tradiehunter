@@ -209,7 +209,10 @@ void main() {
       expect(find.byKey(const Key('pick_someone_else_button')), findsOneWidget);
       expect(find.byKey(const Key('cancel_request_button')), findsOneWidget);
       expect(
-        find.textContaining('Aroha Plumbing', skipOffstage: false),
+        find.textContaining(
+          "Aroha Plumbing's rate for this job",
+          skipOffstage: false,
+        ),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

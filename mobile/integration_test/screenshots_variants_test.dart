@@ -233,7 +233,7 @@ Future<void> _captureHomeownerSheetsAndErrors(WidgetTester tester) async {
       shotSkipped(
         cancelSheet,
         'no "Cancel job" tooltip (the v2 booked screen keeps Cancel in the '
-            'overflow menu: add that path when this capture is wired)',
+        'overflow menu: add that path when this capture is wired)',
       );
     } else {
       await tester.tap(cancelBtn);
@@ -247,11 +247,7 @@ Future<void> _captureHomeownerSheetsAndErrors(WidgetTester tester) async {
   }
 
   // Error variant — nonexistent job id.
-  await _push(
-    tester,
-    '/jobs/99998/detail',
-    'homeowner/26_job_detail_error',
-  );
+  await _push(tester, '/jobs/99998/detail', 'homeowner/26_job_detail_error');
 }
 
 Future<void> _captureTradieVariants(WidgetTester tester) async {

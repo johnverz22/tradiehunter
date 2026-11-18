@@ -68,19 +68,19 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-      _SourceRow(
-        key: const Key('post_job_photos_camera'),
-        icon: Icons.camera_alt_outlined,
-        label: 'Take a photo',
-        onTap: () => Navigator.pop(ctx, ImageSource.camera),
-      ),
-      const SizedBox(height: Space.s2),
-      _SourceRow(
-        key: const Key('post_job_photos_gallery'),
-        icon: Icons.photo_library_outlined,
-        label: 'Choose from gallery',
-        onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-      ),
+                      _SourceRow(
+                        key: const Key('post_job_photos_camera'),
+                        icon: Icons.camera_alt_outlined,
+                        label: 'Take a photo',
+                        onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                      ),
+                      const SizedBox(height: Space.s2),
+                      _SourceRow(
+                        key: const Key('post_job_photos_gallery'),
+                        icon: Icons.photo_library_outlined,
+                        label: 'Choose from gallery',
+                        onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                      ),
                     ],
                   ),
                 ),
@@ -140,12 +140,12 @@ class _HoPostJobPhotosState extends ConsumerState<HoPostJobPhotos> {
                       ref.read(postJobProvider.notifier).removePhoto(paths[i]),
                 ),
               if (paths.length < thMaxPhotos)
-            Semantics(
-              button: true,
-              label: 'Add another photo',
-              child: InkWell(
-                key: const Key('post_job_photos_add_another'),
-                onTap: _pickPhoto,
+                Semantics(
+                  button: true,
+                  label: 'Add another photo',
+                  child: InkWell(
+                    key: const Key('post_job_photos_add_another'),
+                    onTap: _pickPhoto,
                     borderRadius: BorderRadius.circular(Radii.control),
                     child: Container(
                       width: Sizes.avatarLg,

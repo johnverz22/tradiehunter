@@ -10,18 +10,15 @@ Widget _app(
   Widget body, {
   EdgeInsets inset = EdgeInsets.zero,
 }) => MaterialApp(
-    theme: THTheme.light,
-    darkTheme: THTheme.dark,
-    themeMode: mode,
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        padding: inset,
-        viewPadding: inset,
-      ),
-      child: child!,
-    ),
-    home: Scaffold(body: body),
-  );
+  theme: THTheme.light,
+  darkTheme: THTheme.dark,
+  themeMode: mode,
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(padding: inset, viewPadding: inset),
+    child: child!,
+  ),
+  home: Scaffold(body: body),
+);
 
 void main() {
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {

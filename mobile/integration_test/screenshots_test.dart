@@ -415,11 +415,7 @@ Future<void> _captureTradie(WidgetTester tester) async {
   await _go(tester, '/settings', 'tradie/11_settings');
   await _go(tester, '/tradie/onboarding', 'tradie/12_onboarding_1');
   await _go(tester, '/tradie/$_tradieUserId', 'tradie/13_public_profile');
-  await _go(
-    tester,
-    '/users/$_homeownerUserId',
-    'tradie/17_homeowner_profile',
-  );
+  await _go(tester, '/users/$_homeownerUserId', 'tradie/17_homeowner_profile');
 }
 
 /// Opens the "Request extra cost" sheet on the in-progress job, captures it

@@ -107,7 +107,9 @@ void main() {
   test('every contract id is exposed to Semantics.identifier in lib/ui', () {
     final identIds = <String>{};
     final dir = Directory('lib/ui');
-    final identRe = RegExp("identifier:\\s*['\"]([^'\"]+)['\"]|testId\\(['\"]([^'\"]+)['\"]\\)");
+    final identRe = RegExp(
+      "identifier:\\s*['\"]([^'\"]+)['\"]|testId\\(['\"]([^'\"]+)['\"]\\)",
+    );
     final autoWidgets = [
       'THButton',
       'THIconButton',
@@ -122,7 +124,9 @@ void main() {
       '_DatePickRow',
       'tab',
     ];
-    final autoRe = RegExp('(${autoWidgets.join('|')})\\b[^;{}]{0,300}?Key\\([\'"]([^\'"]+)[\'"]');
+    final autoRe = RegExp(
+      '(${autoWidgets.join('|')})\\b[^;{}]{0,300}?Key\\([\'"]([^\'"]+)[\'"]',
+    );
     final dockRe = RegExp(r"'(dock_[a-z]+)'");
 
     for (final entity in dir.listSync(recursive: true)) {

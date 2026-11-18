@@ -34,23 +34,19 @@ class _ThOnboardingScreenState extends ConsumerState<ThOnboardingScreen> {
     (
       asset: 'assets/illustrations/onboarding_describe.png',
       title: 'Post a job in minutes',
-      body:
-          'Describe what you need, choose a local tradie, and pay only when the work is approved.',
+      body: 'Describe what you need, choose a local tradie, and pay only when the work is approved.',
     ),
     (
       asset: 'assets/illustrations/onboarding_match.png',
       title: 'Choose with confidence',
-      body:
-          'Compare rates, credentials and reviews before you decide. Rates always include GST.',
+      body: 'Compare rates, credentials and reviews before you decide. Rates always include GST.',
     ),
     (
       asset: 'assets/illustrations/onboarding_chat.png',
       title: 'Chat and get it sorted',
-      body:
-          'Follow job updates and message your tradie in one place. Leave a review when the work is done.',
+      body: 'Follow job updates and message your tradie in one place. Leave a review when the work is done.',
     ),
   ];
-
 
   @override
   void dispose() {
@@ -139,7 +135,8 @@ class _ThOnboardingScreenState extends ConsumerState<ThOnboardingScreen> {
                       children: [
                         // Contract: the indicator announces the step.
                         Semantics(
-                          label: 'Step ${_currentPage + 1} of ${_slides.length}',
+                          label:
+                              'Step ${_currentPage + 1} of ${_slides.length}',
                           child: ExcludeSemantics(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,

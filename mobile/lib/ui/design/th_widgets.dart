@@ -2201,9 +2201,11 @@ class THDock extends StatelessWidget {
           key: dockKey,
           onTap: onSelected == null ? null : () => onSelected!(t),
           borderRadius: BorderRadius.circular(Radii.control),
-          child: SizedBox(
-            width: Sizes.railItem,
-            height: Sizes.tapMin,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: Sizes.railItem,
+              minHeight: Sizes.tapMin,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,

@@ -99,7 +99,8 @@ class TrJobCard extends StatelessWidget {
                     kind: THButtonKind.accent,
                     size: THButtonSize.sm,
                     fullWidth: false,
-                    onPressed: onTap ?? () => context.push('/tradie/jobs/${job.id}'),
+                    onPressed:
+                        onTap ?? () => context.push('/tradie/jobs/${job.id}'),
                   )
                 else
                   const THIcon(Icons.chevron_right_rounded, tone: THTone.soft),

@@ -19,22 +19,14 @@ String? thTestId(Key? key) => key is ValueKey<String> ? key.value : null;
 /// Explicit semantics identifier wrapper for out-of-process drivers (Maestro).
 /// Wraps [child] in a non-container [Semantics] node with [identifier].
 class THTestId extends StatelessWidget {
-  const THTestId({
-    super.key,
-    required this.id,
-    required this.child,
-  });
+  const THTestId({super.key, required this.id, required this.child});
 
   final String id;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      identifier: id,
-      container: false,
-      child: child,
-    );
+    return Semantics(identifier: id, container: false, child: child);
   }
 }
 
@@ -49,9 +41,5 @@ Widget thTestIdWrap(Widget child, Key? key) {
   final id = thTestId(key);
   return id == null
       ? child
-      : Semantics(
-          identifier: id,
-          container: false,
-          child: child,
-        );
+      : Semantics(identifier: id, container: false, child: child);
 }
