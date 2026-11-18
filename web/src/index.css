@@ -65,6 +65,27 @@ code {
   color: var(--ink);
 }
 
+/* ── Skip link ────────────────────────────────────────
+   App-level (the kit has none). Parked off-screen until it
+   takes focus; stays in the accessibility tree and the tab
+   order. Tokens only. */
+.skip-link {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 70;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-control);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: var(--ty-button);
+  box-shadow: var(--sh-pop);
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
 /* ── Focus ────────────────────────────────────────────
    Thin 2px outline sitting outside the field, per the
    mockups. A box-shadow ring (Tailwind's ring-2) stacks
