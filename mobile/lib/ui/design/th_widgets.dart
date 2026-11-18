@@ -343,12 +343,16 @@ class THBadge extends StatelessWidget {
               decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
             ),
           if (icon != null) Icon(icon, size: 12, color: fg),
-          Text(
-            label,
-            style: THType.meta.copyWith(
-              color: fg,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: THType.meta.copyWith(
+                color: fg,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -491,15 +495,21 @@ class THGrid extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) => GridView.count(
-    crossAxisCount: columns,
-    mainAxisSpacing: spacing,
-    crossAxisSpacing: spacing,
-    childAspectRatio: 0.82,
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    children: children,
-  );
+  Widget build(BuildContext context) {
+    // Tile children (THTile) pair a fixed icon box with a text label, so the
+    // cell height must grow with the text scale or enlarged labels overflow
+    // the fixed-aspect cell. sqrt keeps 200% cells roomy without doubling.
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    return GridView.count(
+      crossAxisCount: columns,
+      mainAxisSpacing: spacing,
+      crossAxisSpacing: spacing,
+      childAspectRatio: 0.82 / math.sqrt(textScale.clamp(1.0, 2.0)),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: children,
+    );
+  }
 }
 
 class THTile extends StatelessWidget {

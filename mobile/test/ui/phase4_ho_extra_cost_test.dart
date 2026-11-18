@@ -70,6 +70,37 @@ void main() {
     expect(find.text('Extra cost request'), findsOneWidget);
   });
 
+  testWidgets('pending adjustment header fits at 200% text scale', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2.0)),
+            child: child!,
+          ),
+          home: HoExtraCostScreen(
+            job: _job,
+            adjustment: _adjustmentWithExpiry,
+            tradie: null,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Extra cost request'), findsOneWidget);
+  });
+
   testWidgets('pending adjustment decision sheet uses the dark v2 theme', (
     tester,
   ) async {
@@ -118,6 +149,19 @@ final _adjustment = JobAdjustment(
   amount: Decimal.parse('48.50'),
   status: JobAdjustment.statusPending,
   createdAtUtc: DateTime.utc(2026, 11, 17),
+);
+
+final _adjustmentWithExpiry = JobAdjustment(
+  id: 'adjustment-1',
+  jobId: 'job-1',
+  proposedByTradieId: 'tradie-1',
+  proposedByTradieName: 'Aroha Plumbing',
+  kind: JobAdjustment.kindMaterials,
+  description: 'Replacement tap cartridge.',
+  amount: Decimal.parse('48.50'),
+  status: JobAdjustment.statusPending,
+  createdAtUtc: DateTime.utc(2026, 11, 17),
+  expiresAtUtc: DateTime.utc(2026, 12, 1),
 );
 
 final _bookedJob = Job(

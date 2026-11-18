@@ -222,6 +222,10 @@ void main() {
     final password = _persona == 'tradie'
         ? kTradiePassword
         : kHomeownerPassword;
+    // loginAs navigates to the persona home before the post_login shot marks
+    // the screen — mark now or home-screen exceptions are misattributed to
+    // the last shared capture (role_select).
+    ExceptionLog.mark('$_persona/00_post_login');
     await loginAs(tester, email, password);
     await _shot(tester, '$_persona/00_post_login', settle: _brief);
 

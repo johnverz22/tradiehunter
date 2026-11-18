@@ -1,0 +1,4 @@
+tradie/01b_home_offline | going offline changes availability and needs a confirm sheet; capture it with the T-01 online switch
+tradie/06_extra_cost | no request_extra_cost_button on the in-progress job
+tradie/07_complete | v1 Check Out is a one-tap API call that changes the job state; capture the final-hours form after T-05
+tradie/08_earnings | no earnings screen or route until T-06

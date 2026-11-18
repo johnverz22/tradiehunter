@@ -228,15 +228,33 @@ Future<void> _captureHomeownerSheetsAndErrors(WidgetTester tester) async {
     ExceptionLog.mark(cancelSheet);
     appRouter.push('/jobs/$_bookedJobId/detail');
     await pumpFor(tester, const Duration(seconds: 5));
+    // The v2 booked screen keeps Cancel in the overflow menu
+    // (job_overflow_menu -> 'Cancel job'); the v1 screen used a
+    // 'Cancel job' tooltip. Try the tooltip first, then the menu.
+    var opened = false;
     final cancelBtn = find.byTooltip('Cancel job');
-    if (cancelBtn.evaluate().isEmpty) {
+    if (cancelBtn.evaluate().isNotEmpty) {
+      await tester.tap(cancelBtn);
+      opened = true;
+    } else {
+      final overflow = find.byKey(const Key('job_overflow_menu'));
+      if (overflow.evaluate().isNotEmpty) {
+        await tester.tap(overflow.first);
+        await pumpFor(tester, const Duration(seconds: 1));
+        final cancelItem = find.text('Cancel job');
+        if (cancelItem.evaluate().isNotEmpty) {
+          await tester.tap(cancelItem.first);
+          opened = true;
+        }
+      }
+    }
+    if (!opened) {
       shotSkipped(
         cancelSheet,
-        'no "Cancel job" tooltip (the v2 booked screen keeps Cancel in the '
-        'overflow menu: add that path when this capture is wired)',
+        'no "Cancel job" tooltip or job_overflow_menu "Cancel job" item '
+        'on the booked job',
       );
     } else {
-      await tester.tap(cancelBtn);
       await _shot(tester, cancelSheet, settle: _brief);
       // Dismiss without confirming.
       await tester.tapAt(_dismissPoint);

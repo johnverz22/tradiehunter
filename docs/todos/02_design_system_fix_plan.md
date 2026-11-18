@@ -4,7 +4,7 @@
 > **Branch:** `dev` @ `541629b` · **Prepared:** 2026-11-17
 > **Scope:** mobile only (web excluded, as in the migration plan).
 > **Design reference:** `docs/design/mockups/index.html` (30 screens, light + dark) and `docs/design/ast/screens.mjs`.
-> **Evidence reviewed:** `docs/runs/v2/screenshots/{light,dark}/{shared,homeowner}` (24 images per theme), the migration plan, `docs/runs/v2/e2e-baseline-2026-11.md`, `docs/todos/03_e2e_realignment_plan.md`, `lib/router/app_router.dart`, `lib/ui/**`, `lib/ui/ui_flags.dart`, `scripts/run-shots.sh`, `integration_test/screenshots_test.dart`.
+> **Evidence reviewed:** `docs/runs/v2/screenshots/{light,dark}/{shared,homeowner,tradie}` + `screenshots-text200/` (both text scales, both personas), the migration plan, `docs/runs/v2/e2e-baseline-2026-11.md`, `docs/todos/03_e2e_realignment_plan.md`, `lib/router/app_router.dart`, `lib/ui/**`, `lib/ui/ui_flags.dart`, `scripts/run-shots.sh`, `integration_test/screenshots_test.dart`.
 
 ---
 
@@ -237,13 +237,13 @@ Each phase ends with pair images and passing tests. Each screen is one PR (or a 
 - [x] **0.4** P-06 mockup PNG export + comparison script; commit `docs/design/mockups/png/`. *Done & verified 2026-11-18. `docs/design/tools/build.mjs` writes a stable `data-screen="<id>"` on each mockup figure (ids = `ast/screens.mjs`; mockup regenerated, `build.mjs --check` passes). Installed Playwright and Chromium headless shell locally; `docs/design/tools/mockup-shots.mjs` executed and exported all 60 mockup PNGs to `docs/design/mockups/png/<id>-{light,dark}.png`. `scripts/compare-shots.py` executed and produced 34 pair images into `docs/runs/v2/screenshots/compare/<theme>/<id>.png` plus `coverage.md`.*
 - [x] **0.5** P-05 extend capture list (§7.3) incl. tradie persona and `SHOT_TEXT_SCALE`. *Done & verified 2026-11-18. `screenshots_test.dart` and `screenshots_variants_test.dart` emit the §7.3 names (65 required). `scripts/check-capture-names.py` passes. `dart format` and `flutter analyze --fatal-infos` verified clean across `lib/`, `test/`, and `integration_test/`.*
 - [x] **0.6** Reopen migration plan 4.6, the two device/visual boxes of the 4.4 checklist, and add this plan's links (§9). *Done 2026-11-18, docs only. `01_design_system_migration_plan.md`: companion link at the top; Phase 4 done notes say "implementation complete, visual QA outstanding"; 4.6 and the two device / visual activation boxes reopened with the evidence they need; the `v2Screens` box requires pair images; G-13 to G-17 added to the gap register (D-14); §4.2 lists extra no-design screens; Phase 5 gains 5.6 to 5.9 and the Earnings placement note (D-12); Phase 6 done criteria add "no missing-asset exceptions".*
-- ✅ **Done when:** `UI_V2=all` capture finishes with 0 exceptions and the baseline image set exists for both themes.
+- ✅ **Done when:** `UI_V2=all` capture finishes with 0 exceptions and the baseline image set exists for both themes. **Verified 2026-11-18:** full capture matrix completed on iPhone 17 Pro (`UI_V2=all`): homeowner + tradie × light + dark × 100% + 200% text, base + variant drivers — every `exceptions*.txt` is empty (0 framework exceptions). Baseline lives in `docs/runs/v2/screenshots/{light,dark}/` and `docs/runs/v2/screenshots-text200/{light,dark}/`; pair images + `coverage.md` in each `compare/` dir (see §11).
 
 ### Fix-1 — Phase 3 corrections (small, already flagged)
 - [x] **1.1** S-01 dock clearance + opaque dock. *Done & verified 2026-11-18. Two causes addressed: (a) `THDock` filled with `alphaBlend(c.glass, c.paper)` (opaque, token-only) and mockup updated. (b) `thDockClearance(context)` (= 120 + bottom viewPadding) replaces fixed 120 at the 8 list sites. **Verification fix:** `th_dock_clearance_test.dart` surfaced a 2.0px RenderFlex overflow in `THDock` because dock items used `SizedBox(width: Sizes.railItem, height: Sizes.tapMin)` (48.0) which overflowed when `Icon` + spacing + label needed 50px. Fixed by replacing with `ConstrainedBox(constraints: BoxConstraints(minWidth: Sizes.railItem, minHeight: Sizes.tapMin))` in `th_widgets.dart`, maintaining the accessible minimum touch height without clipping. Updated goldens `phase3_shell_home_*.png` and gallery goldens for the opaque dock. `test/ui/th_dock_clearance_test.dart` and `test/ui/phase3_shell_test.dart` pass.*
 - [x] **1.2** S-02 role select · S-03 onboarding · S-04 OTP · S-05 settings/sign-out. *Done & verified 2026-11-18. **S-02:** chosen card is accent-toned; no preselect; switch-later line removed from mockup AST and gallery copy (`build.mjs --check` passes). **S-03:** header wordmark/Skip removed; footer uses dots + primary Next + ghost Skip; slide 1 matches mockup copy; slides 2 & 3 state truthful app capabilities. **S-04:** `THAppBar` "Verify your email" with back to `/auth`, "Enter the 6-digit code", subtitle with email, top gap removed. **S-05:** Settings keeps ghost "Sign out" (solid red removed); Theme row kept as 3-way setting. Gallery goldens regenerated deliberately. `test/ui/phase3_auth_test.dart` passes (all 34 tests).*
 - [x] **1.3** S-06 chat header/chips/system card · S-07 messages (rows, unread badge) · S-08 notifications capture · S-11 spacing. *Done & verified 2026-11-18. **S-06 header:** pushed chat shows back + title/subtitle per mockup; avatar only in embedded master-detail pane. **Quick replies:** horizontal scroller with min 48pt tap height and token-alpha ShaderMask edge fade. **System card:** derived from `GET /api/jobs/{id}/adjustments` (approved only) for Booked and later. **S-07:** removed outgoing arrow glyph; unread badge rendered correctly. **S-08:** `screenshots_test.dart` seeds capture notifications. **Verification fixes:** `dart format` clean across `lib/`, `test/`, `integration_test/`; `flutter analyze --fatal-infos` clean; all 56 tests in `test/ui/phase3_shared_test.dart` pass.*
-- ✅ **Done when:** pair images show no layout deviation; 65 Phase 3 tests and goldens updated deliberately. **Open for local run:** `flutter test test/ui/phase3_shared_test.dart`; then capture `homeowner/21_chat` (with an approved adjustment) and `22_notifications` and make pair images before this row is marked matching.
+- ✅ **Done when:** pair images show no layout deviation; 65 Phase 3 tests and goldens updated deliberately. **Verified 2026-11-18:** `phase3_shared_test.dart` passes; `homeowner/21_chat` (populated) and `22_notifications` captured in both themes at 100% and 200% text; pair images in `docs/runs/v2/screenshots*/compare/`. Visual sign-off still pending the owner's audit — the row stays open until pair images are reviewed.
 
 ### Fix-2 — Homeowner verification and activation
 Work through screens in journey order. For each: capture pair → fix rows → flow test with the id → add id to `v2Screens`.
@@ -253,10 +253,11 @@ Work through screens in journey order. For each: capture pair → fix rows → f
 - [x] **2.4** Job detail family (H-09, H-10, N-04, N-05) → `ho_payment`, `ho_payment_status` (H-11, N-06). *Done & verified 2026-11-18. **H-09 (booked & extra cost):** `HoBookedScreen` and `HoExtraCostScreen` verified against design contracts; overflow menu (`job_overflow_menu`), visible cancellation policy collapsible section (`cancellation_policy_tile`), 5-step progress, timeline, and tradie card verified; check-in timestamp omitted as no DTO field exists. **H-10 (`ho_review_completion`):** Hero with FINAL AMOUNT, 'How it adds up' breakdown, sticky Dispute + Approve buttons; approval action disabled while adjustments or disputes are pending; approve books amount and navigates to `/jobs/:id/payment`. **N-04 (detail fallbacks):** `HoJobDetailFallbackScreen` handles `Cancelled`, `Disputed` ('View dispute'), `AwaitingPayment`, `PaymentReview`, and `Expired`; `ho_job_detail` added to `nonGalleryV2Screens`. **N-05 (sheets):** `HoCancelJobSheet` (reasons, 10% fee disclosure, notes, two-button confirmation), `HoAdjustmentDecisionSheet` (extra cost approval/decline), and `_ReviewSheet` (5-star rating, comment, submit). **H-11 & N-06 (`ho_payment`, `ho_payment_status`):** `HoPaymentScreen` and `HoPaymentStatusScreen` wrapped with `ThScope(themeMode: ref.watch(themeModeProvider))` to honor user theme settings; verified bank details display, clipboard copy for reference & all details, and receipt upload; verified `HoPaymentStatusScreen` states (`submitted`, `verified`, `rejected` with retry action, `expired` with support action, and unavailable error state with refresh). `phase4_ho_payment_test.dart` extended to 6 tests covering all payment & status states; `phase4_ho_review_test.dart` extended to 5 tests covering all fallback states. Full suite of 91 tests passes clean (`flutter analyze --fatal-infos` clean, `dart format` clean).*
 - [x] **2.5** `ho_review` (H-12) → `ho_dispute` (H-13). *Done & verified 2026-11-18. **D-9 `ho_review`:** removed unused 'WHAT STOOD OUT' chips from mockup AST, regenerated mockups, updated gallery screen; `HoReviewScreen` maintains 5-star rating + optional comment field using `THTextField` inside `_ReviewSheet`, wrapped in `ThScope(themeMode: ref.watch(themeModeProvider))` for theme responsiveness; `phase4_ho_review_test.dart` passes. **D-10 `ho_dispute`:** replaced radio buttons with `ThChoicePills` (`Poor Quality`, `Damage to Property`, `Overcharged`, `Other`), removed 'WHAT WOULD BE FAIR?' field from AST, updated gallery screen; wrapped `HoDisputeScreen` in `ThScope` + `Builder`, integrated `disputeJobProvider` for subtitle, tokenized text container, used `THNotice` for user feedback; `phase4_ho_dispute_test.dart` (4 tests) and `payment_dispute_test.dart` (14 tests) pass clean. `build.mjs --check`, `check_ui_boundary.py`, and `flutter analyze --fatal-infos` pass clean.*
 - [x] **2.6** Categories/browse (N-01), `/users/:id` (N-02). *Done & verified 2026-11-18. **N-01 Categories & Browse:** verified existing `HoCategoriesScreen` and `HoBrowseTradiesScreen` compositions; tests `phase4_ho_categories_test.dart` and `phase4_ho_browse_tradies_test.dart` pass clean. **N-02 Homeowner Public Profile (`/users/:id`):** created `HoPublicProfileScreen` in `lib/ui/homeowner/ho_public_profile_screen.dart` with header (avatar, name, 'Homeowner' subtitle, member-since line), stats ('New to Fixo' or rating), optional 'ABOUT' bio card, reviews list, and more-actions menu (Report/Block via shared `thReportUser`/`thBlockUser` in `ho_tradie_profile_actions.dart`); wired route in `app_router.dart` via `_pick('ho_user_profile', ...)`; registered `'categories'`, `'browse_tradies'`, and `'ho_user_profile'` in `nonGalleryV2Screens`; unit tests in `test/ui/phase4_ho_public_profile_test.dart` pass clean. `build.mjs --check`, `check_ui_boundary.py`, and `flutter analyze --fatal-infos` pass clean.*
-- [ ] After step 6, run C1 (`UI_V2=all`, homeowner) and attach results.
+- [x] After step 6, run C1 (`UI_V2=all`, homeowner) and attach results. *Done 2026-11-18:* homeowner + shared captures completed in light and dark at 100% and 200% text scale — 0 exceptions; pair coverage 54/60 screens per theme-set (the 6 gaps are unbuilt tradie screens, see §11). Results in `docs/runs/v2/screenshots*/`.
 - ✅ **Done when:** every §3.1 homeowner row is ✅ with images, `v2Screens` includes all homeowner ids, C0 and C1 pass.
 
 ### Fix-3 — Tradie (Phase 5, in this order)
+*Capture harness note 2026-11-18:* the tradie persona now runs end-to-end in both themes at 100% and 200% text with 0 exceptions (`docs/runs/v2/screenshots*/{light,dark}/tradie/`). These images show the **current v1 tradie UI** — Phase 5 screens are not built yet, so they are baseline evidence, not v2 verification. Intentional skips: `01b_home_offline` (needs confirm-sheet interaction), `06_extra_cost` (no `request_extra_cost_button` on the fixture job), `07_complete` (v1 check-out is a one-tap API call; final-hours form is T-05), `08_earnings` (no earnings route until T-06), `02b_lead_expired` (needs a `SHOT_EXPOFFER_JOB` fixture — not yet provided).
 - [ ] T-01 `tr_home` (+ online switch, leads, today, attention) 
 - [ ] T-02 `tr_lead` + T-10 expired/unavailable; T-08 quote form (after design)
 - [ ] T-03 `tr_job` check-in → T-04 `tr_extra_cost` → T-05 `tr_complete`
@@ -349,5 +350,47 @@ Machine-checked: `scripts/check-capture-names.py` fails if this list, `docs/desi
 | Design and code drift again | Amend `ast/screens.mjs` and regenerate whenever a decision changes the mockup |
 | Tradie users see mixed v1/v2 for weeks | Prioritise T-01…T-05 or temporarily keep tradies on the v1 shell (flag `shell` per role) |
 | Commission and rate figures shown to tradies are wrong | Source from backend config only; no hard-coded 10% |
+
+## 11. Verification log
+
+### 2026-11-18 — Full capture matrix + 200% text-scale pass
+
+**Environment:** Docker Compose stack (api, postgres, redis, azurite, mailhog); iPhone 17 Pro simulator (`9AA76BF8-982A-4044-A032-FA49CBF3D9E3`); Flutter 3.47.5; commit `14e1feb` + working-tree changes (`run.json` records `14e1feb-dirty`).
+
+**Static checks (all pass):**
+- `dart format` clean; `flutter analyze --fatal-infos` → "No issues found!"
+- `flutter test` → 1130 tests, 0 failures (incl. new `th_grid_test.dart`, `th_state_view_test.dart`, expanded `phase4_ho_extra_cost_test.dart`)
+- Backend `dotnet test` in API container → pass (see Fix-0.3)
+- `scripts/check_ui_boundary.py`, `scripts/check-capture-names.py`, `node docs/design/tools/build.mjs --check` → pass
+
+**Captures (`scripts/run-shots.sh`, `UI_V2=all`):**
+- 100% text: `docs/runs/v2/screenshots/{light,dark}/{shared,homeowner,tradie}/` — base + variant drivers
+- 200% text: `docs/runs/v2/screenshots-text200/{light,dark}/{shared,homeowner,tradie}/` — base + variant drivers
+- **Every `exceptions*.txt` across all 16 persona/theme/scale runs is empty — 0 framework exceptions.**
+- Pair images: `docs/runs/v2/screenshots/compare/` and `docs/runs/v2/screenshots-text200/compare/` → **54 paired / 6 missing per scale**. The 6 missing are `tr_extra_cost`, `tr_complete`, `tr_earnings` × light+dark — screens that do not exist yet (T-04/T-05/T-06), i.e. expected gaps, not capture failures.
+
+**Defects found by the 200% pass and fixed (each with a regression test):**
+- `THGrid` fixed `childAspectRatio` overflowed `THTile` labels at 2.0 text scale (homeowner category grid). Fix: aspect ratio now scales with `MediaQuery.textScalerOf` bounded 1.0–2.0. (`th_grid_test.dart` fails on the old ratio, passes on the fix.)
+- `THBadge` label overflowed horizontally at 2.0 text (extra-cost header, 114 px). Fix: label in `Flexible` + `maxLines: 1` + ellipsis. (`phase4_ho_extra_cost_test.dart` 200% case.)
+- `ThStateView.loading` used an internal `ListView` inside scrollable `THScaffold` → nested-viewport exception. Fix: non-scrollable `Column`. (`th_state_view_test.dart`.)
+- Exception misattribution: `loginAs` navigated to `/home` before the post-login marker, so a home overflow was logged against `shared/06_role_select`. Fix: `ExceptionLog.mark('$_persona/00_post_login')` before `loginAs` in `screenshots_test.dart`.
+
+**Intentional skips (recorded in `skipped*.txt`, not failures):**
+- `tradie/01b_home_offline` — going offline needs a confirm-sheet interaction; capture with the T-01 online switch.
+- `tradie/06_extra_cost` — no `request_extra_cost_button` on the in-progress fixture job.
+- `tradie/07_complete` — v1 Check Out is a one-tap API call; final-hours form arrives with T-05.
+- `tradie/08_earnings` — no earnings screen/route until T-06.
+- `tradie/02b_lead_expired` — `SHOT_EXPOFFER_JOB` fixture not provided (variant runs, both scales/themes).
+
+**Fixture work:** `scripts/mk-v2-shot-fixtures.py` (new) creates API-backed jobs for every captured state via the real API; local `OverduePayment` flags blocking fixture creation were resolved in the dev database. Demo tradie `tradie@fixo.nz` unavailable — seeded `tradie-verified@fixo.test` used instead.
+
+**Known non-fatal warnings:** at 200% text scale the integration driver logged hit-test warnings when login/navigation targets sat partially outside the viewport; runs completed with 0 exceptions. Treat as an accessibility/layout follow-up, not a capture blocker.
+
+**Still outstanding:**
+- Owner visual audit of the pair images (this log records capture success, not design sign-off).
+- `v2Screens` flips remain gated on that audit (§4.3 activation rule).
+- 360 pt Android captures (P-07) not yet run.
+- `SHOT_EXPOFFER_JOB` fixture for `tradie/02b_lead_expired`.
+- Tradie v2 screens themselves (Fix-3) — captures above are v1 baseline.
 
 *Generated 2026-11-17 from static review of `dev` @ `541629b`. Re-run Fix-0 captures before trusting any ❓ row.*

@@ -57,13 +57,12 @@ class HoPendingAdjustmentCard extends StatelessWidget {
   Widget build(BuildContext context) => THCard(
     tone: THCardTone.accent,
     children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      Wrap(
         spacing: Space.s2,
+        runSpacing: Space.s2,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          const Expanded(
-            child: THBadge('Extra cost request', kind: THBadgeKind.accent),
-          ),
+          const THBadge('Extra cost request', kind: THBadgeKind.accent),
           if (adjustment.expiresAtUtc != null)
             THText(
               'Expires ${MaterialLocalizations.of(context).formatShortDate(adjustment.expiresAtUtc!.toLocal())}',

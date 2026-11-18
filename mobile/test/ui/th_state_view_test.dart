@@ -1,5 +1,6 @@
 // Phase 2.9: ThStateView loading / empty / error / presets, light + dark.
 import 'package:fixo/ui/design/th_tokens.dart';
+import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/feedback/th_state_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,20 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Loading jobs…'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('loading inside a scrollable THScaffold does not throw ($t)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: dark ? THTheme.dark : THTheme.light,
+          home: THScaffold(body: const ThStateView.loading(label: 'Loading…')),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Loading…'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

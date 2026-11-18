@@ -14,6 +14,12 @@
 #   ./dev.sh android --build  # force-rebuild Docker images then start Flutter
 #
 # Prerequisites: Docker (OrbStack), Flutter on host, mobile/.env.json filled in.
+#
+# UI_V2_DEFINE controls which screens render their v2 rebuilds
+# (mobile/lib/ui/ui_flags.dart). Default `all` = every ported v2 screen.
+# Override with a comma-separated id list, e.g.:
+#   UI_V2_DEFINE=sign_in,onboarding ./dev.sh android
+#   UI_V2_DEFINE= ./dev.sh android        # only the shipped v2Screens allowlist
 
 set -euo pipefail
 
@@ -21,6 +27,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MOBILE_DIR="$REPO_ROOT/mobile"
 ENV_JSON="$MOBILE_DIR/.env.json"
 ENV_JSON_EXAMPLE="$MOBILE_DIR/.env.json.example"
+
+# v1↔v2 screen switch — `all` renders every ported v2 screen; a comma-separated
+# id list (e.g. sign_in,onboarding) limits it; empty = shipped v2Screens only.
+# `-` not `:-`: an explicitly empty UI_V2_DEFINE= means "shipped allowlist only".
+UI_V2_DEFINE="${UI_V2_DEFINE-all}"
+UI_V2_ARGS=("--dart-define=UI_V2=$UI_V2_DEFINE")
 
 # ── Colours ───────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -76,7 +88,7 @@ cmd_flutter() {
 
   ensure_env_json
 
-  local flutter_args=("--dart-define-from-file=$ENV_JSON")
+  local flutter_args=("--dart-define-from-file=$ENV_JSON" "${UI_V2_ARGS[@]}")
 
   case "$target" in
     ios)     flutter_args+=("-d" "$(get_ios_device)") ;;
@@ -143,17 +155,20 @@ cmd_flutter_duo() {
   # Building once up-front lets both `flutter run --no-build` calls skip the
   # Gradle step entirely and go straight to install + run.
   info "Building APK (once)..."
-  flutter build apk --debug --dart-define-from-file="$ENV_JSON"
+  flutter build apk --debug \
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}"
 
   info "Launching on both emulators (Ctrl-C stops both)..."
 
   # --no-build skips the Gradle step; both instances just install + start the
   # pre-built APK on their respective device.
-  flutter run --no-build --dart-define-from-file="$ENV_JSON" -d "$dev1" 2>&1 \
+  flutter run --no-build \
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}" -d "$dev1" 2>&1 \
     | sed "s/^/[emu-1] /" &
   PID1=$!
 
-  flutter run --no-build --dart-define-from-file="$ENV_JSON" -d "$dev2" 2>&1 \
+  flutter run --no-build \
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}" -d "$dev2" 2>&1 \
     | sed "s/^/[emu-2] /" &
   PID2=$!
 
@@ -255,7 +270,7 @@ cmd_flutter_ios_duo() {
   # PlatformException -34018 on every token read). A normal sim build gets
   # a proper adhoc signature (0x2) and Keychain works — no team needed.
   flutter build ios --debug --simulator \
-    --dart-define-from-file="$ENV_JSON"
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}"
 
   if [[ ! -d "$IOS_APP_PATH" ]]; then
     error "Build completed but $IOS_APP_PATH was not produced."
@@ -289,7 +304,7 @@ cmd_flutter_ios_rebuild() {
   cd "$MOBILE_DIR"
   # See cmd_flutter_ios_duo: --no-codesign breaks Keychain on the simulator.
   flutter build ios --debug --simulator \
-    --dart-define-from-file="$ENV_JSON"
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}"
 
   info "Reinstalling and relaunching on both simulators..."
   install_ios_duo "$dev1" "$dev2"
@@ -329,7 +344,8 @@ cmd_flutter_attach() {
 
   cd "$MOBILE_DIR"
   info "Running flutter on $target_dev (no rebuild)..."
-  flutter run --no-build --dart-define-from-file="$ENV_JSON" -d "$target_dev"
+  flutter run --no-build \
+    --dart-define-from-file="$ENV_JSON" "${UI_V2_ARGS[@]}" -d "$target_dev"
 }
 
 # ── Entry point ───────────────────────────────────────────────────────────────

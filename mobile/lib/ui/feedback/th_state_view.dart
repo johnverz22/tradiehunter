@@ -275,30 +275,31 @@ class _LoadingState extends State<_Loading>
                 1.0 - 0.45 * Curves.easeInOut.transform(_pulse.value);
             return Opacity(
               opacity: opacity,
-              child: ListView(
-                primary: false,
-                physics: const NeverScrollableScrollPhysics(),
+              child: Padding(
                 padding: const EdgeInsets.all(Sizes.gutter),
-                children: [
-                  for (var i = 0; i < widget.rows; i++) ...[
-                    _SkeletonCard(
-                      color: c.track,
-                      surface: c.surface,
-                      line: c.line,
-                    ),
-                    const SizedBox(height: Space.s3),
-                  ],
-                  if (widget.label != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: Space.s2),
-                      child: THText(
-                        widget.label!,
-                        style: THTextStyle.meta,
-                        tone: THTone.soft,
-                        align: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = 0; i < widget.rows; i++) ...[
+                      _SkeletonCard(
+                        color: c.track,
+                        surface: c.surface,
+                        line: c.line,
                       ),
-                    ),
-                ],
+                      const SizedBox(height: Space.s3),
+                    ],
+                    if (widget.label != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: Space.s2),
+                        child: THText(
+                          widget.label!,
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                          align: TextAlign.center,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             );
           },
