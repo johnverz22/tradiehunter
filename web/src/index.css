@@ -86,10 +86,11 @@ code {
   transform: none;
 }
 
-/* ── Sidebar footer ───────────────────────────────────
+/* ── Sidebar footer / drawer close ────────────────────
    The kit's .nav-item is for links. The footer also needs a
-   Logout button and a non-interactive "signed in as" row, which
-   the frames do not show; these two rules adapt .nav-item.
+   Logout button and a non-interactive "signed in as" row, and the
+   drawer a close button; the frames show none of these. These
+   rules adapt .nav-item.
    Tokens only. */
 button.nav-item {
   width: 100%;
@@ -97,6 +98,12 @@ button.nav-item {
   background: transparent;
   cursor: pointer;
   text-align: left;
+}
+button.nav-item.nav-item-icon {
+  width: var(--sz-touch);
+  flex: none;
+  padding: 0;
+  justify-content: center;
 }
 div.nav-item-static {
   cursor: default;

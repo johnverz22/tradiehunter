@@ -10,9 +10,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { LogOut } from 'lucide-react';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { UserMenu } from './UserMenu';
 
 export interface NavItem {
   to: string;
@@ -24,13 +24,6 @@ interface SidebarNavProps {
   navItems: NavItem[];
   adminName: string;
   onLogout: () => void;
-}
-
-/** Up to two initials for the avatar ("Sam Harris" → "SH"). */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? '').slice(0, 1);
-  return (letters || 'A').toUpperCase();
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({
@@ -63,22 +56,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       </nav>
 
       <div className="sidebar-foot">
-        <div className="nav-item nav-item-static">
-          <span className="avatar avatar-sm" aria-hidden="true">{initials(adminName)}</span>
-          <span className="nav-label" title={adminName}>
-            {adminName}
-            <small>Administrator</small>
-          </span>
-        </div>
-        <button
-          type="button"
-          className="nav-item"
-          onClick={onLogout}
-          title={isDesktop ? undefined : 'Logout'}
-        >
-          <LogOut size={20} aria-hidden="true" />
-          <span className="nav-label">Logout</span>
-        </button>
+        <UserMenu adminName={adminName} onLogout={onLogout} variant="dark" showTitles={!isDesktop} />
       </div>
     </aside>
   );

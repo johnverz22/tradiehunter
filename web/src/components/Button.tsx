@@ -23,6 +23,8 @@ interface BaseProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 
   loading?: boolean;
   /** Stretch to the container width. */
   block?: boolean;
+  /** React 19 passes `ref` as a prop; it reaches the <button> through the spread. */
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 export interface ButtonProps extends BaseProps {
