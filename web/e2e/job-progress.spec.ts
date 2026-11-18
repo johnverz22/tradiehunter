@@ -17,10 +17,11 @@ import { test, expect, type Page } from '@playwright/test';
 /** Navigate to the jobs list and open the first row whose status chip matches. */
 async function openJobWithStatus(page: Page, status: string): Promise<boolean> {
   await page.goto('/jobs');
-  await page.waitForLoadState('networkidle');
+  const rows = page.locator('table tbody tr:not([aria-hidden="true"])');
+  const hasRows = await rows.first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false);
+  if (!hasRows) return false;
 
   // Try to find a row with the matching status badge text.
-  const rows = page.locator('table tbody tr');
   const count = await rows.count().catch(() => 0);
 
   for (let i = 0; i < count; i++) {
@@ -29,6 +30,7 @@ async function openJobWithStatus(page: Page, status: string): Promise<boolean> {
     if (badgeText.trim().toLowerCase() === status.toLowerCase()) {
       await row.click();
       await page.waitForURL(/\/jobs\/\d+/);
+      await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
       return true;
     }
   }
@@ -53,6 +55,7 @@ function activeStep(page: Page) {
 /** Return the aria-current="step" text from the stepper (label, plus sublabel if any). */
 async function activeStepLabel(page: Page): Promise<string | null> {
   const activeLi = activeStep(page);
+  await activeLi.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
   const visible = await activeLi.isVisible().catch(() => false);
   if (!visible) return null;
   return activeLi.textContent();
@@ -60,7 +63,9 @@ async function activeStepLabel(page: Page): Promise<string | null> {
 
 /** Return the step text for a step at the given 0-based index. */
 async function stepLabelAt(page: Page, index: number): Promise<string | null> {
-  return steps(page).nth(index).textContent().catch(() => null);
+  const item = steps(page).nth(index);
+  await item.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  return item.textContent().catch(() => null);
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
@@ -76,12 +81,13 @@ test.describe('P-stepper — Job progress stepper', () => {
 
   test('stepper renders 4 labelled steps', async ({ page }) => {
     // Open any job.
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // Expect exactly 4 steps in the stepper list.
     const items = steps(page);
@@ -159,8 +165,8 @@ test.describe('P-stepper — Job progress stepper', () => {
   // ── Accessibility ─────────────────────────────────────────────────────────────
 
   test('stepper has role="list" and aria-label', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
@@ -170,12 +176,13 @@ test.describe('P-stepper — Job progress stepper', () => {
   });
 
   test('sr-only summary text is present', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // The <span class="sr-only"> should contain "Step N of 4".
     const srOnly = page.locator('.sr-only');
@@ -185,8 +192,8 @@ test.describe('P-stepper — Job progress stepper', () => {
   // ── Refresh button ────────────────────────────────────────────────────────────
 
   test('manual refresh button is present and enabled', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
@@ -198,12 +205,13 @@ test.describe('P-stepper — Job progress stepper', () => {
   });
 
   test('clicking refresh button triggers a network request', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // Intercept the jobs API call.
     let jobFetchCount = 0;
@@ -223,12 +231,13 @@ test.describe('P-stepper — Job progress stepper', () => {
   // ── Connectors ───────────────────────────────────────────────────────────────
 
   test('first step draws no connector; each later step draws one back', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // The kit draws each connector as the ::before of the step it leads into
     // (horizontal layout, >= 768 px; the default test viewport is wider).

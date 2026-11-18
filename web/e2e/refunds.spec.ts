@@ -15,7 +15,7 @@ test.describe('P6 — Refund Queue', () => {
   });
 
   test('P6-08 refund row shows homeowner, amount and cancel reason', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 
@@ -25,7 +25,7 @@ test.describe('P6 — Refund Queue', () => {
   });
 
   test('P6-10 processing refund without TransferReference is blocked', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 
@@ -40,7 +40,7 @@ test.describe('P6 — Refund Queue', () => {
   });
 
   test('P6-12 refund amounts display as exact 2dp decimal', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 

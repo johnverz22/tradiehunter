@@ -17,18 +17,18 @@ test.describe('P4 — Payment Queue', () => {
   });
 
   test('P4-14 payment row shows dollar amount and FIXO- reference', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const rowVisible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!rowVisible) {
       test.skip();
       return;
     }
-    await expect(firstRow.getByText(/\$\d+\.\d{2}/)).toBeVisible();
+    await expect(firstRow.getByText(/\$\d+\.\d{2}/).first()).toBeVisible();
     await expect(firstRow.getByText(/FIXO-/)).toBeVisible();
   });
 
   test('P4-08 reject without reason is blocked', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const rowVisible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!rowVisible) {
       test.skip();
