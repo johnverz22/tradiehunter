@@ -85,7 +85,10 @@ Existing components (keep names and props)
   - e2e (D6): `web/e2e/job-progress.spec.ts` no longer uses `.step-label`, `.step-sublabel`, `.step-line` or `[role="listitem"]`; it finds the stepper with `getByRole('list', { name: 'Job progress' })`, steps with `getByRole('listitem')` and the active step with `[aria-current="step"]`, and asserts on text. The "last step has no connector" test no longer applies (the kit draws each connector as the `::before` of the step it leads into, so the first step has none): replaced by "first step draws no connector; each later step draws one back". The AwaitingConfirmation sublabel check is now strict (was skipped when the sublabel was not visible). Specs not run (deferred).
   - Deviations to know: the `job_detail` frame shows 5 steps (Awaiting confirmation as its own step); the app keeps the 4-step model of `getJobProgress` (mobile parity) with "Awaiting confirmation" as the sublabel, because changing the step list is a behaviour change. Expired and Disputed now halt like Cancelled (red, cross icon; the kit has no gold/other halt state); before, Expired was gold and Disputed red with a gold border. The 200 ms colour transition is gone (the kit stepper defines none).
   - [~] Deferred (manual): run `e2e/job-progress.spec.ts` against a live API; visual check of a Booked, InProgress, AwaitingConfirmation, Completed, Cancelled and Disputed job against the `job_detail` / `job_detail_phone` frames in light + dark at 1280/820/390 (horizontal ≥ 768, vertical below; connector turns red into a halted step; check/cross icons visible in `forced-colors`).
-- [ ] **2.15** `ThemeToggle` (S)
+- [x] **2.15** `ThemeToggle` (S)
+  - Done: `components/ThemeToggle.tsx` renders the shared `IconButton` (ghost, md; kit `.btn .btn-ghost .btn-icon`) with a 20 px Moon/Sun icon, replacing the Tailwind `h-8 w-8 rounded-full border …` classes and legacy `--paper*` variables. Props (`theme`, `onToggle`, `className`) and the state-based label/title ("Switch to dark mode" / "Switch to light mode") are unchanged; no e2e spec references it. Legacy baseline 248 → 247 uses (32 → 31 files).
+  - Deviations / visual deltas: the button is now the kit's square ghost icon button (44 px on coarse pointers) instead of a 32 px round bordered one; the `job_detail`-style frames use a fixed "Switch colour theme" label, the app keeps the state-based one (more informative, no behaviour change). The two call sites (`AppShell` content corner, `TopBar`) still wrap it in legacy layout classes; those are handled in 2.16 / 2.18.
+  - [~] Deferred (manual): keyboard focus ring and activation (Enter/Space) of the toggle, and a look at it in the `AppShell` corner and `TopBar` in light + dark.
 
 Shell
 - [ ] **2.16** `AppShell`, `AdminLayout` (240 / 64 rail / drawer breakpoints, content max 1280) (M)
@@ -142,6 +145,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, task 2.15: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (248 → 247 uses, 31 files), design gate (126/126) pass. **Deferred (manual):** toggle keyboard/visual check, see task 2.15.
 - 2026-11-18, task 2.14: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (253 → 248 uses, 32 files), design gate (126/126) pass. **Deferred (manual):** `job-progress.spec.ts` run and the stepper visual check, see task 2.14.
 - 2026-11-18, tasks 2.11–2.13: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (262 → 253 uses, 33 files), design gate (126/126) pass.
 - 2026-11-18, tasks 2.9–2.10: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (263 → 262 uses, 35 files), design gate (126/126) pass.
