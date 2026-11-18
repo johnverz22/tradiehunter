@@ -2654,7 +2654,8 @@
      "t": "seg",
      "items": [
       "Active",
-      "Completed"
+      "Completed",
+      "All"
      ],
      "on": 0
     },

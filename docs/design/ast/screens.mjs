@@ -108,7 +108,7 @@ screen({ id: 'ho_dispute', title: 'Dispute amount', route: '/jobs/:id/dispute', 
   T('WHAT’S WRONG', 'label', { tone: 'soft' }), pills([{ v: 'Hours too high', on: true }, { v: 'Work incomplete' }, { v: 'Unapproved extra' }, { v: 'Other' }]),
   field('DETAILS', 'Tradie was on site about 1.5 hours, not 2.5.', { h: 90 }), field('WHAT WOULD BE FAIR?', '1.5 h × $85 = $127.50'), dash('cam', 'Add evidence', null)),
 screen({ id: 'ho_jobs', title: 'My jobs', route: '/jobs', role: 'homeowner', nav: 'jobs', dock: 'homeowner' },
-  T('My jobs', 'h1'), seg(['Active', 'Completed'], 0),
+  T('My jobs', 'h1'), seg(['Active', 'Completed', 'All'], 0),
   jobCard('Leaking kitchen tap', 'Aroha Plumbing', 'Pay now', 'accent', 4, 4), jobCard('Repaint hallway', 'Waiting for Kiri Painters', 'Requested', 'brand', 1, 1), jobCard('Kitchen renovation', '2 of 3 quotes in', 'Quotes', 'ok', 1, 1)),
 
 // ════════════════ SHARED · messaging ════════════════

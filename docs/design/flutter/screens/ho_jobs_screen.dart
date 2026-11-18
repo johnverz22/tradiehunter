@@ -20,7 +20,7 @@ class HoJobsScreen extends StatelessWidget {
           spacing: Space.s3,
           children: [
           THText('My jobs', style: THTextStyle.h1),
-          THSegmented(items: ['Active', 'Completed'], selected: 0),
+          THSegmented(items: ['Active', 'Completed', 'All'], selected: 0),
           THCard(
             
             children: [
