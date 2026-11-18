@@ -131,7 +131,7 @@ class _HoBrowseTradiesScreenState extends ConsumerState<HoBrowseTradiesScreen> {
     final catalog = _catalog ?? const <ServiceOption>[];
     final addressState = ref.watch(addressSearchProvider);
     return ListView(
-      padding: const EdgeInsets.only(bottom: Sizes.dockClearance),
+      padding: EdgeInsets.only(bottom: thDockClearance(context)),
       children: [
         if (_catalogError != null)
           ThStateView.error(message: _catalogError!, onRetry: _loadCatalog),

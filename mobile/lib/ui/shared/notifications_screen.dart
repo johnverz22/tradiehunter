@@ -91,7 +91,7 @@ class _ThNotificationsScreenState extends ConsumerState<ThNotificationsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(
+                          padding: EdgeInsets.fromLTRB(
                             Sizes.gutter,
                             Space.s3,
                             Sizes.gutter,
@@ -118,7 +118,7 @@ class _ThNotificationsScreenState extends ConsumerState<ThNotificationsScreen> {
                                     Sizes.gutter,
                                     Space.s2,
                                     Sizes.gutter,
-                                    Sizes.dockClearance,
+                                    thDockClearance(context),
                                   ),
                                   itemCount: visible.length,
                                   separatorBuilder: (_, _) =>

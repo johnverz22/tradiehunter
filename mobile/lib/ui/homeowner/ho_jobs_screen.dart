@@ -123,11 +123,11 @@ class _ThJobsScreenState extends ConsumerState<ThJobsScreen> {
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   Sizes.gutter,
                   Space.s1_5,
                   Sizes.gutter,
-                  Sizes.dockClearance,
+                  thDockClearance(context),
                 ),
                 children: [
                   Center(

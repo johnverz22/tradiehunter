@@ -111,11 +111,11 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
               onRefresh: _reload,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   Sizes.gutter,
                   Space.s1_5,
                   Sizes.gutter,
-                  Sizes.dockClearance,
+                  thDockClearance(context),
                 ),
                 child: Center(
                   child: ConstrainedBox(

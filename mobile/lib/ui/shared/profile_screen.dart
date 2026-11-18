@@ -280,7 +280,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                     Sizes.gutter,
                     Space.s3,
                     Sizes.gutter,
-                    Sizes.dockClearance,
+                    thDockClearance(context),
                   ),
                   children: [
                     Column(
@@ -407,7 +407,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                   Sizes.gutter,
                   Space.s1_5,
                   Sizes.gutter,
-                  Sizes.dockClearance,
+                  thDockClearance(context),
                 ),
                 child: Form(
                   key: _formKey,

@@ -2153,6 +2153,14 @@ class THStickyBar extends StatelessWidget {
   }
 }
 
+/// Bottom padding a scrolling list needs so its last item clears the floating
+/// [THDock] (S-01): [Sizes.dockClearance] covers the dock, its 16 pt float and
+/// the raised FAB; the home-indicator inset is added on top because the shell
+/// lifts the dock by that inset. Zero inset (no notch) gives exactly
+/// [Sizes.dockClearance].
+double thDockClearance(BuildContext context) =>
+    Sizes.dockClearance + MediaQuery.viewPaddingOf(context).bottom;
+
 class THDock extends StatelessWidget {
   const THDock({
     super.key,
@@ -2283,7 +2291,9 @@ class THDock extends StatelessWidget {
     return Container(
       height: Sizes.dock,
       decoration: BoxDecoration(
-        color: c.glass,
+        // Opaque (S-01): `glass` is 82–86% alpha, so list rows showed through
+        // the dock. Composite it over the page colour instead of blurring.
+        color: Color.alphaBlend(c.glass, c.paper),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: c.line),
         boxShadow: const [

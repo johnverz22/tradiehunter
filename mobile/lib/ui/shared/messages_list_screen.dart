@@ -143,7 +143,7 @@ class _ThMessagesListScreenState extends ConsumerState<ThMessagesListScreen> {
                       Space.s4,
                       Space.s4,
                       Space.s4,
-                      Sizes.dockClearance,
+                      thDockClearance(context),
                     ),
                     itemCount: _conversations.length,
                     separatorBuilder: (_, _) =>

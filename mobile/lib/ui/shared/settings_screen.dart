@@ -116,7 +116,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                 Space.s6,
                 Space.s2,
                 Space.s6,
-                Sizes.dockClearance,
+                thDockClearance(context),
               ),
               children: [
                 sectionLabel('Account'),
