@@ -8,7 +8,7 @@ metadata:
 
 # v2 E2E Explorer Skill
 
-Use this skill when exploring the Fixo mobile app using Maestro / Maestro MCP, capturing visual QA screenshots against design mockups (`docs/design/mockups/index.html`), or authoring and debugging out-of-process E2E flows.
+Use this skill when exploring the Fixo mobile app using Maestro / Maestro MCP, capturing visual QA screenshots against design mockups (`docs/design/mobile/mockups/index.html`), or authoring and debugging out-of-process E2E flows.
 
 ## 1. Hard Rules (Non-Negotiable)
 
@@ -75,7 +75,7 @@ Seeding command: `python3 scripts/e2e-credentials.py --keep` and `scripts/seed-t
 
 ## 4. Visual QA Screenshot Protocol
 
-Maestro captures screenshots for direct visual comparison against the 30 v2 design mockups (`docs/design/mockups/index.html`):
+Maestro captures screenshots for direct visual comparison against the 30 v2 design mockups (`docs/design/mobile/mockups/index.html`):
 
 - **Naming Convention:** `takeScreenshot: <screen_id>_<theme>`
   - Examples: `ho_home_light`, `ho_home_dark`, `ho_post_quick_light`, `ho_choose_tradie_light`, `ho_job_booked_light`, `ho_payment_status_light`.
@@ -88,7 +88,7 @@ Maestro captures screenshots for direct visual comparison against the 30 v2 desi
 Exploration sessions must record findings into:
 1. `docs/runs/exploration-report.md`:
    - Summary of screens visited.
-   - Screen inventory cross-referenced against the 30 v2 screen AST list in `docs/design/ast/screens.mjs`.
+   - Screen inventory cross-referenced against the 30 v2 screen AST list in `docs/design/mobile/ast/screens.mjs`.
    - Maestro run outcomes and execution logs.
 2. `docs/runs/e2e-defect-backlog.md`:
    - Itemized table of any visual regressions, missing identifiers, broken flows, or API mismatches discovered during exploration.

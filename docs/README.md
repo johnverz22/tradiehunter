@@ -14,7 +14,7 @@ One file per type. History lives in git; nothing here is versioned by folder. St
 | [QA.md](QA.md) | Manual release pass by actor, including v1.7 cases |
 | [DESIGN.md](DESIGN.md) | Visual system, tokens, components, frame inventory, audit gates |
 | [ai/AI-TOOLING.md](ai/AI-TOOLING.md) | Agent rules, skills, MCP servers, design toolchain |
-| `design/` | v2 design system: tokens, AST screens, Flutter widgets, mockups, build pipeline (`node tools/build.mjs`). Legacy v1.7 archived at `archive/design-legacy-v1/` |
+| `design/` | Design systems: `mobile/` (v2 tokens master, AST screens, Flutter widgets, mockups) and `web/` (admin: inherits mobile tokens, component kit, mockups). Each has `node tools/build.mjs [--check]`. Legacy v1.7 archived at `archive/design-legacy-v1/` |
 
 ## Naming: TradieHunter vs Fixo
 

@@ -7,8 +7,8 @@ import { fetchAppConfig, type BrandConfig } from '../../../services/adminApi';
  * alone.
  */
 export const FALLBACK_BRAND: BrandConfig = {
-  appName: 'TradieFixo',
-  supportEmail: 'support@tradiefixo.nz',
+  appName: 'TradieHunter',
+  supportEmail: 'support@tradiehunter.nz',
   supportHoursDisplay: '8am – 6pm NZT, Mon–Fri',
 };
 

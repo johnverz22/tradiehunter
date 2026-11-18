@@ -26,7 +26,7 @@ test.describe('P7 — Users & Flagged Accounts', () => {
 
   test('P7-13 opening a user profile shows action buttons', async ({ page }) => {
     await page.goto('/users');
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 

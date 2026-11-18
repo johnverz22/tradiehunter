@@ -9,4 +9,4 @@ This directory contains the complete v1.7 design system (Space Grotesk + IBM Ple
 
 The mobile source of truth is now `docs/design/` (v2 system).
 
-See `docs/design/DESIGN_GUIDE.md` for the canonical v2 guide.
+See `docs/design/mobile/DESIGN_GUIDE.md` for the canonical v2 guide.

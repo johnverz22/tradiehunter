@@ -5,9 +5,9 @@ The capture drivers cannot be run without a simulator, so this keeps the names
 consistent without one. It compares four things:
 
   1. section 7.3 of docs/todos/02_design_system_fix_plan.md   (the plan)
-  2. docs/design/tools/capture-manifest.json                  (the manifest)
+  2. docs/design/mobile/tools/capture-manifest.json            (the manifest)
   3. the `__SHOT__` / skip names in the integration_test drivers
-  4. docs/design/tools/shot-map.json                          (mockup id -> names)
+  4. docs/design/mobile/tools/shot-map.json                    (mockup id -> names)
 
 Fails (exit 1) when:
   * the manifest's `required` names differ from the plan's section 7.3;
@@ -28,8 +28,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PLAN = ROOT / "docs/todos/02_design_system_fix_plan.md"
-MANIFEST = ROOT / "docs/design/tools/capture-manifest.json"
-SHOT_MAP = ROOT / "docs/design/tools/shot-map.json"
+MANIFEST = ROOT / "docs/design/mobile/tools/capture-manifest.json"
+SHOT_MAP = ROOT / "docs/design/mobile/tools/shot-map.json"
 DRIVERS = [
     ROOT / "mobile/integration_test/screenshots_test.dart",
     ROOT / "mobile/integration_test/screenshots_variants_test.dart",

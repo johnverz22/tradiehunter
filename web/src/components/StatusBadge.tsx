@@ -1,58 +1,50 @@
 import React from 'react';
-
-type Tone = 'green' | 'amber' | 'red' | 'blue' | 'gray' | 'brand';
+import { Badge, type BadgeTone } from './Badge';
 
 interface StatusBadgeProps {
   status: string;
-  /** `lg` matches the mockup's page-header badge. */
+  /** `lg` is the page-header size. */
   size?: 'sm' | 'lg';
   className?: string;
 }
 
-const statusTones: Record<string, Tone> = {
-  // Job statuses (v1.2)
-  Requested: 'brand',
-  AwaitingPayment: 'amber',
-  PaymentReview: 'amber',
-  Booked: 'green',
-  InProgress: 'blue',
-  AwaitingConfirmation: 'amber',
-  Completed: 'gray',
-  Cancelled: 'red',
-  Expired: 'gray',
-  Disputed: 'red',
-  
-  // User roles (v1.2)
-  Superadmin: 'brand',
-  Staff: 'brand',
-  Homeowner: 'gray',
-  Tradie: 'blue',
-  
-  // Account state
-  Active: 'green',
-  Inactive: 'gray',
-  Verified: 'green',
-  Unverified: 'amber',
-  
-  // Dispute statuses
-  Open: 'amber',
-  Resolved: 'green',
-  Escalated: 'red',
-  None: 'gray',
+/** Status map: docs/design/web/COMPONENTS.md "Status map". Unknown statuses are neutral. */
+const statusTones: Record<string, BadgeTone> = {
+  // ok
+  Booked: 'ok',
+  Active: 'ok',
+  Verified: 'ok',
+  Resolved: 'ok',
+  // info
+  Requested: 'info',
+  InProgress: 'info',
+  Superadmin: 'info',
+  Staff: 'info',
+  Tradie: 'info',
+  // warn
+  AwaitingPayment: 'warn',
+  PaymentReview: 'warn',
+  AwaitingConfirmation: 'warn',
+  Unverified: 'warn',
+  Open: 'warn',
+  // danger
+  Cancelled: 'danger',
+  Disputed: 'danger',
+  Escalated: 'danger',
+  // neutral
+  Completed: 'neutral',
+  Expired: 'neutral',
+  Homeowner: 'neutral',
+  Inactive: 'neutral',
+  None: 'neutral',
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
   size = 'sm',
   className = '',
-}) => {
-  const tone = statusTones[status] ?? 'gray';
-
-  return (
-    <span
-      className={`pill pill-${tone} ${size === 'lg' ? 'pill-lg' : ''} ${className}`.trim()}
-    >
-      {status}
-    </span>
-  );
-};
+}) => (
+  <Badge tone={statusTones[status] ?? 'neutral'} dot size={size} className={className}>
+    {status}
+  </Badge>
+);

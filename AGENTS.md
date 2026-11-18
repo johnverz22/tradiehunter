@@ -8,7 +8,7 @@ A two-sided marketplace for homeowners and tradies. White-label ready — "Fixo"
 ## Stack
 - **Backend**: .NET 10 (ASP.NET Core Web API), EF Core + PostgreSQL/PostGIS (dev), ASP.NET Identity + JWT, SignalR for real-time (chat, job-status, match notifications), Hangfire for scheduled reminders, Firebase Admin SDK for FCM push.
 - **Mobile (primary)**: Flutter, single app with role-based views (homeowner/tradie — not two separate apps). This is the main client for the MVP.
-- **Web (admin only)**: React, scoped to admin dashboard only for MVP. Not a homeowner/tradie client.
+- **Web (admin only)**: React, scoped to admin dashboard only for MVP. Not a homeowner/tradie client. Design system: `docs/design/web/` (extends the mobile tokens). `web/src/theme/` and `web/public/fonts/` are synced copies: never hand-edit them; change `docs/design/web/`, run its build, then `npm run design:sync` in `web/`. Tokens and kit classes only; no retired v1.7 names (`npm run design:legacy`).
 - **Infrastructure**: Docker Compose (OrbStack locally) — PostgreSQL+PostGIS, Azurite (Azure Blob Storage emulator), Redis (SignalR backplane + Hangfire).
 - Full rationale in `docs/ARCHITECTURE.md`.
 
@@ -17,7 +17,7 @@ A two-sided marketplace for homeowners and tradies. White-label ready — "Fixo"
 - Money and pricing fields: always decimal, never float.
 - All timestamps: UTC in the database, localized at the client. Locale settings are configuration-driven (see `docs/ARCHITECTURE.md`).
 - Every job-status transition must go through the SignalR hub, not a REST-only side channel, so both web and mobile stay in sync.
-- Follow the design system in `docs/design/DESIGN_GUIDE.md` and `docs/design/tokens/tokens.json` for any UI work. Colour via `context.th.<name>`, type via `THType.*`, space/radii/size via `Space.*`/`Radii.*`/`Sizes.*`. The visual reference for mobile screens is `docs/design/mockups/index.html` (30 v2 screens, light + dark). Read `docs/DESIGN.md` for the full design contract (component vocabulary, CTA placement, feedback notices). Preserve hourly pricing, manual payment review, disputes, permissions, routes/callbacks, repository/ViewModel layering and SignalR behavior; never fabricate missing data or bypass functional decision gates. Both light and dark themes are required.
+- Follow the design system in `docs/design/mobile/DESIGN_GUIDE.md` and `docs/design/mobile/tokens/tokens.json` for any UI work. Colour via `context.th.<name>`, type via `THType.*`, space/radii/size via `Space.*`/`Radii.*`/`Sizes.*`. The visual reference for mobile screens is `docs/design/mobile/mockups/index.html` (30 v2 screens, light + dark). Read `docs/DESIGN.md` for the full design contract (component vocabulary, CTA placement, feedback notices). Preserve hourly pricing, manual payment review, disputes, permissions, routes/callbacks, repository/ViewModel layering and SignalR behavior; never fabricate missing data or bypass functional decision gates. Both light and dark themes are required.
 - **No hardcoded values in mobile UI code.** All spacing, radii, font sizes, font weights, colors, alpha tints, durations, letter spacing, shadows, and component sizes must come from the token classes in `mobile/lib/theme/design_tokens.dart` (`Space`, `Radii`, `Sizes`, `FW`, `Alpha`, `Durations`, `Tracking`, `THColors`). Never write raw numeric literals or `Color(0x...)` in view/widget files. See `mobile/HARDCODED_AUDIT.md` for the full audit and the list of tokens to use for each category. If a needed token doesn't exist, add it to `design_tokens.dart` rather than inlining the value.
 - Local dev runs via `docker compose up` (OrbStack). Flutter runs on the host (emulator/simulator), not in Docker.
 - Backend `dotnet` commands must always run inside the API container — `dotnet` is NOT installed on the host. Use `docker compose run --rm --entrypoint /bin/bash api -c "dotnet <command>"` (e.g. restore, build, test, ef migrations).
@@ -45,7 +45,8 @@ All docs live in `docs/`, one file per type. Do not add versioned spec folders.
 | Stack and seams | `docs/ARCHITECTURE.md` |
 | Email + Firebase runbooks | `docs/OPERATIONS.md` |
 | Test commands, seeds / manual QA | `docs/TESTING.md`, `docs/QA.md` |
-| Tokens, components, mockups, notices | `docs/DESIGN.md`, `docs/design/mockups/index.html`, `docs/design/DESIGN_GUIDE.md` |
+| Web admin tokens, components, mockups | `docs/design/web/DESIGN_GUIDE.md`, `docs/design/web/mockups/index.html` |
+| Mobile tokens, components, mockups, notices | `docs/DESIGN.md`, `docs/design/mobile/mockups/index.html`, `docs/design/mobile/DESIGN_GUIDE.md` |
 | MCPs, rules, skills | `docs/ai/AI-TOOLING.md` |
 
-Scope rule: changes to decisions recorded in `docs/MVP.md` (hourly vs quotes, payment timing, materials, cancellations, in-app payments) need explicit owner sign-off first; record the superseded decision in MVP §7. Flow v2 (pay at completion) is the current design; v1 remains only for in-flight jobs. The v2 design system (Trust Navy + Gold) is the visual source of truth; mockups are at `docs/design/mockups/index.html`. Update docs via the `docs-sync` skill.
+Scope rule: changes to decisions recorded in `docs/MVP.md` (hourly vs quotes, payment timing, materials, cancellations, in-app payments) need explicit owner sign-off first; record the superseded decision in MVP §7. Flow v2 (pay at completion) is the current design; v1 remains only for in-flight jobs. The v2 design system (Trust Navy + Gold) is the visual source of truth; mockups are at `docs/design/mobile/mockups/index.html`. Update docs via the `docs-sync` skill.

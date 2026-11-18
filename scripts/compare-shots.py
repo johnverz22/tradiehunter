@@ -6,11 +6,11 @@
                                      [--only id[,id]] [--height 1600] [--strict]
 
 Inputs
-  mockups  docs/design/mockups/png/<id>-<theme>.png
-           (make them with: node docs/design/tools/mockup-shots.mjs)
+  mockups  docs/design/mobile/mockups/png/<id>-<theme>.png
+           (make them with: node docs/design/mobile/tools/mockup-shots.mjs)
   shots    docs/runs/v2/screenshots/<theme>/<capture name>.png
            (make them with: scripts/run-shots.sh)
-  map      docs/design/tools/shot-map.json  (mockup id -> capture names)
+  map      docs/design/mobile/tools/shot-map.json  (mockup id -> capture names)
 
 Output
   <out>/<theme>/<id>.png   mockup on the left, app on the right, with a caption
@@ -84,8 +84,8 @@ def pair(mockup_path, app_path, caption, sub, height):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--shots", default=str(ROOT / "docs/runs/v2/screenshots"))
-    ap.add_argument("--mockups", default=str(ROOT / "docs/design/mockups/png"))
-    ap.add_argument("--map", default=str(ROOT / "docs/design/tools/shot-map.json"))
+    ap.add_argument("--mockups", default=str(ROOT / "docs/design/mobile/mockups/png"))
+    ap.add_argument("--map", default=str(ROOT / "docs/design/mobile/tools/shot-map.json"))
     ap.add_argument("--out", default=None)
     ap.add_argument("--themes", default="light,dark")
     ap.add_argument("--only", default="")

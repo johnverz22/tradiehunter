@@ -444,7 +444,7 @@ class _Section extends StatelessWidget {
 }
 
 /// Static reassurance from the mockup (fix plan §4.3.1). Copy mirrors
-/// `docs/design/ast/screens.mjs` `ho_home`; no figure or claim beyond what
+/// `docs/design/mobile/ast/screens.mjs` `ho_home`; no figure or claim beyond what
 /// SPECS/MVP state (pay after approval, rates incl. GST).
 class _TrustNote extends StatelessWidget {
   const _TrustNote();

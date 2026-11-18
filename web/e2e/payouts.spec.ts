@@ -15,7 +15,7 @@ test.describe('P10 — Payout Queue', () => {
   });
 
   test('P10-02 payout table rows display amounts, masked bank numbers, and links', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const rowVisible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!rowVisible) {
       test.skip();

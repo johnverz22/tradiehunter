@@ -126,9 +126,9 @@ After placing files, create these **three human-readable reference pages** insid
 
 | New file | Contents |
 |---|---|
-| `docs/design/COLOUR.md` | Extracted from `DESIGN_GUIDE.md` §2: full colour token table (light + dark), contrast results summary, pairing rules |
-| `docs/design/TYPOGRAPHY.md` | Extracted from `DESIGN_GUIDE.md` §3: type scale table, font families, `pubspec.yaml` font setup instructions |
-| `docs/design/COMPONENTS.md` | Extracted from `DESIGN_GUIDE.md` §5–§7: component vocabulary, widget mapping (`Fixo*` → `TH*`), role differences, screen inventory (30 screens), signature elements |
+| `docs/design/mobile/COLOUR.md` | Extracted from `DESIGN_GUIDE.md` §2: full colour token table (light + dark), contrast results summary, pairing rules |
+| `docs/design/mobile/TYPOGRAPHY.md` | Extracted from `DESIGN_GUIDE.md` §3: type scale table, font families, `pubspec.yaml` font setup instructions |
+| `docs/design/mobile/COMPONENTS.md` | Extracted from `DESIGN_GUIDE.md` §5–§7: component vocabulary, widget mapping (`Fixo*` → `TH*`), role differences, screen inventory (30 screens), signature elements |
 
 These are documentation extracts, not new content — they simply make the design guide navigable by topic.
 
@@ -141,13 +141,13 @@ These are documentation extracts, not new content — they simply make the desig
 | File | Required update | Priority |
 |---|---|---|
 | **`docs/DESIGN.md`** | **Full rewrite.** This is the primary design contract. Must reflect: v2 system version, new colour palette (Navy + Gold), new typography (Lexend + Source Sans 3), new token names (`THColors`, `THType`), new component vocabulary (`TH*` family replacing `Fixo*`), new screen inventory (30 screens, v2 frame list), updated regression gates (use `node tools/build.mjs --check` instead of `audit_full.py`), updated font rules (no font files in repo), remove outdoor/high-contrast variant references (not in v2). | 🔴 Critical |
-| **`docs/ARCHITECTURE.md`** | Update design system section: new token file paths, font strategy (google_fonts vs bundled), remove references to `kit.css` and `html/` frames as source of truth. Add reference to `docs/design/tokens/tokens.json` as the single source of truth. Update the "Design system" row in the stack table. | 🔴 Critical |
+| **`docs/ARCHITECTURE.md`** | Update design system section: new token file paths, font strategy (google_fonts vs bundled), remove references to `kit.css` and `html/` frames as source of truth. Add reference to `docs/design/mobile/tokens/tokens.json` as the single source of truth. Update the "Design system" row in the stack table. | 🔴 Critical |
 | **`docs/SPECS.md`** | Update any references to v1 component names (`FixoPrimaryButton`, `FixoAppBar`, `FixoCard`, etc.) with their v2 equivalents (`THButton`, `THAppBar`, `THHero`). Update §10 mobile UX contract to reflect v2 screen structure. Remove references to `kit.css` classes (`.appbar`, `.btn-tonal`, etc.). | 🟠 High |
 | **`docs/MVP.md`** | Update screen inventory list to match v2 screen names (e.g., `ho_choose_tradie` replaces the old "H19 Browse Tradies" reference). No scope changes — just naming alignment. | 🟡 Medium |
 | **`docs/PRD.md`** | Update any design system references. Add a note that the mobile UI underwent a design system rebrand to v2 Trust Navy + Gold. No feature scope changes. | 🟡 Medium |
 | **`docs/MILESTONES.md`** | Add a milestone entry for the v2 design system migration (this initiative). Record completion dates per phase as work progresses. | 🟡 Medium |
-| **`docs/TESTING.md`** | Update design regression gate commands: replace `python3 docs/design/tools/audit_full.py` with `node docs/design/tools/build.mjs --check`. Update any references to `docs/design/html/frames-*.html` as test inputs. | 🟠 High |
-| **`docs/QA.md`** | Update visual QA references: replace v1 frame file paths with v2 `docs/design/mockups/index.html`. Update component checklist from `Fixo*` to `TH*` names. | 🟡 Medium |
+| **`docs/TESTING.md`** | Update design regression gate commands: replace `python3 docs/design/mobile/tools/audit_full.py` with `node docs/design/mobile/tools/build.mjs --check`. Update any references to `docs/design/html/frames-*.html` as test inputs. | 🟠 High |
+| **`docs/QA.md`** | Update visual QA references: replace v1 frame file paths with v2 `docs/design/mobile/mockups/index.html`. Update component checklist from `Fixo*` to `TH*` names. | 🟡 Medium |
 | **`docs/README.md`** (docs index) | Update the design row in the documentation map table: `docs/design/` now points to v2 Trust Navy + Gold system. Update the "Tokens, components, frames, notices" row. | 🟡 Medium |
 | **`docs/ai/AI-TOOLING.md`** | Update §1 path table (`docs/design/` description), §4 toolchain commands (replace `make -C agent audit`/`transpile` with `node tools/build.mjs`), skills table (see §3.2). | 🟠 High |
 | **`docs/ai/AGENTS-docs-block.md`** | If this contains the docs-map block used in AGENTS.md, update the design row to point to v2. | 🟡 Medium |
@@ -156,9 +156,9 @@ These are documentation extracts, not new content — they simply make the desig
 
 | File | Required update | Priority |
 |---|---|---|
-| **`.agent/rules/mobile.md`** | **Major update.** This is the primary agent rule file for mobile UI. Must update: Design system section to reference `docs/design/DESIGN_GUIDE.md` and `docs/design/tokens/tokens.json` as the source of truth. Replace all `Fixo*` widget references with `TH*` equivalents. Update token class references (`THType` for typography, updated `THColors` fields). Remove references to `kit.css`, `html/frames-*.html`, `outdoor` variant, Space Grotesk/IBM Plex. Update "No hardcoded values" section with v2 token names. Update component reuse list. Add font strategy note. | 🔴 Critical |
+| **`.agent/rules/mobile.md`** | **Major update.** This is the primary agent rule file for mobile UI. Must update: Design system section to reference `docs/design/mobile/DESIGN_GUIDE.md` and `docs/design/mobile/tokens/tokens.json` as the source of truth. Replace all `Fixo*` widget references with `TH*` equivalents. Update token class references (`THType` for typography, updated `THColors` fields). Remove references to `kit.css`, `html/frames-*.html`, `outdoor` variant, Space Grotesk/IBM Plex. Update "No hardcoded values" section with v2 token names. Update component reuse list. Add font strategy note. | 🔴 Critical |
 | **`AGENTS.md`** (root) | Update the design token reference in the "Conventions" section: `mobile/lib/theme/design_tokens.dart` reference stays but update token class names. Update `docs/design/` description in the documentation map table. Remove references to `design-system.html` as a source. Remove references to v1 frame files (`frames-homeowner.html`, `frames-tradie.html`) as the visual source of truth (or update to point to v2 `mockups/index.html`). | 🔴 Critical |
-| **`GEMINI.md`** | Update design token section: replace "docs/design/design-system.html" and v1 frame file references with v2 equivalents. Update the visual source of truth sentence. Remove "frames-homeowner.html and frames-tradie.html" and replace with "docs/design/mockups/index.html" and "docs/design/DESIGN_GUIDE.md". | 🔴 Critical |
+| **`GEMINI.md`** | Update design token section: replace "docs/design/design-system.html" and v1 frame file references with v2 equivalents. Update the visual source of truth sentence. Remove "frames-homeowner.html and frames-tradie.html" and replace with "docs/design/mobile/mockups/index.html" and "docs/design/mobile/DESIGN_GUIDE.md". | 🔴 Critical |
 | **`CLAUDE.md`** | Same updates as `AGENTS.md` — these files are kept in parity (see `AI-TOOLING.md §1`). | 🔴 Critical |
 | **`.cursorrules`** | Regenerate from `CLAUDE.md` (per AI-TOOLING.md convention) after CLAUDE.md is updated. | 🟠 High |
 | **`.windsurfrules`** | Regenerate from `CLAUDE.md` after CLAUDE.md is updated. | 🟠 High |
@@ -173,16 +173,16 @@ The following **specific strings** appear in multiple docs and rule files and mu
 
 | Old reference | New reference | Appears in |
 |---|---|---|
-| `docs/design/html/frames-homeowner.html` | `docs/design/mockups/index.html` | AGENTS.md, GEMINI.md, DESIGN.md, mobile.md |
-| `docs/design/html/frames-tradie.html` | `docs/design/mockups/index.html` | AGENTS.md, GEMINI.md, DESIGN.md, mobile.md |
-| `docs/design/html/kit.css` | `docs/design/tokens/tokens.css` | DESIGN.md, AI-TOOLING.md |
-| `docs/design/design-system.html` | `docs/design/DESIGN_GUIDE.md` | DESIGN.md, ARCHITECTURE.md, GEMINI.md |
+| `docs/design/html/frames-homeowner.html` | `docs/design/mobile/mockups/index.html` | AGENTS.md, GEMINI.md, DESIGN.md, mobile.md |
+| `docs/design/html/frames-tradie.html` | `docs/design/mobile/mockups/index.html` | AGENTS.md, GEMINI.md, DESIGN.md, mobile.md |
+| `docs/design/html/kit.css` | `docs/design/mobile/tokens/tokens.css` | DESIGN.md, AI-TOOLING.md |
+| `docs/design/design-system.html` | `docs/design/mobile/DESIGN_GUIDE.md` | DESIGN.md, ARCHITECTURE.md, GEMINI.md |
 | `Space Grotesk` | `Lexend` | DESIGN.md, mobile.md |
 | `IBM Plex Sans` | `Source Sans 3` | DESIGN.md, mobile.md |
 | `FixoPrimaryButton` | `THButton(kind: accent)` or `THButton(kind: primary)` | mobile.md, SPECS.md |
 | `FixoAppBar` | `THAppBar` | mobile.md, SPECS.md, AI-TOOLING.md |
 | `THColors` via `Theme.of(context).extension<THColors>()` | `context.th.<name>` (via `THTheme` extension) | mobile.md |
-| `python3 docs/design/tools/audit_full.py` | `node docs/design/tools/build.mjs --check` | TESTING.md, AI-TOOLING.md |
+| `python3 docs/design/mobile/tools/audit_full.py` | `node docs/design/mobile/tools/build.mjs --check` | TESTING.md, AI-TOOLING.md |
 | `DesignTokens.*` | `THColors.*`, `THType.*`, `Space.*`, `Radii.*`, `Sizes.*` | mobile.md |
 | `v1.7` (design system version) | `v2.0.0` | DESIGN.md, ARCHITECTURE.md, MILESTONES.md |
 | `outdoor` variant | *(remove — not in v2)* | DESIGN.md, mobile.md |
@@ -208,13 +208,13 @@ The following **specific strings** appear in multiple docs and rule files and mu
 - An import-boundary guard (§2.4) keeps v1 and v2 files from importing each other.
 
 **Per-screen recipe (used in Phases 3–5)**
-1. Copy the generated stub from `docs/design/flutter/screens/<id>_screen.dart` into `lib/ui/<feature>/`. It is now hand-owned; never regenerate over it. (`ast/` + `mockups/` stay the design reference.)
+1. Copy the generated stub from `docs/design/mobile/flutter/screens/<id>_screen.dart` into `lib/ui/<feature>/`. It is now hand-owned; never regenerate over it. (`ast/` + `mockups/` stay the design reference.)
 2. Make it a `ConsumerWidget` and replace sample copy by watching the **existing** providers/viewmodels the old screen used. Put model→display mapping (money via `utils/money.dart`, status text via `job_status_presentation.dart`) in a small pure mapper next to the screen so it can be unit-tested.
 3. Port the old screen's **actions** one by one (every button/sheet/navigation) to the same viewmodel methods. Write the action list from the old file first; it is the parity checklist.
 4. Use `ThStateView` for loading / empty / error; use `THNotice` for toasts and banners.
 5. Preserve the `Key`s the old screen exposed (141 in `lib/views`) wherever `test/` or `integration_test/` rely on them.
 6. Add a widget test (provider overrides, light + dark) and, where useful, a golden.
-7. Visual QA against `docs/design/mockups/index.html`, then add the id to `v2Screens`, one PR per screen or small group.
+7. Visual QA against `docs/design/mobile/mockups/index.html`, then add the id to `v2Screens`, one PR per screen or small group.
 
 **Definition of done for a screen:** parity checklist complete, old-screen flow tests green with the flag on, no hardcoded colours/sizes/fonts (tokens only), Semantics labels kept, light + dark verified.
 
@@ -259,9 +259,9 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [x] **1.2** Move all files from `docs/design/` into `docs/archive/design-legacy-v1/` (preserving subdirectory layout)
 - [x] **1.3** Create `docs/archive/design-legacy-v1/ARCHIVE-NOTICE.md` (date, reason, pointer to v2)
 - [x] **1.4** Copy `th-design-v2/` contents into `docs/design/` following the structure in §2.2
-- [x] **1.5** Create `docs/design/COLOUR.md` (extract from DESIGN_GUIDE.md §2)
-- [x] **1.6** Create `docs/design/TYPOGRAPHY.md` (extract from DESIGN_GUIDE.md §3)
-- [x] **1.7** Create `docs/design/COMPONENTS.md` (extract from DESIGN_GUIDE.md §5–§7)
+- [x] **1.5** Create `docs/design/mobile/COLOUR.md` (extract from DESIGN_GUIDE.md §2)
+- [x] **1.6** Create `docs/design/mobile/TYPOGRAPHY.md` (extract from DESIGN_GUIDE.md §3)
+- [x] **1.7** Create `docs/design/mobile/COMPONENTS.md` (extract from DESIGN_GUIDE.md §5–§7)
 - [x] **1.8** Add `docs/design/assets/ASSETS-NOTICE.md` documenting asset strategy decision (see §2.3) — *D-1 resolved: skip; brand assets stay in archive*
 - [x] **1.9** Rewrite `docs/DESIGN.md` per §3.1
 - [x] **1.10** Update `docs/ARCHITECTURE.md` per §3.1
@@ -281,10 +281,10 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [x] **1.24** Regenerate `.cursorrules` and `.windsurfrules` from updated `CLAUDE.md`
 - [x] **1.25** Update `.agent/rules/ai-tools.md` per §3.2
 - [x] **1.26** Check `.agent/rules/backend.md` and `.agent/rules/frontend.md` for stray mobile design refs
-- [x] **1.27** Verify `docs/design/tools/build.mjs` runs correctly from its new location (`node docs/design/tools/build.mjs --check`)
+- [x] **1.27** Verify `docs/design/mobile/tools/build.mjs` runs correctly from its new location (`node docs/design/mobile/tools/build.mjs --check`)
 - [x] **1.28** Commit with message: `docs: archive v1.7 design system, install v2 Trust Navy + Gold`
 
-✅ **Phase 1 done when:** `node docs/design/tools/build.mjs --check` passes, no doc or rule file references old v1 paths, and `docs/archive/design-legacy-v1/` contains the complete v1 set.
+✅ **Phase 1 done when:** `node docs/design/mobile/tools/build.mjs --check` passes, no doc or rule file references old v1 paths, and `docs/archive/design-legacy-v1/` contains the complete v1 set.
 
 ---
 
@@ -292,11 +292,11 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 **Goal:** Install v2 tokens, fonts, widgets and a scoped theme under `mobile/lib/ui/`, next to the old code. Nothing in `lib/views/`, `lib/widgets/` or `lib/theme/` changes.
 
-- [x] **2.1** Create `mobile/lib/ui/design/` and copy in `docs/design/tokens/design_tokens.dart` → `th_tokens.dart` and `docs/design/flutter/th_widgets.dart` → `th_widgets.dart`. Fix the one relative import (`design_tokens.dart` → `th_tokens.dart`). Keep class names unchanged (`THColors`, `THType`, `THButton`, …).
+- [x] **2.1** Create `mobile/lib/ui/design/` and copy in `docs/design/mobile/tokens/design_tokens.dart` → `th_tokens.dart` and `docs/design/mobile/flutter/th_widgets.dart` → `th_widgets.dart`. Fix the one relative import (`design_tokens.dart` → `th_tokens.dart`). Keep class names unchanged (`THColors`, `THType`, `THButton`, …).
 - [x] **2.2** Bundle fonts (D-2): add Lexend + Source Sans 3 files for the weights used in `tokens.json` under `mobile/assets/fonts/v2/` and declare both families in `pubspec.yaml`. **Keep the v1 families until Phase 6.** Verify on a real iOS and Android device that the files render (Flutter's mobile engines are only guaranteed to load `.ttf`/`.otf`; if `.woff2` falls back to the system font, convert to `.ttf`, which still satisfies D-2). *Done as static `.ttf` (Lexend 400–800, Source Sans 3 400–700); on-device render check still to do.*
 - [x] **2.3** Add `ThScope` (`lib/ui/design/th_scope.dart`; takes `themeMode` as a parameter until 2.11 moves `themeModeProvider` out of `views/`, so `lib/ui` stays free of `views/` imports): wraps a subtree in `Theme(data: THTheme.light | THTheme.dark)`, choosing by the existing `themeModeProvider` + platform brightness. `THTheme.light/dark` are getters, not methods. This is how v2 screens get v2 theme while the rest of the app keeps `FixoTheme`.
 - [x] **2.4** Add the import-boundary guard (`scripts/check_ui_boundary.py`, run as a step of the `mobile-build-test` CI job): files under `lib/ui/**` must not import `theme/design_tokens.dart`, `theme/fixo_theme.dart`, `widgets/fixo_*`, `widgets/th_components.dart` or `views/**`; files outside `lib/ui/**` must not import `ui/design/**`. This is what makes the side-by-side approach safe, because the old app and v2 both define `THColors`, `THType`, `THBadge`, `THField`, `THSegmented`, `THSwitch`, `THIconButton`, `THListRow` and `THDivider`. They only clash if one file imports both.
-- [x] **2.5** Add `node docs/design/tools/build.mjs --check` to CI now (new `design-system-check` CI job; passes: 30 screens, contrast 38/38). Retiring the v1 audit targets waits for Phase 6.
+- [x] **2.5** Add `node docs/design/mobile/tools/build.mjs --check` to CI now (new `design-system-check` CI job; passes: 30 screens, contrast 38/38). Retiring the v1 audit targets waits for Phase 6.
 - [x] **2.6** Copy the 30 generated stubs to `mobile/lib/ui/gallery/` (static sample data, imports repointed) and add a debug-only `/debug/screen-gallery` route exposing `thScreenBuilders`, each wrapped in `ThScope` (`ScreenGalleryPage`, with a light/dark toggle; deep link `?screen=<id>&theme=dark`). These stubs are the visual baseline and golden source. They are **not** the real screens.
 - [x] **2.7** Add golden tests for the 30 gallery screens (light + dark) under `test/ui/goldens/`. *Test written (`test/ui/gallery_goldens_test.dart`); baseline PNGs still to generate with `flutter test --update-goldens test/ui/gallery_goldens_test.dart` (comparison is skipped per screen until its PNG is committed).*
 - [x] **2.8** Create `lib/ui/feedback/th_notice.dart` (D-3): a v2-styled skin that reuses the existing `FixoNoticeController`/`notice_copy.dart` logic (UI-independent). The class rename of the old widgets happens at cutover. *`THNotice` façade + `THNoticeHost` + `THNoticeBanner`, tests in `test/ui/th_notice_test.dart`. Host is not mounted yet: the v1 `FixoNoticeHost` still renders notices until Phase 6.1.*
@@ -335,7 +335,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
   | *(no v2 design)* | `views/settings_screen.dart` | theme mode, locale, sign-out |
 
 - [x] **3.4** For each screen follow the §4.0 recipe, including widget tests, preserved `Key`s and flipping its entry in `v2Screens`.
-- [x] **3.5** Visual QA each screen against `docs/design/mockups/index.html` (light + dark). *Automated light + dark verification (widget tests + gallery goldens stay green); on-device mockup comparison is the follow-up.*
+- [x] **3.5** Visual QA each screen against `docs/design/mobile/mockups/index.html` (light + dark). *Automated light + dark verification (widget tests + gallery goldens stay green); on-device mockup comparison is the follow-up.*
 
 ✅ **Phase 3 done when:** a user can sign up, verify, sign in (email and Google), pick a role, and land in the v2 shell with chat / notifications / profile in v2, with all auth tests green.
 
@@ -343,7 +343,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 *Phase 3 audit follow-up (2026-11-17): fixed B1 by scoping `ThScope` to shell chrome, aligned the self-profile overview with its v2 design, and covered both real v1 shell children plus light/dark Home goldens. Added the Phase 3 type, radius, size and motion tokens from the source token file; chat wrapping/semantics and reduced-motion handling are covered by widget tests. Verification on Flutter 3.47.5: analyze clean and all 65 Phase 3 tests pass. The full suite reports 60 gallery golden diffs against baselines last re-blessed on Flutter 3.47.9; those global baselines were left unchanged, outside this Phase 3 fix set.*
 
-*Widget audit against `docs/design/mockups/index.html` (2026-11-17): Phase 2's display `THField` and button dimensions/type sizes match the mockup (`56px` input, `54px`/`15px` regular button, `44px`/`14px` small button). The editable `THTextField` added in Phase 3 was the mismatch: it rendered its label outside the border and Flutter's default icon slot made the control too tall. It now keeps uppercase small-caps labels and editable input inside one bordered surface, constrains icon slots, uses 16px input text, and follows the mockup's field radius.*
+*Widget audit against `docs/design/mobile/mockups/index.html` (2026-11-17): Phase 2's display `THField` and button dimensions/type sizes match the mockup (`56px` input, `54px`/`15px` regular button, `44px`/`14px` small button). The editable `THTextField` added in Phase 3 was the mismatch: it rendered its label outside the border and Flutter's default icon slot made the control too tall. It now keeps uppercase small-caps labels and editable input inside one bordered surface, constrains icon slots, uses 16px input text, and follows the mockup's field radius.*
 
 *THTextField follow-up (2026-11-17): the first fix still left the icon on a separate line from the hint, because the icon was an `InputDecoration.prefixIcon` forced to 44px tall, which stretched the input row and the field past 56px. `THTextField` now builds the mockup `.fld` structure directly: bordered 56px surface, 10/14 padding, small-caps label, then one row (18px icon, 10px gap, value/hint); the password toggle keeps its 44px tap target, bottom-aligned with the value row. Geometry is pinned by `test/ui/th_text_field_layout_test.dart`.*
 
@@ -385,7 +385,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [x] **4.3** Screens without a v2 design (listed above, plus cancel / schedule / rating sheets, `/users/:id`, wide-layout rail) are composed from `TH*` widgets following `DESIGN_GUIDE.md`, flagged `needs-design` in the PR, and added to the D-4 design-pass backlog.
 - [x] **4.4** Preserve post-job navigation (`/jobs/new` → `/jobs/:id/tradies` | `/matching` | `/request`) and all `extra` payload types in `app_router.dart` unchanged. Push-notification deep links must keep working.
 - [x] **4.5** Widget tests per screen; run the matching existing flow tests (`job_request_test`, `matching_test`, `payment_test`, `dispute_test`, `job_lifecycle_test`) with v2 enabled.
-- [ ] **4.6** Visual QA against `docs/design/mockups/index.html`. *Reopened 2026-11-18 (was skipped). Run per `docs/todos/02_design_system_fix_plan.md` Fix-2 and §8: capture with `UI_V2=all`, pair image (mockup | app) per screen, light + dark, 100% and 200% text, no unexplained deviation.*
+- [ ] **4.6** Visual QA against `docs/design/mobile/mockups/index.html`. *Reopened 2026-11-18 (was skipped). Run per `docs/todos/02_design_system_fix_plan.md` Fix-2 and §8: capture with `UI_V2=all`, pair image (mockup | app) per screen, light + dark, 100% and 200% text, no unexplained deviation.*
 
 *4.2 progress (2026-11-17, PR A): added `ThJobDetailRouter`, the auto-dispose job/profile/contact/adjustments loader, a total detail-state selector and the v2 status presentation copy; `/jobs/:jobId/detail` now selects the router through `_pick('ho_job_detail', …)`, preserving the route and `job_detail_<id>` key. Every selector result still injects the v1 detail screen, so the flag-on path is behavior-preserving while the state views are built in PRs B–E. Status/selector tests cover known and unknown statuses, pending adjustments, terminal-vs-dispute priority, and v1 table parity. The 4.4 route snapshot baseline is also in place and confirms `/jobs/:jobId/edit` remains unregistered (F-3). `flutter analyze --no-pub`, the focused state and route tests, and `scripts/check_ui_boundary.py` pass. Extra-payload tests and the post-job journey remain outstanding; PRs B–E remain outstanding; `ho_job_detail` remains absent from `v2Screens`.*
 
@@ -405,7 +405,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 *4.1 progress (2026-11-17, #10): **`ho_dispute` ported** as `HoDisputeScreen` (`lib/ui/homeowner/ho_dispute_screen.dart`, 227 lines) with the same four reason values, 4,000-char text cap, five-photo evidence upload, and the existing completion navigation. It reuses the existing `disputeProvider`/`DisputeNotifier` (multi-step submit order preserved: create dispute → evidence text → files; partial failure surfaces which step failed and never loses typed content), the existing `open_dispute` / `uploadDisputeEvidence` repository calls, and the existing `dispute_screen` / `dispute_reason_*` / `dispute_details_field` / `open_dispute_button` Keys. The v2 skin is composed from `TH*` (`THScaffold`, `THAppBar`, `THCard`, `THText`, `THIcon`, `THButton.kind: danger`, `THStickyBar`) with the info card, radio reason group, multi-line details field with live counter, evidence grid (`_EvidenceThumb` + `_AddEvidenceTile`), and the sticky submit bar. `THNotice`/`FixoNotice` success toast and `pop`/`go('/jobs/$jobId/detail')` fallback preserved. Wired in `app_router.dart` as `_pick('ho_dispute', DisputeScreen(…), HoDisputeScreen(…))` at the unchanged `/jobs/:jobId/dispute` route; **not added to `v2Screens`** pending owner visual QA. Verification on Flutter 3.47.5: `flutter analyze --no-pub --fatal-infos` clean, `scripts/check_ui_boundary.py` passes, `test/ui/phase4_ho_dispute_test.dart` 1/1 (reason selection, details counter, evidence entry), `flutter test --dart-define=UI_V2=ho_dispute integration_test/dispute_test.dart` 3/3 (render, validation-blocks-submit, filled-submit-navigates-away). Remaining Phase 4 items: none — #1–#10 all ported; activation checklist (§4.4) and `v2Screens` flip await owner visual QA.*
 
-*4.5 progress (2026-11-17 wrap-up): All 10 homeowner screens (#1 through #10) plus interim compositions (`ho_categories`, `ho_browse_tradies`, fallback states and action sheets) are fully implemented, tested, and routed behind `isV2Screen(...)`. Cleaned up import boundary in `lib/views/jobs/matching_screen.dart` by moving `ThScope` into `ThRequestSentScreen` (`scripts/check_ui_boundary.py` passes with 0 violations). Resolved prohibited `ScaffoldMessenger.of / SnackBar` in `ho_payment_screen.dart` with `FixoNotice` (`test/fixo_notice_test.dart` passes). `node docs/design/tools/build.mjs --check` passes (30 screens, 36 files, contrast 38/38 pass). `flutter analyze --no-pub --fatal-infos` reports 0 issues. Full mobile test suite passes with `--dart-define=UI_V2=all` (1,013/1,013 tests green). Visual QA and device QA skipped per user instruction. **Reopened 2026-11-18: implementation complete, visual QA outstanding; see `docs/todos/02_design_system_fix_plan.md` Fix-2.** The earlier screenshot runs rendered v1 for every Phase 4 screen (no `UI_V2` flag), so none of these screens has been looked at yet.*
+*4.5 progress (2026-11-17 wrap-up): All 10 homeowner screens (#1 through #10) plus interim compositions (`ho_categories`, `ho_browse_tradies`, fallback states and action sheets) are fully implemented, tested, and routed behind `isV2Screen(...)`. Cleaned up import boundary in `lib/views/jobs/matching_screen.dart` by moving `ThScope` into `ThRequestSentScreen` (`scripts/check_ui_boundary.py` passes with 0 violations). Resolved prohibited `ScaffoldMessenger.of / SnackBar` in `ho_payment_screen.dart` with `FixoNotice` (`test/fixo_notice_test.dart` passes). `node docs/design/mobile/tools/build.mjs --check` passes (30 screens, 36 files, contrast 38/38 pass). `flutter analyze --no-pub --fatal-infos` reports 0 issues. Full mobile test suite passes with `--dart-define=UI_V2=all` (1,013/1,013 tests green). Visual QA and device QA skipped per user instruction. **Reopened 2026-11-18: implementation complete, visual QA outstanding; see `docs/todos/02_design_system_fix_plan.md` Fix-2.** The earlier screenshot runs rendered v1 for every Phase 4 screen (no `UI_V2` flag), so none of these screens has been looked at yet.*
 
 #### 4.4 activation checklist (keep `ho_job_detail` and other Phase 4 ids gated)
 
@@ -454,7 +454,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [ ] **5.2** Keep `tradie_onboarding_viewmodel` (708 lines) and `offer_responder` untouched; only the presentation is recreated. Split the dashboard and job-detail files into per-section widgets rather than porting them 1:1.
 - [ ] **5.3** Confirm the tradie dock has **no** centre action (`THDock(role: THDockRole.tradie)`, `onNewRequest` null). The earlier draft's `fab: false` parameter does not exist in `th_widgets.dart`.
 - [ ] **5.4** Run `offer_countdown` and offer-response behaviour tests with v2 enabled.
-- [ ] **5.5** Visual QA against `docs/design/mockups/index.html`.
+- [ ] **5.5** Visual QA against `docs/design/mobile/mockups/index.html`.
 - [ ] **5.6** Tradie quote submission form for project jobs (`POST /api/jobs/:id/quotes`): pricing model, amounts, inclusions / exclusions, start / duration. No mockup, so compose from `TH*` and label `needs-design` (fix plan T-08).
 - [ ] **5.7** Tradie jobs list at `/jobs` (reuse the `ho_jobs` card pattern with tradie statuses, Active / Completed) (fix plan T-09).
 - [ ] **5.8** Tradie own profile, settings and public-profile views: availability, services / rates, credentials status, earnings entry, rating (fix plan T-12).
@@ -477,7 +477,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [ ] **6.7** Update `mobile/HARDCODED_AUDIT.md` for v2 tokens.
 - [ ] **6.8** Retire old audit targets from `agent/Makefile` (`audit`, `transpile`, `sheet`) or redirect them to `build.mjs`; update `agent/setup.sh` and root `package.json` scripts (`audit`, `verify`).
 - [ ] **6.9** Document the "change a colour / screen / component" workflow in `docs/ai/AI-TOOLING.md` §4 and `docs/design/README.md`, including that ported screens are now hand-owned code and the AST stubs remain the design reference.
-- [ ] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mockups/index.html`.
+- [ ] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/mobile/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mobile/mockups/index.html`.
 - [ ] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
 
 ✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, no capture run raises a missing-asset exception (and the `il-05` v1 workaround is deleted), and a release build passes on iOS and Android.
@@ -503,8 +503,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 ```
 docs/design/                          → v2 design system (installed 2026-11-16) ✅
 docs/archive/design-legacy-v1/        → v1.7 legacy design system (archived 2026-11-16) ✅
-mobile/lib/ui/design/th_tokens.dart   → Phase 2 (copy of docs/design/tokens/design_tokens.dart)
-mobile/lib/ui/design/th_widgets.dart  → Phase 2 (copy of docs/design/flutter/th_widgets.dart)
+mobile/lib/ui/design/th_tokens.dart   → Phase 2 (copy of docs/design/mobile/tokens/design_tokens.dart)
+mobile/lib/ui/design/th_widgets.dart  → Phase 2 (copy of docs/design/mobile/flutter/th_widgets.dart)
 mobile/lib/ui/design/th_scope.dart    → Phase 2 (scoped THTheme wrapper)
 mobile/lib/ui/gallery/                → Phase 2 (static stubs, debug gallery + goldens only)
 mobile/lib/ui/{auth,homeowner,tradie,shared,feedback}/ → Phases 3–5 (real screens bound to existing viewmodels)

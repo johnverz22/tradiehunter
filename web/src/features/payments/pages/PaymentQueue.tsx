@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { AlarmClock, CheckCircle, Receipt, Wallet } from 'lucide-react';
+import { CheckCircle, Receipt } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
+import { EmptyState } from '../../../components/EmptyState';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
@@ -58,30 +60,23 @@ function waitBand(minutes: number): WaitBand {
   return 'ok';
 }
 
-/** Row tint + badge for the Waiting column. */
+/** Label for the Waiting column: a badge once a payment is past an SLA threshold (text + dot, never colour alone). */
 function waitingCell(payment: PendingPayment) {
   const minutes = waitingMinutes(payment);
   const band = waitBand(minutes);
 
-  const bandClass =
-    band === 'urgent'
-      ? 'bg-red-50 dark:bg-red-900/25'
-      : band === 'warn'
-        ? 'bg-amber-50 dark:bg-amber-900/25'
-        : undefined;
-
   return {
     minutes,
     band,
-    bandClass,
-    label: (
-      <span className={band === 'ok' ? 'cell-muted' : 'font-medium'}>
-        {waitLabel(minutes)}
-        {band === 'urgent' && (
-          <span className="pill pill-red ml-2">URGENT</span>
-        )}
-      </span>
-    ),
+    label:
+      band === 'ok' ? (
+        <span className="muted">{waitLabel(minutes)}</span>
+      ) : (
+        <Badge tone={band === 'urgent' ? 'danger' : 'warn'} dot>
+          {waitLabel(minutes)}
+          {band === 'urgent' ? ' · urgent' : ''}
+        </Badge>
+      ),
   };
 }
 
@@ -202,12 +197,12 @@ export const PaymentQueue: React.FC = () => {
           </Link>
           {/* v1.7: rows are finished work — the completion date is the key context. */}
           {payment.completionSubmittedAtUtc && (
-            <span className="block text-xs cell-muted">
+            <span className="block t-meta muted">
               Work completed on {formatDate(payment.completionSubmittedAtUtc)}
             </span>
           )}
           {payment.reUploadCount > 0 && (
-            <span className="block text-xs text-[var(--amber-dark)]">
+            <span className="block t-meta c-accent">
               {payment.reUploadCount} send-back{payment.reUploadCount === 1 ? '' : 's'}
             </span>
           )}
@@ -221,7 +216,7 @@ export const PaymentQueue: React.FC = () => {
       cell: (payment) => (
         <div>
           {payment.homeownerName}
-          <span className="block text-xs cell-muted">{payment.homeownerEmail}</span>
+          <span className="block t-meta muted">{payment.homeownerEmail}</span>
         </div>
       ),
     },
@@ -233,7 +228,7 @@ export const PaymentQueue: React.FC = () => {
         const currency = payment.currency || 'NZD';
         const hasBreakdown = payment.labourAmount != null || payment.adjustmentsTotal != null;
         if (!hasBreakdown) {
-          return <span className="font-mono">{money(payment.amount, currency)}</span>;
+          return <span className="money">{money(payment.amount, currency)}</span>;
         }
         // v1.7 itemised row: labour + approved adjustments = the final total.
         // Show only the parts the payload actually carries — never invented ones.
@@ -247,10 +242,10 @@ export const PaymentQueue: React.FC = () => {
         if (parts.length === 0) parts.push('no adjustments');
         return (
           <div>
-            <span className="font-mono font-semibold">
+            <span className="money">
               {money(payment.finalAmount ?? payment.amount, currency)}
             </span>
-            <span className="block text-xs cell-muted font-mono">{parts.join(' + ')}</span>
+            <span className="block t-meta muted mono">{parts.join(' + ')}</span>
           </div>
         );
       },
@@ -260,7 +255,7 @@ export const PaymentQueue: React.FC = () => {
       header: 'Reference',
       priority: 'detail',
       cell: (payment) => (
-        <span className="font-mono">{payment.reference}</span>
+        <span className="mono">{payment.reference}</span>
       ),
     },
     {
@@ -268,7 +263,7 @@ export const PaymentQueue: React.FC = () => {
       header: 'Submitted',
       priority: 'detail',
       cell: (payment) => (
-        <span className="cell-muted">{submittedAgo(payment.submittedAtUtc)}</span>
+        <span className="muted">{submittedAgo(payment.submittedAtUtc)}</span>
       ),
     },
     {
@@ -303,40 +298,33 @@ export const PaymentQueue: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       {/* Header */}
       <PageHeader
-        title="Payment Queue"
+        title="Payment queue"
         description="Manual bank transfers for finished work, uploaded by homeowners. Check the amount and reference against the bank statement, then verify to complete the job and queue the tradie's payout, or reject to ask for a corrected receipt."
+        actions={
+          <Link to="/payments/overdue" className="btn btn-secondary">
+            Overdue payments
+          </Link>
+        }
         meta={
-          data && (
+          data && items.length > 0 ? (
             <>
-              {data.totalCount > 0 && (
-                <div className="stat-pill">
-                  <Wallet size={13} aria-hidden="true" />
-                  <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
-                </div>
-              )}
-              {items.length > 0 && (
-                <div className="stat-pill">
-                  <strong>{money(
-                    items.reduce((sum, p) => sum + p.amount, 0),
-                    items[0]?.currency ?? 'NZD',
-                  )}</strong>{' '}
-                  on this page
-                </div>
-              )}
+              <Badge>
+                {money(
+                  items.reduce((sum, p) => sum + p.amount, 0),
+                  items[0]?.currency ?? 'NZD',
+                )}{' '}
+                on this page
+              </Badge>
               {urgentCount > 0 && (
-                <div className="stat-pill" style={{ color: 'var(--red)' }}>
-                  <strong>{urgentCount}</strong> waiting over {URGENT_MINUTES}m
-                </div>
+                <Badge tone="danger" dot>
+                  {urgentCount} waiting over {URGENT_MINUTES}m
+                </Badge>
               )}
-              <Link to="/payments/overdue" className="stat-pill action-link">
-                <AlarmClock size={13} aria-hidden="true" />
-                Overdue payments
-              </Link>
             </>
-          )
+          ) : undefined
         }
       />
 
@@ -371,7 +359,6 @@ export const PaymentQueue: React.FC = () => {
         columns={columns}
         rows={items}
         getRowKey={(p) => p.id}
-        getRowClassName={(p) => waitingCell(p).bandClass}
         isLoading={isLoading}
         rowActions={rowActions}
         empty={
@@ -379,24 +366,25 @@ export const PaymentQueue: React.FC = () => {
             <>
               No payments left on this page.{' '}
               <button
-                className="action-link"
+                type="button"
+                className="cell-link"
                 onClick={() => setPage(Math.max(1, data.totalPages))}
               >
                 Go to page {Math.max(1, data.totalPages)}
               </button>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <CheckCircle size={28} aria-hidden="true" className="text-[var(--green)]" />
-              <span className="font-medium text-[var(--ink)]">
-                No payments awaiting review.
-              </span>
-              <span className="text-xs">
-                Check the{' '}
-                <Link to="/payouts" className="action-link">payout queue</Link> or{' '}
-                <Link to="/refunds" className="action-link">refund queue</Link>.
-              </span>
-            </div>
+            <EmptyState icon={<CheckCircle size={26} />} title="No payments awaiting review.">
+              Check the{' '}
+              <Link to="/payouts" className="cell-link">
+                payout queue
+              </Link>{' '}
+              or{' '}
+              <Link to="/refunds" className="cell-link">
+                refund queue
+              </Link>
+              .
+            </EmptyState>
           )
         }
         pagination={
@@ -413,8 +401,8 @@ export const PaymentQueue: React.FC = () => {
         }
       />
 
-      <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
-        <Receipt size={12} aria-hidden="true" />
+      <p className="t-meta c-soft row">
+        <Receipt size={16} aria-hidden="true" />
         Receipt images are served from a private container; links expire 15 minutes after the queue was
         loaded. Verifying completes the job and queues the tradie's payout — it cannot be undone from
         this screen.
@@ -434,6 +422,6 @@ export const PaymentQueue: React.FC = () => {
           onCancel={closeAction}
         />
       )}
-    </div>
+    </>
   );
 };

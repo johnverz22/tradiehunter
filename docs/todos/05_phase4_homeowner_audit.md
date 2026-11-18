@@ -69,9 +69,9 @@ Two root causes explain most of what you described:
 | ID | Sev | Status | Hypothesis | How to settle it |
 |---|---|---|---|---|
 | P4-10 | P1 | Open | **Every reading style is the lightest bundled weight.** `body`, `meta`, `input` and `detail` are `w400` in Source Sans 3 Regular, a light face at 13–15 pt. Source Sans 3 **Medium (500) is bundled and declared in `pubspec.yaml` but no token uses it**. | Add a body-weight token and A/B: body/meta at 400 vs 500 on a simulator, same screen, same scale. |
-| P4-10b | P1 | Verify | **Renderer difference.** The mockup is rendered by desktop Chromium from Google Fonts at 3×; the app is rendered by Flutter on iOS. Chromium's text rasterization usually looks heavier than Flutter's for the same weight, so identical numbers can read as "thinner". | Same A/B: crop the same text from `docs/design/mockups/png` and from a device capture at equal pixel size. |
+| P4-10b | P1 | Verify | **Renderer difference.** The mockup is rendered by desktop Chromium from Google Fonts at 3×; the app is rendered by Flutter on iOS. Chromium's text rasterization usually looks heavier than Flutter's for the same weight, so identical numbers can read as "thinner". | Same A/B: crop the same text from `docs/design/mobile/mockups/png` and from a device capture at equal pixel size. |
 | P4-10c | P2 | Open | Docs drift: `TYPOGRAPHY.md` pubspec snippet omits Source Sans 3 Medium, which the real `pubspec.yaml` declares. | Update `TYPOGRAPHY.md` when P4-10 is decided. |
-| P4-10d | P1 | Decision | If A/B confirms the gap, choose: **(A)** body, meta, input, detail → w500 (one token edit in `tokens.json`, run `node docs/design/tools/build.mjs`, regenerate goldens); **(B)** only `meta` and `detail` → w500, body stays 400; **(C)** keep 400 and change the mockup render to match. Recommend A or B by the A/B result. Not a per-screen fix. | Owner picks after the A/B. |
+| P4-10d | P1 | Decision | If A/B confirms the gap, choose: **(A)** body, meta, input, detail → w500 (one token edit in `tokens.json`, run `node docs/design/mobile/tools/build.mjs`, regenerate goldens); **(B)** only `meta` and `detail` → w500, body stays 400; **(C)** keep 400 and change the mockup render to match. Recommend A or B by the A/B result. Not a per-screen fix. | Owner picks after the A/B. |
 
 ---
 
@@ -90,7 +90,7 @@ Two root causes explain most of what you described:
 
 ## 5. Visual deviations seen in the goldens (verify on device)
 
-Source: side-by-side of `mobile/test/ui/goldens/<id>_light.png` against `docs/design/mockups/png/<id>-light.png`, at 393 pt width. Goldens are 1× and use a test icon font, so only layout and weight cues count. Each row needs a device capture to confirm.
+Source: side-by-side of `mobile/test/ui/goldens/<id>_light.png` against `docs/design/mobile/mockups/png/<id>-light.png`, at 393 pt width. Goldens are 1× and use a test icon font, so only layout and weight cues count. Each row needs a device capture to confirm.
 
 | ID | Sev | Status | Screen | Deviation |
 |---|---|---|---|---|

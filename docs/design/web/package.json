@@ -1,0 +1,12 @@
+{
+  "name": "tradiehunter-design-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Web admin design system: tokens inherited from mobile v2 + component kit + screen AST -> CSS, Tailwind theme, HTML mockups",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/build.mjs --check"
+  },
+  "engines": { "node": ">=18" }
+}

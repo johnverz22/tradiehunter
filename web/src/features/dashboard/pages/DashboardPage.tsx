@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
 import { StatGrid } from '../../../components/StatGrid';
 import { StatCard } from '../../../components/StatCard';
@@ -35,6 +36,24 @@ function formatJobId(id: number): string {
   return `JOB-${String(id).padStart(5, '0')}`;
 }
 
+/** Card with a title row and a "View all"-style link; the table inside sits flush. */
+const SectionCard: React.FC<{
+  title: string;
+  to: string;
+  linkLabel: string;
+  children: React.ReactNode;
+}> = ({ title, to, linkLabel, children }) => (
+  <section className="card flush">
+    <div className="card-head">
+      <h2>{title}</h2>
+      <Link to={to} className="btn btn-ghost btn-sm">
+        {linkLabel}
+      </Link>
+    </div>
+    <div className="card-body">{children}</div>
+  </section>
+);
+
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -66,23 +85,27 @@ export const DashboardPage: React.FC = () => {
 
   if (statsLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-[var(--ink-soft)]">
-        Loading dashboard…
-      </div>
+      <>
+        <PageHeader title="Dashboard" />
+        <p className="muted" role="status" aria-busy="true">
+          Loading dashboard…
+        </p>
+      </>
     );
   }
 
   if (statsError || !stats) {
     return (
-      <div className="space-y-4 max-w-lg">
+      <>
         <PageHeader title="Dashboard" />
-        <Banner variant="error" action={{ label: 'Retry', onClick: () => refetchStats() }}>
-          <div>
-            <p className="font-semibold mb-1">Failed to load dashboard stats.</p>
-            <p>{describeStatsError(statsErrObj)}</p>
-          </div>
+        <Banner
+          variant="error"
+          title="Failed to load dashboard stats."
+          action={{ label: 'Retry', onClick: () => refetchStats() }}
+        >
+          {describeStatsError(statsErrObj)}
         </Banner>
-      </div>
+      </>
     );
   }
 
@@ -102,14 +125,12 @@ export const DashboardPage: React.FC = () => {
       header: 'Issue',
       priority: 'primary',
       cell: (d) => (
-        <span className="font-medium text-[var(--ink)]">
-          {d.flagReason ?? d.jobTitle}
-        </span>
+        <span>{d.flagReason ?? d.jobTitle}</span>
       ),
     },
     {
       key: 'reportedBy',
-      header: 'Reported By',
+      header: 'Reported by',
       priority: 'detail',
       cell: (d) => d.homeownerName,
     },
@@ -117,7 +138,7 @@ export const DashboardPage: React.FC = () => {
       key: 'date',
       header: 'Date',
       priority: 'detail',
-      cell: (d) => <span className="cell-muted">{formatDate(d.flaggedAtUtc)}</span>,
+      cell: (d) => <span className="muted">{formatDate(d.flaggedAtUtc)}</span>,
     },
     {
       key: 'status',
@@ -153,7 +174,7 @@ export const DashboardPage: React.FC = () => {
       header: 'Description',
       priority: 'primary',
       cell: (j) => (
-        <Link to={`/jobs/${j.id}`} className="cell-link font-medium">
+        <Link to={`/jobs/${j.id}`} className="cell-link">
           {j.title}
         </Link>
       ),
@@ -168,7 +189,7 @@ export const DashboardPage: React.FC = () => {
       key: 'trade',
       header: 'Tradie',
       priority: 'detail',
-      cell: (j) => <span className="cell-muted">{j.tradeName ?? '—'}</span>,
+      cell: (j) => <span className="muted">{j.tradeName ?? '—'}</span>,
     },
     {
       key: 'status',
@@ -180,7 +201,7 @@ export const DashboardPage: React.FC = () => {
       key: 'date',
       header: 'Posted',
       priority: 'detail',
-      cell: (j) => <span className="cell-muted">{formatDate(j.createdAtUtc)}</span>,
+      cell: (j) => <span className="muted">{formatDate(j.createdAtUtc)}</span>,
     },
   ];
 
@@ -191,7 +212,7 @@ export const DashboardPage: React.FC = () => {
       header: 'Name',
       priority: 'primary',
       cell: (u) => (
-        <Link to={`/users/${u.id}`} className="cell-link font-medium">
+        <Link to={`/users/${u.id}`} className="cell-link">
           {u.fullName}
         </Link>
       ),
@@ -206,13 +227,13 @@ export const DashboardPage: React.FC = () => {
       key: 'email',
       header: 'Email',
       priority: 'detail',
-      cell: (u) => <span className="mono cell-muted text-xs">{u.email}</span>,
+      cell: (u) => <span className="mono muted t-meta">{u.email}</span>,
     },
     {
       key: 'applied',
       header: 'Applied',
       priority: 'detail',
-      cell: (u) => <span className="cell-muted">{formatDate(u.createdAtUtc)}</span>,
+      cell: (u) => <span className="muted">{formatDate(u.createdAtUtc)}</span>,
     },
   ];
 
@@ -226,53 +247,38 @@ export const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <>
       <PageHeader
         title="Dashboard"
-        badge={<span className="pill pill-brand">Admin</span>}
+        description="Marketplace operations overview"
+        badge={<Badge tone="info">Admin</Badge>}
       />
 
       {/* Needs-action cards */}
       <StatGrid>
         <StatCard
-          label="Pending Verifications"
+          label="Pending verifications"
           value={credentialQueue?.totalCount}
-          color="var(--amber-ink)"
           to="/credentials"
           hint="Needs action"
         />
         <StatCard
-          label="Flagged Disputes"
+          label="Flagged disputes"
           value={stats.pendingDisputes}
-          color="var(--red-ink)"
+          accent="red"
           to="/disputes"
           hint="Needs action"
         />
-        <StatCard
-          label="Active Jobs"
-          value={stats.activeJobs}
-          color="var(--ink)"
-          to="/jobs"
-        />
-        <StatCard
-          label="Total Users"
-          value={stats.totalUsers}
-          color="var(--ink)"
-          to="/users"
-        />
+        <StatCard label="Active jobs" value={stats.activeJobs} to="/jobs" />
+        <StatCard label="Total users" value={stats.totalUsers} to="/users" />
       </StatGrid>
 
       {/* ── P8-08: marketplace health ─────────────────────────────── */}
       {window30 && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <h2
-              className="text-[18px] font-semibold text-[var(--ink)] m-0"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Marketplace Health · last 30 days
-            </h2>
-            <span className="text-[13px] text-[var(--ink)] opacity-60">
+        <section className="stack">
+          <div className="row between">
+            <h2 className="dash-title">Marketplace health · last 30 days</h2>
+            <span className="t-meta muted">
               {window30.totalJobs} jobs · {window30.totalSignups} signups
             </span>
           </div>
@@ -294,25 +300,10 @@ export const DashboardPage: React.FC = () => {
               value={`${window30.tradieResponseRatePct.toFixed(1)}%`}
             />
           </StatGrid>
-        </div>
+        </section>
       )}
 
-      {/* ── Flagged disputes ─────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-[18px] font-semibold text-[var(--ink)] m-0"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Flagged Disputes
-          </h2>
-          <Link
-            to="/disputes"
-            className="text-[13px] text-[var(--brand-500)] font-medium hover:underline"
-          >
-            View all
-          </Link>
-        </div>
+      <SectionCard title="Flagged disputes" to="/disputes" linkLabel="View all">
         <DataTable
           columns={disputeColumns}
           rows={disputesData?.items}
@@ -322,24 +313,9 @@ export const DashboardPage: React.FC = () => {
           rowActions={disputeActions}
           empty="No flagged disputes"
         />
-      </div>
+      </SectionCard>
 
-      {/* ── Recent jobs ──────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-[18px] font-semibold text-[var(--ink)] m-0"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Recent Jobs
-          </h2>
-          <Link
-            to="/jobs"
-            className="text-[13px] text-[var(--brand-500)] font-medium hover:underline"
-          >
-            View all
-          </Link>
-        </div>
+      <SectionCard title="Recent jobs" to="/jobs" linkLabel="View all">
         <DataTable
           columns={jobColumns}
           rows={jobsData?.items}
@@ -348,24 +324,9 @@ export const DashboardPage: React.FC = () => {
           isLoading={jobsLoading}
           empty="No jobs yet"
         />
-      </div>
+      </SectionCard>
 
-      {/* ── Pending verifications ────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-[18px] font-semibold text-[var(--ink)] m-0"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Unverified tradies
-          </h2>
-          <Link
-            to="/credentials"
-            className="text-[13px] text-[var(--brand-500)] font-medium hover:underline"
-          >
-            Review credentials
-          </Link>
-        </div>
+      <SectionCard title="Unverified tradies" to="/credentials" linkLabel="Review credentials">
         <DataTable
           columns={verificationColumns}
           rows={pendingVerifications}
@@ -375,7 +336,7 @@ export const DashboardPage: React.FC = () => {
           rowActions={verificationActions}
           empty="No unverified tradies"
         />
-      </div>
-    </div>
+      </SectionCard>
+    </>
   );
 };

@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { AlertTriangle, Paperclip, X } from 'lucide-react';
+import { AlertCircle, Paperclip, X } from 'lucide-react';
+import { Button, IconButton } from '../../../components/Button';
+import { Field } from '../../../components/Field';
 import { Modal } from '../../../components/Modal';
 import type { RefundSummary } from '../../../services/adminApi';
 
@@ -73,179 +75,157 @@ export const ProcessRefundModal: React.FC<ProcessRefundModalProps> = ({
       open
       onClose={onCancel}
       size="lg"
-      title={`Process Refund — Job #${refund.jobId}`}
+      title={`Process refund — job #${refund.jobId}`}
       footer={
-        <div className="flex justify-end gap-3">
-          <button onClick={onCancel} className="btn btn-ghost" disabled={isSubmitting}>
+        <>
+          <Button kind="secondary" onClick={onCancel} disabled={isSubmitting}>
             Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="btn btn-primary"
-          >
+          </Button>
+          <Button kind="accent" onClick={handleSubmit} disabled={!canSubmit}>
             {isSubmitting ? 'Processing…' : 'Process refund'}
-          </button>
-        </div>
+          </Button>
+        </>
       }
     >
-      <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <AlertTriangle
-            size={20}
-            className="text-[var(--amber)] shrink-0 mt-0.5"
-            aria-hidden="true"
-          />
-          <div>
-            <p className="text-sm font-semibold text-[var(--ink)]">
-              {refund.jobTitle}
-            </p>
-            <p className="text-xs text-[var(--ink-soft)]">
-              Review amounts and provide the bank transfer reference.
-            </p>
-          </div>
+      <div className="stack">
+        <div>
+          <p className="t-title">{refund.jobTitle}</p>
+          <p className="t-meta c-soft">Review amounts and provide the bank transfer reference.</p>
         </div>
 
         {/* Summary row */}
-        <dl className="rounded-lg border border-[var(--paper-line)] divide-y divide-[var(--paper-line)]">
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Homeowner</dt>
-            <dd className="text-sm text-[var(--ink)] text-right">
+        <dl className="dl">
+          <div>
+            <dt>Homeowner</dt>
+            <dd>
               {refund.homeownerName}
-              <span className="block text-xs text-[var(--ink-soft)]">
-                {refund.homeownerEmail}
-              </span>
+              <span className="block t-meta muted">{refund.homeownerEmail}</span>
             </dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Suggested refund</dt>
-            <dd className="font-mono text-sm font-semibold text-[var(--ink)]">
-              {money(refund.suggestedAmount)}
+          <div>
+            <dt>Suggested refund</dt>
+            <dd>
+              <span className="money">{money(refund.suggestedAmount)}</span>
             </dd>
           </div>
           {refund.cancelReasonCode && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Cancel reason</dt>
-              <dd className="text-sm text-[var(--ink)]">
-                {refund.cancelReasonCode.replace(/_/g, ' ')}
-              </dd>
+            <div>
+              <dt>Cancel reason</dt>
+              <dd>{refund.cancelReasonCode.replace(/_/g, ' ')}</dd>
             </div>
           )}
           {refund.hoursWorked > 0 && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Hours worked (system est.)</dt>
-              <dd className="font-mono text-sm text-[var(--ink)]">{refund.hoursWorked}h</dd>
+            <div>
+              <dt>Hours worked (system est.)</dt>
+              <dd className="mono">{refund.hoursWorked}h</dd>
             </div>
           )}
         </dl>
 
         {/* Editable fields */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="rf-final">
-                Final amount (NZD)
-              </label>
+        <div className="grid c2">
+          <Field label="Final amount (NZD)">
+            {(a11y) => (
               <input
-                id="rf-final"
+                {...a11y}
                 type="number"
                 min="0"
                 step="0.01"
                 value={finalAmount}
                 onChange={(e) => setFinalAmount(e.target.value)}
-                className="field w-full"
+                className="field"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="rf-penalty">
-                Penalty (NZD)
-              </label>
+            )}
+          </Field>
+          <Field label="Penalty (NZD)">
+            {(a11y) => (
               <input
-                id="rf-penalty"
+                {...a11y}
                 type="number"
                 min="0"
                 step="0.01"
                 value={penalty}
                 onChange={(e) => setPenalty(e.target.value)}
-                className="field w-full"
+                className="field"
               />
-            </div>
-          </div>
+            )}
+          </Field>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="rf-hours">
-              Hours worked
-            </label>
+        <Field label="Hours worked">
+          {(a11y) => (
             <input
-              id="rf-hours"
+              {...a11y}
               type="number"
               min="0"
               step="0.25"
               value={hoursWorked}
               onChange={(e) => setHoursWorked(e.target.value)}
-              className="field w-full"
+              className="field"
             />
-          </div>
+          )}
+        </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="rf-ref">
-              Transfer reference <span className="text-[var(--red)]">*</span>
-            </label>
+        <Field
+          label="Transfer reference"
+          help="Required. The bank transfer reference shown on the homeowner's statement."
+        >
+          {(a11y) => (
             <input
-              id="rf-ref"
+              {...a11y}
               type="text"
               value={transferRef}
               onChange={(e) => setTransferRef(e.target.value)}
               maxLength={200}
               placeholder="e.g. BNZ TXN-20260929-001"
-              className="field w-full"
+              className="field"
               autoFocus
+              data-autofocus
             />
-            <p className="text-xs text-[var(--ink-soft)] mt-1">
-              The bank transfer reference shown on the homeowner's statement.
-            </p>
-          </div>
+          )}
+        </Field>
 
-          {/* Proof file upload */}
-          <div>
-            <p className="text-sm font-medium text-[var(--ink)] mb-1">Proof of transfer (optional)</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,application/pdf"
-              className="sr-only"
-              onChange={handleFileChange}
-              id="rf-proof-file"
-            />
-            {proof ? (
-              <div className="flex items-center gap-2 rounded-lg border border-[var(--paper-line)] bg-[var(--paper)] px-3 py-2">
-                <Paperclip size={13} className="text-[var(--ink-soft)] shrink-0" aria-hidden="true" />
-                <span className="text-sm text-[var(--ink)] truncate flex-1">{proof.name}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProof(undefined);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }}
-                  className="p-1 rounded text-[var(--ink-soft)] hover:text-[var(--red)] transition-colors shrink-0"
-                  aria-label="Remove file"
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            ) : (
-              <label
-                htmlFor="rf-proof-file"
-                className="btn btn-ghost w-full justify-center cursor-pointer"
+        {/* Proof file upload */}
+        <div className="form-row">
+          <span className="label">
+            Proof of transfer<span className="opt">Optional</span>
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            className="sr-only"
+            onChange={handleFileChange}
+            id="rf-proof-file"
+          />
+          {proof ? (
+            <div className="row nowrap">
+              <Paperclip size={16} className="shrink-0 c-soft" aria-hidden="true" />
+              <span className="truncate flex-1">{proof.name}</span>
+              <IconButton
+                kind="ghost"
+                size="sm"
+                label="Remove file"
+                onClick={() => {
+                  setProof(undefined);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
               >
-                <Paperclip size={13} aria-hidden="true" />
-                Attach receipt / screenshot
-              </label>
-            )}
-            {fileError && (
-              <p className="text-xs text-[var(--red)] mt-1">{fileError}</p>
-            )}
-          </div>
+                <X size={16} aria-hidden="true" />
+              </IconButton>
+            </div>
+          ) : (
+            <label htmlFor="rf-proof-file" className="btn btn-secondary btn-block">
+              <Paperclip size={20} aria-hidden="true" />
+              Attach receipt / screenshot
+            </label>
+          )}
+          {fileError && (
+            <div className="error" role="alert">
+              <AlertCircle size={16} aria-hidden="true" className="shrink-0" />
+              <span>{fileError}</span>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

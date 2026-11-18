@@ -55,7 +55,9 @@ jobs:
       with:
         node-version: '20'
     - name: Design tokens, screens and WCAG contrast gate
-      run: node docs/design/tools/build.mjs --check
+      run: node docs/design/mobile/tools/build.mjs --check
+    - name: Web design tokens, kit lint and WCAG contrast gate
+      run: node docs/design/web/tools/build.mjs --check
 
   web-build-test:
     runs-on: ubuntu-latest
@@ -67,6 +69,12 @@ jobs:
         node-version: '20'
     - name: Install dependencies
       run: npm ci
+      working-directory: ./web
+    - name: Web design files match docs/design/web
+      run: npm run design:check
+      working-directory: ./web
+    - name: No legacy design names
+      run: npm run design:legacy
       working-directory: ./web
     - name: Lint
       run: npm run lint

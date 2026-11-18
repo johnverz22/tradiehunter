@@ -110,7 +110,7 @@ cd mobile
 dart format lib test
 flutter analyze --no-pub --fatal-infos
 python3 ../scripts/check_ui_boundary.py           # path may be repo-root scripts/
-node ../docs/design/tools/build.mjs --check
+node ../docs/design/mobile/tools/build.mjs --check
 flutter test test/ui/                              # all v2 suites
 flutter test --dart-define=UI_V2=<this id>         # existing v1 tests that touch the route
 flutter test --dart-define=UI_V2=all               # full suite once per package
@@ -339,7 +339,7 @@ test/ui/phase5_tr_*_test.dart
 - [ ] Finish → same navigation as v1 (verify target) and verification-pending messaging
 - Stub line "No call-out fee is charged by TradieHunter…" → keep only if v1/SPECS contains the same statement; otherwise drop.
 
-**Undrawn steps (D-P5-4):** ship interim compositions now; when the owner requests the design, extend `ast/screens.mjs` with the missing step frames, run `node docs/design/tools/build.mjs`, compare with the interim screens and restyle. No data or viewmodel change is involved.
+**Undrawn steps (D-P5-4):** ship interim compositions now; when the owner requests the design, extend `ast/screens.mjs` with the missing step frames, run `node docs/design/mobile/tools/build.mjs`, compare with the interim screens and restyle. No data or viewmodel change is involved.
 
 **Tests:** extend from `tradie_onboarding_wizard_test.dart` patterns (446 lines): step navigation, validation per step, `day:2` toggle, credential upload outcomes with a fake repo, back/PopScope, controller disposal (no leaks), light/dark, 200% text with keyboard open (`viewInsets`).
 **Run with `UI_V2=tr_onboarding`:** `tradie_onboarding_wizard_test`, `tradie_onboarding_test`, `auth_test` (role select → onboarding).
@@ -386,7 +386,7 @@ Compose from `TH*` (`THPills`/`ThChoicePills` filters, `THCard`/`THListRow`/`THB
 | Route | path snapshot incl. `/tradie/earnings` if approved; extras unchanged | `test/ui/route_contract_test.dart` |
 | Flow (headless) | existing tradie tests with `--dart-define=UI_V2=<id>` then `all` | `test/` |
 | Device | `job_request_test`, `job_lifecycle_test`, `cancellation_test`, `dispute_test`, `payment_test` against the dev backend | **owner** (skipped in Phase 4; keep skipped unless asked) |
-| Visual QA | compare with `docs/design/mockups/index.html`, light + dark | **owner**; tick the checklist below |
+| Visual QA | compare with `docs/design/mobile/mockups/index.html`, light + dark | **owner**; tick the checklist below |
 
 **Per-id activation checklist (copy into each PR):**
 - [ ] parity checklist complete · [ ] Keys preserved · [ ] analyze `--fatal-infos` clean · [ ] boundary guard green · [ ] design gate green · [ ] widget + mapper tests green · [ ] v1 flow tests green with the id on · [ ] full suite green with `UI_V2=all` · [ ] light/dark + 200% text checked · [ ] gaps G-13…G-25 handled as listed · [ ] **id NOT yet in `v2Screens`** · [ ] owner visual QA → then add id to `v2Screens`

@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
-import { AlertTriangle, Landmark } from 'lucide-react';
+import React from 'react';
+import { Landmark } from 'lucide-react';
+import { Banner } from '../../../components/Banner';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { Field } from '../../../components/Field';
 import type { PayoutQueueItem } from '../../../services/adminApi';
 
 interface ProcessPayoutModalProps {
@@ -17,9 +19,9 @@ const money = (amount: number) =>
   new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(amount);
 
 const row = (label: string, value: React.ReactNode) => (
-  <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-    <dt className="text-xs text-[var(--ink-soft)]">{label}</dt>
-    <dd className="font-mono text-sm text-[var(--ink)]">{value}</dd>
+  <div>
+    <dt>{label}</dt>
+    <dd className="mono">{value}</dd>
   </div>
 );
 
@@ -37,11 +39,6 @@ export const ProcessPayoutModal: React.FC<ProcessPayoutModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  useEffect(() => {
-    const input = document.getElementById('payout-transfer-reference');
-    input?.focus();
-  }, []);
-
   const trimmed = reference.trim();
 
   return (
@@ -55,13 +52,16 @@ export const ProcessPayoutModal: React.FC<ProcessPayoutModalProps> = ({
       onConfirm={onConfirm}
       onCancel={onCancel}
     >
-      <div className="mt-4 space-y-4">
-        <dl className="rounded-lg border border-[var(--paper-line)] divide-y divide-[var(--paper-line)]">
+      <div className="stack">
+        <dl className="dl">
           {row('Tradie', payout.tradieName)}
           {row('Job', payout.jobReferenceCode || `#${payout.jobId}`)}
           {row('Gross', money(payout.grossAmount))}
           {row(`Platform fee (${payout.commissionPercent}%)`, `−${money(payout.commissionAmount)}`)}
-          {row('Net payout', <strong>{money(payout.netAmount)}</strong>)}
+          <div className="total">
+            <dt>Net payout</dt>
+            <dd className="mono">{money(payout.netAmount)}</dd>
+          </div>
           {row(
             'Bank account',
             payout.hasBankDetails
@@ -72,37 +72,33 @@ export const ProcessPayoutModal: React.FC<ProcessPayoutModalProps> = ({
         </dl>
 
         {!payout.hasBankDetails && (
-          <p className="flex items-start gap-2 text-xs text-[var(--red)]" role="alert">
-            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <Banner variant="error">
             This tradie has no bank account on file. Do not mark this payout processed until
             they've supplied details — resolve it with the tradie first.
-          </p>
+          </Banner>
         )}
 
-        <div>
-          <label
-            htmlFor="payout-transfer-reference"
-            className="block text-sm font-medium text-[var(--ink)] mb-1"
-          >
-            Bank transfer reference
-          </label>
-          <input
-            id="payout-transfer-reference"
-            className="field w-full font-mono"
-            value={reference}
-            onChange={(e) => onReferenceChange(e.target.value)}
-            placeholder="e.g. FP-2026-0143"
-            maxLength={64}
-            aria-invalid={trimmed.length === 0 && reference.length > 0}
-          />
-          <p className="text-xs text-[var(--ink-soft)] mt-1">
-            Required. The reference your bank shows for this transfer — the tradie sees it on
-            their payout notification.
-          </p>
-        </div>
+        <Field
+          label="Bank transfer reference"
+          error={trimmed.length === 0 && reference.length > 0 ? 'Enter the transfer reference.' : undefined}
+          help="Required. The reference your bank shows for this transfer — the tradie sees it on their payout notification."
+        >
+          {(a11y) => (
+            <input
+              {...a11y}
+              className="field mono"
+              value={reference}
+              onChange={(e) => onReferenceChange(e.target.value)}
+              placeholder="e.g. FP-2026-0143"
+              maxLength={64}
+              autoFocus
+              data-autofocus
+            />
+          )}
+        </Field>
 
-        <p className="flex items-start gap-2 text-xs text-[var(--ink-soft)]">
-          <Landmark size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="t-meta c-soft row nowrap">
+          <Landmark size={16} className="shrink-0" aria-hidden="true" />
           The platform does not move money itself. Confirm the transfer in your banking platform first.
         </p>
       </div>

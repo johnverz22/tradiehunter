@@ -1,25 +1,15 @@
-# TradieHunter design v2 (Trust Navy + Gold)
+# TradieHunter design systems
 
-Tokens and a screen AST generate the Flutter code and the HTML mockups, so design and code cannot drift.
+| Folder | Platform | Start here |
+|---|---|---|
+| [`mobile/`](mobile/README.md) | Flutter app (homeowner and tradie). Master tokens | `mobile/DESIGN_GUIDE.md` |
+| [`web/`](web/README.md) | React admin dashboard. Inherits mobile tokens | `web/DESIGN_GUIDE.md` |
 
-```
-tokens/tokens.json         source of truth (light + dark, type, space, radii, sizes)
-tokens/design_tokens.dart  GENERATED  Space, Radii, Sizes, THType, THColors, THTheme
-tokens/tokens.css          GENERATED  CSS variables for the mockups
-tokens/contrast-report.txt GENERATED  WCAG AA gate results
-ast/dsl.mjs                node builders (the AST vocabulary)
-ast/screens.mjs            30 screens as AST (homeowner, tradie, shared)
-ast/screens.ast.json       GENERATED  the AST as JSON, for any other consumer
-flutter/th_widgets.dart    hand-written component library
-flutter/screens/*.dart     GENERATED  one StatelessWidget per screen + route table
-mockups/index.html         GENERATED  long-form light and dark mockups
-tools/build.mjs            the generator (Node 18+, no dependencies)
-DESIGN_GUIDE.md            the design guide
-```
+Colour, fonts, space, radii and motion are defined once in `mobile/tokens/tokens.json`; web extends it. Each system has its own gate:
 
 ```bash
-node tools/build.mjs          # generate
-node tools/build.mjs --check  # CI gate
+node docs/design/mobile/tools/build.mjs --check
+node docs/design/web/tools/build.mjs --check
 ```
 
-Read `DESIGN_GUIDE.md` section 10 to integrate into `mobile/lib`.
+The legacy v1.7 system is archived at `docs/archive/design-legacy-v1/`.

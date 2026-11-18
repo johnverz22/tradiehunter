@@ -3,13 +3,13 @@
  *
  * Triggered by the TopBar menu button on phone, and by the ≡ button on tablet.
  * Features:
- * - Full nav items list with active styling
+ * - Full nav items list with active styling (kit `.sidebar.is-drawer` + `.scrim`)
  * - Focus trap while open
  * - Esc and scrim click to close
  * - Body scroll lock
  * - Closes on route change
  * - User menu in footer
- * - slide-in-left animation (respects prefers-reduced-motion)
+ * - slide-in animation from the kit (reduced under prefers-reduced-motion)
  */
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -96,68 +96,47 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex" aria-hidden="false">
-      {/* Scrim */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <>
+      {/* Scrim: a press outside the drawer closes it */}
+      <div className="scrim" onClick={onClose} aria-hidden="true" />
 
-      {/* Drawer panel */}
+      {/* Drawer panel (a div, not an aside: role="dialog" is not allowed on aside) */}
       <div
         ref={drawerRef}
         id="mobile-nav-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
-        className={[
-          'relative z-10 flex flex-col h-full bg-[var(--brand-900)]',
-          'motion-safe:animate-slide-in-left',
-        ].join(' ')}
-        style={{ width: 'var(--drawer-width)', paddingTop: 'var(--safe-top)' }}
+        className="sidebar is-drawer"
+        style={{ height: '100dvh', paddingTop: 'var(--safe-top)' }}
       >
-        {/* Drawer header */}
-        <div className="flex items-center justify-between px-6 pt-4 pb-6">
-          <BrandWordmark className="font-bold text-[22px] text-white" />
-          <button
-            onClick={onClose}
-            aria-label="Close navigation"
-            className="p-2 rounded text-white/70 hover:text-white hover:bg-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
+        <div className="sidebar-brand">
+          <div className="row between nowrap">
+            <BrandWordmark className="wordmark-lg" />
+            <button
+              type="button"
+              className="nav-item nav-item-icon"
+              onClick={onClose}
+              aria-label="Close navigation"
+            >
+              <X size={20} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto" aria-label="Admin navigation">
+        <nav className="sidebar-nav" aria-label="Admin navigation">
           {navItems.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                [
-                  'flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors min-h-[44px]',
-                  isActive
-                    ? 'bg-white/15 text-white border-l-[3px] border-[var(--amber)]'
-                    : 'text-white/90 hover:text-white hover:bg-white/10 border-l-[3px] border-transparent',
-                ].join(' ')
-              }
-            >
-              <Icon size={18} aria-hidden="true" className="shrink-0" />
-              {label}
+            <NavLink key={to} to={to} className="nav-item">
+              <Icon size={20} aria-hidden="true" />
+              <span className="nav-label">{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        {/* Footer */}
-        <div
-          className="border-t border-white/10 p-4"
-          style={{ paddingBottom: 'max(var(--safe-bottom), 16px)' }}
-        >
+        <div className="sidebar-foot" style={{ paddingBottom: 'max(var(--safe-bottom), var(--sp-4))' }}>
           <UserMenu adminName={adminName} onLogout={onLogout} variant="dark" />
         </div>
       </div>
-    </div>
+    </>
   );
 };

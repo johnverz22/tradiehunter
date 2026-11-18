@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { AlarmClock, CheckCircle, Wallet } from 'lucide-react';
+import { AlarmClock, CheckCircle } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
+import { EmptyState } from '../../../components/EmptyState';
 import { DataTable, type ColumnDef } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
@@ -94,7 +96,7 @@ export const OverduePayments: React.FC = () => {
             {row.jobTitle ?? `Job #${row.jobId}`}
           </Link>
           {row.completionSubmittedAtUtc && (
-            <span className="block text-xs cell-muted">
+            <span className="block t-meta muted">
               Work completed on {formatDate(row.completionSubmittedAtUtc)}
             </span>
           )}
@@ -109,7 +111,7 @@ export const OverduePayments: React.FC = () => {
         <div>
           {row.homeownerName ?? '—'}
           {row.homeownerEmail && (
-            <span className="block text-xs cell-muted">{row.homeownerEmail}</span>
+            <span className="block t-meta muted">{row.homeownerEmail}</span>
           )}
         </div>
       ),
@@ -119,7 +121,7 @@ export const OverduePayments: React.FC = () => {
       header: 'Amount',
       priority: 'secondary',
       cell: (row) => (
-        <span className="font-mono">
+        <span className="mono">
           {row.amount != null ? money(row.amount, row.currency || 'NZD') : '—'}
         </span>
       ),
@@ -133,17 +135,13 @@ export const OverduePayments: React.FC = () => {
         const band = overdueBand(days);
         return (
           <div>
-            <span className={band === 'ok' ? 'cell-muted' : 'font-medium'}>
+            <span className={band === 'ok' ? 'muted' : undefined}>
               {formatDate(row.paymentDueAtUtc)}
             </span>
             <span
               className={[
-                'block text-xs',
-                band === 'urgent'
-                  ? 'text-[var(--red)] font-medium'
-                  : band === 'warn'
-                    ? 'text-[var(--amber-dark)]'
-                    : 'cell-muted',
+                'block t-meta',
+                band === 'urgent' ? 'c-danger' : band === 'warn' ? 'c-accent' : 'muted',
               ].join(' ')}
             >
               {days === 0 ? 'Due today' : `Overdue by ${days} day${days === 1 ? '' : 's'}`}
@@ -155,42 +153,32 @@ export const OverduePayments: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       <PageHeader
-        title="Overdue Payments"
+        title="Overdue payments"
         description="Completed work the homeowner hasn't paid by the due date. Follow up with the homeowner — the job stays unfinished on their side and the tradie's payout waits on this payment."
+        actions={
+          <Link to="/payments" className="btn btn-secondary">
+            Payment queue
+          </Link>
+        }
         meta={
-          data && (
+          data && items.length > 0 ? (
             <>
-              <div className="stat-pill">
-                <AlarmClock size={13} aria-hidden="true" />
-                <strong>{data.totalCount.toLocaleString()}</strong> overdue
-              </div>
-              {items.length > 0 && (
-                <div className="stat-pill">
-                  <strong>
-                    {money(
-                      items.reduce(
-                        (sum, p) => sum + (p.amount != null ? p.amount : 0),
-                        0,
-                      ),
-                      items[0]?.currency ?? 'NZD',
-                    )}
-                  </strong>{' '}
-                  outstanding on this page
-                </div>
-              )}
+              <Badge>
+                {money(
+                  items.reduce((sum, p) => sum + (p.amount != null ? p.amount : 0), 0),
+                  items[0]?.currency ?? 'NZD',
+                )}{' '}
+                outstanding on this page
+              </Badge>
               {flaggedCount > 0 && (
-                <div className="stat-pill" style={{ color: 'var(--red)' }}>
-                  <strong>{flaggedCount}</strong> over 3 days
-                </div>
+                <Badge tone="danger" dot>
+                  {flaggedCount} over 3 days
+                </Badge>
               )}
-              <Link to="/payments" className="stat-pill action-link">
-                <Wallet size={13} aria-hidden="true" />
-                Payment queue
-              </Link>
             </>
-          )
+          ) : undefined
         }
       />
 
@@ -225,23 +213,24 @@ export const OverduePayments: React.FC = () => {
             <>
               No overdue payments on this page.{' '}
               <button
-                className="action-link"
+                type="button"
+                className="cell-link"
                 onClick={() => setPage(Math.max(1, data.totalPages))}
               >
                 Go to page {Math.max(1, data.totalPages)}
               </button>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <CheckCircle size={28} aria-hidden="true" className="text-[var(--green)]" />
-              <span className="font-medium text-[var(--ink)]">
-                No overdue payments — every awaiting payment is inside its window.
-              </span>
-              <span className="text-xs">
-                Finished work still waiting on a receipt review lives in the{' '}
-                <Link to="/payments" className="action-link">payment queue</Link>.
-              </span>
-            </div>
+            <EmptyState
+              icon={<CheckCircle size={26} />}
+              title="No overdue payments — every awaiting payment is inside its window."
+            >
+              Finished work still waiting on a receipt review lives in the{' '}
+              <Link to="/payments" className="cell-link">
+                payment queue
+              </Link>
+              .
+            </EmptyState>
           )
         }
         pagination={
@@ -258,11 +247,11 @@ export const OverduePayments: React.FC = () => {
         }
       />
 
-      <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
-        <AlarmClock size={12} aria-hidden="true" />
+      <p className="t-meta c-soft row">
+        <AlarmClock size={16} aria-hidden="true" />
         Work is never cancelled for late payment — the overdue flow reminds the homeowner (24h/72h),
         then flags the account so no new jobs can be posted until the payment is verified.
       </p>
-    </div>
+    </>
   );
 };

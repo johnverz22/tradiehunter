@@ -5,7 +5,7 @@ TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tr
 ## Read first
 `docs/README.md` is the map. Then, by task:
 - behaviour, state machine, data, money → `docs/SPECS.md`; scope → `docs/MVP.md`; open work → `docs/MILESTONES.md`
-- mobile UI → `docs/DESIGN.md` and `docs/design/DESIGN_GUIDE.md`; visual reference → `docs/design/mockups/index.html`; tooling → `docs/ai/AI-TOOLING.md`
+- web admin UI → `docs/design/web/DESIGN_GUIDE.md` (`docs/design/web/mockups/index.html`); mobile UI → `docs/DESIGN.md` and `docs/design/mobile/DESIGN_GUIDE.md`; visual reference → `docs/design/mobile/mockups/index.html`; tooling → `docs/ai/AI-TOOLING.md`
 - tests → `docs/TESTING.md`, `docs/QA.md`
 
 ## Non-negotiables
@@ -19,15 +19,18 @@ TradieHunter is a NZ tradie marketplace: .NET 10 API + Flutter app (homeowner/tr
 8. Never commit secrets: `.env`, `appsettings.Development.json`, `firebase-service-account.json`, LINZ key, tokens.
 
 ## Mobile UI rules (Flutter)
-- **Tokens only:** colours via `context.th.<name>` (`THColors`); `Space.*`, `Radii.*`, `Sizes.*`, `THType.*` for type. No `Color(0x…)`, no magic numbers. Missing token → add to `design_tokens.dart` and `docs/design/tokens/tokens.json`.
-- **Reuse before create:** `THAppBar`, `THButton`, `THCard`, `THHero`, `THDock`, `THStickyBar`, `THBadge`, `THAvatar`, `THNotice`. New widgets follow the `TH*` contract in `docs/design/flutter/th_widgets.dart`.
+- **Tokens only:** colours via `context.th.<name>` (`THColors`); `Space.*`, `Radii.*`, `Sizes.*`, `THType.*` for type. No `Color(0x…)`, no magic numbers. Missing token → add to `design_tokens.dart` and `docs/design/mobile/tokens/tokens.json`.
+- **Reuse before create:** `THAppBar`, `THButton`, `THCard`, `THHero`, `THDock`, `THStickyBar`, `THBadge`, `THAvatar`, `THNotice`. New widgets follow the `TH*` contract in `docs/design/mobile/flutter/th_widgets.dart`.
 - **Dark mode is a token swap**; a theme `if` inside a view is a bug. Support light/dark, 320 px width, text scale to 2.0, safe-area + keyboard. No outdoor variant.
 - **Brand budget:** one gold (`accent`) action per screen. `brand` (navy) for secondary filled actions. Green = verified/done, red = problem/dispute.
 - **Feedback:** use `THNotice` + `NoticeCopy`; no raw `SnackBar`.
 
+## Web UI rules (React admin)
+- **Tokens only** from `docs/design/web/` (extends the mobile master): `var(--ink)` / Tailwind `bg-surface`, `--sp-*`, `--r-*`; no hex. Reuse the existing shared components. One gold `btn-accent` per view or dialog. Light and dark are a token swap. `web/src/theme/` is synced from `docs/design/web/` (never hand-edit; `npm run design:sync`, checked by `npm run design:check`), no retired v1.7 names (`npm run design:legacy`): follow `.agent/rules/frontend.md`.
+
 ## Workflows
-- New or fixed screen: start from `docs/design/flutter/screens/<id>_screen.dart` stub, bind data, run `flutter analyze`. Widget extraction: `widget-refactor`. Design gate: `node docs/design/tools/build.mjs --check`.
+- New or fixed screen: start from `docs/design/mobile/flutter/screens/<id>_screen.dart` stub, bind data, run `flutter analyze`. Widget extraction: `widget-refactor`. Design gate: `node docs/design/mobile/tools/build.mjs --check`.
 - **After any behaviour, scope or status change: skill `docs-sync`**, and update only the owning doc. Do not create versioned spec folders, plans, progress logs or audit notes.
 
 ## Before committing
-`dart format` · `flutter analyze` clean · `flutter test` green · backend `dotnet build` + `dotnet test` · for design changes `node docs/design/tools/build.mjs --check`.
+`dart format` · `flutter analyze` clean · `flutter test` green · backend `dotnet build` + `dotnet test` · for design changes `node docs/design/mobile/tools/build.mjs --check` and `node docs/design/web/tools/build.mjs --check`.

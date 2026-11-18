@@ -21,7 +21,7 @@ test.describe('P7 — Disputes', () => {
   });
 
   test('P7-09 opening a dispute shows job context and evidence section', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 
@@ -37,7 +37,7 @@ test.describe('P7 — Disputes', () => {
   // (resolution must be a deliberate two-step action) is covered by
   // asserting the outcome button opens a confirmation modal first.
   test('P7-10 resolving goes through a confirmation modal', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"]):not(:has(td[colspan]))').first();
     const visible = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!visible) { test.skip(); return; }
 

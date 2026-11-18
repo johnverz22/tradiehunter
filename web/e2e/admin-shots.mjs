@@ -61,7 +61,7 @@ for (const vp of VIEWPORTS) {
 
     // Set theme in localStorage before navigation
     await page.addInitScript((t) => {
-      localStorage.setItem('fixo-theme', t);
+      localStorage.setItem('tradiehunter-theme', t);
       if (document.documentElement) {
         document.documentElement.setAttribute('data-theme', t);
       }
@@ -120,7 +120,7 @@ for (const vp of VIEWPORTS) {
       await page.waitForTimeout(1000);
       await page.evaluate(() => {
         // Inject long strings into first card
-        const cardTitle = document.querySelector('ul[role="list"] li .font-medium');
+        const cardTitle = document.querySelector('ul[role="list"] li .font-semibold, ul[role="list"] li .font-medium');
         if (cardTitle) {
           cardTitle.textContent = 'Dr. Alexandria Montgomery-Fitzgerald III of Lower Hutt Region (Master Certified Electrician & Gasfitter)';
         }

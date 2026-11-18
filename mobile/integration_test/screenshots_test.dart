@@ -4,7 +4,7 @@
 //
 // Capture names follow docs/todos/02_design_system_fix_plan.md section 7.3 and
 // are checked by `scripts/check-capture-names.py` against
-// `docs/design/tools/capture-manifest.json`. A capture that cannot be taken
+// `docs/design/mobile/tools/capture-manifest.json`. A capture that cannot be taken
 // prints `__SHOT_SKIPPED__ <name> | <reason>` instead of failing or vanishing.
 // States that need special fixtures live in `screenshots_variants_test.dart`.
 //

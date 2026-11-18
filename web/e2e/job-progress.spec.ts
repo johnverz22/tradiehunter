@@ -17,10 +17,11 @@ import { test, expect, type Page } from '@playwright/test';
 /** Navigate to the jobs list and open the first row whose status chip matches. */
 async function openJobWithStatus(page: Page, status: string): Promise<boolean> {
   await page.goto('/jobs');
-  await page.waitForLoadState('networkidle');
+  const rows = page.locator('table tbody tr:not([aria-hidden="true"])');
+  const hasRows = await rows.first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false);
+  if (!hasRows) return false;
 
   // Try to find a row with the matching status badge text.
-  const rows = page.locator('table tbody tr');
   const count = await rows.count().catch(() => 0);
 
   for (let i = 0; i < count; i++) {
@@ -29,26 +30,42 @@ async function openJobWithStatus(page: Page, status: string): Promise<boolean> {
     if (badgeText.trim().toLowerCase() === status.toLowerCase()) {
       await row.click();
       await page.waitForURL(/\/jobs\/\d+/);
+      await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
       return true;
     }
   }
   return false;
 }
 
-/** Return the aria-current="step" label text from the stepper. */
-async function activeStepLabel(page: Page): Promise<string | null> {
-  // The active <li> has aria-current="step"; its first .step-label child has the text.
-  const activeLi = page.locator('[role="list"] [aria-current="step"]');
-  const visible = await activeLi.isVisible().catch(() => false);
-  if (!visible) return null;
-  return activeLi.locator('.step-label').first().textContent();
+/** The stepper list, found by role and accessible name (no class selectors). */
+function stepper(page: Page) {
+  return page.getByRole('list', { name: 'Job progress' });
 }
 
-/** Return the step label for a step at the given 0-based index. */
+/** The stepper's steps, in order. */
+function steps(page: Page) {
+  return stepper(page).getByRole('listitem');
+}
+
+/** The active step (aria-current="step"). */
+function activeStep(page: Page) {
+  return stepper(page).locator('[aria-current="step"]');
+}
+
+/** Return the aria-current="step" text from the stepper (label, plus sublabel if any). */
+async function activeStepLabel(page: Page): Promise<string | null> {
+  const activeLi = activeStep(page);
+  await activeLi.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const visible = await activeLi.isVisible().catch(() => false);
+  if (!visible) return null;
+  return activeLi.textContent();
+}
+
+/** Return the step text for a step at the given 0-based index. */
 async function stepLabelAt(page: Page, index: number): Promise<string | null> {
-  const items = page.locator('[role="list"] [role="listitem"]');
-  const item = items.nth(index);
-  return item.locator('.step-label').first().textContent().catch(() => null);
+  const item = steps(page).nth(index);
+  await item.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  return item.textContent().catch(() => null);
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
@@ -64,22 +81,23 @@ test.describe('P-stepper — Job progress stepper', () => {
 
   test('stepper renders 4 labelled steps', async ({ page }) => {
     // Open any job.
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
-    // Expect exactly 4 listitem elements.
-    const items = page.locator('[role="listitem"]');
+    // Expect exactly 4 steps in the stepper list.
+    const items = steps(page);
     await expect(items).toHaveCount(4, { timeout: 8_000 });
 
     // Verify step labels match the mobile naming convention.
-    await expect(items.nth(0).locator('.step-label')).toContainText('Requested');
-    await expect(items.nth(1).locator('.step-label')).toContainText('Booked');
-    await expect(items.nth(2).locator('.step-label')).toContainText('In progress');
-    await expect(items.nth(3).locator('.step-label')).toContainText('Done');
+    await expect(items.nth(0)).toContainText('Requested');
+    await expect(items.nth(1)).toContainText('Booked');
+    await expect(items.nth(2)).toContainText('In progress');
+    await expect(items.nth(3)).toContainText('Done');
   });
 
   // ── Booked job ───────────────────────────────────────────────────────────────
@@ -92,7 +110,7 @@ test.describe('P-stepper — Job progress stepper', () => {
     expect(label?.trim()).toBe('Booked');
 
     // Step at index 0 (Requested) should be rendered as "done" — no aria-current.
-    const step0 = page.locator('[role="listitem"]').nth(0);
+    const step0 = steps(page).nth(0);
     await expect(step0).not.toHaveAttribute('aria-current', 'step');
 
     // Verify the step 0 label text via helper.
@@ -119,11 +137,8 @@ test.describe('P-stepper — Job progress stepper', () => {
     const label = await activeStepLabel(page);
     expect(label?.trim()).toMatch(/In progress/);
 
-    // A sublabel "Awaiting confirmation" should be rendered.
-    const sublabel = page.locator('[aria-current="step"] .step-sublabel');
-    if (await sublabel.isVisible().catch(() => false)) {
-      await expect(sublabel).toContainText('Awaiting confirmation');
-    }
+    // The sublabel "Awaiting confirmation" is rendered inside the active step.
+    await expect(activeStep(page)).toContainText('Awaiting confirmation');
   });
 
   // ── Completed ────────────────────────────────────────────────────────────────
@@ -144,32 +159,30 @@ test.describe('P-stepper — Job progress stepper', () => {
 
     // The stepper should show a terminal state at whatever step was reached.
     // The step text at the current step should contain 'Cancelled'.
-    const activeLi = page.locator('[aria-current="step"]');
-    const activeLabel = await activeLi.locator('.step-label').textContent().catch(() => '');
-    expect(activeLabel).toContain('Cancelled');
+    await expect(activeStep(page)).toContainText('Cancelled');
   });
 
   // ── Accessibility ─────────────────────────────────────────────────────────────
 
   test('stepper has role="list" and aria-label', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
 
-    const list = page.locator('[role="list"][aria-label]');
-    await expect(list).toBeVisible({ timeout: 8_000 });
+    await expect(stepper(page)).toBeVisible({ timeout: 8_000 });
   });
 
   test('sr-only summary text is present', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // The <span class="sr-only"> should contain "Step N of 4".
     const srOnly = page.locator('.sr-only');
@@ -179,8 +192,8 @@ test.describe('P-stepper — Job progress stepper', () => {
   // ── Refresh button ────────────────────────────────────────────────────────────
 
   test('manual refresh button is present and enabled', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
@@ -192,12 +205,13 @@ test.describe('P-stepper — Job progress stepper', () => {
   });
 
   test('clicking refresh button triggers a network request', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
     // Intercept the jobs API call.
     let jobFetchCount = 0;
@@ -214,27 +228,24 @@ test.describe('P-stepper — Job progress stepper', () => {
     expect(jobFetchCount).toBeGreaterThan(0);
   });
 
-  // ── Last-step connector overflow ──────────────────────────────────────────────
+  // ── Connectors ───────────────────────────────────────────────────────────────
 
-  test('last step (Done) has no visible connector', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr').first();
-    const hasRow = await firstRow.isVisible({ timeout: 8_000 }).catch(() => false);
+  test('first step draws no connector; each later step draws one back', async ({ page }) => {
+    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
+    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
 
     await firstRow.click();
     await page.waitForURL(/\/jobs\/\d+/);
+    await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
-    // The 4th listitem (Done) must not render a step-line connector.
-    const lastItem = page.locator('[role="listitem"]').nth(3);
-    const stepLine = lastItem.locator('.step-line');
-    // Either it doesn't exist, or it's display:none.
-    const lineCount = await stepLine.count();
-    if (lineCount > 0) {
-      const display = await stepLine.evaluate((el) =>
-        window.getComputedStyle(el).display
-      );
-      expect(display).toBe('none');
-    }
+    // The kit draws each connector as the ::before of the step it leads into
+    // (horizontal layout, >= 768 px; the default test viewport is wider).
+    const before = (index: number) =>
+      steps(page).nth(index).evaluate((el) => window.getComputedStyle(el, '::before').display);
+    await expect(steps(page)).toHaveCount(4, { timeout: 8_000 });
+    expect(await before(0)).toBe('none');
+    expect(await before(3)).not.toBe('none');
   });
 
 });

@@ -19,5 +19,5 @@ appId: nz.co.fixo.fixo
 - assertVisible:
     id: "dock_profile"
 
-# Evidence screenshots for review against docs/design/mockups/index.html
+# Evidence screenshots for review against docs/design/mobile/mockups/index.html
 - takeScreenshot: ho_home_light

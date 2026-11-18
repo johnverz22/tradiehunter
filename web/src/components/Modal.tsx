@@ -1,24 +1,26 @@
 /**
- * Modal — accessible dialog primitive used by all overlays.
+ * Modal — accessible dialog primitive used by all overlays (design system: COMPONENTS.md "Modal").
  *
- * Phone:          bottom sheet (full-width, rounded top, max-h 90dvh,
- *                 internal scroll, sticky footer, slide-up animation).
- * Tablet/desktop: centered dialog (max-h 85dvh, internal scroll).
+ * Markup is the kit's `.scrim > .modal > .modal-head / .modal-body / .modal-foot`.
+ * Centered dialog from 640 px up; below 640 px the kit CSS turns it into a bottom sheet
+ * (full width, rounded top, stacked footer buttons), so no breakpoint logic lives here.
  *
- * Provides: role=dialog, aria-modal, aria-labelledby, focus trap,
- * Esc to close, scrim click to close, body scroll lock, restore focus.
- * Animated with translate-y; respects prefers-reduced-motion.
+ * Provides: role=dialog, aria-modal, aria-labelledby, focus trap, Esc to close,
+ * scrim click to close, body scroll lock, and focus restored to the opener.
+ *
+ * Initial focus: the element marked `data-autofocus` (destructive confirms mark Cancel),
+ * else the first focusable element in the body, else the first one in the dialog.
  *
  * Usage:
- *   <Modal open={open} onClose={close} title="Confirm action"
- *          footer={<><button onClick={close}>Cancel</button><button>OK</button></>}>
- *     <p>Are you sure?</p>
+ *   <Modal open={open} onClose={close} title="Verify payment"
+ *          footer={<><Button kind="secondary" onClick={close}>Cancel</Button><Button kind="accent">Verify payment</Button></>}>
+ *     <p>Check the transfer before you verify.</p>
  *   </Modal>
  */
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { useBreakpoint } from '../hooks/useBreakpoint';
+import { IconButton } from './Button';
 
 export interface ModalProps {
   open: boolean;
@@ -30,13 +32,13 @@ export interface ModalProps {
   /** 'sm' = narrow confirm dialog (default). 'lg' = wide content dialog. */
   size?: 'sm' | 'lg';
   children: React.ReactNode;
-  /** Rendered in a sticky footer area (actions row). */
+  /** Rendered in the footer (actions row). Cancel first, commit action last. */
   footer?: React.ReactNode;
   /** Show the ✕ close button in the header. Default true. */
   showCloseButton?: boolean;
 }
 
-// ── Focus trap helpers ────────────────────────────────────────────────────────
+// ── Focus helpers ─────────────────────────────────────────────────────────────
 
 const FOCUSABLE = [
   'a[href]',
@@ -63,21 +65,19 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   showCloseButton = true,
 }) => {
-  const { isPhone } = useBreakpoint();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<Element | null>(null);
   const labelledBy = ariaLabelledBy || (title ? titleId : undefined);
 
-  // Remember the element that opened the modal so we can restore focus.
+  // Remember the opener and restore focus when the modal closes OR is unmounted by its parent.
   useEffect(() => {
-    if (open) {
-      triggerRef.current = document.activeElement;
-    } else {
-      // Restore focus after the portal unmounts (next frame).
-      const el = triggerRef.current as HTMLElement | null;
-      if (el?.focus) requestAnimationFrame(() => el.focus());
-    }
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    return () => {
+      if (opener?.isConnected && typeof opener.focus === 'function') {
+        requestAnimationFrame(() => opener.focus());
+      }
+    };
   }, [open]);
 
   // Body scroll lock
@@ -85,7 +85,9 @@ export const Modal: React.FC<ModalProps> = ({
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   // Keyboard handling: Esc + focus trap
@@ -93,18 +95,31 @@ export const Modal: React.FC<ModalProps> = ({
     if (!open) return;
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
 
       if (e.key === 'Tab' && dialogRef.current) {
         const focusable = getFocusable(dialogRef.current);
-        if (focusable.length === 0) { e.preventDefault(); return; }
+        if (focusable.length === 0) {
+          e.preventDefault();
+          dialogRef.current.focus();
+          return;
+        }
         const first = focusable[0];
-        const last  = focusable[focusable.length - 1];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
 
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-        } else {
-          if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+          if (active === first || active === dialogRef.current) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (active === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
     };
@@ -112,142 +127,57 @@ export const Modal: React.FC<ModalProps> = ({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  // Auto-focus first focusable element when modal opens
+  // Initial focus when the modal opens
   useEffect(() => {
-    if (!open || !dialogRef.current) return;
-    requestAnimationFrame(() => {
-      const first = getFocusable(dialogRef.current!)[0];
-      first?.focus();
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const target =
+        dialog.querySelector<HTMLElement>('[data-autofocus]') ??
+        getFocusable(dialog.querySelector<HTMLElement>('.modal-body') ?? dialog)[0] ??
+        getFocusable(dialog)[0] ??
+        dialog;
+      target.focus();
     });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   if (!open) return null;
 
-  // ── Phone: bottom sheet ────────────────────────────────────────────────────
-  if (isPhone) {
-    return createPortal(
-      <div
-        className="fixed inset-0 z-50 flex flex-col justify-end"
-        aria-hidden="false"
-      >
-        {/* Scrim */}
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-
-        {/* Sheet */}
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={labelledBy}
-          className={[
-            'relative z-10 w-full bg-[var(--surface)] rounded-t-2xl',
-            'flex flex-col max-h-[90dvh]',
-            'motion-safe:animate-slide-up',
-            // safe-area bottom padding applied in footer
-          ].join(' ')}
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-        >
-          {/* Handle bar */}
-          <div className="flex justify-center pt-3 pb-1 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-[var(--paper-line)]" aria-hidden="true" />
-          </div>
-
-          {/* Header */}
-          {(title || showCloseButton) && (
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[var(--paper-line)] shrink-0">
-              {title && (
-                <h2 id={titleId} className="text-base font-semibold text-[var(--ink)] m-0">
-                  {title}
-                </h2>
-              )}
-              {showCloseButton && (
-                <button
-                  onClick={onClose}
-                  aria-label="Close"
-                  className="p-2 rounded text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors -mr-1 shrink-0"
-                >
-                  <X size={18} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
-            {children}
-          </div>
-
-          {/* Sticky footer */}
-          {footer && (
-            <div className="shrink-0 px-5 py-4 border-t border-[var(--paper-line)] bg-[var(--surface)]">
-              {footer}
-            </div>
-          )}
-        </div>
-      </div>,
-      document.body,
-    );
-  }
-
-  // ── Tablet / desktop: centered dialog ─────────────────────────────────────
-  const maxWidth = size === 'lg' ? 'max-w-2xl' : 'max-w-sm';
+  const sizeClass = size === 'lg' ? 'modal-lg' : 'modal-sm';
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      aria-hidden="false"
+      className="scrim"
+      onMouseDown={(e) => {
+        // Only a press on the scrim itself closes; presses inside the dialog never do.
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      {/* Scrim */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Dialog panel */}
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className={[
-          'relative z-10 w-full card-pop flex flex-col',
-          maxWidth,
-          'max-h-[85dvh]',
-        ].join(' ')}
+        tabIndex={-1}
+        className={`modal ${sizeClass}`}
       >
-        {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between gap-3 p-6 pb-0 shrink-0">
-            {title && (
-              <h2 id={titleId} className="text-base font-semibold text-[var(--ink)] m-0">
-                {title}
-              </h2>
-            )}
+          <div className="modal-head">
+            {title && <h2 id={titleId}>{title}</h2>}
             {showCloseButton && (
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="p-2 rounded text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors -mr-2 shrink-0"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
+              <IconButton label="Close" size="sm" className="ml-auto" onClick={onClose}>
+                <X size={18} />
+              </IconButton>
             )}
           </div>
         )}
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-6 min-h-0">
-          {children}
-        </div>
+        <div className="modal-body">{children}</div>
 
-        {/* Footer */}
         {footer && (
-          <div className="shrink-0 px-6 pb-6 pt-0">
+          <div className="modal-foot" style={{ paddingBottom: 'calc(var(--sp-4) + var(--safe-bottom))' }}>
             {footer}
           </div>
         )}

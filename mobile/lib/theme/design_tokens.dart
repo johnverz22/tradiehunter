@@ -6,8 +6,8 @@
 // documented theme-invariant constants (heroes are navy in every theme).
 //
 // Source of truth: docs/design/html/kit.css,
-//                  docs/design/tokens/design_tokens.dart and
-//                  docs/design/tokens/tokens.json (parity-checked).
+//                  docs/design/mobile/tokens/design_tokens.dart and
+//                  docs/design/mobile/tokens/tokens.json (parity-checked).
 // v1.6.2 changes folded in: F-106 outdoor line, F-114 hero-glass/on-hero
 // tokens, F-118 avTradie/onAvTradie avatar ink pair.
 library;
