@@ -134,8 +134,20 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
           return Scaffold(
             key: const Key('otp_screen'),
             backgroundColor: th.paper,
+            // Mockup `verify_otp`: app bar with back. The screen is reached
+            // with go(), so there is no stack to pop; back returns to /auth,
+            // the same place as 'Use a different email'.
+            appBar: THAppBar(
+              title: 'Verify your email',
+              leading: THIconButton(
+                icon: Icons.arrow_back_rounded,
+                semanticLabel: 'Back',
+                onPressed: () => context.go('/auth'),
+              ),
+            ),
             body: SafeArea(
-              child: Center(
+              child: Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     maxWidth: 480, // one-off: v1 auth form width
@@ -146,28 +158,18 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SizedBox(height: Space.s9),
-                          THWordmark(),
-                          const SizedBox(height: Space.s7),
+                          const SizedBox(height: Space.s4),
                           Text(
-                            'Check your email',
+                            'Enter the 6-digit code',
                             style: THType.h1.copyWith(
                               fontWeight: FontWeight.w700,
                               color: th.text,
                             ),
                           ),
-                          const SizedBox(height: Space.s2),
+                          const SizedBox(height: Space.s1_5),
                           Text(
-                            'We sent a 6-digit code to',
+                            'We sent a code to ${widget.email}.',
                             style: THType.body.copyWith(color: th.textSoft),
-                          ),
-                          const SizedBox(height: Space.s1),
-                          Text(
-                            widget.email,
-                            style: THType.body.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: th.text,
-                            ),
                           ),
                           Align(
                             alignment: Alignment.centerLeft,
@@ -297,7 +299,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: Space.s9),
+                          const SizedBox(height: Space.s6),
                         ],
                       ),
                     ),

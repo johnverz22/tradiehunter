@@ -3,7 +3,7 @@
 //
 // Hand-owned port of views/auth/role_select_screen.dart — same props
 // (userId + P9-02 one-time registrationToken), same PopScope(no back), same
-// disabled-until-selected Continue, same routing (role 1 → /tradie/onboarding,
+// disabled-until-selected Continue (D-6: no preselect), same routing (role 1 → /tradie/onboarding,
 // role 0 → /home), same keys and card semantics. The gallery stub's "You can
 // switch later in settings." copy is deliberately NOT used — tests assert it
 // never appears (the backend does not support switching yet).
@@ -195,11 +195,13 @@ class _ThRoleChoice extends StatelessWidget {
         child: AnimatedContainer(
           duration: THDurations.fast,
           decoration: BoxDecoration(
-            color: selected ? c.tintBrand : c.surface,
+            // Mockup `role_select`: the chosen card is accent-toned
+            // (gold border + tint + check), not brand navy.
+            color: selected ? c.accentTint : c.surface,
             borderRadius: BorderRadius.circular(Radii.card),
             border: Border.all(
-              color: selected ? c.brand : c.line,
-              width: selected ? 2 : 1,
+              color: selected ? c.accent : c.line,
+              width: selected ? 1.5 : 1,
             ),
           ),
           padding: const EdgeInsets.all(Space.s4),
@@ -210,15 +212,13 @@ class _ThRoleChoice extends StatelessWidget {
                 width: Sizes.tapMin,
                 height: Sizes.tapMin,
                 decoration: BoxDecoration(
-                  color: selected
-                      ? c.brand.withValues(alpha: 0.12)
-                      : c.surfaceAlt,
+                  color: selected ? c.surface : c.surfaceAlt,
                   borderRadius: BorderRadius.circular(Radii.control),
                 ),
                 child: Icon(
                   icon,
                   size: 22,
-                  color: selected ? c.brand : c.textSoft,
+                  color: selected ? c.accentText : c.textSoft,
                 ),
               ),
               Expanded(
@@ -248,13 +248,13 @@ class _ThRoleChoice extends StatelessWidget {
                         width: Space.s6,
                         height: Space.s6,
                         decoration: BoxDecoration(
-                          color: c.brand,
+                          color: c.accent,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.check_rounded,
                           size: Sizes.icon,
-                          color: c.onBrand,
+                          color: c.onAccent,
                         ),
                       )
                     : Container(

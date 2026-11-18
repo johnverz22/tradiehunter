@@ -13,6 +13,7 @@ import 'package:fixo/ui/auth/sign_in_screen.dart';
 import 'package:fixo/ui/auth/sign_up_screen.dart';
 import 'package:fixo/ui/auth/splash_screen.dart';
 import 'package:fixo/ui/auth/verify_otp_screen.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/viewmodels/auth_viewmodel.dart';
 import 'package:fixo/viewmodels/locale_viewmodel.dart';
@@ -532,5 +533,104 @@ void main() {
     // Unmount so the countdown timer is cancelled before the test ends.
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  // ── Fix plan 1.2 (S-02, S-03, S-04) ─────────────────────────────────────
+  testWidgets('v2 onboarding follows the mockup layout (S-03)', (tester) async {
+    final auth = _V2Auth();
+    await pumpScreen(tester, const ThOnboardingScreen(), auth, height: 852);
+
+    expect(find.text('Post a job in minutes'), findsOneWidget);
+    expect(
+      find.text(
+        'Describe what you need, choose a local tradie, and pay only when '
+        'the work is approved.',
+      ),
+      findsOneWidget,
+    );
+    // No header wordmark; Skip is a ghost button under Next.
+    expect(find.byType(THWordmark), findsNothing);
+    final skip = tester.widget<THButton>(find.widgetWithText(THButton, 'Skip'));
+    expect(skip.kind, THButtonKind.ghost);
+    expect(
+      tester.getTopLeft(find.text('Skip')).dy,
+      greaterThan(tester.getTopLeft(find.text('Next')).dy),
+    );
+    // Skip stays reachable on the last slide (v1 parity).
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Skip'), findsOneWidget);
+  });
+
+  for (final dark in [false, true]) {
+    testWidgets('v2 role card selection is accent-toned (dark: $dark)', (
+      tester,
+    ) async {
+      final auth = _V2Auth();
+      await pumpScreen(
+        tester,
+        const ThRoleSelectScreen(userId: 'user', registrationToken: 'one-time'),
+        auth,
+        dark: dark,
+      );
+      expect(find.byKey(const ValueKey('checked')), findsNothing);
+
+      await tester.tap(find.text('Homeowner'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('checked')), findsOneWidget);
+
+      final colors = dark ? THColors.dark : THColors.light;
+      final card = tester.widget<AnimatedContainer>(
+        find
+            .ancestor(
+              of: find.text('Homeowner'),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
+      );
+      final deco = card.decoration! as BoxDecoration;
+      expect(deco.color, colors.accentTint);
+      expect((deco.border! as Border).top.color, colors.accent);
+      // Still no "switch later" promise (backend cannot switch roles).
+      expect(find.textContaining('switch later'), findsNothing);
+    });
+  }
+
+  testWidgets('v2 OTP has an app bar whose back returns to /auth (S-04)', (
+    tester,
+  ) async {
+    final auth = _V2Auth();
+    final router = GoRouter(
+      initialLocation: '/verify-email',
+      routes: [
+        GoRoute(
+          path: '/verify-email',
+          builder: (_, _) =>
+              const ThVerifyOtpScreen(email: 'test@example.co.nz'),
+        ),
+        GoRoute(path: '/auth', builder: (_, _) => const Text('AUTH SCREEN')),
+      ],
+    );
+    addTearDown(router.dispose);
+    await pumpScreen(
+      tester,
+      const SizedBox(),
+      auth,
+      router: router,
+      height: 852,
+    );
+
+    expect(find.byType(THAppBar), findsOneWidget);
+    expect(find.text('Verify your email'), findsOneWidget);
+    expect(find.text('Enter the 6-digit code'), findsOneWidget);
+    expect(find.text('We sent a code to test@example.co.nz.'), findsOneWidget);
+    expect(find.text('Use a different email'), findsOneWidget);
+    expect(find.byType(THWordmark), findsNothing);
+
+    await tester.tap(find.byType(THIconButton));
+    await tester.pumpAndSettle();
+    expect(find.text('AUTH SCREEN'), findsOneWidget);
   });
 }

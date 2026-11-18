@@ -4,9 +4,10 @@
 // Hand-owned port of views/settings_screen.dart. Same rows and actions:
 // Account (Personal Details / tradie Payout Details / stub Payment Methods),
 // Preferences (device-local Notifications toggle, Region from
-// GET /api/config/locale, live Theme picker), Support stubs, the red Log Out
-// (key sign_out_button — also used by integration helpers) and the version
-// label. themeModeProvider is imported from its viewmodels home (plan 2.11).
+// GET /api/config/locale, live Theme picker), Support stubs, a ghost Sign out
+// (S-05: same label and weight as Profile, not a solid red block; key
+// sign_out_button — also used by integration helpers) and the version label.
+// themeModeProvider is imported from its viewmodels home (plan 2.11).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -226,9 +227,8 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                 const SizedBox(height: Space.s7),
                 THButton(
                   key: const Key('sign_out_button'),
-                  label: 'Log Out',
-                  kind: THButtonKind.danger,
-                  icon: Icons.logout_rounded,
+                  label: 'Sign out',
+                  kind: THButtonKind.ghost,
                   onPressed: () async {
                     await ref.read(authViewModelProvider.notifier).logout();
                     ref.invalidate(profileViewModelProvider);
