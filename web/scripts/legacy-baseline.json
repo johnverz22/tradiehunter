@@ -21,6 +21,5 @@
   "src/features/refunds/pages/RefundQueue.tsx": 8,
   "src/features/settings/pages/SettingsPage.tsx": 7,
   "src/features/users/pages/UserDetailPage.tsx": 22,
-  "src/features/users/pages/UserListPage.tsx": 12,
-  "src/pages/Forbidden.tsx": 1
+  "src/features/users/pages/UserListPage.tsx": 12
 }

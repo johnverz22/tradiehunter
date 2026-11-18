@@ -138,6 +138,15 @@ div.nav-item-static:hover {
     display: none;
   }
 }
+/* Standalone `.page` (public routes with no shell, e.g. /403): centred in the viewport.
+   Design-system gap: the kit has no centred single-card page besides `.auth`. */
+.page-centered {
+  min-height: 100dvh;
+  max-width: calc(var(--sz-content-max) / 2);
+  justify-content: center;
+  padding-top: max(var(--sp-6), var(--safe-top));
+  padding-bottom: max(var(--sp-10), var(--safe-bottom));
+}
 .input-icon > .field.has-trailing {
   padding-right: var(--sp-16);
 }
