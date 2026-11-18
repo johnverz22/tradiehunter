@@ -9,8 +9,8 @@
 
 ## Phase 0 — Sign-off and baseline
 
-- [ ] **0.1** Owner confirms strategy D1 (B / A / flagged `src/ui/`) (S)
-- [ ] **0.2** Owner answers D2–D8 or accepts the proposed defaults (S)
+- [x] **0.1** Owner confirms strategy D1: **B approved 2026-11-18** (S)
+- [x] **0.2** Owner answers D2–D8: **all proposed defaults approved 2026-11-18** (S)
 - [ ] **0.3** Confirm `dev` is green: `npm run lint`, `npm run build`, `npm run test:e2e` in `web/` (S)
 - [ ] **0.4** Capture before-shots of all 17 routes, light + dark, 1280/820/390 via `web/e2e/admin-shots.mjs`; keep outside the repo (M)
 - [ ] **0.5** Tag `pre-web-design-migration`; create branch `design-web-migration` off `dev` (S)

@@ -5,7 +5,7 @@
 > **Source of truth:** `docs/design/web/` (Trust Navy + Gold, web v1, inherits `docs/design/mobile/tokens/tokens.json`).
 > **Replaces:** the legacy v1.7 admin theme in `web/src/theme/` (Space Grotesk + IBM Plex + amber, `--hue` knob).
 > **Companion:** `docs/web_design_system_migration_todo.md` (checkable tasks, one per file or step).
-> **Status:** proposed, 2026-11-18. Facts below were measured on branch `design` at `fd945e1`.
+> **Status:** approved 2026-11-18 (strategy D1 = Option B and decisions D2–D8 accepted as proposed). Facts below were measured on branch `design` at `fd945e1`.
 
 ---
 
@@ -73,7 +73,7 @@ Reasons, in order of weight:
 
 **When to switch to Option A instead:** the admin must stay deployable to production from the current UI while this runs for more than about two weeks and hotfixes keep landing, or the team wants a feature-flagged, route-by-route rollout in one running app. In that case use the mobile pattern (a `web/src/ui/` tree beside the old one, a per-route flag, an import-boundary guard) rather than a second project; that keeps the data layer shared and is cheaper than a moved directory.
 
-> **Sign-off needed:** confirm Option B (or choose A / the flagged variant) before Phase 1. Everything below assumes B.
+> **Signed off 2026-11-18: Option B.** Everything below assumes B.
 
 ---
 
@@ -182,9 +182,9 @@ Pages with **no frame** (refunds, batches, batch detail, credential review dialo
 
 ---
 
-## 6. Open decisions (need an owner before the phase that needs them)
+## 6. Decisions (all approved 2026-11-18 with the proposed defaults)
 
-| # | Decision | Needed by | Proposed default |
+| # | Decision | Needed by | Approved default |
 |---|---|---|---|
 | D1 | Strategy: B (in place + shim) vs A (moved directory) vs flagged `src/ui/` tree | Phase 0 | **B** |
 | D2 | Dashboard **charts** (`Charts.tsx`) are not designed (DESIGN_GUIDE §12) | Phase 3 | Recolour with chart tokens, add a small chart spec to the design system before restyling |
