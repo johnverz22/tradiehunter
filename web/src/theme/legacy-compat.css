@@ -1,0 +1,143 @@
+/* ────────────────────────────────────────────────────────────────
+   TEMPORARY compat layer for the design-system migration.
+   Plan: docs/web_design_system_migration_plan.md (§3). Removed in Phase 6.
+   Maps v1.7 variables, Tailwind colour names and component classes onto
+   the new design system so unmigrated pages keep rendering. Mappings only;
+   no new design lives here. New code must not use any name defined here
+   (enforced by scripts/check-legacy-names.mjs).
+   Every rule below is: legacy: remove in P6
+   ──────────────────────────────────────────────────────────────── */
+
+/* ── Variables (legacy: remove in P6) ── */
+:root {
+  --brand-900: var(--sidebar);
+  --brand-700: var(--brand);
+  --brand-500: var(--ink-brand);
+  --brand-300: var(--line-strong);
+  --brand-100: var(--brand-tint);
+  --paper-line: var(--line);
+  --amber: var(--accent);
+  --amber-dark: var(--accent-ink);
+  --amber-ink: var(--accent-ink);
+  --green: var(--success);
+  --green-ink: var(--success-ink);
+  --red: var(--danger);
+  --red-ink: var(--danger);
+  --radius: var(--r-control);
+  --shadow-card: var(--sh-card);
+  --shadow-pop: var(--sh-pop);
+  --space-1: var(--sp-1);
+  --space-2: var(--sp-2);
+  --space-3: var(--sp-3);
+  --space-4: var(--sp-4);
+  --space-5: var(--sp-5);
+  --space-6: var(--sp-6);
+  --space-8: var(--sp-8);
+  --space-10: var(--sp-10);
+  --space-12: var(--sp-12);
+  --font-display: var(--ff-display);
+  --font-body: var(--ff-body);
+  --font-mono: var(--ff-mono);
+  --text-display: var(--ty-display);
+  --text-h2: var(--ty-h2);
+  --text-h3: var(--ty-title);
+  --text-body: var(--ty-body);
+  --text-mono: var(--ty-mono);
+}
+
+/* ── Tailwind colour names (legacy: remove in P6) ── */
+@theme {
+  --color-paper-line: var(--line);
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-500: var(--brand-500);
+  --color-brand-300: var(--brand-300);
+  --color-brand-100: var(--brand-100);
+  --color-amber-brand: var(--amber);
+  --color-amber-dark: var(--amber-dark);
+}
+
+/* ── Component classes with no kit equivalent (legacy: remove in P6) ── */
+.surface { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--sh-card); }
+.card-pop { background: var(--surface); border-radius: var(--r-panel); box-shadow: var(--sh-pop); }
+.card-title {
+  font: var(--ty-title); color: var(--ink); margin: 0 0 var(--sp-4);
+  padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line);
+}
+.field-multiline { height: auto; padding: var(--sp-3); }
+.field-invalid { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+.field-search { padding-left: 34px; }
+.select-field {
+  appearance: none; -webkit-appearance: none; width: 100%; height: var(--sz-control);
+  padding: 0 32px 0 var(--sp-3); font: var(--ty-body); color: var(--ink);
+  background-color: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-control); cursor: pointer;
+}
+.select-field:focus { outline: var(--sz-focus-ring) solid var(--focus); outline-offset: 1px; }
+
+.table-container {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-panel); box-shadow: var(--sh-card); overflow: auto;
+}
+.th-sortable { cursor: pointer; user-select: none; }
+.cell-muted { color: var(--ink-soft); }
+.action-link { color: var(--ink-brand); font-size: 13px; font-weight: 500; text-decoration: none; }
+.action-link:hover { text-decoration: underline; }
+
+.detail-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line);
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { font-size: 13px; color: var(--ink-soft); }
+.detail-value { font-size: 14px; font-weight: 500; color: var(--ink); text-align: right; }
+
+/* Pills → badge look. Status is never colour-only: callers keep their text. */
+.pill {
+  display: inline-block; padding: var(--sp-1) var(--sp-3); border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+}
+.pill-lg { padding: var(--sp-2) var(--sp-4); font-size: 13px; }
+.pill-green { background: var(--success-tint); color: var(--success-ink); }
+.pill-amber { background: var(--accent-tint); color: var(--accent-ink); }
+.pill-red { background: var(--danger-tint); color: var(--danger); }
+.pill-blue, .pill-brand { background: var(--brand-tint); color: var(--ink-brand); }
+.pill-gray { background: var(--surface-alt); color: var(--ink-soft); }
+
+.stat-pill {
+  display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card);
+  box-shadow: var(--sh-card); font-size: 13px; color: var(--ink-soft);
+}
+.stat-pill strong { font: var(--ty-mono); font-weight: 600; color: var(--ink); }
+
+/* Legacy stepper markup (.stepper > .step …). Scoped so the kit's own .stepper is untouched. */
+.stepper:has(> .step) {
+  display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-6);
+  background: var(--surface); border-radius: var(--r-card); box-shadow: var(--sh-card);
+}
+.step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.step-line { position: absolute; top: 8px; left: 50%; width: 100%; height: 3px; background: var(--track); z-index: 0; }
+.step:last-child .step-line { display: none; }
+.step-line.step-line--filled { background: var(--brand); }
+.step-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--track); border: 3px solid var(--track); z-index: 1; }
+.step-dot.step-dot--done { background: var(--brand); border-color: var(--brand); }
+.step-dot.step-dot--active { background: var(--success); border-color: var(--success); }
+.step-dot.step-dot--cancelled { background: var(--danger); border-color: var(--danger); }
+.step-dot.step-dot--expired { background: var(--accent); border-color: var(--accent); }
+.step-dot.step-dot--disputed { background: var(--danger); border-color: var(--accent); }
+.step-label { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--ink-soft); text-align: center; }
+.step-label.step-label--past { color: var(--ink-soft); }
+.step-label.step-label--active, .step-label.step-label--done { color: var(--success-ink); }
+.step-label.step-label--cancelled, .step-label.step-label--disputed { color: var(--danger); }
+.step-label.step-label--expired { color: var(--accent-ink); }
+.step-sublabel { margin-top: 2px; font-size: 11px; font-weight: 400; }
+.step-updated-caption { font-size: 12px; color: var(--ink-soft); text-align: right; }
+
+/* Legacy timeline markup (.timeline > .timeline-item …). */
+.timeline:has(> .timeline-item) { margin-top: var(--sp-2); }
+.timeline-item { display: flex; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+.timeline-item:last-child { border-bottom: none; }
+.timeline-time { width: 92px; flex-shrink: 0; font: var(--ty-mono); color: var(--ink-soft); padding-top: 2px; overflow-wrap: anywhere; }
+.timeline-event { font-size: 14px; color: var(--ink); }
+.timeline-meta { margin-top: 2px; font-size: 12px; color: var(--ink-soft); }

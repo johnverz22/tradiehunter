@@ -70,6 +70,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
       working-directory: ./web
+    - name: Web design files match docs/design/web
+      run: npm run design:check
+      working-directory: ./web
+    - name: Legacy design names do not grow
+      run: npm run design:legacy
+      working-directory: ./web
     - name: Lint
       run: npm run lint
       working-directory: ./web

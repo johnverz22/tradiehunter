@@ -106,18 +106,18 @@ Every shim rule carries a `/* legacy: remove in P6 */` comment so Phase 6 can fi
 - Capture before-shots of every route in light and dark at 1280, 820 and 390 with `web/e2e/admin-shots.mjs`; store outside the repo (CI artifact or a zip). Used for diffing, not committed.
 - Record the baseline: `npm run lint`, `npm run build`, `npm run test:e2e` all green on `dev`.
 - Tag `pre-web-design-migration` on the starting commit. Done 2026-11-18.
-- e2e and screenshots need a browser and live API: run locally before Phase 1 (todo 0.3, 0.4).
+- e2e and screenshots need a browser and live API. **Deferred by the owner (2026-11-18): manual/e2e verification is done later; scripted work proceeds first** (todo 0.3, 0.4, 1.8).
 
 ### Phase 1 — Foundation (app looks nearly the same, new tokens live)
 
 Follows `DESIGN_GUIDE.md` §10 steps 1–3.
 
 1. Copy `tokens.css`, `theme.css` to `web/src/theme/`; copy `css/kit.css` to `web/src/theme/components.css` (replacing the legacy file); remove `design-tokens.css` and the old `@theme` + `@custom-variant` from `index.css`. Import order: `tailwindcss` → `tokens.css` → `theme.css` → `components.css` → `legacy-compat.css`.
-2. Copy `fonts/` to `web/public/fonts/`, import `fonts.css` first; remove the Google Fonts `<link>`s.
+2. Copy `fonts/` to `web/public/fonts/` and load `fonts.css` with a `<link>` in `index.html` (a CSS `@import` makes Vite rewrite the font URLs and drop the woff2 files); remove the Google Fonts `<link>`s.
 3. `index.html`: keep the blocking theme script, update `theme-color`, title and description.
 4. Write `legacy-compat.css` (§3).
 5. Decide and wire a **sync check**: a script (`web/scripts/sync-design.mjs`, or an npm script) that fails CI if `web/src/theme/{tokens,theme,components}.css` differ from `docs/design/web/{tokens,css}`, so the app cannot drift from the system. Generated files are copied, never hand-edited.
-6. Add a lint/CI guard that rejects new uses of legacy names outside `legacy-compat.css`.
+6. Add a CI guard that rejects new uses of legacy names outside `legacy-compat.css`. Implemented as a ratchet (`web/scripts/check-legacy-names.mjs` + `legacy-baseline.json`): no file may gain uses, new files must have none, and the baseline can only go down. Starting point: 302 uses in 42 files; Phase 6 target is 0.
 
 **Exit gate:** `lint`, `build`, full e2e green; every route renders with no unstyled element (compare with Phase 0 shots); `node docs/design/web/tools/build.mjs --check` green.
 
