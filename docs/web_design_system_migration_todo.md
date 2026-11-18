@@ -39,11 +39,16 @@
 ## Phase 2 — Shared components and shell
 
 Foundations
-- [ ] **2.1** `Button` (`kind`, `size`, `loading`, `icon`) — extract and adopt (M)
-- [ ] **2.2** `Badge` (`tone`, `dot`, `size`) + `StatusBadge` on the new status map; `PayoutStatusBadge` follows (M)
-- [ ] **2.3** `Field` (`label`, `help`, `error`, `optional`) with `aria-describedby` (M)
-- [ ] **2.4** `EmptyState` (S)
-- [ ] **2.5** `Toast` (inverse surface, success/info auto-dismiss 3 s, errors persist and also appear inline) (M)
+- [x] **2.1** `Button` (`kind`, `size`, `loading`, `icon`) — extract and adopt (M)
+  - Done: `components/Button.tsx`: `Button` (`kind` default primary, `size`, `loading` with aria-busy and click blocked, `icon`, `block`) and `IconButton` (required `label` → aria-label). Not yet adopted by pages: raw `btn btn-*` markup is replaced per page in Phase 3/4.
+- [x] **2.2** `Badge` (`tone`, `dot`, `size`) + `StatusBadge` on the new status map; `PayoutStatusBadge` follows (M)
+  - Done: `components/Badge.tsx` (`tone`, `dot`, `size`); `StatusBadge` now uses the COMPONENTS.md status map with dot; `PayoutStatusBadge`/`BatchStatusBadge` moved to `Badge` (Pending→warn, Scheduled→info, Processed→ok, Failed→danger; Open→info, Processing→warn, Completed→ok: payout statuses are not in the design status map, mapped by legacy colour).
+- [x] **2.3** `Field` (`label`, `help`, `error`, `optional`) with `aria-describedby` (M)
+  - Done: `components/Field.tsx`: render-prop `Field` (`label`, `help`, `error`, `optional`) wiring `id`, `aria-describedby` (error first) and `aria-invalid` via `useId`; error shows icon + text.
+- [x] **2.4** `EmptyState` (S)
+  - Done: `components/EmptyState.tsx` (`title`, description child, `icon`, `action`).
+- [x] **2.5** `Toast` (inverse surface, success/info auto-dismiss 3 s, errors persist and also appear inline) (M)
+  - Done: `components/Toast.tsx` (`Toast`, `ToastProvider`) + `toast-context.ts` (`useToast`): info/ok auto-dismiss at 3 s, warn/danger persist with `role="alert"`, always a Dismiss button; provider mounted in `main.tsx`. No page calls it yet; per the design rule, errors must also be shown inline when pages adopt it. The kit defines no `.toast-ok/-warn/-danger` rules (tone lives in the icon tile), the classes are harmless hooks.
 
 Existing components (keep names and props)
 - [ ] **2.6** `Banner` (`role` alert/status, icon tile, no side stripe) (S)
@@ -109,6 +114,10 @@ Detail
 - [ ] **6.6** Merge `design-web-migration` → `dev`; tag `web-design-v1` (S)
 
 ---
+
+## Verification log
+
+- 2026-11-18, tasks 2.1–2.5: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check`, `design:legacy` (302 → 289 uses, 40 files), design gate (126/126) pass. **Deferred (manual):** visual check of the new components and of `StatusBadge`/payout badges in tables, light + dark; keyboard check of `Toast` dismiss and `Button` loading state.
 
 ## Parked / blocked
 
