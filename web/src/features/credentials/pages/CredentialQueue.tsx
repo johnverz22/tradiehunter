@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { ExternalLink, ShieldCheck } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
+import { Field } from '../../../components/Field';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
 import { ConfirmModal } from '../../../components/ConfirmModal';
@@ -128,7 +130,7 @@ export const CredentialQueue: React.FC = () => {
           <Link to={`/users/${credential.tradieUserId}`} className="cell-link">
             {credential.tradieName}
           </Link>
-          <span className="block text-xs cell-muted">{credential.tradieEmail}</span>
+          <span className="block t-meta muted">{credential.tradieEmail}</span>
         </div>
       ),
     },
@@ -140,7 +142,7 @@ export const CredentialQueue: React.FC = () => {
         <div>
           <span>{credential.tradeType ?? '—'}</span>
           {credential.businessName && (
-            <span className="block text-xs cell-muted">{credential.businessName}</span>
+            <span className="block t-meta muted">{credential.businessName}</span>
           )}
         </div>
       ),
@@ -150,7 +152,7 @@ export const CredentialQueue: React.FC = () => {
       header: 'Credential',
       priority: 'secondary',
       cell: (credential) => (
-        <span className="pill pill-brand">{credential.type}</span>
+        <Badge tone="info">{credential.type}</Badge>
       ),
     },
     {
@@ -162,9 +164,9 @@ export const CredentialQueue: React.FC = () => {
           href={credential.downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="action-link inline-flex items-center gap-1.5"
+          className="cell-link inline-flex items-center gap-1.5"
         >
-          <ExternalLink size={12} aria-hidden="true" />
+          <ExternalLink size={16} aria-hidden="true" />
           <span className="truncate max-w-[200px]">
             {credential.originalFileName || 'View document'}
           </span>
@@ -190,24 +192,11 @@ export const CredentialQueue: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       {/* Header */}
       <PageHeader
-        title="Credential Verification"
+        title="Credential queue"
         description="Review tradie licences, insurance and certifications. Approving a credential verifies the tradie and makes them eligible for job matching."
-        meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <ShieldCheck size={13} aria-hidden="true" />
-                <strong>{data.totalCount.toLocaleString()}</strong> awaiting review
-              </div>
-              <div className="stat-pill">
-                <strong>{data.items.length}</strong> on this page
-              </div>
-            </>
-          )
-        }
       />
 
       {successMessage && (
@@ -249,7 +238,7 @@ export const CredentialQueue: React.FC = () => {
         }
       />
 
-      <p className="text-xs text-[var(--ink-soft)]">
+      <p className="t-meta c-soft">
         Document links are private-bucket URLs that expire 15 minutes after the queue was loaded.
       </p>
 
@@ -274,31 +263,27 @@ export const CredentialQueue: React.FC = () => {
           onCancel={closeAction}
         >
           {pendingAction.kind === 'reject' && (
-            <div className="mt-4">
-              <label
-                htmlFor="reject-reason"
-                className="block text-sm font-medium text-[var(--ink)] mb-1"
-              >
-                Reason for rejection
-              </label>
-              <textarea
-                id="reject-reason"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={3}
-                maxLength={REJECT_REASON_MAX}
-                autoFocus
-                placeholder="e.g. Licence expired — please upload the current one."
-                className="field field-multiline w-full resize-none"
-              />
-              <p className="text-xs text-[var(--ink-soft)] mt-1">
-                Required. Stored on the credential so the tradie can see what to fix.{' '}
-                {rejectReason.length}/{REJECT_REASON_MAX} characters.
-              </p>
-            </div>
+            <Field
+              label="Reason for rejection"
+              help={`Required. Stored on the credential so the tradie can see what to fix. ${rejectReason.length}/${REJECT_REASON_MAX} characters.`}
+            >
+              {(a11y) => (
+                <textarea
+                  {...a11y}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={3}
+                  maxLength={REJECT_REASON_MAX}
+                  autoFocus
+                  data-autofocus
+                  placeholder="e.g. Licence expired — please upload the current one."
+                  className="textarea"
+                />
+              )}
+            </Field>
           )}
         </ConfirmModal>
       )}
-    </div>
+    </>
   );
 };

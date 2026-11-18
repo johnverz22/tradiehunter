@@ -194,11 +194,22 @@ Shell
 ## Phase 4 — Queues, detail pages and dialogs
 
 Queues
-- [ ] **4.1** `CredentialQueue` — frame `credentials` (M)
+- [x] **4.1** `CredentialQueue` — frame `credentials` (M)
+  - Parity list (kept): `useCredentialQueue` (`page`, `pageSize` 20) and `useReviewCredential`; columns Tradie (link to `/users/:id`, email), Trade (type, business name), Credential type, Document (external link, `rel=noopener noreferrer`, file name or "View document"); row actions Approve (primary) and Reject (danger) opening `ConfirmModal` (Reject destructive, needs a reason of 1–500 characters shown with a counter, Reject disabled until it is non-empty); success banner from `reviewSummary`, action error banner, load error banner with Retry; step back a page when the last row is reviewed; loading, empty "No credentials awaiting review.", pagination; the 15-minute document-link note.
+  - Done: `features/credentials/pages/CredentialQueue.tsx` JSX only: fragment root, title "Credential queue" (frame), the `stat-pill`s removed, credential type is `Badge` (info), document link uses `cell-link` with a 16 px icon, `cell-muted` / `text-xs` → `.muted` / `.t-meta`, the reject reason is the shared `Field` + kit `.textarea` (label, `aria-describedby` to the counter/help text, still `autoFocus` plus `data-autofocus` so `Modal` focuses it). Handlers, error mapping, mutation and paging logic untouched. Zero legacy names left. `credentials.spec.ts` selectors (Approve/Reject buttons by role, dialog buttons, "required" text) all still match; no spec edited.
+  - Deviations to know: (1) the frame's columns Submitted and Waiting (Unverified badge) and its secondary "Review" button have no data/behaviour in the app (`PendingCredential` has no submitted date; Approve/Reject act directly), so the app's columns and row actions stay; (2) the app's explanatory sub-line is kept instead of the frame's shorter one; (3) the two `stat-pill`s are gone (pagination shows the total); (4) Approve stays the calm `primary` row button and Reject `danger-outline` (DataTable mapping), not gold: a row action is not the page's one gold action.
+  - [~] Deferred (manual): `credentials.spec.ts` against a live API; visual check against the `credentials` frame in light + dark at 1280/820/390; keyboard: reject dialog opens with focus in the reason field, Cancel reachable, focus returns to the row action.
 - [ ] **4.2** `PaymentQueue` + `PaymentReviewModal` — frame `payments` (L)
-- [ ] **4.3** `OverduePayments` — queue pattern, no frame (M)
+- [x] **4.3** `OverduePayments` — queue pattern, no frame (M)
+  - Parity list (kept): `useOverduePayments` (`page`, `pageSize` 20); rows re-sorted most overdue first; columns Job (link, completed-on line), Homeowner (name, email), Amount (currency via `Intl`), Due (date plus "Due today" / "Overdue by N days", band by 24 h / 72 h ladder); "N payments are more than 3 days past due" warn banner; 404 "feed isn't available" info banner with Retry; other errors with Retry; empty state (and "Go to page N" when a page is empty); pagination; the closing note; link to the Payment queue.
+  - Done: `features/payments/pages/OverduePayments.tsx` JSX only: fragment root, title "Overdue payments"; header `actions` carry the Payment queue link (`btn btn-secondary`; it used to show only once data loaded, now always); the outstanding total and "N over 3 days" are `Badge`s in `meta` (danger + dot for the over-3-days count, so it is text + dot, not colour alone); the "N overdue" pill is gone (pagination shows it); due-day line uses `c-danger` (urgent) / `c-accent` (warn) / `muted` over text that already says how many days; `font-mono` → `.mono`; the empty state is the shared `EmptyState` (check icon in the kit tile, same wording and link). Logic (days, bands, sort, error mapping) untouched. Zero legacy names left. `payments.spec.ts` overdue tests (h1 matches /overdue/, empty text, link from the queue) still match.
+  - Known visual deltas: no `.font-medium` weight on the due date; empty state sits in the kit tile layout; badges instead of stat pills.
+  - [~] Deferred (manual): visual check in light + dark at 1280/820/390 with rows in each band, the empty state and the 404 banner; confirm the warn text colour (`--accent-ink`) is legible in dark.
 - [ ] **4.4** `PayoutQueue` + `ProcessPayoutModal` — frame `payouts` (L)
-- [ ] **4.5** `PayoutBatches` — queue pattern, no frame (M)
+- [x] **4.5** `PayoutBatches` — queue pattern, no frame (M)
+  - Parity list (kept): `usePayoutBatches` (`page`, `pageSize` 20); columns Period (link, id mono), Payouts count, Progress (`processed/total` and percent), Total (net), Status (`BatchStatusBadge`), Completed date; row click and "View batch" action to `/payouts/batches/:id`; header link to the Payout queue; error banner with Retry; empty text (and "Go to page N"); pagination; the closing note.
+  - Done: `features/payouts/pages/PayoutBatches.tsx` JSX only: fragment root, title "Payout batches", the Payout queue link is `btn btn-secondary` without the icon, `cell-muted` / `text-xs` / `font-mono` → `.muted` / `.t-meta` / `.mono`, links `cell-link`, closing note on `t-meta c-soft row`. Logic untouched. Zero legacy names left. `payouts.spec.ts` (link by name /batches/) unaffected.
+  - [~] Deferred (manual): visual check in light + dark at 1280/820/390 (phone card list shows the "View batch" action).
 - [ ] **4.6** `RefundQueue` + `ProcessRefundModal` — queue + dialog pattern, no frame (L)
 
 Detail
@@ -228,6 +239,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, tasks 4.1, 4.3, 4.5: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (178 → 151 uses, 15 files), design gate (126/126) pass. **Deferred (manual):** credential e2e, overdue and batches visual checks, see the tasks.
 - 2026-11-18, tasks 3.7–3.8: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (194 → 178 uses, 18 files), design gate (126/126) pass. **Deferred (manual):** settings save flow, disputes tabs and visual/keyboard checks, see tasks 3.7 and 3.8.
 - 2026-11-18, task 3.6: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (198 → 194 uses, 20 files), design gate (126/126) pass. **Deferred (manual):** audit logs visual and keyboard checks, see task 3.6.
 - 2026-11-18, tasks 3.4–3.5: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (218 → 198 uses, 21 files), design gate (126/126) pass. **Deferred (manual):** list-page visual, keyboard and e2e checks, see tasks 3.4 and 3.5.
