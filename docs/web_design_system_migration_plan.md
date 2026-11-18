@@ -183,7 +183,7 @@ Pages with **no frame** (refunds, batches, batch detail, credential review dialo
 
 ---
 
-## 6. Decisions (all approved 2026-11-18 with the proposed defaults)
+## 6. Decisions (D1–D8 approved 2026-11-18 with the proposed defaults; D9 open)
 
 | # | Decision | Needed by | Approved default |
 |---|---|---|---|
@@ -195,6 +195,7 @@ Pages with **no frame** (refunds, batches, batch detail, credential review dialo
 | D6 | Replace e2e `.step-label` selectors with role/aria (`aria-current="step"`) | Phase 2 | Yes, in the stepper PR |
 | D7 | Sync mechanism for tokens/kit (copy script + CI check vs importing from `docs/`) | Phase 1 | Copy script + CI check, so `web/` stays self-contained for Docker |
 | D8 | Need for a bulk-selection bar, date-range picker, tooltips (not designed) | Phase 3–4 | None unless a page already has one; if so, add to the design system first |
+| D9 | `DataTable` on phones: the design says tables scroll in their wrapper (min 640 px); the app shows a card list under 640 px | Phase 2 (task 2.8) | **Open.** Interim: card list kept, restyled on tokens. Recommended: keep it and add it to the design system as a phone pattern |
 
 Per repo rules, any new third-party dependency (for example a chart library change) needs approval first; this plan adds none.
 

@@ -59,7 +59,11 @@ Existing components (keep names and props)
   - Deviations to know: non-destructive confirms are now gold (`accent`, was navy `primary`) and Cancel is `secondary` (was ghost), per DESIGN_GUIDE "Confirm dialog"; destructive confirm is the kit's filled danger button.
   - Follow-ups (other tasks, not done here): `FilterBar` (2.9), `ProcessRefundModal` (4.6) and `AuditDiffModal` (4.11) still pass their own footer wrappers (`flex …` divs) and legacy classes; when migrated they should pass bare `Button`s so the kit's stacked footer works on phones. `AuditDiffModal` passes an `aria-label` prop that `Modal` ignores (pre-existing); give it a `title` when migrated.
   - [~] Deferred (manual): keyboard walk of a confirm and a destructive confirm (Tab/Shift+Tab trap, Esc, focus returns to the trigger, Cancel focused first when destructive); visual check against the `payments` frame modal in light + dark at 1280/820/390 (bottom sheet < 640, stacked footer, safe-area padding).
-- [ ] **2.8** `DataTable` (`.table-wrap`/`.table`, sticky header, `aria-sort`, hidden actions header, scrolls in wrapper) (L)
+- [x] **2.8** `DataTable` (`.table-wrap`/`.table`, sticky header, `aria-sort`, hidden actions header, scrolls in wrapper) (L)
+  - Done: `components/DataTable.tsx` renders `.table-wrap > table.table` (sticky header from the kit, pagination inside the wrapper under the table as in the `jobs` frame), `<th scope="col">`, sortable headers are real `<button>`s with `aria-sort` on the sorted header only (was: click handler on the `<th>`), the actions column has a visually hidden "Actions" header and `td.actions`, right-aligned columns use `.num`, skeleton rows use `.skeleton` with `aria-busy` on the table, empty/error cells use `.muted`. Row actions use kit `Button` classes (`primary`→`btn-primary`, `ghost`→`btn-ghost`, `danger`→`btn-danger-outline` so a row stays calm; size sm). Props unchanged (`columns`, `rows`, `getRowKey`, `getRowClassName`, `onRowClick`, `isLoading`, `empty`, `error`, `sortState`, `onSort`, `rowActions`, `pagination`, `mobileCard`, `skeletonCount`); added optional `caption` (visible `<caption>`, for tables not under a heading; no page passes it yet). Tablet-portrait hiding of `detail` columns kept. Phone card list kept and restyled on tokens (`.card`, `--line`, `--surface-alt`, `--sh-pop`, `--danger*`, kit buttons, 44 px menu rows); removed the invalid `role="row"` on card `<li>`s. Legacy baseline 276 → 263 uses (37 → 36 files). No e2e selector changed (specs use `table tbody tr` and roles).
+  - **Open decision D9 (needs owner):** DESIGN_GUIDE §6 / COMPONENTS.md say tables on phones *scroll inside their wrapper* (min 640 px); the app renders a **card list** under 640 px (with a "More" menu and 44 px actions). Removing it changes behaviour, so I kept it. Options: (a) keep the card list and add it to the design system as a phone pattern (recommended: better for the thumb-driven queues), (b) drop it and let the table scroll as designed (then delete `CardList`, `mobileCard` and the "More" menu in a follow-up). Does not block other tasks.
+  - Known visual deltas for the manual pass: header cells are now the kit's uppercase label style on `--surface-alt`; row height `--sz-table-row`; the sort icon only shows on the active column (unchanged); pagination (still legacy-styled until 2.10) now sits inside the bordered wrapper; row-action danger buttons are outline, not filled.
+  - [~] Deferred (manual): visual check of a queue and a list page against the `jobs` / `credentials` / `payments` frames in light + dark at 1280/820/390 (table scroll inside wrapper at 820; phone card list at 390); keyboard check of sort buttons (Enter/Space, `aria-sort` announcement) and the "More" menu.
 - [ ] **2.9** `FilterBar` (`role="search"`, chips `aria-pressed`) (S)
 - [ ] **2.10** `Pagination` (`aria-current`, labelled prev/next) (S)
 - [ ] **2.11** `PageHeader` + breadcrumb (S)
@@ -123,10 +127,13 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, task 2.8: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (276 → 263 uses, 36 files), design gate (126/126) pass.
 - 2026-11-18, task 2.7: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (283 → 276 uses, 37 files), design gate (126/126) pass.
 - 2026-11-18, task 2.6: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (289 → 283 uses, 39 files), design gate (126/126) pass.
 - 2026-11-18, tasks 2.1–2.5: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check`, `design:legacy` (302 → 289 uses, 40 files), design gate (126/126) pass. **Deferred (manual):** visual check of the new components and of `StatusBadge`/payout badges in tables, light + dark; keyboard check of `Toast` dismiss and `Button` loading state.
 
 ## Parked / blocked
 
-_None yet. Add `[~] <task> — parked: <why>` here._
+- **D9 (open, not blocking):** phone layout of `DataTable` (card list vs scrolling table), see task 2.8.
+
+_No parked tasks yet. Add `[~] <task> — parked: <why>` here._
