@@ -14,6 +14,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MatchRepo extends JobsRepository {
   MatchRepo() : super(Dio(), const FlutterSecureStorage());
@@ -107,6 +108,10 @@ class MatchHub extends JobHubClient {
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  // The v2 radar (UI_V2=ho_radar|all) reads themeModeProvider, whose notifier
+  // loads SharedPreferences on construction. Harmless on the v1 path.
+  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   Future<GoRouter> mount(
     WidgetTester tester,

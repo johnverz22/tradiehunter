@@ -17,8 +17,10 @@ import '../../widgets/fixo_cards.dart';
 import '../widgets/offer_countdown.dart';
 import '../widgets/sticky_action_bar.dart';
 import '../../feedback/fixo_notice.dart';
+import '../../ui/homeowner/ho_radar_screen.dart';
 import '../../ui/homeowner/ho_request_sent_screen.dart';
 import '../../ui/ui_flags.dart';
+import '../../viewmodels/theme_mode_viewmodel.dart';
 
 /// Which waiting experience this screen runs.
 enum MatchingScreenMode {
@@ -384,6 +386,21 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
     if (_isRequestSent) return _buildRequestSent(context, theme, isDark);
 
     final progress = ref.watch(matchingProgressProvider(widget.jobId));
+    if (isV2Screen('ho_radar')) {
+      // N-03: presentation only. The SignalR run, dispatch, stall watchdog
+      // and cancel all stay in this state object.
+      return ThRadarScreen(
+        progress: progress,
+        radar: _animationsEnabled ? _ctrl : null,
+        reconnecting: _reconnecting,
+        stalled: _stalled,
+        dispatchFailed: _dispatchFailed,
+        busy: _busy,
+        themeMode: ref.watch(themeModeProvider),
+        onTryAgain: _dispatch,
+        onCancel: _cancelMatching,
+      );
+    }
     final done = progress.phase == MatchingPhase.noTradieFound;
     final matched = progress.phase == MatchingPhase.matched;
     final searching = !done && !matched;
@@ -776,6 +793,18 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen>
         ),
       ), // Scaffold
     ); // AnnotatedRegion
+  }
+
+  /// v2 radar Cancel / Go Back. Same factual cancel as the v1 button:
+  /// DELETE /api/jobs/:id, then back to the tradie list — the run itself is
+  /// server-owned.
+  Future<void> _cancelMatching() async {
+    _stallTimer?.cancel();
+    await _leave();
+    await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
+    if (mounted) {
+      context.pushReplacement('/jobs/${widget.jobId}/tradies');
+    }
   }
 
   Future<void> _cancelRequest() async {
