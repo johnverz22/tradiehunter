@@ -354,15 +354,12 @@ class _ThConversationTile extends StatelessWidget {
                             Icons.warning_amber_rounded,
                             size: Sizes.icon,
                             color: c.danger,
-                          )
-                        else if (conversation.lastMessageMine)
-                          // Outgoing: small send arrow — no "You:" prefix needed.
-                          Icon(
-                            Icons.north_east_rounded,
-                            size: Sizes.iconSm + 1,
-                            color: c.textSoft,
-                          )
-                        else if (hasUnread)
+                          ),
+                        // The unread count is the server's, so it shows even
+                        // when the last message is mine (earlier replies can
+                        // still be unread). The 'You:' prefix already marks an
+                        // outgoing preview; no extra arrow glyph.
+                        if (hasUnread)
                           THBadge(
                             conversation.unreadCount > 99
                                 ? '99+'

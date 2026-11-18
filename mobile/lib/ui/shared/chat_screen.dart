@@ -16,6 +16,9 @@
 //   • locked composer for Completed/Cancelled/Disputed (ChatService.IsChatOpenAsync)
 //   • status pill ('Step N of 4 · …'), chat-closed banner, date separators
 //   • scroll-to-bottom on new messages / first load; loadMore at the top
+//   • approved extra costs render inline as the mockup's accent system card.
+//     The chat has no server-side system messages, so the card is derived from
+//     GET /api/jobs/{id}/adjustments (amount + responded-at, nothing invented)
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +27,7 @@ import 'package:intl/intl.dart';
 import '../../models/marketplace.dart';
 import '../../network/api_error.dart';
 import '../../network/external_launcher.dart';
+import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
@@ -63,6 +67,14 @@ const _contactableStatuses = {
 /// Mirrors ChatService.IsChatOpenAsync — new messages are rejected
 /// server-side for Completed, Cancelled and Disputed jobs.
 const _lockedStatuses = {'Completed', 'Cancelled', 'Disputed'};
+
+/// Extra costs for a job, read to draw approved ones as system cards. The
+/// repository returns an empty list when the call fails, so this never
+/// surfaces an error into the chat.
+final _chatAdjustmentsProvider = FutureProvider.autoDispose
+    .family<List<JobAdjustment>, String>(
+      (ref, jobId) => ref.watch(jobsRepositoryProvider).getAdjustments(jobId),
+    );
 
 class ThChatScreen extends ConsumerStatefulWidget {
   final String jobId;
@@ -283,6 +295,8 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
       if (prev == null) return;
       if (next.messages.length > prev.messages.length) {
         _scrollToBottom();
+        // A reply often follows a decision on an extra cost: re-read it.
+        ref.invalidate(_chatAdjustmentsProvider(widget.jobId));
       }
       // Also scroll on first load.
       if (prev.isLoading && !next.isLoading && next.messages.isNotEmpty) {
@@ -292,6 +306,19 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
 
     // Verified: we treat InProgress / Booked / Completed as verified contexts.
     final isVerified = _contactableStatuses.contains(status);
+
+    // Approved extra costs become inline system cards (Booked+ only; the
+    // endpoint has nothing earlier). valueOrNull keeps the previous list while
+    // a refresh is in flight, so cards do not blink out on every new message.
+    final adjustments = isVerified
+        ? (ref.watch(_chatAdjustmentsProvider(widget.jobId)).valueOrNull ??
+              const <JobAdjustment>[])
+        : const <JobAdjustment>[];
+    final items = _buildChatItems(
+      chatState.messages,
+      adjustments,
+      hasMore: chatState.hasMore,
+    );
 
     return ThScope(
       themeMode: ref.watch(themeModeProvider),
@@ -303,13 +330,19 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
             appBar: THAppBar(
               title: title,
               subtitle: subtitle,
+              // Mockup `chat`: back arrow + title/subtitle. THAppBar's `leading`
+              // replaces the back button, so a pushed chat passes none (an
+              // avatar + back + three actions also cannot fit at 320 pt). The
+              // embedded master-detail pane has no back and room for the avatar.
               showBack: !widget.embedded,
-              leading: _ThChatAvatar(
-                initials: participant.isNotEmpty
-                    ? participant[0].toUpperCase()
-                    : '?',
-                verified: isVerified,
-              ),
+              leading: widget.embedded
+                  ? _ThChatAvatar(
+                      initials: participant.isNotEmpty
+                          ? participant[0].toUpperCase()
+                          : '?',
+                      verified: isVerified,
+                    )
+                  : null,
               actions: [
                 if (status == 'Booked' || status == 'InProgress')
                   THIconButton(
@@ -419,9 +452,7 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
                                 controller: _scrollCtrl,
                                 padding: const EdgeInsets.all(Space.s4),
                                 itemCount:
-                                    _buildMessageItems(chatState.messages)
-                                        .length +
-                                    (chatState.hasMore ? 1 : 0),
+                                    items.length + (chatState.hasMore ? 1 : 0),
                                 itemBuilder: (context, index) {
                                   if (chatState.hasMore && index == 0) {
                                     return Center(
@@ -438,12 +469,20 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
                                     );
                                   }
                                   final offset = chatState.hasMore ? 1 : 0;
-                                  final item = _buildMessageItems(
-                                    chatState.messages,
-                                  )[index - offset];
+                                  final item = items[index - offset];
                                   if (item is _DateSeparatorItem) {
                                     return _ThChatDateSeparator(
                                       timestampUtc: item.timestamp,
+                                    );
+                                  }
+                                  if (item is _SystemEventItem) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: Space.s3,
+                                      ),
+                                      child: _ThChatSystemCard(
+                                        text: item.text,
+                                      ),
                                     );
                                   }
                                   final mi = item as _MessageItem;
@@ -544,19 +583,65 @@ class _MessageItem extends _ListItem {
   _MessageItem(this.message, {this.isGrouped = false});
 }
 
-/// Builds the interleaved list of separators and message items.
+/// A job event drawn between bubbles (the mockup's accent system card).
+class _SystemEventItem extends _ListItem {
+  final String id;
+  final DateTime timestamp;
+  final String text;
+  _SystemEventItem({
+    required this.id,
+    required this.timestamp,
+    required this.text,
+  });
+}
+
+/// Builds the interleaved list of separators, bubbles and system cards.
 /// A separator is inserted:
 ///   • Before the first message
 ///   • When > 5 minutes pass between consecutive messages from different sessions
 /// A bubble is "grouped" (no sender name, tighter gap) when:
 ///   • Same sender as the previous message AND
-///   • Within 60 seconds
-List<_ListItem> _buildMessageItems(List<ChatMessage> messages) {
+///   • Within 60 seconds AND no system card sits between them
+/// A system card is shown for each *approved* extra cost, placed by its
+/// responded-at time (created-at if the server sent none). While older pages
+/// of history are still unloaded ([hasMore]) a card older than the oldest
+/// loaded message is held back, so it never lands above messages it follows.
+List<_ListItem> _buildChatItems(
+  List<ChatMessage> messages,
+  List<JobAdjustment> adjustments, {
+  bool hasMore = false,
+}) {
+  final oldestLoaded = messages.isEmpty ? null : messages.first.sentAtUtc;
+  final events =
+      <_SystemEventItem>[
+        for (final a in adjustments)
+          if (a.isApproved)
+            _SystemEventItem(
+              id: a.id,
+              timestamp: a.respondedAtUtc ?? a.createdAtUtc,
+              text: 'Extra cost ${formatMoney(a.amount)} approved',
+            ),
+      ].where((e) {
+        if (!hasMore) return true;
+        return oldestLoaded != null && !e.timestamp.isBefore(oldestLoaded);
+      }).toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
   final items = <_ListItem>[];
   DateTime? lastSeparatorTime;
   ChatMessage? prev;
+  var nextEvent = 0;
+
+  void flushEventsBefore(DateTime? limit) {
+    while (nextEvent < events.length &&
+        (limit == null || events[nextEvent].timestamp.isBefore(limit))) {
+      items.add(events[nextEvent++]);
+      prev = null; // a card ends the visual group
+    }
+  }
 
   for (final m in messages) {
+    flushEventsBefore(m.sentAtUtc);
+
     // Insert separator if this is the first message or > 5 min gap.
     final needsSeparator =
         lastSeparatorTime == null ||
@@ -567,15 +652,17 @@ List<_ListItem> _buildMessageItems(List<ChatMessage> messages) {
     }
 
     // Group with previous if same sender and < 60 seconds apart.
+    final p = prev;
     final isGrouped =
-        prev != null &&
-        prev.sentByMe == m.sentByMe &&
-        m.sentAtUtc.difference(prev.sentAtUtc).inSeconds.abs() < 60 &&
+        p != null &&
+        p.sentByMe == m.sentByMe &&
+        m.sentAtUtc.difference(p.sentAtUtc).inSeconds.abs() < 60 &&
         !needsSeparator;
 
     items.add(_MessageItem(m, isGrouped: isGrouped));
     prev = m;
   }
+  flushEventsBefore(null);
   return items;
 }
 
@@ -805,6 +892,38 @@ class _ThChatDateSeparator extends StatelessWidget {
   }
 }
 
+/// Accent card for a job event between bubbles (mockup `chat`: check icon +
+/// one meta line). Not a message: no sender, no time, no retry.
+class _ThChatSystemCard extends StatelessWidget {
+  final String text;
+
+  const _ThChatSystemCard({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    return THCard(
+      tone: THCardTone.accent,
+      padding: Space.s3,
+      children: [
+        Row(
+          spacing: Space.s2_5,
+          children: [
+            Icon(
+              Icons.check_circle_rounded,
+              size: Sizes.icon,
+              color: c.success,
+            ),
+            Expanded(
+              child: Text(text, style: THType.meta.copyWith(color: c.text)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 /// Message composer: optional role-appropriate [quickReplies] that populate
 /// the field for editing (never auto-send), an attach action, the text field
 /// and a ≥48px send button. TH-token repaint of v1 ChatComposer.
@@ -842,55 +961,58 @@ class _ThChatComposer extends StatelessWidget {
       spacing: Space.s2,
       children: [
         // ── Quick-reply chips ───────────────────────────────────────────
+        // One line per chip in a horizontal scroller with no fixed height:
+        // text is never truncated (a long reply just scrolls), and the end
+        // fades out so a chip cut by the edge reads as "more this way".
         if (quickReplies.isNotEmpty)
-          SizedBox(
-            height: Sizes.quickReplyHeight,
-            child: ListView.separated(
+          _ThFadeEnd(
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(vertical: Space.s1),
-              itemCount: quickReplies.length,
-              separatorBuilder: (_, _) => const SizedBox(width: Space.s2),
-              itemBuilder: (_, i) {
-                final reply = quickReplies[i];
-                return Semantics(
-                  button: true,
-                  label: reply,
-                  excludeSemantics: true,
-                  child: InkWell(
-                    onTap: () => _applyQuickReply(reply),
-                    borderRadius: BorderRadius.circular(Radii.pill),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Space.s4,
-                        vertical: Space.s1,
-                      ),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: c.surface,
+              padding: const EdgeInsetsDirectional.only(
+                top: Space.s1,
+                bottom: Space.s1,
+                end: Space.s6,
+              ),
+              child: Row(
+                spacing: Space.s2,
+                children: [
+                  for (final reply in quickReplies)
+                    Semantics(
+                      button: true,
+                      label: reply,
+                      excludeSemantics: true,
+                      child: InkWell(
+                        onTap: () => _applyQuickReply(reply),
                         borderRadius: BorderRadius.circular(Radii.pill),
-                        border: Border.all(color: c.line),
-                      ),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: Sizes.quickReplyWidth,
-                        ),
-                        child: Text(
-                          reply,
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          softWrap: true,
-                          overflow: TextOverflow.ellipsis,
-                          style: THType.button.copyWith(
-                            fontSize: THType.meta.fontSize,
-                            fontWeight: FontWeight.w500,
-                            color: c.text,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minHeight: Sizes.tapMin,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.s4,
+                            vertical: Space.s1,
+                          ),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: c.surface,
+                            borderRadius: BorderRadius.circular(Radii.pill),
+                            border: Border.all(color: c.line),
+                          ),
+                          child: Text(
+                            reply,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: THType.button.copyWith(
+                              fontSize: THType.meta.fontSize,
+                              fontWeight: FontWeight.w500,
+                              color: c.text,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                ],
+              ),
             ),
           ),
 
@@ -968,6 +1090,38 @@ class _ThChatComposer extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Fades the trailing edge of a horizontal scroller to transparent over
+/// [Space.s6]. The scroller's end padding is the same width, so the last item
+/// is fully visible once scrolled to the end. Direction-aware (RTL fades left).
+class _ThFadeEnd extends StatelessWidget {
+  final Widget child;
+
+  const _ThFadeEnd({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        if (!width.isFinite || width <= Space.s6) return child;
+        final start = 1 - Space.s6 / width;
+        // Only alpha matters for dstIn; an opaque theme token supplies it.
+        final opaque = context.th.paper;
+        return ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (bounds) => LinearGradient(
+            begin: AlignmentDirectional.centerStart,
+            end: AlignmentDirectional.centerEnd,
+            colors: [opaque, opaque, opaque.withValues(alpha: 0)],
+            stops: [0, start, 1],
+          ).createShader(bounds, textDirection: Directionality.of(context)),
+          child: child,
+        );
+      },
     );
   }
 }

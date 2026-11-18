@@ -6,6 +6,7 @@
 // keys/semantics/copy are asserted verbatim, light + dark where it matters.
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/network/external_launcher.dart';
@@ -129,9 +130,14 @@ class _ChatRepo extends ChatRepository {
 class _JobsRepo extends JobsRepository {
   Job? job;
   JobContact? contact;
+  List<JobAdjustment> adjustments;
 
-  _JobsRepo({this.job, this.contact})
+  _JobsRepo({this.job, this.contact, this.adjustments = const []})
     : super(Dio(), const FlutterSecureStorage());
+
+  @override
+  Future<List<JobAdjustment>> getAdjustments(String jobId) async =>
+      adjustments;
 
   @override
   Future<Job?> getJobById(String jobId) async => job;
@@ -177,6 +183,23 @@ class _FakeAuth extends AuthNotifier {
   @override
   Future<void> logout() async {}
 }
+
+JobAdjustment _adjustment(
+  String status, {
+  String amount = '48.50',
+  DateTime? respondedAt,
+}) => JobAdjustment(
+  id: 'adj-$status',
+  jobId: '7',
+  proposedByTradieId: 'tr-1',
+  proposedByTradieName: 'Rangi',
+  kind: JobAdjustment.kindMaterials,
+  description: 'Worn cartridge',
+  amount: Decimal.parse(amount),
+  status: status,
+  createdAtUtc: DateTime.utc(2026, 11, 3, 9, 20),
+  respondedAtUtc: respondedAt,
+);
 
 Job _job(String status) => Job(
   id: '7',
@@ -228,6 +251,7 @@ void main() {
     _Launcher? launcher,
     _ProfileRepo? profile,
     bool dark = false,
+    bool embedded = false,
   }) async {
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1;
@@ -254,7 +278,7 @@ void main() {
             ),
             child: child!,
           ),
-          home: const ThChatScreen(jobId: '7'),
+          home: ThChatScreen(jobId: '7', embedded: embedded),
         ),
       ),
     );
@@ -409,6 +433,136 @@ void main() {
     }
   });
 
+  testWidgets('v2 chat: a pushed chat keeps a back button (S-06)', (
+    tester,
+  ) async {
+    await mountChat(
+      tester,
+      _ChatRepo()..history = [_msg('1')],
+      _JobsRepo(job: _job('Booked')),
+    );
+    expect(find.bySemanticsLabel('Back'), findsOneWidget);
+  });
+
+  testWidgets('v2 chat: the embedded pane has no back, only the avatar', (
+    tester,
+  ) async {
+    await mountChat(
+      tester,
+      _ChatRepo()..history = [_msg('1', senderName: 'Rangi')],
+      _JobsRepo(job: _job('Booked')),
+      embedded: true,
+    );
+    expect(find.bySemanticsLabel('Back'), findsNothing);
+    expect(find.text('R'), findsOneWidget); // avatar initial
+  });
+
+  testWidgets('v2 chat: approved extra cost shows as an inline card (S-06)', (
+    tester,
+  ) async {
+    await mountChat(
+      tester,
+      _ChatRepo()
+        ..history = [
+          _msg('1', sentAt: DateTime.utc(2026, 11, 3, 9, 20)),
+          _msg('2', sentByMe: true, sentAt: DateTime.utc(2026, 11, 3, 9, 30)),
+        ],
+      _JobsRepo(
+        job: _job('InProgress'),
+        adjustments: [
+          _adjustment(
+            JobAdjustment.statusApproved,
+            respondedAt: DateTime.utc(2026, 11, 3, 9, 24),
+          ),
+          // Not approved: never drawn as a card.
+          _adjustment(JobAdjustment.statusPending, amount: '10.00'),
+          _adjustment(JobAdjustment.statusDeclined, amount: '20.00'),
+        ],
+      ),
+    );
+    expect(find.text(r'Extra cost $48.50 approved'), findsOneWidget);
+    expect(find.textContaining(r'$10.00'), findsNothing);
+    expect(find.textContaining(r'$20.00'), findsNothing);
+    // Placed by responded-at: below the 9:20 bubble, above the 9:30 one.
+    final cardY = tester
+        .getTopLeft(find.text(r'Extra cost $48.50 approved'))
+        .dy;
+    final lastY = tester.getTopLeft(find.text('hello').last).dy;
+    expect(cardY, lessThan(lastY));
+  });
+
+  testWidgets('v2 chat: no extra-cost card before the job is booked', (
+    tester,
+  ) async {
+    await mountChat(
+      tester,
+      _ChatRepo()..history = [_msg('1')],
+      _JobsRepo(
+        job: _job('Requested'),
+        adjustments: [
+          _adjustment(
+            JobAdjustment.statusApproved,
+            respondedAt: DateTime.utc(2026, 11, 3, 9, 24),
+          ),
+        ],
+      ),
+    );
+    expect(find.textContaining('Extra cost'), findsNothing);
+  });
+
+  testWidgets('v2 chat: quick replies stay whole at 320 pt and 2x text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = ProviderContainer(
+      overrides: [
+        chatRepositoryProvider.overrideWithValue(
+          _ChatRepo()..history = [_msg('1')],
+        ),
+        jobsRepositoryProvider.overrideWithValue(
+          _JobsRepo(job: _job('Booked')),
+        ),
+        externalLauncherProvider.overrideWithValue(_Launcher()),
+        profileRepositoryProvider.overrideWithValue(
+          _ProfileRepo(const {'role': 0}),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(2.0)),
+            child: child!,
+          ),
+          home: const ThChatScreen(jobId: '7'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // Every chip is built (a scroller, not a lazy list) and one line tall:
+    // the text is never truncated, whatever the scale.
+    for (final reply in const [
+      'Thanks!',
+      'That works for me.',
+      'When can you start?',
+      'Could you send a receipt?',
+    ]) {
+      expect(find.text(reply), findsOneWidget, reason: reply);
+    }
+    final h = tester.getSize(find.text('When can you start?')).height;
+    final single = tester.getSize(find.text('Thanks!')).height;
+    expect(h, closeTo(single, 1.0));
+  });
+
   // ── Messages inbox ──────────────────────────────────────────────────────────
 
   Future<void> mountInbox(
@@ -473,6 +627,17 @@ void main() {
     );
     expect(find.text('You: See you Tuesday'), findsOneWidget);
     expect(find.text('3'), findsNothing);
+  });
+
+  testWidgets('v2 inbox: unread badge shows even when the last message is '
+      'mine, and no arrow glyph is drawn (S-07)', (tester) async {
+    await mountInbox(
+      tester,
+      _ChatRepo()..conversations = [_conv(mine: true, unread: 2)],
+    );
+    expect(find.text('You: See you Tuesday'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.byIcon(Icons.north_east_rounded), findsNothing);
   });
 
   testWidgets('v2 inbox: empty thread shows no fake preview', (tester) async {
