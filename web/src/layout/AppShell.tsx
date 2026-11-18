@@ -1,16 +1,18 @@
 /**
- * AppShell — responsive application shell.
+ * AppShell — responsive application shell (kit `.app` > `.sidebar` + `.app-main`).
  *
- * Desktop (>=1024px):
- *   Fixed 240px SidebarNav, main p-8 + max-w-6xl, theme toggle top-right of content.
- * Tablet (640-1023px):
- *   64px icon rail SidebarNav, TopBar (56px), main p-6.
- * Phone (<640px):
- *   No persistent sidebar, sticky TopBar (56px + safe-area top), MobileDrawer overlay, main p-4.
+ * Desktop (>=1024px): full 240px SidebarNav; TopBar with the theme toggle; `.page` content (max 1280).
+ * Tablet (640-1023px): 64px icon rail SidebarNav; same TopBar.
+ * Phone (<640px): no persistent sidebar; TopBar with menu button, wordmark, theme and account
+ *   menu (+ safe-area top); MobileDrawer overlay; `.page` with the phone gutters.
+ *
+ * The shell is locked to the viewport and `<main>` scrolls inside it, so the
+ * sidebar and TopBar stay put (unchanged behaviour). The widths and what shows
+ * where are decided by the kit CSS; `useBreakpoint` only tells the TopBar when to
+ * show the account menu.
  */
 import React, { useState } from 'react';
 import { useBreakpoint } from '../hooks/useBreakpoint';
-import { ThemeToggle } from '../components/ThemeToggle';
 import { SidebarNav, type NavItem } from './SidebarNav';
 import { TopBar } from './TopBar';
 import { MobileDrawer } from './MobileDrawer';
@@ -32,16 +34,13 @@ export const AppShell: React.FC<AppShellProps> = ({
   onLogout,
   children,
 }) => {
-  const { isPhone, isDesktop } = useBreakpoint();
+  const { isPhone } = useBreakpoint();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="flex h-dvh bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
+    <div className="app h-dvh overflow-hidden">
       {/* Skip to content link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:rounded focus:bg-[var(--brand-700)] focus:text-white focus:text-sm shadow-md"
-      >
+      <a href="#main-content" className="skip-link">
         Skip to content
       </a>
 
@@ -62,40 +61,23 @@ export const AppShell: React.FC<AppShellProps> = ({
       />
 
       {/* Main column */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* TopBar on phone and tablet (hidden on desktop) */}
-        {!isDesktop && (
-          <TopBar
-            onOpenDrawer={() => setDrawerOpen(true)}
-            isDrawerOpen={drawerOpen}
-            navItems={navItems}
-            theme={theme}
-            onToggleTheme={onToggleTheme}
-            adminName={adminName}
-            onLogout={onLogout}
-            isPhone={isPhone}
-          />
-        )}
+      <div className="app-main h-full overflow-hidden">
+        <TopBar
+          onOpenDrawer={() => setDrawerOpen(true)}
+          isDrawerOpen={drawerOpen}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          adminName={adminName}
+          onLogout={onLogout}
+          isPhone={isPhone}
+        />
 
-        {/* Scrollable main content */}
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className={[
-            'relative flex-1 overflow-auto focus:outline-none',
-            isPhone ? 'p-4' : !isDesktop ? 'p-6' : 'p-8',
-          ].join(' ')}
-          style={isPhone ? { paddingBottom: 'max(var(--safe-bottom), 16px)' } : undefined}
-        >
-          <div className="max-w-6xl mx-auto w-full">
-            {isDesktop && (
-              <div className="flex justify-end mb-4">
-                <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-              </div>
-            )}
+        {/* Scroll container; the kit `.page` inside it sets width, gutters and spacing */}
+        <div className="flex-1 overflow-auto pb-[var(--safe-bottom)]">
+          <main id="main-content" tabIndex={-1} className="page">
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   );

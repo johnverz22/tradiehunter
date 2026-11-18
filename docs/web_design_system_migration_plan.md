@@ -5,7 +5,7 @@
 > **Source of truth:** `docs/design/web/` (Trust Navy + Gold, web v1, inherits `docs/design/mobile/tokens/tokens.json`).
 > **Replaces:** the legacy v1.7 admin theme in `web/src/theme/` (Space Grotesk + IBM Plex + amber, `--hue` knob).
 > **Companion:** `docs/web_design_system_migration_todo.md` (checkable tasks, one per file or step).
-> **Status:** proposed, 2026-11-18. Facts below were measured on branch `design` at `fd945e1`.
+> **Status:** approved 2026-11-18 (strategy D1 = Option B and decisions D2–D8 accepted as proposed). Facts below were measured on branch `design` at `fd945e1`.
 
 ---
 
@@ -73,7 +73,7 @@ Reasons, in order of weight:
 
 **When to switch to Option A instead:** the admin must stay deployable to production from the current UI while this runs for more than about two weeks and hotfixes keep landing, or the team wants a feature-flagged, route-by-route rollout in one running app. In that case use the mobile pattern (a `web/src/ui/` tree beside the old one, a per-route flag, an import-boundary guard) rather than a second project; that keeps the data layer shared and is cheaper than a moved directory.
 
-> **Sign-off needed:** confirm Option B (or choose A / the flagged variant) before Phase 1. Everything below assumes B.
+> **Signed off 2026-11-18: Option B.** Everything below assumes B.
 
 ---
 
@@ -83,7 +83,7 @@ Reasons, in order of weight:
 
 **Change:** `src/theme/*`, `src/index.css`, `index.html`, `public/fonts`, `src/components/*`, `src/layout/*`, and the JSX/class names inside page files.
 
-**Branching:** one long-lived branch `design-web-migration` off `dev`; one PR per phase (Phase 3 and 4: one PR per page or small group). Each PR must be buildable, lint-clean and e2e-green on its own.
+**Branching:** one long-lived branch `design-web-migration`, created from `design` (the design system lives there and `dev` has 12 commits `design` lacks; merge `dev` in before the final merge); one PR per phase (Phase 3 and 4: one PR per page or small group). Each PR must be buildable, lint-clean and e2e-green on its own.
 
 ### The compat shim (temporary)
 
@@ -105,18 +105,19 @@ Every shim rule carries a `/* legacy: remove in P6 */` comment so Phase 6 can fi
 - Confirm strategy (§2) and the open decisions (§6).
 - Capture before-shots of every route in light and dark at 1280, 820 and 390 with `web/e2e/admin-shots.mjs`; store outside the repo (CI artifact or a zip). Used for diffing, not committed.
 - Record the baseline: `npm run lint`, `npm run build`, `npm run test:e2e` all green on `dev`.
-- Tag `pre-web-design-migration` on the starting commit.
+- Tag `pre-web-design-migration` on the starting commit. Done 2026-11-18.
+- e2e and screenshots need a browser and live API. **Deferred by the owner (2026-11-18): manual/e2e verification is done later; scripted work proceeds first** (todo 0.3, 0.4, 1.8).
 
 ### Phase 1 — Foundation (app looks nearly the same, new tokens live)
 
 Follows `DESIGN_GUIDE.md` §10 steps 1–3.
 
 1. Copy `tokens.css`, `theme.css` to `web/src/theme/`; copy `css/kit.css` to `web/src/theme/components.css` (replacing the legacy file); remove `design-tokens.css` and the old `@theme` + `@custom-variant` from `index.css`. Import order: `tailwindcss` → `tokens.css` → `theme.css` → `components.css` → `legacy-compat.css`.
-2. Copy `fonts/` to `web/public/fonts/`, import `fonts.css` first; remove the Google Fonts `<link>`s.
+2. Copy `fonts/` to `web/public/fonts/` and load `fonts.css` with a `<link>` in `index.html` (a CSS `@import` makes Vite rewrite the font URLs and drop the woff2 files); remove the Google Fonts `<link>`s.
 3. `index.html`: keep the blocking theme script, update `theme-color`, title and description.
 4. Write `legacy-compat.css` (§3).
 5. Decide and wire a **sync check**: a script (`web/scripts/sync-design.mjs`, or an npm script) that fails CI if `web/src/theme/{tokens,theme,components}.css` differ from `docs/design/web/{tokens,css}`, so the app cannot drift from the system. Generated files are copied, never hand-edited.
-6. Add a lint/CI guard that rejects new uses of legacy names outside `legacy-compat.css`.
+6. Add a CI guard that rejects new uses of legacy names outside `legacy-compat.css`. Implemented as a ratchet (`web/scripts/check-legacy-names.mjs` + `legacy-baseline.json`): no file may gain uses, new files must have none, and the baseline can only go down. Starting point: 302 uses in 42 files; Phase 6 target is 0.
 
 **Exit gate:** `lint`, `build`, full e2e green; every route renders with no unstyled element (compare with Phase 0 shots); `node docs/design/web/tools/build.mjs --check` green.
 
@@ -182,18 +183,19 @@ Pages with **no frame** (refunds, batches, batch detail, credential review dialo
 
 ---
 
-## 6. Open decisions (need an owner before the phase that needs them)
+## 6. Decisions (D1–D8 approved 2026-11-18 with the proposed defaults; D9 open)
 
-| # | Decision | Needed by | Proposed default |
+| # | Decision | Needed by | Approved default |
 |---|---|---|---|
 | D1 | Strategy: B (in place + shim) vs A (moved directory) vs flagged `src/ui/` tree | Phase 0 | **B** |
-| D2 | Dashboard **charts** (`Charts.tsx`) are not designed (DESIGN_GUIDE §12) | Phase 3 | Recolour with chart tokens, add a small chart spec to the design system before restyling |
+| D2 | Dashboard **charts** (`Charts.tsx`) are not designed (DESIGN_GUIDE §12) | Phase 3 | **Revised 2026-11-18 (owner approved):** the dashboard shows no charts and the chart components were unused, so no chart spec; `Charts.tsx` and `MetricsCard.tsx` deleted in 3.3. Spec charts in `docs/design/web` first if they are wanted later |
 | D3 | Layout/type/safe-area variables with no new equivalent: `--topbar-height`, `--drawer-width`, `--safe-top/bottom`, `--text-body/-display/-h2/-h3` | Phase 1 | Keep as app-level layout variables in `index.css`; map `--text-*` to the `t-*` classes in TYPOGRAPHY.md |
 | D4 | Rename `fixo-theme` localStorage key to a TradieHunter key | Phase 6 | Rename and read the old key once for migration |
 | D5 | White-label `--hue` is dropped; confirm no tenant needs per-brand colour | Phase 0 | Confirm dropped (design decision already recorded) |
 | D6 | Replace e2e `.step-label` selectors with role/aria (`aria-current="step"`) | Phase 2 | Yes, in the stepper PR |
 | D7 | Sync mechanism for tokens/kit (copy script + CI check vs importing from `docs/`) | Phase 1 | Copy script + CI check, so `web/` stays self-contained for Docker |
 | D8 | Need for a bulk-selection bar, date-range picker, tooltips (not designed) | Phase 3–4 | None unless a page already has one; if so, add to the design system first |
+| D9 | `DataTable` on phones: the design says tables scroll in their wrapper (min 640 px); the app shows a card list under 640 px | Phase 2 (task 2.8) | **Open.** Interim: card list kept, restyled on tokens. Recommended: keep it and add it to the design system as a phone pattern |
 
 Per repo rules, any new third-party dependency (for example a chart library change) needs approval first; this plan adds none.
 

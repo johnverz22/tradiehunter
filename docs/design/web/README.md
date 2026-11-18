@@ -27,4 +27,4 @@ node tools/build.mjs          # generate
 node tools/build.mjs --check  # CI gate
 ```
 
-Open `mockups/index.html` (needs the `frames/` folder next to it). Read `DESIGN_GUIDE.md` §10 to integrate into `web/src`; the app has not been migrated yet.
+Open `mockups/index.html` (needs the `frames/` folder next to it). `web/src` runs this system: `web/src/theme/` and `web/public/fonts/` are copies kept in sync by `npm run design:sync` and checked by `npm run design:check` (see `DESIGN_GUIDE.md` §10).

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { IconButton } from './Button';
 
 interface ThemeToggleProps {
   theme: 'light' | 'dark';
@@ -10,28 +11,26 @@ interface ThemeToggleProps {
 /**
  * Light/dark theme switcher used in the content area (desktop top-right)
  * and in the mobile/tablet TopBar.
+ *
+ * Renders the kit ghost icon button (COMPONENTS.md "Top bar": the theme
+ * button has a label). The label names the action for the current state, and
+ * the icon shows the theme it switches to.
  */
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   theme,
   onToggle,
-  className = '',
-}) => (
-  <button
-    type="button"
-    onClick={onToggle}
-    title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-    aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-    className={[
-      'h-8 w-8 rounded-full border border-[var(--paper-line)] bg-[var(--paper)]',
-      'text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors',
-      'flex items-center justify-center shadow-xs',
-      className,
-    ].join(' ')}
-  >
-    {theme === 'light' ? (
-      <Moon size={14} aria-hidden="true" />
-    ) : (
-      <Sun size={14} aria-hidden="true" />
-    )}
-  </button>
-);
+  className,
+}) => {
+  const label = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  return (
+    <IconButton
+      kind="ghost"
+      label={label}
+      title={label}
+      onClick={onToggle}
+      className={className}
+    >
+      {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+    </IconButton>
+  );
+};

@@ -1,23 +1,28 @@
 import React from 'react';
 import type { PayoutBatchStatus, PayoutStatus } from '../../../services/adminApi';
+import { Badge, type BadgeTone } from '../../../components/Badge';
 
-const PAYOUT_TONE: Record<PayoutStatus, string> = {
-  Pending: 'pill-amber',
-  Scheduled: 'pill-blue',
-  Processed: 'pill-green',
-  Failed: 'pill-red',
+const PAYOUT_TONE: Record<PayoutStatus, BadgeTone> = {
+  Pending: 'warn',
+  Scheduled: 'info',
+  Processed: 'ok',
+  Failed: 'danger',
 };
 
-const BATCH_TONE: Record<PayoutBatchStatus, string> = {
-  Open: 'pill-blue',
-  Processing: 'pill-amber',
-  Completed: 'pill-green',
+const BATCH_TONE: Record<PayoutBatchStatus, BadgeTone> = {
+  Open: 'info',
+  Processing: 'warn',
+  Completed: 'ok',
 };
 
 export const PayoutStatusBadge: React.FC<{ status: PayoutStatus }> = ({ status }) => (
-  <span className={`pill ${PAYOUT_TONE[status] ?? 'pill-gray'}`}>{status}</span>
+  <Badge tone={PAYOUT_TONE[status] ?? 'neutral'} dot>
+    {status}
+  </Badge>
 );
 
 export const BatchStatusBadge: React.FC<{ status: PayoutBatchStatus }> = ({ status }) => (
-  <span className={`pill ${BATCH_TONE[status] ?? 'pill-gray'}`}>{status}</span>
+  <Badge tone={BATCH_TONE[status] ?? 'neutral'} dot>
+    {status}
+  </Badge>
 );

@@ -1,32 +1,7 @@
 @import 'tailwindcss';
-@import './theme/design-tokens.css';
+@import './theme/tokens.css';
+@import './theme/theme.css';
 @import './theme/components.css';
-
-/* ── Dark mode: driven by data-theme attribute, not OS media query.
-   This makes Tailwind's dark: variants respond to the toggle button
-   (which writes data-theme to <html>) rather than the browser preference.
-   The browser preference is still read by the blocking inline script in
-   index.html and by getInitialTheme() in AdminLayout, so it is honoured
-   on first load — just not directly by Tailwind. ── */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
-@theme {
-  --color-paper: var(--paper);
-  --color-paper-line: var(--paper-line);
-  --color-surface: var(--surface);
-  --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-brand-900: var(--brand-900);
-  --color-brand-700: var(--brand-700);
-  --color-brand-500: var(--brand-500);
-  --color-brand-300: var(--brand-300);
-  --color-brand-100: var(--brand-100);
-  --color-amber-brand: var(--amber);
-  --color-amber-dark: var(--amber-dark);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
-}
 
 /* ── Base reset ─────────────────────────────────────── */
 *, *::before, *::after {
@@ -34,7 +9,7 @@
 }
 
 html {
-  font: var(--text-body);
+  font: var(--ty-body);
   color-scheme: light dark;
   color: var(--ink);
   background: var(--paper);
@@ -57,22 +32,22 @@ body {
 
 /* ── Typography ─────────────────────────────────────── */
 h1 {
-  font: var(--text-display);
+  font: var(--ty-h1);
   color: var(--ink);
-  letter-spacing: -0.01em;
-  margin: var(--space-8) 0;
+  letter-spacing: var(--ty-h1-ls);
+  margin: var(--sp-8) 0;
 }
 
 h2 {
-  font: var(--text-h2);
+  font: var(--ty-h2);
   color: var(--ink);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--sp-2);
 }
 
 h3 {
-  font: var(--text-h3);
+  font: var(--ty-title);
   color: var(--ink-soft);
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--sp-4);
 }
 
 p {
@@ -82,13 +57,103 @@ p {
 
 /* ── Code / Mono ────────────────────────────────────── */
 code {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.35;
-  padding: var(--space-1) var(--space-2);
-  background: var(--brand-100);
-  border-radius: var(--radius);
+  font: var(--ty-mono);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--brand-tint);
+  border-radius: var(--r-sm);
   color: var(--ink);
+}
+
+/* ── Skip link ────────────────────────────────────────
+   App-level (the kit has none). Parked off-screen until it
+   takes focus; stays in the accessibility tree and the tab
+   order. Tokens only. */
+.skip-link {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 70;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-control);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: var(--ty-button);
+  box-shadow: var(--sh-pop);
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* ── Sidebar footer / drawer close ────────────────────
+   The kit's .nav-item is for links. The footer also needs a
+   Logout button and a non-interactive "signed in as" row, and the
+   drawer a close button; the frames show none of these. These
+   rules adapt .nav-item.
+   Tokens only. */
+button.nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+button.nav-item.nav-item-icon {
+  width: var(--sz-touch);
+  flex: none;
+  padding: 0;
+  justify-content: center;
+}
+div.nav-item-static {
+  cursor: default;
+}
+div.nav-item-static:hover {
+  background: transparent;
+  color: var(--on-sidebar-soft);
+}
+
+/* ── Sign-in (kit `.auth`): app-level additions, tokens only ──────────
+   Design-system gaps (DESIGN_GUIDE §12), so these rules can go once the kit has them:
+   `.auth` uses 100vh (taller than the visible area on phones) and has no safe-area
+   padding; the form needs a field stack; the show/hide control inside `.input-icon`;
+   the brand on the card when the aside is hidden (< 1024 px). */
+.auth {
+  min-height: 100dvh;
+}
+.auth-main {
+  padding-top: max(var(--sp-6), var(--safe-top));
+  padding-bottom: max(var(--sp-6), var(--safe-bottom));
+}
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.auth-card-brand {
+  align-self: flex-start;
+}
+@media (min-width: 1024px) {
+  .auth-card-brand {
+    display: none;
+  }
+}
+/* Standalone `.page` (public routes with no shell, e.g. /403): centred in the viewport.
+   Design-system gap: the kit has no centred single-card page besides `.auth`. */
+.page-centered {
+  min-height: 100dvh;
+  max-width: calc(var(--sz-content-max) / 2);
+  justify-content: center;
+  padding-top: max(var(--sp-6), var(--safe-top));
+  padding-bottom: max(var(--sp-10), var(--safe-bottom));
+}
+.input-icon > .field.has-trailing {
+  padding-right: var(--sp-16);
+}
+.input-icon > .input-trailing {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-1);
+  transform: translateY(-50%);
 }
 
 /* ── Focus ────────────────────────────────────────────
@@ -97,50 +162,183 @@ code {
    on top of the border and reads as a heavy 3px band —
    fields and selects both use this instead. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--brand-500);
+  outline: var(--sz-focus-ring) solid var(--focus);
   outline-offset: 2px;
 }
 
 /* ── Borders ────────────────────────────────────────── */
 hr {
   border: none;
-  border-top: 1px solid var(--paper-line);
-  margin: var(--space-6) 0;
+  border-top: 1px solid var(--line);
+  margin: var(--sp-6) 0;
 }
 
 /* ── Shell tokens ───────────────────────────────────── */
 :root {
-  --topbar-height: 56px;
-  --sidebar-width: 240px;
-  --rail-width: 64px;
-  --drawer-width: min(85vw, 320px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
 }
 
-/* ── Bottom sheet animation ─────────────────────────── */
-@keyframes slide-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+/* Receipt preview in the payment review dialog (app-level; tokens only). */
+.receipt-img {
+  display: block;
+  width: 100%;
+  max-height: 20rem;
+  object-fit: contain;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
 }
 
-@keyframes slide-in-left {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
+/* Detail pages (app-level; tokens only). The kit has no photo grid, long-text block or scroll
+   region; design-system gaps logged in the migration todo (task 4.7). */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--sp-3);
+}
+.photo-tile {
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-alt);
+}
+.photo-tile:hover {
+  border-color: var(--line-strong);
+}
+.photo-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.desc-text {
+  margin: 0;
+  color: var(--ink);
+  font: var(--ty-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-scroll {
+  max-height: 25rem;
+  overflow-y: auto;
 }
 
-.motion-safe\:animate-slide-up {
-  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+/* Phone action bar + "More" menu on detail pages (app-level; tokens only). The kit has a
+   `.menu` for desktop popovers but no bottom action bar; design-system gap logged in the
+   migration todo (task 4.8). Behaviour is the existing <details> disclosure. */
+.action-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  padding-bottom: max(var(--sp-3), var(--safe-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
 }
-@media (prefers-reduced-motion: reduce) {
-  .motion-safe\:animate-slide-up { animation: none; }
+.more-menu {
+  position: relative;
+  flex: none;
+}
+.more-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.more-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.more-menu-list {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: var(--sp-2);
+  z-index: 30;
+  min-width: 12rem;
+  padding: var(--sp-1_5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-pop);
+}
+.more-menu-list button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--sz-touch);
+  padding: 0 var(--sp-3);
+  background: none;
+  border: 0;
+  border-radius: var(--r-control);
+  color: var(--ink);
+  font: var(--ty-body-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.more-menu-list button:hover {
+  background: var(--surface-alt);
+}
+.more-menu-list button.danger {
+  color: var(--danger);
+}
+.more-menu-list button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 
-.motion-safe\:animate-slide-in-left {
-  animation: slide-in-left 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+/* Audit diff dialog (app-level; tokens only). The kit has no code block; design-system gap
+   logged in the migration todo (task 4.11). The scroll stays inside the <pre>. */
+.diff-title {
+  margin: 0;
+  color: var(--ink);
+  font: var(--ty-label);
 }
-@media (prefers-reduced-motion: reduce) {
-  .motion-safe\:animate-slide-in-left { animation: none; }
+.diff-pre {
+  margin: 0;
+  max-height: 16rem;
+  overflow: auto;
+  padding: var(--sp-3);
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  color: var(--ink);
+  font: var(--ty-mono);
+}
+
+/* Dispute evidence item (app-level; tokens only). The kit has no bordered list item;
+   design-system gap logged in the migration todo (task 4.9). */
+.evidence-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  min-width: 0;
+}
+
+/* Section heading outside a card, e.g. "Marketplace health" on the dashboard (app-level;
+   tokens only). The kit has card titles but no standalone section heading. */
+.dash-title {
+  margin: 0;
+  font: var(--ty-title);
+  color: var(--ink);
+}
+
+/* A link-styled <button> (e.g. "Go to page N" in an empty queue page). The kit's `.cell-link`
+   is for anchors; Tailwind's preflight leaves buttons with a default cursor. App-level,
+   tokens only; found in the 5.2 audit. */
+button.cell-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: inherit;
+  cursor: pointer;
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Layers, Wallet } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
 import { Banner } from '../../../components/Banner';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
@@ -51,7 +51,7 @@ export const PayoutBatches: React.FC = () => {
           <Link to={`/payouts/batches/${batch.id}`} className="cell-link">
             {periodLabel(batch.periodStartUtc, batch.periodEndUtc)}
           </Link>
-          <span className="block text-xs cell-muted font-mono">{batch.id}</span>
+          <span className="block t-meta muted mono">{batch.id}</span>
         </div>
       ),
     },
@@ -67,12 +67,12 @@ export const PayoutBatches: React.FC = () => {
       priority: 'detail',
       cell: (batch) => (
         <div>
-          <span className="font-mono">
+          <span className="mono">
             {batch.processedCount}/{batch.payoutCount}
           </span>{' '}
           processed
           {batch.payoutCount > 0 && (
-            <span className="block text-xs cell-muted">
+            <span className="block t-meta muted">
               {Math.round((batch.processedCount / batch.payoutCount) * 100)}%
             </span>
           )}
@@ -83,7 +83,7 @@ export const PayoutBatches: React.FC = () => {
       key: 'total',
       header: 'Total (net)',
       priority: 'detail',
-      cell: (batch) => <span className="font-mono">{money(batch.totalAmount)}</span>,
+      cell: (batch) => <span className="mono">{money(batch.totalAmount)}</span>,
     },
     {
       key: 'status',
@@ -96,7 +96,7 @@ export const PayoutBatches: React.FC = () => {
       header: 'Completed',
       priority: 'detail',
       cell: (batch) => (
-        <span className="cell-muted">
+        <span className="muted">
           {batch.completedAtUtc
             ? new Date(batch.completedAtUtc).toLocaleDateString('en-NZ', {
                 dateStyle: 'medium',
@@ -117,13 +117,12 @@ export const PayoutBatches: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       <PageHeader
-        title="Payout Batches"
+        title="Payout batches"
         description="Weekly batches created by the scheduled payout job. Open a batch to work through its individual tradie payouts."
         actions={
-          <Link to="/payouts" className="btn btn-ghost shrink-0">
-            <Wallet size={14} aria-hidden="true" />
+          <Link to="/payouts" className="btn btn-secondary">
             Payout queue
           </Link>
         }
@@ -150,7 +149,8 @@ export const PayoutBatches: React.FC = () => {
             <>
               No batches left on this page.{' '}
               <button
-                className="action-link"
+                type="button"
+                className="cell-link"
                 onClick={() => setPage(Math.max(1, data.totalPages))}
               >
                 Go to page {Math.max(1, data.totalPages)}
@@ -174,11 +174,11 @@ export const PayoutBatches: React.FC = () => {
         }
       />
 
-      <p className="flex items-center gap-1.5 text-xs text-[var(--ink-soft)]">
-        <Layers size={12} aria-hidden="true" />
+      <p className="t-meta c-soft row">
+        <Layers size={16} aria-hidden="true" />
         A batch closes itself once its last payout is processed — the manual action is there for the
         case where the automatic close didn't land.
       </p>
-    </div>
+    </>
   );
 };

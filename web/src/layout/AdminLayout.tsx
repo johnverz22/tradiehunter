@@ -8,8 +8,12 @@ import { navItems } from './navItems';
 
 type ThemeMode = 'light' | 'dark';
 
+const THEME_KEY = 'tradiehunter-theme';
+/** Key used before the rename; read once so a saved choice survives (decision D4). */
+const LEGACY_THEME_KEY = 'fixo-theme';
+
 function getInitialTheme(): ThemeMode {
-  const stored = localStorage.getItem('fixo-theme');
+  const stored = localStorage.getItem(THEME_KEY) ?? localStorage.getItem(LEGACY_THEME_KEY);
   if (stored === 'light' || stored === 'dark') return stored;
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
@@ -21,7 +25,8 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("fixo-theme", theme);
+    localStorage.setItem(THEME_KEY, theme);
+    localStorage.removeItem(LEGACY_THEME_KEY);
   }, [theme]);
 
   // The static <title> in index.html is the pre-config paint; once the brand

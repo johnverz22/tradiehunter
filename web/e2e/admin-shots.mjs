@@ -61,7 +61,7 @@ for (const vp of VIEWPORTS) {
 
     // Set theme in localStorage before navigation
     await page.addInitScript((t) => {
-      localStorage.setItem('fixo-theme', t);
+      localStorage.setItem('tradiehunter-theme', t);
       if (document.documentElement) {
         document.documentElement.setAttribute('data-theme', t);
       }

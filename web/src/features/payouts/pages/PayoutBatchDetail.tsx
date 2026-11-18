@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Layers } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
+import { Button } from '../../../components/Button';
 import { DataTable, type ColumnDef } from '../../../components/DataTable';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { BatchStatusBadge, PayoutStatusBadge } from '../components/PayoutStatusBadge';
@@ -54,22 +55,22 @@ export const PayoutBatchDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-5">
-        <p className="text-sm text-[var(--ink-soft)]">Loading batch…</p>
-      </div>
+      <p className="muted" role="status" aria-busy="true">
+        Loading batch…
+      </p>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="space-y-5">
+      <div className="stack">
         <Banner
           variant="error"
           action={{ label: 'Retry', onClick: () => refetch() }}
         >
           Could not load this batch: {describeBatchError(queryError)}
         </Banner>
-        <Link to="/payouts/batches" className="action-link inline-flex items-center gap-1.5">
+        <Link to="/payouts/batches" className="cell-link">
           ← Back to payout batches
         </Link>
       </div>
@@ -84,7 +85,7 @@ export const PayoutBatchDetail: React.FC = () => {
       header: 'Tradie',
       priority: 'primary',
       cell: (payout) => (
-        <Link to={`/users/${payout.tradieId}`} className="cell-link font-medium">
+        <Link to={`/users/${payout.tradieId}`} className="cell-link">
           {payout.tradieName}
         </Link>
       ),
@@ -99,7 +100,7 @@ export const PayoutBatchDetail: React.FC = () => {
             {payout.jobTitle}
           </Link>
           {payout.jobReferenceCode && (
-            <span className="block text-xs cell-muted font-mono">
+            <span className="block t-meta muted mono">
               {payout.jobReferenceCode}
             </span>
           )}
@@ -110,14 +111,14 @@ export const PayoutBatchDetail: React.FC = () => {
       key: 'gross',
       header: 'Gross',
       priority: 'detail',
-      cell: (payout) => <span className="font-mono">{money(payout.grossAmount)}</span>,
+      cell: (payout) => <span className="money">{money(payout.grossAmount)}</span>,
     },
     {
       key: 'fee',
       header: 'Fee',
       priority: 'detail',
       cell: (payout) => (
-        <span className="font-mono cell-muted">−{money(payout.commissionAmount)}</span>
+        <span className="money muted">−{money(payout.commissionAmount)}</span>
       ),
     },
     {
@@ -125,7 +126,7 @@ export const PayoutBatchDetail: React.FC = () => {
       header: 'Net',
       priority: 'secondary',
       cell: (payout) => (
-        <span className="font-mono font-semibold">{money(payout.netAmount)}</span>
+        <span className="money">{money(payout.netAmount)}</span>
       ),
     },
     {
@@ -133,11 +134,13 @@ export const PayoutBatchDetail: React.FC = () => {
       header: 'Bank',
       priority: 'detail',
       cell: (payout) => (
-        <span className="font-mono">
+        <span className="mono">
           {payout.hasBankDetails ? (
             <>····{payout.bankAccountLast4 ?? '????'}</>
           ) : (
-            <span className="pill pill-red">No details</span>
+            <Badge tone="danger" dot>
+              No details
+            </Badge>
           )}
         </span>
       ),
@@ -153,58 +156,50 @@ export const PayoutBatchDetail: React.FC = () => {
       header: 'Transfer ref',
       priority: 'detail',
       cell: (payout) => (
-        <span className="font-mono cell-muted">{payout.transferReference ?? '—'}</span>
+        <span className="mono muted">{payout.transferReference ?? '—'}</span>
       ),
     },
     {
       key: 'createdAt',
       header: 'Age',
       priority: 'detail',
-      cell: (payout) => <span className="cell-muted">{createdAgo(payout.createdAtUtc)}</span>,
+      cell: (payout) => <span className="muted">{createdAgo(payout.createdAtUtc)}</span>,
     },
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="stack">
       <PageHeader
         backLink={{ to: '/payouts/batches', label: 'Payout batches' }}
         title={periodLabel(data.periodStartUtc, data.periodEndUtc)}
         description={`Batch ${data.id}`}
         meta={
           <>
-            <div className="stat-pill">
-              <Layers size={13} aria-hidden="true" />
-              <strong>
-                {data.processedCount}/{data.payoutCount}
-              </strong>{' '}
-              processed
-            </div>
-            <div className="stat-pill">
-              <strong>{money(data.totalAmount)}</strong> net total
-            </div>
-            <div className="stat-pill">
-              <BatchStatusBadge status={data.status} />
-            </div>
+            <Badge>
+              {data.processedCount}/{data.payoutCount} processed
+            </Badge>
+            <Badge>{money(data.totalAmount)} net total</Badge>
+            <BatchStatusBadge status={data.status} />
           </>
         }
         actions={
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Link to="/payouts" className="btn btn-ghost flex-1 sm:flex-none justify-center">
+          <>
+            <Link to="/payouts" className="btn btn-secondary">
               Process from queue
             </Link>
-            <button
-              className="btn btn-primary flex-1 sm:flex-none justify-center"
+            <Button
+              kind="accent"
               disabled={unprocessed > 0 || data.status === 'Completed' || completeBatch.isPending}
               onClick={() => setConfirming(true)}
             >
               {data.status === 'Completed' ? 'Batch complete' : 'Mark Batch Complete'}
-            </button>
-          </div>
+            </Button>
+          </>
         }
       />
 
       {unprocessed > 0 && (
-        <p className="text-xs text-[var(--ink-soft)]">
+        <p className="t-meta muted">
           {unprocessed} payout{unprocessed === 1 ? '' : 's'} still to process.
         </p>
       )}

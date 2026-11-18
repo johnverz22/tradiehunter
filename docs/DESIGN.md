@@ -132,4 +132,4 @@ The React admin has its own system in `docs/design/web/` (v1.0.0, Trust Navy + G
 | `docs/design/web/fonts/` | Self-hosted Lexend and Source Sans 3 (latin + latin-ext for macrons), generated `fonts.css` |
 | `docs/design/web/mockups/index.html`, `system.html` | 18 frames in light and dark, and every component state |
 
-Gate: `node docs/design/web/tools/build.mjs --check` (47 text pairs at 5.0:1 and 16 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: designed and generated; `web/src/theme/` still runs the legacy v1.7 tokens (see [MILESTONES](MILESTONES.md) open items).
+Gate: `node docs/design/web/tools/build.mjs --check` (47 text pairs at 5.0:1 and 16 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: the React admin runs it. `web/src/theme/` is synced from this folder (`npm run design:sync`, checked in CI by `npm run design:check`) and `npm run design:legacy` rejects the retired v1.7 names. See [MILESTONES](MILESTONES.md) for what is still manual.

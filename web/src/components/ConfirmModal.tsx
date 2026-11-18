@@ -1,13 +1,14 @@
 /**
- * ConfirmModal — thin wrapper over the shared Modal primitive.
+ * ConfirmModal — confirm dialog on the shared Modal (design system: COMPONENTS.md "Modal",
+ * DESIGN_GUIDE "Confirm dialog").
  *
- * All existing props, aria-labels and testids are preserved exactly.
- * On phone it renders as a bottom sheet (via Modal); on tablet/desktop
- * as the existing centered dialog — layout and labels unchanged.
+ * Props are unchanged. Footer is Cancel (secondary) then the commit button: gold `accent`,
+ * or filled `danger` when `destructive`. Destructive dialogs put initial focus on Cancel.
+ * Below 640 px it is a bottom sheet (via Modal).
  */
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Modal } from './Modal';
+import { Button } from './Button';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -43,41 +44,28 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     open={open}
     onClose={onCancel}
     size={size}
+    title={title}
     showCloseButton={false}
-    ariaLabelledBy="modal-title"
     footer={
-      <div className="flex justify-end gap-3">
-        <button onClick={onCancel} className="btn btn-ghost">
+      <>
+        <Button
+          kind="secondary"
+          onClick={onCancel}
+          data-autofocus={destructive ? '' : undefined}
+        >
           {cancelLabel}
-        </button>
-        <button
+        </Button>
+        <Button
+          kind={destructive ? 'danger' : 'accent'}
           onClick={onConfirm}
           disabled={confirmDisabled}
-          className={destructive ? 'btn' : 'btn btn-primary'}
-          style={destructive ? { background: 'var(--red)', color: '#fff' } : undefined}
         >
           {confirmLabel}
-        </button>
-      </div>
+        </Button>
+      </>
     }
   >
-    <div className="flex items-start gap-4 mb-4">
-      <AlertTriangle
-        size={22}
-        className={
-          destructive
-            ? 'text-[var(--red)] shrink-0 mt-0.5'
-            : 'text-[var(--amber)] shrink-0 mt-0.5'
-        }
-        aria-hidden="true"
-      />
-      <div>
-        <h2 id="modal-title" className="text-base font-semibold text-[var(--ink)] mb-1 m-0">
-          {title}
-        </h2>
-        <p className="text-sm text-[var(--ink-soft)]">{message}</p>
-      </div>
-    </div>
+    <p>{message}</p>
     {children}
   </Modal>
 );

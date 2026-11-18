@@ -1,6 +1,9 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Banner } from '../../../components/Banner';
+import { IconButton } from '../../../components/Button';
+import { PageHeader } from '../../../components/PageHeader';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
 import { JobProgressStepper } from '../../../components/JobProgressStepper';
@@ -54,224 +57,203 @@ export const JobDetailPage: React.FC = () => {
   const handleRefresh = useCallback(() => { void refetch(); }, [refetch]);
 
   if (isLoading)
-    return <div className="text-[var(--ink-soft)] text-sm p-4">Loading job…</div>;
+    return (
+      <p className="muted" role="status" aria-busy="true">
+        Loading job…
+      </p>
+    );
   if (!job)
-    return <div className="text-[var(--red)] text-sm p-4">Job not found.</div>;
+    return (
+      <Banner variant="error" title="Job not found">
+        This job does not exist or is no longer available.
+      </Banner>
+    );
 
   const history = [...job.statusHistory].sort(
     (a, b) => new Date(a.changedAtUtc).getTime() - new Date(b.changedAtUtc).getTime(),
   );
 
   const updatedCaption = (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="row nowrap">
       {timeAgo(dataUpdatedAt)}
-      <button
-        type="button"
+      <IconButton
+        kind="ghost"
+        size="sm"
+        label="Refresh job status"
         onClick={handleRefresh}
         disabled={isFetching}
-        aria-label="Refresh job status"
-        className="inline-flex items-center justify-center rounded p-0.5 hover:opacity-80 disabled:opacity-40 transition-opacity"
       >
-        <RefreshCw
-          size={12}
-          aria-hidden="true"
-          className={isFetching ? 'animate-spin' : ''}
-        />
-      </button>
+        <RefreshCw size={12} aria-hidden="true" className={isFetching ? 'animate-spin' : ''} />
+      </IconButton>
     </span>
   );
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="text-[13px] text-[var(--ink)] opacity-60">
-        <Link to="/jobs" className="inline-flex items-center gap-1.5 hover:underline">
-          <ArrowLeft size={13} /> Jobs
-        </Link>{' '}
-        / <span className="mono">{formatJobId(job.id)}</span>
-      </div>
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] sm:text-[24px] font-bold text-[var(--ink)] mb-1">
-            {job.title}
-          </h1>
-          <p className="mono text-[13px] text-[var(--ink)] opacity-60">
-            {formatJobId(job.id)} • {job.category} • {job.address ?? 'No address'}
-          </p>
-        </div>
-        <StatusBadge status={job.status} size="lg" />
-      </div>
-
-      {/* Status stepper — correct status mapping, live updates, sublabels */}
-      <JobProgressStepper
-        status={job.status}
-        statusHistory={job.statusHistory}
-        updatedCaption={updatedCaption}
+    <div className="stack">
+      <PageHeader
+        title={job.title}
+        description={`${formatJobId(job.id)} · ${job.category} · ${job.address ?? 'No address'}`}
+        backLink={{ to: '/jobs', label: 'Jobs' }}
+        badge={<StatusBadge status={job.status} size="lg" />}
       />
 
-      {/* Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="card">
-            <h3 className="card-title">Job Details</h3>
-
-            {job.description && (
-              <p className="text-[15px] leading-relaxed text-[var(--ink)] mb-4 whitespace-pre-wrap">
-                {job.description}
-              </p>
-            )}
-
-            <DescriptionList>
-              <InfoRow
-                label="Urgency"
-                valueClassName={job.urgency === 'Urgent' ? 'text-[var(--red-ink)]' : undefined}
-              >
-                {job.urgency}
-              </InfoRow>
-              <InfoRow label="Category">{job.category}</InfoRow>
-              <InfoRow label="Schedule">{job.scheduleStatus}</InfoRow>
-              {job.scheduledDateUtc && (
-                <InfoRow label="Scheduled">
-                  {dateTimeFormat.format(new Date(job.scheduledDateUtc))}
-                </InfoRow>
-              )}
-              <InfoRow label="Posted">
-                {dateTimeFormat.format(new Date(job.createdAtUtc))}
-              </InfoRow>
-              <InfoRow label="Last updated">
-                {dateTimeFormat.format(new Date(job.updatedAtUtc))}
-              </InfoRow>
-            </DescriptionList>
-          </div>
-
-          {/* Photos */}
-          <div className="card">
-            <h3 className="card-title">
-              <ImageIcon size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
-              Photos ({job.photos.length})
-            </h3>
-            {job.photos.length === 0 ? (
-              <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No photos attached.</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {job.photos.map((photo) => (
-                  <a
-                    key={photo.id}
-                    href={photo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block aspect-4/3 rounded overflow-hidden border border-[var(--brand-100)] hover:border-[var(--brand-300)] transition-colors"
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.originalFileName ?? `Photo ${photo.id}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Status stepper — correct status mapping, live updates, sublabels */}
+      <section className="card">
+        <div className="card-body">
+          <JobProgressStepper
+            status={job.status}
+            statusHistory={job.statusHistory}
+            updatedCaption={updatedCaption}
+          />
         </div>
+      </section>
 
-        {/* Participants */}
-        <div className="space-y-6">
-          <div className="card">
-            <h3 className="card-title">Homeowner</h3>
-            <DescriptionList>
-              <InfoRow label="Name">
-                <Link to={`/users/${job.homeownerId}`} className="cell-link">
-                  {job.homeownerName}
-                </Link>
-              </InfoRow>
-              <InfoRow label="User ID" valueClassName="mono">{job.homeownerId}</InfoRow>
-            </DescriptionList>
-          </div>
-
-          {job.matchedTradieId && (
-            <div className="card">
-              <h3 className="card-title">Tradie</h3>
+      <div className="grid side">
+        <div className="stack">
+          <section className="card">
+            <div className="card-head">
+              <h2>Job details</h2>
+            </div>
+            <div className="card-body">
+              {job.description && <p className="desc-text">{job.description}</p>}
               <DescriptionList>
-                <InfoRow label="Name">
-                  <Link to={`/users/${job.matchedTradieId}`} className="cell-link">
-                    {job.tradeName ?? job.matchedTradieId}
-                  </Link>
+                <InfoRow label="Urgency" valueClassName={job.urgency === 'Urgent' ? 'c-danger' : undefined}>
+                  {job.urgency}
                 </InfoRow>
-                <InfoRow label="Status">{job.status}</InfoRow>
+                <InfoRow label="Category">{job.category}</InfoRow>
+                <InfoRow label="Schedule">{job.scheduleStatus}</InfoRow>
+                {job.scheduledDateUtc && (
+                  <InfoRow label="Scheduled">{dateTimeFormat.format(new Date(job.scheduledDateUtc))}</InfoRow>
+                )}
+                <InfoRow label="Posted">{dateTimeFormat.format(new Date(job.createdAtUtc))}</InfoRow>
+                <InfoRow label="Last updated">{dateTimeFormat.format(new Date(job.updatedAtUtc))}</InfoRow>
               </DescriptionList>
             </div>
+          </section>
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Photos ({job.photos.length})</h2>
+              <ImageIcon size={16} className="c-soft" aria-hidden="true" />
+            </div>
+            <div className="card-body">
+              {job.photos.length === 0 ? (
+                <p className="muted">No photos attached.</p>
+              ) : (
+                <div className="photo-grid">
+                  {job.photos.map((photo) => (
+                    <a
+                      key={photo.id}
+                      href={photo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="photo-tile"
+                    >
+                      <img src={photo.url} alt={photo.originalFileName ?? `Photo ${photo.id}`} loading="lazy" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <div className="stack">
+          <section className="card">
+            <div className="card-head">
+              <h2>Homeowner</h2>
+            </div>
+            <div className="card-body">
+              <DescriptionList>
+                <InfoRow label="Name">
+                  <Link to={`/users/${job.homeownerId}`} className="cell-link">
+                    {job.homeownerName}
+                  </Link>
+                </InfoRow>
+                <InfoRow label="User ID" valueClassName="mono">
+                  {job.homeownerId}
+                </InfoRow>
+              </DescriptionList>
+            </div>
+          </section>
+
+          {job.matchedTradieId && (
+            <section className="card">
+              <div className="card-head">
+                <h2>Tradie</h2>
+              </div>
+              <div className="card-body">
+                <DescriptionList>
+                  <InfoRow label="Name">
+                    <Link to={`/users/${job.matchedTradieId}`} className="cell-link">
+                      {job.tradeName ?? job.matchedTradieId}
+                    </Link>
+                  </InfoRow>
+                  <InfoRow label="Status">{job.status}</InfoRow>
+                </DescriptionList>
+              </div>
+            </section>
           )}
         </div>
       </div>
 
-      {/* Activity timeline */}
-      <div className="card">
-        <h3 className="card-title">Activity Timeline</h3>
-
-        <div className="timeline">
-          <div className="timeline-item">
-            <div className="timeline-time">
-              {timeFormat.format(new Date(job.createdAtUtc))}
-            </div>
-            <div>
-              <div className="timeline-event">Job posted by {job.homeownerName}</div>
-              <div className="timeline-meta">{dateTimeFormat.format(new Date(job.createdAtUtc))}</div>
-            </div>
-          </div>
-
-          {history.map((h) => (
-            <div key={h.id} className="timeline-item">
-              <div className="timeline-time">
-                {timeFormat.format(new Date(h.changedAtUtc))}
-              </div>
+      <section className="card">
+        <div className="card-head">
+          <h2>Activity timeline</h2>
+        </div>
+        <div className="card-body">
+          <ol className="timeline">
+            <li className="done">
+              <time dateTime={job.createdAtUtc}>{timeFormat.format(new Date(job.createdAtUtc))}</time>
               <div>
-                <div className="timeline-event">
-                  Status changed to <strong>{h.toStatus}</strong>
-                </div>
-                <div className="timeline-meta">
-                  {h.changedByName ?? h.changedByUserId} •{' '}
-                  {dateTimeFormat.format(new Date(h.changedAtUtc))}
-                  {h.reason ? ` • ${h.reason}` : ''}
-                </div>
+                <div className="ev">Job posted by {job.homeownerName}</div>
+                <div className="meta">{dateTimeFormat.format(new Date(job.createdAtUtc))}</div>
               </div>
-            </div>
-          ))}
-
-          {history.length === 0 && (
-            <p className="text-sm text-[var(--ink-soft)] py-4 text-center">
-              No status changes recorded yet.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Chat transcript */}
-      <div className="card">
-        <h3 className="card-title">
-          <MessageSquare size={14} className="inline -mt-0.5 mr-1.5" aria-hidden="true" />
-          Chat Transcript ({job.chatTranscript.length})
-        </h3>
-        {job.chatTranscript.length === 0 ? (
-          <p className="text-sm text-[var(--ink-soft)] py-4 text-center">No messages yet.</p>
-        ) : (
-          <div className="max-h-[400px] overflow-y-auto">
-            {job.chatTranscript.map((msg) => (
-              <div key={msg.id} className="timeline-item">
-                <div className="timeline-time">{msg.senderName}</div>
+            </li>
+            {history.map((h) => (
+              <li key={h.id} className="done">
+                <time dateTime={h.changedAtUtc}>{timeFormat.format(new Date(h.changedAtUtc))}</time>
                 <div>
-                  <div className="timeline-event">{msg.content}</div>
-                  <div className="timeline-meta">
-                    {dateTimeFormat.format(new Date(msg.sentAtUtc))}
+                  <div className="ev">
+                    Status changed to <strong>{h.toStatus}</strong>
+                  </div>
+                  <div className="meta">
+                    {h.changedByName ?? h.changedByUserId} · {dateTimeFormat.format(new Date(h.changedAtUtc))}
+                    {h.reason ? ` · ${h.reason}` : ''}
                   </div>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
-        )}
-      </div>
+          </ol>
+          {history.length === 0 && <p className="muted">No status changes recorded yet.</p>}
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <h2>Chat transcript ({job.chatTranscript.length})</h2>
+          <MessageSquare size={16} className="c-soft" aria-hidden="true" />
+        </div>
+        <div className="card-body">
+          {job.chatTranscript.length === 0 ? (
+            <p className="muted">No messages yet.</p>
+          ) : (
+            <ol className="timeline chat-scroll" tabIndex={0} aria-label="Chat transcript">
+              {job.chatTranscript.map((msg) => (
+                <li key={msg.id}>
+                  <span className="t-meta">{msg.senderName}</span>
+                  <div>
+                    <div className="ev">{msg.content}</div>
+                    <div className="meta">
+                      <time dateTime={msg.sentAtUtc}>{dateTimeFormat.format(new Date(msg.sentAtUtc))}</time>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

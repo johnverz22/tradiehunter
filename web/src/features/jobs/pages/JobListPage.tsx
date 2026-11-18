@@ -6,6 +6,7 @@ import { FilterBar } from '../../../components/FilterBar';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { Pagination } from '../../../components/Pagination';
+import { Button } from '../../../components/Button';
 import { useJobList } from '../hooks/useJobs';
 import type { AdminJobSummary } from '../../../services/adminApi';
 
@@ -63,7 +64,7 @@ export const JobListPage: React.FC = () => {
       key: 'category',
       header: 'Category',
       priority: 'detail',
-      cell: (job) => <span className="cell-muted">{job.category}</span>,
+      cell: (job) => <span className="muted">{job.category}</span>,
     },
     {
       key: 'status',
@@ -75,20 +76,20 @@ export const JobListPage: React.FC = () => {
       key: 'homeowner',
       header: 'Homeowner',
       priority: 'detail',
-      cell: (job) => <span className="cell-muted">{job.homeownerName}</span>,
+      cell: (job) => <span className="muted">{job.homeownerName}</span>,
     },
     {
       key: 'tradie',
       header: 'Tradie',
       priority: 'detail',
-      cell: (job) => <span className="cell-muted">{job.tradeName ?? '—'}</span>,
+      cell: (job) => <span className="muted">{job.tradeName ?? '—'}</span>,
     },
     {
       key: 'createdAt',
       header: 'Posted',
       priority: 'secondary',
       cell: (job) => (
-        <span className="cell-muted">
+        <span className="muted">
           {new Date(job.createdAtUtc).toLocaleDateString()}
         </span>
       ),
@@ -105,23 +106,8 @@ export const JobListPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <PageHeader
-        title="Jobs"
-        meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <strong>{data.totalCount.toLocaleString()}</strong> {status || 'All statuses'}
-              </div>
-              <div className="stat-pill">
-                <strong>{data.items.length}</strong> on this page
-              </div>
-            </>
-          )
-        }
-      />
+    <>
+      <PageHeader title="Jobs" description="Job list and status monitoring" />
 
       {/* Filters */}
       <FilterBar
@@ -131,11 +117,12 @@ export const JobListPage: React.FC = () => {
           setPage(1);
         }}
       >
-        <div className="relative flex-1 min-w-48">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-soft)]" />
+        <label className="input-icon">
+          <span className="sr-only">Search jobs by title or address</span>
+          <Search size={20} aria-hidden="true" />
           <input
             type="search"
-            className="field field-search"
+            className="field"
             placeholder="Search title or address…"
             value={search}
             onChange={(e) => {
@@ -143,10 +130,10 @@ export const JobListPage: React.FC = () => {
               setPage(1);
             }}
           />
-        </div>
+        </label>
         <span className="select-wrap">
           <select
-            className="select-field"
+            className="select"
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
@@ -160,12 +147,9 @@ export const JobListPage: React.FC = () => {
             ))}
           </select>
         </span>
-        <button
-          className="btn btn-ghost"
-          onClick={() => setSortDesc((d) => !d)}
-        >
+        <Button kind="ghost" onClick={() => setSortDesc((d) => !d)}>
           {sortDesc ? 'Newest first' : 'Oldest first'}
-        </button>
+        </Button>
       </FilterBar>
 
       {/* Table */}
@@ -190,6 +174,6 @@ export const JobListPage: React.FC = () => {
           ) : undefined
         }
       />
-    </div>
+    </>
   );
 };

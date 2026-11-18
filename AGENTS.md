@@ -8,7 +8,7 @@ A two-sided marketplace for homeowners and tradies. White-label ready — "Fixo"
 ## Stack
 - **Backend**: .NET 10 (ASP.NET Core Web API), EF Core + PostgreSQL/PostGIS (dev), ASP.NET Identity + JWT, SignalR for real-time (chat, job-status, match notifications), Hangfire for scheduled reminders, Firebase Admin SDK for FCM push.
 - **Mobile (primary)**: Flutter, single app with role-based views (homeowner/tradie — not two separate apps). This is the main client for the MVP.
-- **Web (admin only)**: React, scoped to admin dashboard only for MVP. Not a homeowner/tradie client. Design system: `docs/design/web/` (extends the mobile tokens).
+- **Web (admin only)**: React, scoped to admin dashboard only for MVP. Not a homeowner/tradie client. Design system: `docs/design/web/` (extends the mobile tokens). `web/src/theme/` and `web/public/fonts/` are synced copies: never hand-edit them; change `docs/design/web/`, run its build, then `npm run design:sync` in `web/`. Tokens and kit classes only; no retired v1.7 names (`npm run design:legacy`).
 - **Infrastructure**: Docker Compose (OrbStack locally) — PostgreSQL+PostGIS, Azurite (Azure Blob Storage emulator), Redis (SignalR backplane + Hangfire).
 - Full rationale in `docs/ARCHITECTURE.md`.
 

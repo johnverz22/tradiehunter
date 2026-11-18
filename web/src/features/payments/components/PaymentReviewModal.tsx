@@ -1,6 +1,9 @@
 import React from 'react';
 import { AlertTriangle, FileText } from 'lucide-react';
+import { Badge } from '../../../components/Badge';
+import { Banner } from '../../../components/Banner';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { Field } from '../../../components/Field';
 import type { PendingPayment } from '../../../services/adminApi';
 
 export type PaymentActionKind = 'verify' | 'reject';
@@ -70,74 +73,70 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
       onConfirm={onConfirm}
       onCancel={onCancel}
     >
-      <div className="mt-4 space-y-4">
+      <div className="stack">
         {/* What was claimed */}
-        <dl className="rounded-lg border border-[var(--paper-line)] divide-y divide-[var(--paper-line)]">
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Amount</dt>
-            <dd className="font-mono text-sm font-semibold text-[var(--ink)]">
-              {money(payment.amount, payment.currency)}
+        <dl className="dl">
+          <div>
+            <dt>Amount</dt>
+            <dd>
+              <span className="money">{money(payment.amount, payment.currency)}</span>
             </dd>
           </div>
           {payment.labourAmount != null && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Labour</dt>
-              <dd className="font-mono text-sm text-[var(--ink)]">
-                {money(payment.labourAmount, currency)}
-              </dd>
+            <div>
+              <dt>Labour</dt>
+              <dd className="mono">{money(payment.labourAmount, currency)}</dd>
             </div>
           )}
           {payment.adjustmentsTotal != null && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Approved adjustments</dt>
-              <dd className="font-mono text-sm text-[var(--ink)]">
-                {money(payment.adjustmentsTotal, currency)}
-              </dd>
+            <div>
+              <dt>Approved adjustments</dt>
+              <dd className="mono">{money(payment.adjustmentsTotal, currency)}</dd>
             </div>
           )}
           {payment.estimatedTotal != null && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Original estimate</dt>
-              <dd
-                className={`font-mono text-sm ${overEstimate ? 'text-[var(--amber-dark)]' : 'text-[var(--ink)]'}`}
-              >
+            <div>
+              <dt>Original estimate</dt>
+              <dd className="mono">
                 {money(payment.estimatedTotal, currency)}
                 {overEstimate && (
-                  <span className="block text-xs">Final is higher than the estimate</span>
+                  <Badge tone="warn" dot className="ml-2">
+                    Final is higher than the estimate
+                  </Badge>
                 )}
               </dd>
             </div>
           )}
           {payment.completionSubmittedAtUtc && (
-            <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-              <dt className="text-xs text-[var(--ink-soft)]">Work completed</dt>
-              <dd className="text-sm text-[var(--ink)]">{submitted(payment.completionSubmittedAtUtc)}</dd>
+            <div>
+              <dt>Work completed</dt>
+              <dd>{submitted(payment.completionSubmittedAtUtc)}</dd>
             </div>
           )}
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Reference</dt>
-            <dd className="font-mono text-sm text-[var(--ink)]">{payment.reference}</dd>
+          <div>
+            <dt>Reference</dt>
+            <dd className="mono">{payment.reference}</dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Homeowner</dt>
-            <dd className="text-sm text-[var(--ink)] text-right">
+          <div>
+            <dt>Homeowner</dt>
+            <dd>
               {payment.homeownerName}
-              <span className="block text-xs cell-muted">{payment.homeownerEmail}</span>
+              <span className="block t-meta muted">{payment.homeownerEmail}</span>
             </dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Method</dt>
-            <dd className="text-sm text-[var(--ink)]">{payment.method ?? '—'}</dd>
+          <div>
+            <dt>Method</dt>
+            <dd>{payment.method ?? '—'}</dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 px-3 py-2">
-            <dt className="text-xs text-[var(--ink-soft)]">Submitted</dt>
-            <dd className="text-sm text-[var(--ink)]">{submitted(payment.submittedAtUtc)}</dd>
+          <div>
+            <dt>Submitted</dt>
+            <dd>{submitted(payment.submittedAtUtc)}</dd>
           </div>
         </dl>
 
         {payment.reUploadCount > 0 && (
-          <p className="flex items-start gap-2 text-xs text-[var(--ink-soft)]">
-            <AlertTriangle size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <p className="t-meta c-soft row nowrap">
+            <AlertTriangle size={16} className="shrink-0" aria-hidden="true" />
             This payment has been sent back {payment.reUploadCount}{' '}
             {payment.reUploadCount === 1 ? 'time' : 'times'} already.
           </p>
@@ -150,9 +149,9 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
               href={payment.receiptUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-ghost w-full justify-center"
+              className="btn btn-secondary btn-block"
             >
-              <FileText size={14} aria-hidden="true" />
+              <FileText size={20} aria-hidden="true" />
               Open receipt PDF
             </a>
           ) : (
@@ -161,40 +160,37 @@ export const PaymentReviewModal: React.FC<PaymentReviewModalProps> = ({
                 <img
                   src={payment.receiptUrl}
                   alt={`Bank transfer receipt for ${payment.reference}`}
-                  className="w-full max-h-80 object-contain rounded-lg border border-[var(--paper-line)] bg-[var(--paper)]"
+                  className="receipt-img"
                 />
               </a>
-              <p className="text-xs text-[var(--ink-soft)] mt-1">
-                Tap the image to open it full size.
-              </p>
+              <p className="t-meta c-soft">Tap the image to open it full size.</p>
             </div>
           )
         ) : (
-          <p className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-[var(--red)]">
+          <Banner variant="error">
             The receipt file could not be loaded. Verify against the bank statement before approving.
-          </p>
+          </Banner>
         )}
 
         {isReject && (
-          <div>
-            <label htmlFor="payment-reject-reason" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Reason for rejection
-            </label>
-            <textarea
-              id="payment-reject-reason"
-              value={reason}
-              onChange={(e) => onReasonChange(e.target.value)}
-              rows={3}
-              maxLength={REASON_MAX}
-              autoFocus
-              placeholder="e.g. The amount on the slip doesn't match — please resend the full transfer."
-              className="field field-multiline w-full resize-none"
-            />
-            <p className="text-xs text-[var(--ink-soft)] mt-1">
-              Required. Shown to the homeowner so they know what to fix.{' '}
-              {reason.length}/{REASON_MAX} characters.
-            </p>
-          </div>
+          <Field
+            label="Reason for rejection"
+            help={`Required. Shown to the homeowner so they know what to fix. ${reason.length}/${REASON_MAX} characters.`}
+          >
+            {(a11y) => (
+              <textarea
+                {...a11y}
+                value={reason}
+                onChange={(e) => onReasonChange(e.target.value)}
+                rows={3}
+                maxLength={REASON_MAX}
+                autoFocus
+                data-autofocus
+                placeholder="e.g. The amount on the slip doesn't match — please resend the full transfer."
+                className="textarea"
+              />
+            )}
+          </Field>
         )}
       </div>
     </ConfirmModal>

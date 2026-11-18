@@ -1,5 +1,11 @@
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+/**
+ * Pagination — design system `nav.pagination` (COMPONENTS.md "Pagination"): summary text, then
+ * previous / numbered / next `.page-btn`s. Current page has `aria-current="page"`; previous is
+ * disabled on the first page; previous and next carry labels.
+ */
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -43,7 +49,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   const to = Math.min(page * pageSize, totalCount);
 
   return (
-    <div className="pagination">
+    <nav className="pagination" aria-label="Pagination">
       <span>
         Showing {from.toLocaleString()}–{to.toLocaleString()} of{' '}
         {totalCount.toLocaleString()} {itemLabel}
@@ -52,12 +58,13 @@ export const Pagination: React.FC<PaginationProps> = ({
       {totalPages > 1 && (
         <div className="page-buttons">
           <button
+            type="button"
             className="page-btn"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
             aria-label="Previous page"
           >
-            &lt;
+            <ChevronLeft size={18} aria-hidden="true" />
           </button>
 
           {pageWindow(page, totalPages).map((entry, i) =>
@@ -68,6 +75,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             ) : (
               <button
                 key={entry}
+                type="button"
                 className="page-btn"
                 aria-current={entry === page ? 'page' : undefined}
                 onClick={() => onPageChange(entry)}
@@ -79,15 +87,16 @@ export const Pagination: React.FC<PaginationProps> = ({
           )}
 
           <button
+            type="button"
             className="page-btn"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
             aria-label="Next page"
           >
-            &gt;
+            <ChevronRight size={18} aria-hidden="true" />
           </button>
         </div>
       )}
-    </div>
+    </nav>
   );
 };

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { RotateCcw } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
+import { Badge } from '../../../components/Badge';
 import { Banner } from '../../../components/Banner';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
 import { Pagination } from '../../../components/Pagination';
@@ -105,7 +105,7 @@ export const RefundQueue: React.FC = () => {
           <Link to={`/jobs/${refund.jobId}`} className="cell-link">
             {refund.jobTitle}
           </Link>
-          <span className="block text-xs cell-muted">Job #{refund.jobId}</span>
+          <span className="block t-meta muted">Job #{refund.jobId}</span>
         </div>
       ),
     },
@@ -116,7 +116,7 @@ export const RefundQueue: React.FC = () => {
       cell: (refund) => (
         <div>
           {refund.homeownerName}
-          <span className="block text-xs cell-muted">{refund.homeownerEmail}</span>
+          <span className="block t-meta muted">{refund.homeownerEmail}</span>
         </div>
       ),
     },
@@ -125,7 +125,7 @@ export const RefundQueue: React.FC = () => {
       header: 'Suggested',
       priority: 'secondary',
       cell: (refund) => (
-        <span className="font-mono">{money(refund.suggestedAmount)}</span>
+        <span className="money">{money(refund.suggestedAmount)}</span>
       ),
     },
     {
@@ -133,7 +133,7 @@ export const RefundQueue: React.FC = () => {
       header: 'Penalty',
       priority: 'detail',
       cell: (refund) => (
-        <span className="font-mono text-[var(--amber-dark)]">
+        <span className="money">
           {refund.penalty > 0 ? money(refund.penalty) : '—'}
         </span>
       ),
@@ -143,7 +143,7 @@ export const RefundQueue: React.FC = () => {
       header: 'Reason',
       priority: 'detail',
       cell: (refund) => (
-        <span className="text-xs cell-muted">
+        <span className="t-meta muted">
           {refund.cancelReasonCode
             ? refund.cancelReasonCode.replace(/_/g, ' ')
             : '—'}
@@ -155,7 +155,7 @@ export const RefundQueue: React.FC = () => {
       header: 'Created',
       priority: 'secondary',
       cell: (refund) => (
-        <span className="cell-muted">{createdAgo(refund.createdAtUtc)}</span>
+        <span className="muted">{createdAgo(refund.createdAtUtc)}</span>
       ),
     },
   ];
@@ -171,28 +171,18 @@ export const RefundQueue: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
+    <>
       {/* Header */}
       <PageHeader
-        title="Refund Queue"
+        title="Refund queue"
         description="Jobs cancelled after payment is collected. Review the suggested amounts, adjust if needed, record your bank transfer reference, and optionally attach proof."
         meta={
-          data && (
-            <>
-              <div className="stat-pill">
-                <RotateCcw size={13} aria-hidden="true" />
-                <strong>{data.totalCount.toLocaleString()}</strong> pending refunds
-              </div>
-              {data.items.length > 0 && (
-                <div className="stat-pill">
-                  <strong>
-                    {money(data.items.reduce((sum, r) => sum + r.suggestedAmount, 0))}
-                  </strong>{' '}
-                  suggested on this page
-                </div>
-              )}
-            </>
-          )
+          data && data.items.length > 0 ? (
+            <Badge>
+              {money(data.items.reduce((sum, r) => sum + r.suggestedAmount, 0))} suggested on this
+              page
+            </Badge>
+          ) : undefined
         }
       />
 
@@ -225,7 +215,8 @@ export const RefundQueue: React.FC = () => {
             <>
               No refunds on this page.{' '}
               <button
-                className="action-link"
+                type="button"
+                className="cell-link"
                 onClick={() => setPage(Math.max(1, data.totalPages))}
               >
                 Go to page {Math.max(1, data.totalPages)}
@@ -258,6 +249,6 @@ export const RefundQueue: React.FC = () => {
           onCancel={closeModal}
         />
       )}
-    </div>
+    </>
   );
 };

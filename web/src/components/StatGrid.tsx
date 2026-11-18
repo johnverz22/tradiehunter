@@ -1,28 +1,19 @@
 /**
- * StatGrid — responsive grid container for StatCard components.
+ * StatGrid — responsive grid container for StatCard components (kit `.grid.cN`).
  *
- * phone/tablet: 2 columns
- * desktop:      4 columns
+ * Design system: stat rows are 4 columns, then 2 below 1024 px, then 1 below 640 px.
+ * `cols.desktop` (2–4, default 4) sets the wide layout; `cols.phone` no longer applies
+ * (the kit steps down on its own).
  */
 import React from 'react';
 
 interface StatGridProps {
   children: React.ReactNode;
-  /** Override column count. Defaults: 2 on phone/tablet, 4 on desktop. */
+  /** Override the wide column count (2, 3 or 4). Default 4. */
   cols?: { phone?: number; desktop?: number };
 }
 
 export const StatGrid: React.FC<StatGridProps> = ({ children, cols }) => {
-  const phoneCols   = cols?.phone   ?? 2;
-  const desktopCols = cols?.desktop ?? 4;
-
-  // Map column count to Tailwind classes
-  const phoneClass   = `grid-cols-${phoneCols}`;
-  const desktopClass = `lg:grid-cols-${desktopCols}`;
-
-  return (
-    <div className={`grid ${phoneClass} ${desktopClass} gap-4`}>
-      {children}
-    </div>
-  );
+  const desktop = cols?.desktop === 2 || cols?.desktop === 3 ? cols.desktop : 4;
+  return <div className={`grid c${desktop}`}>{children}</div>;
 };

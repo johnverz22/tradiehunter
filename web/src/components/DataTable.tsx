@@ -18,6 +18,11 @@
  *
  * Loading: skeleton rows/cards
  * Pagination: pass a <Pagination> node as `pagination` prop
+ *
+ * Markup is the design-system data table (COMPONENTS.md "Data table"): `.table-wrap > .table`,
+ * `<th scope="col">`, sortable headers are real buttons with `aria-sort`, the actions column has a
+ * visually hidden header, pagination sits inside the wrapper under the table.
+ * The phone card list is kept (presentation restyled on tokens); see todo decision D9.
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -75,18 +80,25 @@ export interface DataTableProps<T> {
   mobileCard?: (row: T) => React.ReactNode;
   /** Number of skeleton rows/cards to show while loading. Default 5. */
   skeletonCount?: number;
+  /** Visible table caption, for tables that are not under a heading. */
+  caption?: string;
 }
 
 // ── Action button helpers ─────────────────────────────────────────────────────
 
-const VARIANT_CLASS: Record<string, string> = {
-  primary: 'btn btn-primary',
-  danger:  'btn btn-danger',
-  ghost:   'btn btn-ghost',
+/** Row-action variants map to kit button kinds (danger is the outline kind in rows). */
+const VARIANT_KIND: Record<string, string> = {
+  primary: 'btn-primary',
+  danger: 'btn-danger-outline',
+  ghost: 'btn-ghost',
 };
 
+function actionClass(variant: RowAction['variant'], extra = '') {
+  return `btn ${VARIANT_KIND[variant ?? 'ghost']} ${extra}`.trim();
+}
+
 function ActionButton({ action }: { action: RowAction }) {
-  const cls = `${VARIANT_CLASS[action.variant ?? 'ghost']} !py-1 !px-2.5 !text-xs min-h-[44px] sm:min-h-0 inline-flex items-center justify-center`;
+  const cls = actionClass(action.variant, 'btn-sm');
   if (action.to) {
     return (
       <Link to={action.to} className={cls}>
@@ -95,11 +107,7 @@ function ActionButton({ action }: { action: RowAction }) {
     );
   }
   return (
-    <button
-      className={cls}
-      onClick={action.onClick}
-      disabled={action.disabled}
-    >
+    <button type="button" className={cls} onClick={action.onClick} disabled={action.disabled}>
       {action.label}
     </button>
   );
@@ -110,8 +118,13 @@ function ActionButton({ action }: { action: RowAction }) {
 function SortIcon({ colKey, sortState }: { colKey: string; sortState?: SortState }) {
   if (!sortState || sortState.key !== colKey) return null;
   return sortState.desc
-    ? <ChevronDown size={13} className="inline ml-1" aria-hidden="true" />
-    : <ChevronUp   size={13} className="inline ml-1" aria-hidden="true" />;
+    ? <ChevronDown size={14} aria-hidden="true" />
+    : <ChevronUp size={14} aria-hidden="true" />;
+}
+
+function ariaSort(colKey: string, sortState?: SortState): 'ascending' | 'descending' | undefined {
+  if (!sortState || sortState.key !== colKey) return undefined;
+  return sortState.desc ? 'descending' : 'ascending';
 }
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -120,8 +133,8 @@ function SkeletonRow({ colCount }: { colCount: number }) {
   return (
     <tr aria-hidden="true">
       {Array.from({ length: colCount }).map((_, i) => (
-        <td key={i} className="td">
-          <div className="h-4 bg-[var(--paper-line)] rounded animate-pulse" />
+        <td key={i}>
+          <span className="skeleton" />
         </td>
       ))}
     </tr>
@@ -130,21 +143,25 @@ function SkeletonRow({ colCount }: { colCount: number }) {
 
 function SkeletonCard() {
   return (
-    <li aria-hidden="true" className="surface p-4 space-y-3">
+    <li aria-hidden="true" className="card p-4 space-y-3">
       <div className="flex justify-between">
-        <div className="h-4 w-40 bg-[var(--paper-line)] rounded animate-pulse" />
-        <div className="h-5 w-16 bg-[var(--paper-line)] rounded-full animate-pulse" />
+        <span className="skeleton w-40" />
+        <span className="skeleton w-16" />
       </div>
       <div className="space-y-2">
-        <div className="h-3 w-full bg-[var(--paper-line)] rounded animate-pulse" />
-        <div className="h-3 w-3/4 bg-[var(--paper-line)] rounded animate-pulse" />
+        <span className="skeleton w-full" />
+        <span className="skeleton w-3/4" />
       </div>
-      <div className="h-10 bg-[var(--paper-line)] rounded animate-pulse" />
+      <span className="skeleton" style={{ height: 'var(--sz-control)' }} />
     </li>
   );
 }
 
 // ── Card list (phone) ─────────────────────────────────────────────────────────
+
+function closeMenu() {
+  (document.activeElement as HTMLElement | null)?.closest('details')?.removeAttribute('open');
+}
 
 function CardList<T>({
   columns,
@@ -168,7 +185,7 @@ function CardList<T>({
 
   if (isLoading) {
     return (
-      <ul className="space-y-3 list-none p-0 m-0" role="list">
+      <ul className="space-y-3 list-none p-0 m-0" role="list" aria-busy="true">
         {Array.from({ length: skeletonCount }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -177,11 +194,11 @@ function CardList<T>({
   }
 
   if (error) {
-    return <div className="surface p-6 text-center text-sm text-[var(--ink-soft)]">{error}</div>;
+    return <div className="card p-6 text-center text-sm c-soft">{error}</div>;
   }
 
   if (!rows || rows.length === 0) {
-    return <div className="surface p-6 text-center text-sm text-[var(--ink-soft)]">{empty ?? 'No results.'}</div>;
+    return <div className="card p-6 text-center text-sm c-soft">{empty ?? 'No results.'}</div>;
   }
 
   return (
@@ -200,19 +217,15 @@ function CardList<T>({
         const secondaryActions = actions.filter((a) => a !== primaryAction);
 
         return (
-          <li
-            key={key}
-            className={`surface overflow-hidden ${rowClass}`}
-            role="row"
-          >
+          <li key={key} className={`card overflow-hidden ${rowClass}`}>
             {/* Card body */}
             <div
-              className={`p-4 space-y-2 ${onRowClick ? 'cursor-pointer hover:bg-[var(--paper)] transition-colors' : ''}`}
+              className={`p-4 space-y-2 ${onRowClick ? 'cursor-pointer' : ''}`}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {/* Title row: primary value */}
               <div className="flex items-start justify-between gap-3">
-                <div className="font-medium text-[var(--ink)] min-w-0 flex-1">
+                <div className="font-semibold min-w-0 flex-1">
                   {primaryCol ? primaryCol.cell(row) : null}
                 </div>
               </div>
@@ -220,18 +233,18 @@ function CardList<T>({
               {/* Secondary fields */}
               {secondaryCols.map((col) => (
                 <div key={col.key} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-[var(--ink-soft)] shrink-0">{col.header}</span>
-                  <span className="text-[var(--ink)] text-right min-w-0 flex-1">{col.cell(row)}</span>
+                  <span className="c-soft shrink-0">{col.header}</span>
+                  <span className="text-right min-w-0 flex-1">{col.cell(row)}</span>
                 </div>
               ))}
             </div>
 
             {/* Footer */}
             {actions.length > 0 && (
-              <div className="flex items-center gap-2 px-4 py-3 border-t border-[var(--paper-line)] bg-[var(--paper)]">
+              <div className="flex items-center gap-2 px-4 py-3 border-t border-[var(--line)] bg-[var(--surface-alt)]">
                 {actions.length <= 2 ? (
                   actions.map((a, i) => {
-                    const cls = `${VARIANT_CLASS[a.variant ?? 'ghost']} flex-1 justify-center min-h-[44px] inline-flex items-center`;
+                    const cls = actionClass(a.variant, 'flex-1');
                     if (a.to) {
                       return (
                         <Link key={i} to={a.to} className={cls}>
@@ -242,6 +255,7 @@ function CardList<T>({
                     return (
                       <button
                         key={i}
+                        type="button"
                         className={cls}
                         onClick={a.onClick}
                         disabled={a.disabled}
@@ -254,29 +268,22 @@ function CardList<T>({
                   <>
                     <details className="relative">
                       <summary
-                        className="btn btn-ghost !py-1 !px-2 min-h-[44px] list-none cursor-pointer flex items-center justify-center"
+                        className="btn btn-ghost btn-icon list-none cursor-pointer"
                         aria-label="More actions"
                       >
-                        <MoreHorizontal size={16} aria-hidden="true" />
+                        <MoreHorizontal size={18} aria-hidden="true" />
                       </summary>
-                      <div className="absolute bottom-full left-0 mb-1 z-10 surface shadow-[var(--shadow-pop)] rounded min-w-[160px]">
+                      <div className="absolute bottom-full left-0 mb-1 z-10 min-w-[160px] bg-[var(--surface)] border border-[var(--line)] rounded-[var(--r-control)] shadow-[var(--sh-pop)]">
                         {secondaryActions.map((a, i) => {
                           const cls = [
-                            'w-full text-left px-4 py-3 text-sm font-medium min-h-[44px] block',
+                            'w-full text-left px-4 py-3 text-sm font-semibold block min-h-[var(--sz-touch)]',
                             a.variant === 'danger'
-                              ? 'text-[var(--red)] hover:bg-red-50 dark:hover:bg-red-900/20'
-                              : 'text-[var(--ink)] hover:bg-[var(--paper)]',
+                              ? 'text-[var(--danger)] hover:bg-[var(--danger-tint)]'
+                              : 'text-[var(--ink)] hover:bg-[var(--surface-alt)]',
                           ].join(' ');
                           if (a.to) {
                             return (
-                              <Link
-                                key={i}
-                                to={a.to}
-                                className={cls}
-                                onClick={() => {
-                                  (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
-                                }}
-                              >
+                              <Link key={i} to={a.to} className={cls} onClick={closeMenu}>
                                 {a.label}
                               </Link>
                             );
@@ -284,10 +291,11 @@ function CardList<T>({
                           return (
                             <button
                               key={i}
+                              type="button"
                               className={cls}
                               onClick={() => {
                                 a.onClick?.();
-                                (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
+                                closeMenu();
                               }}
                               disabled={a.disabled}
                             >
@@ -302,13 +310,14 @@ function CardList<T>({
                         primaryAction.to ? (
                           <Link
                             to={primaryAction.to}
-                            className={`${VARIANT_CLASS[primaryAction.variant ?? 'primary']} w-full justify-center min-h-[44px] inline-flex items-center`}
+                            className={actionClass(primaryAction.variant ?? 'primary', 'btn-block')}
                           >
                             {primaryAction.label}
                           </Link>
                         ) : (
                           <button
-                            className={`${VARIANT_CLASS[primaryAction.variant ?? 'primary']} w-full justify-center min-h-[44px]`}
+                            type="button"
+                            className={actionClass(primaryAction.variant ?? 'primary', 'btn-block')}
                             onClick={primaryAction.onClick}
                             disabled={primaryAction.disabled}
                           >
@@ -345,6 +354,7 @@ export function DataTable<T>({
   pagination,
   mobileCard,
   skeletonCount = 5,
+  caption,
 }: DataTableProps<T>) {
   const { isPhone, isTabletPortrait } = useBreakpoint();
 
@@ -380,93 +390,98 @@ export function DataTable<T>({
   );
   const colCount = visibleCols.length + (rowActions ? 1 : 0);
 
+  // Right-aligned columns use the kit's `.num` (right + tabular figures).
   const alignClass = (align?: string) =>
-    align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : '';
+    align === 'right' ? 'num' : align === 'center' ? 'text-center' : '';
 
   return (
-    <div className="table-container">
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              {visibleCols.map((col) => (
+    <div className="table-wrap">
+      <table className="table" aria-busy={isLoading || undefined}>
+        {caption ? <caption>{caption}</caption> : null}
+        <thead>
+          <tr>
+            {visibleCols.map((col) => {
+              const sortable = !!(col.sortable && onSort);
+              return (
                 <th
                   key={col.key}
-                  className={[
-                    'th',
-                    col.sortable && onSort ? 'th-sortable' : '',
-                    alignClass(col.align),
-                    col.width ?? '',
-                  ].join(' ')}
-                  onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                  scope="col"
+                  aria-sort={sortable ? ariaSort(col.key, sortState) : undefined}
+                  className={[alignClass(col.align), col.width ?? ''].filter(Boolean).join(' ') || undefined}
                 >
-                  {col.header}
-                  {col.sortable && (
-                    <SortIcon colKey={col.key} sortState={sortState} />
+                  {sortable ? (
+                    <button type="button" onClick={() => onSort!(col.key)}>
+                      {col.header}
+                      <SortIcon colKey={col.key} sortState={sortState} />
+                    </button>
+                  ) : (
+                    col.header
                   )}
                 </th>
-              ))}
-              {rowActions && <th className="th" />}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: skeletonCount }).map((_, i) => (
-                <SkeletonRow key={i} colCount={colCount} />
-              ))
-            ) : error ? (
-              <tr>
-                <td colSpan={colCount} className="td text-center cell-muted">
-                  {error}
-                </td>
-              </tr>
-            ) : !rows || rows.length === 0 ? (
-              <tr>
-                <td colSpan={colCount} className="td text-center cell-muted">
-                  {empty ?? 'No results.'}
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => {
-                const actions = rowActions?.(row) ?? [];
-                const rowClass = getRowClassName?.(row) ?? '';
-                return (
-                  <tr
-                    key={getRowKey(row)}
-                    className={`${rowClass} ${onRowClick ? 'cursor-pointer' : ''}`}
-                    onClick={
-                      onRowClick
-                        ? (e) => {
-                            if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
-                            onRowClick(row);
-                          }
-                        : undefined
-                    }
-                  >
-                    {visibleCols.map((col) => (
-                      <td
-                        key={col.key}
-                        className={`td ${alignClass(col.align)} ${col.width ?? ''}`}
-                      >
-                        {col.cell(row)}
-                      </td>
-                    ))}
-                    {rowActions && (
-                      <td className="td">
-                        <div className="flex items-center justify-end gap-2">
-                          {actions.map((a, i) => (
-                            <ActionButton key={i} action={a} />
-                          ))}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
+              );
+            })}
+            {rowActions && (
+              <th scope="col">
+                <span className="sr-only">Actions</span>
+              </th>
             )}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading ? (
+            Array.from({ length: skeletonCount }).map((_, i) => (
+              <SkeletonRow key={i} colCount={colCount} />
+            ))
+          ) : error ? (
+            <tr>
+              <td colSpan={colCount} className="text-center muted">
+                {error}
+              </td>
+            </tr>
+          ) : !rows || rows.length === 0 ? (
+            <tr>
+              <td colSpan={colCount} className="text-center muted">
+                {empty ?? 'No results.'}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => {
+              const actions = rowActions?.(row) ?? [];
+              const rowClass = getRowClassName?.(row) ?? '';
+              return (
+                <tr
+                  key={getRowKey(row)}
+                  className={`${rowClass} ${onRowClick ? 'cursor-pointer' : ''}`.trim() || undefined}
+                  onClick={
+                    onRowClick
+                      ? (e) => {
+                          if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
+                >
+                  {visibleCols.map((col) => (
+                    <td
+                      key={col.key}
+                      className={[alignClass(col.align), col.width ?? ''].filter(Boolean).join(' ') || undefined}
+                    >
+                      {col.cell(row)}
+                    </td>
+                  ))}
+                  {rowActions && (
+                    <td className="actions">
+                      {actions.map((a, i) => (
+                        <ActionButton key={i} action={a} />
+                      ))}
+                    </td>
+                  )}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
       {pagination}
     </div>
   );

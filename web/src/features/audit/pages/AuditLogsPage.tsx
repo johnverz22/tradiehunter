@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '../../../components/PageHeader';
 import { FilterBar } from '../../../components/FilterBar';
 import { DataTable, type ColumnDef, type RowAction } from '../../../components/DataTable';
+import { Field } from '../../../components/Field';
 import { Pagination } from '../../../components/Pagination';
 import { AuditDiffModal } from '../components/AuditDiffModal';
 import { useAuditLogs } from '../hooks/useAuditLogs';
@@ -49,30 +50,28 @@ export const AuditLogsPage: React.FC = () => {
       key: 'action',
       header: 'Action',
       priority: 'primary',
-      cell: (e) => <span className="mono font-semibold">{e.action}</span>,
+      cell: (e) => <span className="mono">{e.action}</span>,
     },
     {
       key: 'timestamp',
       header: 'Timestamp',
       priority: 'secondary',
       cell: (e) => (
-        <span className="mono cell-muted text-xs">
-          {formatDate(e.createdAtUtc)}
-        </span>
+        <span className="mono muted">{formatDate(e.createdAtUtc)}</span>
       ),
     },
     {
       key: 'actor',
       header: 'Admin / User',
       priority: 'secondary',
-      cell: (e) => <span className="mono text-xs">{e.userId ?? 'system'}</span>,
+      cell: (e) => <span className="mono">{e.userId ?? 'system'}</span>,
     },
     {
       key: 'entity',
       header: 'Entity',
       priority: 'detail',
       cell: (e) => (
-        <span className="mono cell-muted text-xs">
+        <span className="mono muted">
           {[e.entityType, e.entityId].filter(Boolean).join(' · ') || '—'}
         </span>
       ),
@@ -89,66 +88,71 @@ export const AuditLogsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Audit Logs"
-        badge={<span className="pill pill-brand">Admin</span>}
-      />
+    <>
+      <PageHeader title="Audit logs" description="Every staff action, newest first" />
 
-      {/* Filters */}
+      {/* Filters: labelled fields (the page has text and date filters, not a single search) */}
       <FilterBar activeFiltersCount={activeFiltersCount} onClear={handleClear}>
-        <label className="flex flex-col gap-1 text-[13px] flex-1 min-w-44">
-          <span className="text-[var(--ink-soft)]">Action</span>
-          <input
-            className="field"
-            placeholder="e.g. credential.review"
-            value={action}
-            onChange={(e) => {
-              setPage(1);
-              setAction(e.target.value);
-            }}
-            aria-label="Filter by action"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[13px] flex-1 min-w-44">
-          <span className="text-[var(--ink-soft)]">User ID</span>
-          <input
-            className="field"
-            placeholder="Admin / user id"
-            value={userId}
-            onChange={(e) => {
-              setPage(1);
-              setUserId(e.target.value);
-            }}
-            aria-label="Filter by user ID"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[13px] flex-1 min-w-36">
-          <span className="text-[var(--ink-soft)]">From</span>
-          <input
-            className="field"
-            type="date"
-            value={fromUtc}
-            onChange={(e) => {
-              setPage(1);
-              setFromUtc(e.target.value);
-            }}
-            aria-label="Filter from date"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[13px] flex-1 min-w-36">
-          <span className="text-[var(--ink-soft)]">To</span>
-          <input
-            className="field"
-            type="date"
-            value={toUtc}
-            onChange={(e) => {
-              setPage(1);
-              setToUtc(e.target.value);
-            }}
-            aria-label="Filter to date"
-          />
-        </label>
+        <Field label="Action" className="flex-1 min-w-44">
+          {(a11y) => (
+            <input
+              {...a11y}
+              className="field"
+              placeholder="e.g. credential.review"
+              value={action}
+              onChange={(e) => {
+                setPage(1);
+                setAction(e.target.value);
+              }}
+              aria-label="Filter by action"
+            />
+          )}
+        </Field>
+        <Field label="User ID" className="flex-1 min-w-44">
+          {(a11y) => (
+            <input
+              {...a11y}
+              className="field"
+              placeholder="Admin / user id"
+              value={userId}
+              onChange={(e) => {
+                setPage(1);
+                setUserId(e.target.value);
+              }}
+              aria-label="Filter by user ID"
+            />
+          )}
+        </Field>
+        <Field label="From" className="flex-1 min-w-36">
+          {(a11y) => (
+            <input
+              {...a11y}
+              className="field"
+              type="date"
+              value={fromUtc}
+              onChange={(e) => {
+                setPage(1);
+                setFromUtc(e.target.value);
+              }}
+              aria-label="Filter from date"
+            />
+          )}
+        </Field>
+        <Field label="To" className="flex-1 min-w-36">
+          {(a11y) => (
+            <input
+              {...a11y}
+              className="field"
+              type="date"
+              value={toUtc}
+              onChange={(e) => {
+                setPage(1);
+                setToUtc(e.target.value);
+              }}
+              aria-label="Filter to date"
+            />
+          )}
+        </Field>
       </FilterBar>
 
       {/* Table */}
@@ -175,6 +179,6 @@ export const AuditLogsPage: React.FC = () => {
       />
 
       <AuditDiffModal entry={selected} onClose={() => setSelected(null)} />
-    </div>
+    </>
   );
 };

@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save } from 'lucide-react';
 import { PageHeader } from '../../../components/PageHeader';
 import { Banner } from '../../../components/Banner';
+import { Button } from '../../../components/Button';
+import { Field } from '../../../components/Field';
 import { useSettings, useUpdateSettings } from '../hooks/useSettings';
 import type { AdminSettings } from '../../../services/adminApi';
 
@@ -49,13 +50,31 @@ export const SettingsPage: React.FC = () => {
   };
 
   if (isLoading)
-    return <div className="text-[var(--ink-soft)] text-sm p-4">Loading settings…</div>;
+    return (
+      <>
+        <PageHeader title="Settings" description="Platform-wide locale and feature configuration." />
+        <p className="muted" role="status" aria-busy="true">
+          Loading settings…
+        </p>
+      </>
+    );
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <>
       <PageHeader
         title="Settings"
         description="Platform-wide locale and feature configuration."
+        actions={
+          <Button
+            type="submit"
+            form="settings-form"
+            kind="accent"
+            disabled={!isDirty}
+            loading={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? 'Saving…' : 'Save changes'}
+          </Button>
+        }
       />
 
       {updateMutation.isSuccess && (
@@ -66,116 +85,106 @@ export const SettingsPage: React.FC = () => {
         <Banner variant="error">Failed to save settings. Please try again.</Banner>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form id="settings-form" onSubmit={handleSubmit(onSubmit)} className="stack">
         {/* Locale */}
-        <section className="card space-y-4">
-          <h2 className="card-title">Locale &amp; Region</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              label="Currency code"
-              placeholder="NZD"
-              error={errors.currency?.message}
-              {...register('currency')}
-            />
-            <FormField
-              label="Currency symbol"
-              placeholder="$"
-              error={errors.currencySymbol?.message}
-              {...register('currencySymbol')}
-            />
+        <section className="card">
+          <div className="card-head">
+            <h2>Locale &amp; region</h2>
           </div>
+          <div className="card-body">
+            <div className="grid c2">
+              <Field label="Currency code" error={errors.currency?.message}>
+                {(a11y) => (
+                  <input {...a11y} className="field" placeholder="NZD" {...register('currency')} />
+                )}
+              </Field>
+              <Field label="Currency symbol" error={errors.currencySymbol?.message}>
+                {(a11y) => (
+                  <input
+                    {...a11y}
+                    className="field"
+                    placeholder="$"
+                    {...register('currencySymbol')}
+                  />
+                )}
+              </Field>
+            </div>
 
-          <FormField
-            label="Timezone"
-            placeholder="Pacific/Auckland"
-            error={errors.timezone?.message}
-            hint="IANA timezone name, e.g. Pacific/Auckland, Australia/Sydney"
-            {...register('timezone')}
-          />
+            <Field
+              label="Timezone"
+              error={errors.timezone?.message}
+              help="IANA timezone name, e.g. Pacific/Auckland, Australia/Sydney"
+            >
+              {(a11y) => (
+                <input
+                  {...a11y}
+                  className="field"
+                  placeholder="Pacific/Auckland"
+                  {...register('timezone')}
+                />
+              )}
+            </Field>
 
-          <FormField
-            label="Phone format / country code"
-            placeholder="+64"
-            error={errors.phoneFormat?.message}
-            {...register('phoneFormat')}
-          />
+            <Field label="Phone format / country code" error={errors.phoneFormat?.message}>
+              {(a11y) => (
+                <input {...a11y} className="field" placeholder="+64" {...register('phoneFormat')} />
+              )}
+            </Field>
+          </div>
         </section>
 
         {/* Matching */}
-        <section className="card space-y-4">
-          <h2 className="card-title">Matching</h2>
-          <FormField
-            label="Default match radius (km)"
-            type="number"
-            placeholder="25"
-            error={errors.defaultMatchRadiusKm?.message}
-            {...register('defaultMatchRadiusKm', { valueAsNumber: true })}
-          />
+        <section className="card">
+          <div className="card-head">
+            <h2>Matching</h2>
+          </div>
+          <div className="card-body">
+            <Field
+              label="Default match radius (km)"
+              error={errors.defaultMatchRadiusKm?.message}
+            >
+              {(a11y) => (
+                <input
+                  {...a11y}
+                  className="field"
+                  type="number"
+                  placeholder="25"
+                  {...register('defaultMatchRadiusKm', { valueAsNumber: true })}
+                />
+              )}
+            </Field>
+          </div>
         </section>
 
         {/* Feature flags */}
-        <section className="card space-y-2">
-          <h2 className="card-title">Feature Flags</h2>
-          <ToggleField
-            label="Chat"
-            description="Enable in-app chat for jobs"
-            {...register('featureChatEnabled')}
-          />
-          <ToggleField
-            label="Reviews"
-            description="Enable post-job reviews"
-            {...register('featureReviewsEnabled')}
-          />
-          <ToggleField
-            label="Scheduling"
-            description="Enable appointment scheduling"
-            {...register('featureSchedulingEnabled')}
-          />
+        <section className="card">
+          <div className="card-head">
+            <h2>Feature flags</h2>
+          </div>
+          <div className="card-body">
+            <ToggleField
+              label="Chat"
+              description="Enable in-app chat for jobs"
+              {...register('featureChatEnabled')}
+            />
+            <ToggleField
+              label="Reviews"
+              description="Enable post-job reviews"
+              {...register('featureReviewsEnabled')}
+            />
+            <ToggleField
+              label="Scheduling"
+              description="Enable appointment scheduling"
+              {...register('featureSchedulingEnabled')}
+            />
+          </div>
         </section>
-
-        {/* Save button - sticky footer on mobile, standard flex on desktop */}
-        <div
-          className="sticky bottom-0 sm:static bg-[var(--paper)] sm:bg-transparent py-3 sm:py-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-[var(--paper-line)] flex justify-end z-10"
-          style={{ paddingBottom: 'max(var(--safe-bottom), 12px)' }}
-        >
-          <button
-            type="submit"
-            disabled={!isDirty || updateMutation.isPending}
-            className="btn btn-primary w-full sm:w-auto justify-center min-h-[44px]"
-          >
-            <Save size={14} />
-            {updateMutation.isPending ? 'Saving…' : 'Save Settings'}
-          </button>
-        </div>
       </form>
-    </div>
+    </>
   );
 };
 
-// ── Dumb field components ──────────────────────────────────────────────────────
-
-interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  error?: string;
-  hint?: string;
-}
-
-const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, error, hint, ...props }, ref) => (
-    <div>
-      <label className="block text-sm font-medium text-[var(--ink)] mb-1">{label}</label>
-      <input
-        ref={ref}
-        className={error ? 'field field-invalid' : 'field'}
-        {...props}
-      />
-      {hint && !error && <p className="text-xs text-[var(--ink-soft)] mt-1">{hint}</p>}
-      {error && <p className="text-xs text-[var(--red)] mt-1">{error}</p>}
-    </div>
-  ),
-);
-FormField.displayName = 'FormField';
+// ── Toggle row ─────────────────────────────────────────────────────────────────
 
 interface ToggleFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -183,19 +192,26 @@ interface ToggleFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const ToggleField = React.forwardRef<HTMLInputElement, ToggleFieldProps>(
-  ({ label, description, ...props }, ref) => (
-    <label className="flex items-center justify-between gap-4 cursor-pointer py-2 px-1 rounded hover:bg-[var(--paper)] transition-colors min-h-[44px]">
-      <div>
-        <p className="text-sm font-medium text-[var(--ink)]">{label}</p>
-        <p className="text-xs text-[var(--ink-soft)]">{description}</p>
-      </div>
-      <input
-        ref={ref}
-        type="checkbox"
-        className="w-5 h-5 accent-[var(--brand-500)] cursor-pointer shrink-0"
-        {...props}
-      />
-    </label>
-  ),
+  ({ label, description, ...props }, ref) => {
+    const descId = useId();
+    return (
+      <label className="choice">
+        <input
+          ref={ref}
+          type="checkbox"
+          role="switch"
+          className="switch"
+          aria-describedby={descId}
+          {...props}
+        />
+        <span className="stack" style={{ gap: 'var(--sp-1)' }}>
+          <span className="t-title">{label}</span>
+          <span className="t-meta c-soft" id={descId}>
+            {description}
+          </span>
+        </span>
+      </label>
+    );
+  },
 );
 ToggleField.displayName = 'ToggleField';
