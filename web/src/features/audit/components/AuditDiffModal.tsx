@@ -4,6 +4,7 @@
  * <pre> blocks (not the page).
  */
 import React from 'react';
+import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
 import { Modal } from '../../../components/Modal';
 import type { AuditLogEntry } from '../../../services/adminApi';
 
@@ -32,46 +33,40 @@ export const AuditDiffModal: React.FC<AuditDiffModalProps> = ({ entry, onClose }
     aria-label="Audit log detail"
   >
     {entry && (
-      <>
-        <dl className="text-[13px] space-y-2 mb-4">
-          <div className="flex gap-2">
-            <dt className="text-[var(--ink-soft)] w-24 shrink-0">Timestamp</dt>
-            <dd className="mono">{formatDate(entry.createdAtUtc)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-[var(--ink-soft)] w-24 shrink-0">Actor</dt>
-            <dd className="mono">{entry.userId ?? 'system'}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="text-[var(--ink-soft)] w-24 shrink-0">Entity</dt>
-            <dd className="mono">
-              {[entry.entityType, entry.entityId].filter(Boolean).join(' · ') || '—'}
-            </dd>
-          </div>
+      <div className="stack">
+        <DescriptionList>
+          <InfoRow label="Timestamp" valueClassName="mono">
+            {formatDate(entry.createdAtUtc)}
+          </InfoRow>
+          <InfoRow label="Actor" valueClassName="mono">
+            {entry.userId ?? 'system'}
+          </InfoRow>
+          <InfoRow label="Entity" valueClassName="mono">
+            {[entry.entityType, entry.entityId].filter(Boolean).join(' · ') || '—'}
+          </InfoRow>
           {entry.ipAddress && (
-            <div className="flex gap-2">
-              <dt className="text-[var(--ink-soft)] w-24 shrink-0">IP</dt>
-              <dd className="mono">{entry.ipAddress}</dd>
-            </div>
+            <InfoRow label="IP" valueClassName="mono">
+              {entry.ipAddress}
+            </InfoRow>
           )}
-        </dl>
+        </DescriptionList>
 
-        {/* Code blocks: overflow-x-auto is scoped to the pre, not the page */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="text-[13px] font-semibold mb-1">Before</h4>
-            <pre className="mono text-[12px] bg-[var(--brand-100)] rounded p-3 overflow-x-auto max-h-64 m-0">
+        {/* Code blocks: overflow-x is scoped to the pre, not the page */}
+        <div className="grid c2">
+          <div className="stack">
+            <h3 className="diff-title">Before</h3>
+            <pre className="diff-pre" tabIndex={0}>
               {prettyJson(entry.oldValues)}
             </pre>
           </div>
-          <div>
-            <h4 className="text-[13px] font-semibold mb-1">After</h4>
-            <pre className="mono text-[12px] bg-[var(--brand-100)] rounded p-3 overflow-x-auto max-h-64 m-0">
+          <div className="stack">
+            <h3 className="diff-title">After</h3>
+            <pre className="diff-pre" tabIndex={0}>
               {prettyJson(entry.newValues)}
             </pre>
           </div>
         </div>
-      </>
+      </div>
     )}
   </Modal>
 );
