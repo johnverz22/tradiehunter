@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Lock, Mail } from 'lucide-react';
 import api from '../../services/api';
 import { useAppName } from '../branding/hooks/useBrandConfig';
 import { BrandWordmark } from '../branding/components/BrandWordmark';
+import { Banner } from '../../components/Banner';
+import { Button } from '../../components/Button';
+import { Field } from '../../components/Field';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,96 +73,97 @@ export const AdminLogin: React.FC = () => {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  // Kit sign-in layout (frame `login`): brand aside from 1024 px up, form card always.
   return (
-    <div
-      className="min-h-dvh flex items-center justify-center bg-paper px-4 py-8 sm:py-12"
-      style={{
-        paddingTop: 'max(var(--safe-top), 2rem)',
-        paddingBottom: 'max(var(--safe-bottom), 2rem)',
-      }}
-    >
-      <div className="max-w-md w-full p-6 sm:p-8 card-pop">
-        <div className="text-center mb-6 sm:mb-8">
-          <BrandWordmark className="wordmark-lg block" />
-          <p className="text-ink-soft mt-2 text-sm">{appName} Admin Portal</p>
-          <h1 className="text-[22px] sm:text-[24px] font-bold text-ink mt-6 mb-0">Sign in</h1>
+    <div className="auth">
+      <aside className="hero auth-aside">
+        <BrandWordmark className="wordmark-lg" />
+        <div className="stack">
+          <p className="t-display">Marketplace operations, in one place.</p>
+          <p className="t-body c-onHeroSoft">
+            Verify tradies, review bank payments and settle disputes.
+          </p>
         </div>
+        <p className="t-meta c-onHeroSoft">Staff access only.</p>
+      </aside>
 
-        {error && (
-          <div
-            className="bg-red-100 dark:bg-red-900/30 text-[var(--red)] dark:text-red-400 p-3 rounded mb-4 text-center text-sm border border-red-200 dark:border-red-800"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
+      <main className="auth-main">
+        <div className="auth-card">
+          {/* The aside is hidden below 1024 px; keep the brand on the card there. */}
+          <BrandWordmark className="wordmark-lg auth-card-brand" />
+          <h1 className="t-h1">Sign in</h1>
+          <p className="t-body c-soft">Use your staff account to continue.</p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-ink mb-1.5">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoFocus
-              autoComplete="email"
-              aria-invalid={errors.email ? 'true' : 'false'}
-              {...register('email', { required: 'Email is required' })}
-              className="field"
-              placeholder="admin@example.com"
-            />
-            {errors.email && (
-              <span className="text-[var(--red)] text-xs mt-1 block" role="alert">{errors.email.message}</span>
-            )}
-          </div>
+          {error && (
+            <Banner variant="error" title="Sign-in failed">
+              {error}
+            </Banner>
+          )}
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-ink mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                aria-invalid={errors.password ? 'true' : 'false'}
-                aria-describedby={capsLock ? 'caps-lock-hint' : undefined}
-                {...register('password', { required: 'Password is required' })}
-                onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
-                onBlur={() => setCapsLock(false)}
-                className="field pr-16"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                aria-controls="password"
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 px-3 text-xs font-semibold text-[var(--brand-500)] hover:underline"
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
-            {capsLock && (
-              <span id="caps-lock-hint" className="text-[var(--amber-ink)] text-xs mt-1 block" role="status">
-                Caps Lock is on.
-              </span>
-            )}
-            {errors.password && (
-              <span className="text-[var(--red)] text-xs mt-1 block" role="alert">{errors.password.message}</span>
-            )}
-          </div>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <Field label="Email Address" error={errors.email?.message}>
+              {(control) => (
+                <span className="input-icon">
+                  <Mail size={20} aria-hidden="true" />
+                  <input
+                    {...control}
+                    type="email"
+                    autoFocus
+                    autoComplete="email"
+                    {...register('email', { required: 'Email is required' })}
+                    className="field"
+                    placeholder="admin@example.com"
+                  />
+                </span>
+              )}
+            </Field>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn btn-primary w-full justify-center"
-          >
-            {isLoading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
-      </div>
+            <Field label="Password" error={errors.password?.message}>
+              {(control) => (
+                <>
+                  <span className="input-icon">
+                    <Lock size={20} aria-hidden="true" />
+                    <input
+                      {...control}
+                      aria-describedby={
+                        [control['aria-describedby'], capsLock ? 'caps-lock-hint' : null]
+                          .filter(Boolean)
+                          .join(' ') || undefined
+                      }
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      {...register('password', { required: 'Password is required' })}
+                      onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
+                      onBlur={() => setCapsLock(false)}
+                      className="field has-trailing"
+                      placeholder="••••••••"
+                    />
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      className="input-trailing"
+                      aria-controls={control.id}
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword((v) => !v)}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </Button>
+                  </span>
+                  {capsLock && (
+                    <div id="caps-lock-hint" className="help" role="status">
+                      Caps Lock is on.
+                    </div>
+                  )}
+                </>
+              )}
+            </Field>
+
+            <Button type="submit" kind="accent" size="lg" block loading={isLoading}>
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 };

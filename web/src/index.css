@@ -113,6 +113,41 @@ div.nav-item-static:hover {
   color: var(--on-sidebar-soft);
 }
 
+/* ── Sign-in (kit `.auth`): app-level additions, tokens only ──────────
+   Design-system gaps (DESIGN_GUIDE §12), so these rules can go once the kit has them:
+   `.auth` uses 100vh (taller than the visible area on phones) and has no safe-area
+   padding; the form needs a field stack; the show/hide control inside `.input-icon`;
+   the brand on the card when the aside is hidden (< 1024 px). */
+.auth {
+  min-height: 100dvh;
+}
+.auth-main {
+  padding-top: max(var(--sp-6), var(--safe-top));
+  padding-bottom: max(var(--sp-6), var(--safe-bottom));
+}
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.auth-card-brand {
+  align-self: flex-start;
+}
+@media (min-width: 1024px) {
+  .auth-card-brand {
+    display: none;
+  }
+}
+.input-icon > .field.has-trailing {
+  padding-right: var(--sp-16);
+}
+.input-icon > .input-trailing {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-1);
+  transform: translateY(-50%);
+}
+
 /* ── Focus ────────────────────────────────────────────
    Thin 2px outline sitting outside the field, per the
    mockups. A box-shadow ring (Tailwind's ring-2) stacks
