@@ -37,7 +37,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   return (
     <aside className="sidebar" aria-label="Admin navigation">
       <div className="sidebar-brand">
-        <BrandWordmark className="wordmark wordmark-lg" />
+        <BrandWordmark className="wordmark-lg" />
         <span className="monogram" aria-hidden="true">TH</span>
       </div>
 

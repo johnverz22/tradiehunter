@@ -110,7 +110,11 @@ Shell
   - Not done (data needed): the frames show waiting counts on the Credentials and Payments nav items (`.nav-count`); no count source is wired, so none are shown. Log as a gap, not built.
   - Known visual deltas for the manual pass: top bar is now the kit's glass bar on desktop/tablet too (theme button at the right instead of the content corner); the account dropdown is the kit menu; the drawer matches the sidebar look.
   - [~] Deferred (manual): keyboard walk of the drawer (open, Tab trap, Esc, focus back to the menu button) and of the account menu (open, arrows, Home/End, Esc, Tab, outside press); visual check against `nav_drawer`, `dashboard_phone`, `dashboard` in light + dark at 1280/820/390; confirm the drawer footer is not hidden under the browser bar on a real phone.
-- [ ] **2.19** `BrandWordmark` / `useBrandConfig` rendering on the new tokens (no `--hue`) (S)
+- [x] **2.19** `BrandWordmark` / `useBrandConfig` rendering on the new tokens (no `--hue`) (S)
+  - Done: `features/branding/components/BrandWordmark.tsx` renders the kit `.wordmark` (`<span class="wordmark …">lead<span>accent</span></span>`): the inline `fontFamily: var(--font-display)` and the legacy `text-[var(--amber)]` accent class are gone (the kit sets the display face, brand colour, accent colour, and recolours it on `.sidebar`/`.hero`/`.on-dark`). The component now always adds `wordmark`; `className` adds modifiers only (`wordmark-lg`, `phone-only`), so the three layout call sites (`SidebarNav`, `MobileDrawer`, `TopBar`) no longer pass `wordmark`. `useBrandConfig`, `useAppName`, `FALLBACK_BRAND`, `splitBrandName` and the name split are unchanged (data layer; no `--hue` anywhere in `features/branding`, D5 already holds). The `TradieFixo` fallback name and support strings stay until 6.3.
+  - One call site outside the shell: `AdminLogin` passed `block text-[28px] sm:text-[32px] font-bold text-brand-900` (legacy brand name, and it would now lose to the kit font rule); changed to `wordmark-lg block` so the sign-in wordmark stays correct. The rest of the page is task 3.1. Legacy baseline 228 → 225 uses (26 → 25 files). No e2e spec references the wordmark.
+  - Visual delta: sign-in wordmark is 28 px at all widths (was 28 / 32 px) and uses the kit colours; the accent segment is the kit accent colour.
+  - [~] Deferred (manual): look at the wordmark in the sidebar, drawer, phone top bar and sign-in page, light + dark (accent legible on each surface).
 - [ ] **2.20** Verify against `dashboard`, `dashboard_rail`, `dashboard_phone`, `nav_drawer`; e2e green (M)
 
 ## Phase 3 — Entry, simple and list pages
@@ -161,6 +165,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, task 2.19: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (228 → 225 uses, 25 files), design gate (126/126) pass. **Deferred (manual):** wordmark visual check, see task 2.19.
 - 2026-11-18, task 2.18: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (240 → 228 uses, 26 files), design gate (126/126) pass. **Deferred (manual):** drawer and account menu keyboard/visual checks, see task 2.18.
 - 2026-11-18, task 2.17: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (246 → 240 uses, 29 files), design gate (126/126) pass. **Deferred (manual):** sidebar keyboard/visual checks, see task 2.17.
 - 2026-11-18, task 2.16: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (247 → 246 uses, 30 files), design gate (126/126) pass. **Deferred (manual):** skip link and shell layout checks, see task 2.16.

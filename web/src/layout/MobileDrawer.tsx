@@ -112,7 +112,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
       >
         <div className="sidebar-brand">
           <div className="row between nowrap">
-            <BrandWordmark className="wordmark wordmark-lg" />
+            <BrandWordmark className="wordmark-lg" />
             <button
               type="button"
               className="nav-item nav-item-icon"

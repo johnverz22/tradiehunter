@@ -55,7 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       <Menu size={20} />
     </IconButton>
 
-    <BrandWordmark className="wordmark phone-only" />
+    <BrandWordmark className="phone-only" />
 
     <span className="grow" />
 

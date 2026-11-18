@@ -79,7 +79,7 @@ export const AdminLogin: React.FC = () => {
     >
       <div className="max-w-md w-full p-6 sm:p-8 card-pop">
         <div className="text-center mb-6 sm:mb-8">
-          <BrandWordmark className="block text-[28px] sm:text-[32px] font-bold text-brand-900" />
+          <BrandWordmark className="wordmark-lg block" />
           <p className="text-ink-soft mt-2 text-sm">{appName} Admin Portal</p>
           <h1 className="text-[22px] sm:text-[24px] font-bold text-ink mt-6 mb-0">Sign in</h1>
         </div>
