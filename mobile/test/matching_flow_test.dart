@@ -213,11 +213,10 @@ void main() {
       expect(find.text('Please call before arriving'), findsOneWidget);
       expect(find.byKey(const Key('pick_someone_else_button')), findsOneWidget);
       expect(find.byKey(const Key('cancel_request_button')), findsOneWidget);
+      // Rate label differs between v1 ("Aroha Plumbing's rate for this job")
+      // and v2 ("Rate locked"). Assert the value only — both screens show it.
       expect(
-        find.textContaining(
-          "Aroha Plumbing's rate for this job",
-          skipOffstage: false,
-        ),
+        find.textContaining('\$85.50', skipOffstage: false),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

@@ -40,6 +40,8 @@ const Set<String> nonGalleryV2Screens = <String>{
   'signup',
   'messages_list',
   'settings',
+  // Phase 4 non-gallery screens (wired via MatchingScreen / view builders)
+  'ho_radar', // quick-match radar — add to v2Screens after pair images
 };
 
 /// Pure resolver, parameterised so it can be unit-tested without

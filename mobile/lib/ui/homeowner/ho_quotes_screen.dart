@@ -11,6 +11,12 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
 
+/// Job title for the quotes app-bar subtitle. `null` means the fetch failed
+/// or is in progress; the subtitle shows the count alone in that case (G-6).
+final quotesJobProvider = FutureProvider.autoDispose.family<Job?, String>(
+  (ref, jobId) => ref.watch(jobsRepositoryProvider).getJobById(jobId),
+);
+
 /// v2 presentation for the existing project quote comparison contract.
 class HoQuotesScreen extends ConsumerStatefulWidget {
   const HoQuotesScreen({super.key, required this.jobId});
@@ -144,6 +150,11 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
       builder: (context) {
         final state = ref.watch(quotesProvider(widget.jobId));
         final quotes = state.quotes;
+        // Job title for the subtitle — G-6: omit rather than guess if null.
+        final jobTitle = ref
+            .watch(quotesJobProvider(widget.jobId))
+            .valueOrNull
+            ?.title;
         final body = state.isLoading && quotes.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.error != null && quotes.isEmpty
@@ -176,7 +187,11 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
         return THScaffold(
           appBar: THAppBar(
             title: 'Quotes',
-            subtitle: quotes.isEmpty ? null : '${quotes.length} received',
+            subtitle: quotes.isEmpty
+                ? null
+                : jobTitle != null
+                ? '$jobTitle · ${quotes.length} received'
+                : '${quotes.length} received',
           ),
           scrollable: false,
           body: body,

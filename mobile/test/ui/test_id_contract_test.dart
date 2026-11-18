@@ -60,6 +60,9 @@ const contractIds = <String>[
   'home_search',
   // review
   'star_',
+  // quick-match radar (v2 N-03)
+  'radar_try_again_button',
+  'radar_cancel_button',
 ];
 
 /// Dynamic id families — a contract entry ending in '_' is a prefix.
