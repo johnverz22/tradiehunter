@@ -36,7 +36,7 @@ Use through `context.th.<name>` (Flutter) or `var(--<name>)` (CSS). Never hardco
 | `heroStart` → `heroEnd` | #1E3A8A → #2849B5 | #17255C → #2A44A0 | Hero card gradient |
 | `onHero`, `heroGold` | #FFF, #FFD495 | #FFF, #FFD495 | Text on hero cards |
 | `line`, `track` | #DCE2EF | #26345A | Borders, dividers, inactive progress |
-| `glass` | white 86% | surface 82% | Dock and sticky bar (blurred) |
+| `glass` | white 86% | surface 82% | Sticky bar (blurred). The dock paints `glass` over `paper`, so it is opaque and list rows never show through |
 
 **Contrast is enforced by the build.** 19 text/background pairs per theme must reach 4.5:1 (WCAG AA) or the build fails. See `tokens/contrast-report.txt`. Two earlier values failed and were corrected (`success` light, `heroGold`).
 
