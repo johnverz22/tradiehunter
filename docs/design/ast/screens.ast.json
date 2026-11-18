@@ -1736,13 +1736,13 @@
          "c": [
           {
            "t": "text",
-           "v": "6 yrs",
+           "v": "96",
            "s": "money",
            "tone": "onHero"
           },
           {
            "t": "text",
-           "v": "Experience",
+           "v": "Jobs done",
            "s": "meta",
            "tone": "onHeroSoft",
            "size": 11.5

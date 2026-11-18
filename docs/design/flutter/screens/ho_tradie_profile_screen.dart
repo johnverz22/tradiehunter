@@ -78,8 +78,8 @@ class HoTradieProfileScreen extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      THText('6 yrs', style: THTextStyle.money, tone: THTone.onHero),
-                      THText('Experience', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
+                      THText('96', style: THTextStyle.money, tone: THTone.onHero),
+                      THText('Jobs done', style: THTextStyle.meta, tone: THTone.onHeroSoft, size: 11.5),
                     ],
                   ),
                 ],
