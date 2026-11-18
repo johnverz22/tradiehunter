@@ -1,11 +1,16 @@
 /**
- * Banner — shared alert/status banner replacing the 10+ inline alert divs.
+ * Banner — persistent inline message (design system: COMPONENTS.md "Banner").
  *
- * Maps variant to the design token colours. Uses role="alert" for
- * error and success variants so screen readers announce immediately.
+ * Flat surface with a small tone icon tile; warn and danger add a tone border (kit CSS).
+ * No side stripe, no tinted fill. Tone is never colour-only: the icon tile always renders,
+ * and an optional `title` states what happened. `role="alert"` for errors, `role="status"`
+ * for everything else.
+ *
+ * Variants keep their original names (`info | warn | error | success`) so call sites do not change.
  */
 import React from 'react';
-import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
+import { Button } from './Button';
 
 type BannerVariant = 'info' | 'warn' | 'error' | 'success';
 
@@ -17,6 +22,8 @@ interface BannerAction {
 interface BannerProps {
   variant: BannerVariant;
   children: React.ReactNode;
+  /** Optional short heading above the text (what happened). */
+  title?: string;
   /** Optional inline action button (e.g. "Retry"). */
   action?: BannerAction;
   className?: string;
@@ -25,63 +32,45 @@ interface BannerProps {
 const CONFIG: Record<
   BannerVariant,
   {
-    Icon: React.FC<{ size: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
-    containerClass: string;
-    iconClass: string;
-    role?: string;
+    Icon: React.ElementType;
+    /** Kit class suffix on `.banner-*`. */
+    tone: 'info' | 'ok' | 'warn' | 'danger';
+    tile: string;
+    role: 'alert' | 'status';
   }
 > = {
-  info: {
-    Icon: Info,
-    containerClass:
-      'bg-[var(--brand-100)] border border-[var(--paper-line)] text-[var(--ink)]',
-    iconClass: 'text-[var(--brand-500)]',
-  },
-  warn: {
-    Icon: AlertTriangle,
-    containerClass:
-      'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[var(--amber-dark)] dark:text-[var(--amber-ink)]',
-    iconClass: '',
-  },
-  error: {
-    Icon: XCircle,
-    containerClass:
-      'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-[var(--red-ink)]',
-    iconClass: '',
-    role: 'alert',
-  },
-  success: {
-    Icon: CheckCircle,
-    containerClass:
-      'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400',
-    iconClass: '',
-    role: 'alert',
-  },
+  info: { Icon: Info, tone: 'info', tile: 'tile tile-xs', role: 'status' },
+  warn: { Icon: AlertTriangle, tone: 'warn', tile: 'tile tile-xs tile-warn', role: 'status' },
+  error: { Icon: XCircle, tone: 'danger', tile: 'tile tile-xs tile-danger', role: 'alert' },
+  success: { Icon: CheckCircle2, tone: 'ok', tile: 'tile tile-xs tile-ok', role: 'status' },
 };
 
 export const Banner: React.FC<BannerProps> = ({
   variant,
   children,
+  title,
   action,
   className = '',
 }) => {
-  const { Icon, containerClass, iconClass, role } = CONFIG[variant];
+  const { Icon, tone, tile, role } = CONFIG[variant];
 
   return (
-    <div
-      role={role}
-      className={`flex flex-wrap items-start gap-2 rounded-lg px-4 py-3 text-sm ${containerClass} ${className}`}
-    >
-      <Icon size={14} className={`mt-0.5 shrink-0 ${iconClass}`} aria-hidden="true" />
-      <span className="flex-1 min-w-0">{children}</span>
-      {action && (
-        <button
-          className="btn btn-ghost !py-1 !px-2.5 !text-xs shrink-0"
-          onClick={action.onClick}
-        >
-          {action.label}
-        </button>
-      )}
+    <div role={role} className={`banner banner-${tone} ${className}`.trim()}>
+      <span className={tile} aria-hidden="true">
+        <Icon size={18} />
+      </span>
+      <div className="banner-body">
+        {title ? <div className="banner-title">{title}</div> : null}
+        {/* With a title the message is secondary copy; without one it is the message itself. */}
+        {title ? <div className="banner-text">{children}</div> : children}
+      </div>
+      {action ? (
+        <div className="banner-actions">
+          <Button kind="ghost" size="sm" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 };

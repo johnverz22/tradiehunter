@@ -51,7 +51,9 @@ Foundations
   - Done: `components/Toast.tsx` (`Toast`, `ToastProvider`) + `toast-context.ts` (`useToast`): info/ok auto-dismiss at 3 s, warn/danger persist with `role="alert"`, always a Dismiss button; provider mounted in `main.tsx`. No page calls it yet; per the design rule, errors must also be shown inline when pages adopt it. The kit defines no `.toast-ok/-warn/-danger` rules (tone lives in the icon tile), the classes are harmless hooks.
 
 Existing components (keep names and props)
-- [ ] **2.6** `Banner` (`role` alert/status, icon tile, no side stripe) (S)
+- [x] **2.6** `Banner` (`role` alert/status, icon tile, no side stripe) (S)
+  - Done: `components/Banner.tsx` renders the kit markup (`.banner banner-{info|ok|warn|danger}`, `.tile.tile-xs` icon tile, `.banner-body`, `.banner-actions` with the shared `Button` ghost/sm). Props and variant names unchanged (`variant`, `children`, `action`, `className`); added optional `title` (shows `.banner-title` + `.banner-text`; without it the message renders as plain body text). Deviation: `success` is now `role="status"` (was `alert`) per COMPONENTS.md; only `error` is `role="alert"`. No page edited; the 17 call sites still pass only `children`, so frame-style titles are added when each page is migrated. Legacy baseline 289 → 283 uses (40 → 39 files).
+  - [~] Deferred (manual): visual check of all four variants in light + dark against `dashboard` / `user_detail` / `dispute_detail` / `job_detail` frames; check the `action` button wraps sensibly at 390 (kit `.banner` does not wrap; if it squeezes, fix in the design system, not here).
 - [ ] **2.7** `Modal` + `ConfirmModal` (focus trap, Esc, return focus, Cancel first when destructive, bottom sheet < 640) (L)
 - [ ] **2.8** `DataTable` (`.table-wrap`/`.table`, sticky header, `aria-sort`, hidden actions header, scrolls in wrapper) (L)
 - [ ] **2.9** `FilterBar` (`role="search"`, chips `aria-pressed`) (S)
@@ -117,6 +119,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, task 2.6: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (289 → 283 uses, 39 files), design gate (126/126) pass.
 - 2026-11-18, tasks 2.1–2.5: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check`, `design:legacy` (302 → 289 uses, 40 files), design gate (126/126) pass. **Deferred (manual):** visual check of the new components and of `StatusBadge`/payout badges in tables, light + dark; keyboard check of `Toast` dismiss and `Button` loading state.
 
 ## Parked / blocked
