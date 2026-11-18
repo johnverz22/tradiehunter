@@ -13,16 +13,23 @@
 # screen cannot be mistaken for a v2 one. Override with the env var
 # (`UI_V2=ho_home,ho_jobs ./scripts/run-shots.sh ...`), `UI_V2=` (empty,
 # i.e. the shipped default flags) or an extra `UI_V2=...` argument.
-# `SHOT_TEXT_SCALE` (default 1.0) is passed through and recorded.
+# `SHOT_TEXT_SCALE` (default 1.0, 2.0 = 200%) is applied by the driver (it fails
+# the run if the app renders another scale) and recorded in run.json. A run
+# with a scale other than 1.0 writes to `docs/runs/v2/screenshots-text<pct>/`
+# (e.g. screenshots-text200) so it cannot overwrite the 100% captures; an
+# explicit SHOTS_OUT_ROOT always wins. Compare such a run with
+# `scripts/compare-shots.py --shots docs/runs/v2/screenshots-text200`.
 # Framework exceptions raised during the run are attributed to the screen being
 # captured (`__EXCEPTION__` lines from helpers/exception_log.dart) and collected
-# in `<theme>/<persona>/exceptions.txt` for the P-03 triage.
+# in `<theme>/<persona>/exceptions.txt` for the P-03 triage. Captures a driver
+# could not take (`__SHOT_SKIPPED__ <name> | <reason>`) are collected in
+# `<theme>/<persona>/skipped.txt`. Runs of another driver (SHOT_FILE=
+# integration_test/screenshots_variants_test.dart) write `exceptions-variants.txt`
+# and `skipped-variants.txt` instead, so they do not overwrite the base run's.
 # Every run writes a `run.json` next to the PNGs (flag, commit, device,
 # theme, text scale) into `<theme>/<persona>/` and `<theme>/shared/`.
 set -u
 PERSONA=$1; THEME=$2; UDID=$3; shift 3
-OUT=${SHOTS_OUT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)/docs/runs/v2/screenshots}/$THEME
-mkdir -p "$OUT/shared" "$OUT/$PERSONA"
 
 # Capture flags. An explicit `UI_V2=...` extra argument wins over the env var,
 # which wins over the default `all`.
@@ -37,11 +44,24 @@ for kv in "$@"; do
   esac
 done
 
+# Output root: 100% text scale keeps the historical folder; any other scale gets
+# its own (the scale is only known once the arguments above are parsed).
+REPO=$(cd "$(dirname "$0")/.." && pwd)
+if awk -v s="$TEXT_SCALE" 'BEGIN { exit !(s + 0 > 0) }'; then :; else
+  echo "SHOT_TEXT_SCALE must be a positive number, got '$TEXT_SCALE'" >&2; exit 2
+fi
+ROOT_DIR="$REPO/docs/runs/v2/screenshots"
+if awk -v s="$TEXT_SCALE" 'BEGIN { exit !(s + 0 != 1) }'; then
+  ROOT_DIR="$ROOT_DIR-text$(awk -v s="$TEXT_SCALE" 'BEGIN { printf "%d", s * 100 + 0.5 }')"
+fi
+OUT=${SHOTS_OUT_ROOT:-$ROOT_DIR}/$THEME
+mkdir -p "$OUT/shared" "$OUT/$PERSONA"
+
 DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true --dart-define "SHOT_THEME=$THEME")
 DEFINES+=(--dart-define "UI_V2=$UI_V2_VALUE" --dart-define "SHOT_TEXT_SCALE=$TEXT_SCALE")
 for kv in "${EXTRA[@]+"${EXTRA[@]}"}"; do DEFINES+=(--dart-define "$kv"); done
 
-REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+REPO_ROOT=$REPO
 COMMIT=$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
 if [ -n "$(git -C "$REPO_ROOT" status --porcelain 2>/dev/null)" ]; then COMMIT="$COMMIT-dirty"; fi
 DEVICE_NAME=$(xcrun simctl list devices 2>/dev/null | sed -n "s/^[[:space:]]*\(.*\) ($UDID) .*/\1/p" | head -1)
@@ -59,16 +79,25 @@ printf '%s' "$RUN_JSON" > "$OUT/shared/run.json"
 
 cd "$(dirname "$0")/../mobile"
 SHOT_FILE=${SHOT_FILE:-integration_test/screenshots_test.dart}
+# Log files are per driver so a variants run never truncates the base run's.
+DRIVER=$(basename "$SHOT_FILE" .dart); DRIVER=${DRIVER%_test}; DRIVER=${DRIVER#screenshots}
+SUFFIX=${DRIVER//_/-}   # "" for the base driver, "-variants" for the variants one
+EXC_FILE="$OUT/$PERSONA/exceptions$SUFFIX.txt"
+SKIP_FILE="$OUT/$PERSONA/skipped$SUFFIX.txt"
 echo "=== persona=$PERSONA theme=$THEME udid=$UDID out=$OUT file=$SHOT_FILE ==="
 echo "=== UI_V2=${UI_V2_VALUE:-<default flags>} text_scale=$TEXT_SCALE commit=$COMMIT device=$DEVICE_NAME ==="
-: > "$OUT/$PERSONA/exceptions.txt"
+: > "$EXC_FILE"
+: > "$SKIP_FILE"
 "${FLUTTER_BIN:-flutter}" test \
   "$SHOT_FILE" \
   --device-id "$UDID" --reporter expanded "${DEFINES[@]}" 2>&1 | \
 while IFS= read -r line; do
   echo "$line"
   if [[ "$line" == __EXCEPTION__* ]]; then
-    echo "${line#__EXCEPTION__ }" >> "$OUT/$PERSONA/exceptions.txt"
+    echo "${line#__EXCEPTION__ }" >> "$EXC_FILE"
+  fi
+  if [[ "$line" == __SHOT_SKIPPED__* ]]; then
+    echo "${line#__SHOT_SKIPPED__ }" >> "$SKIP_FILE"
   fi
   if [[ "$line" =~ __SHOT__[[:space:]]+([^[:space:]]+) ]]; then
     name="${BASH_REMATCH[1]}"
@@ -77,4 +106,5 @@ while IFS= read -r line; do
       && echo "  [captured] $name.png" || echo "  [CAPTURE FAILED] $name"
   fi
 done
-echo "=== exceptions: $(grep -c . "$OUT/$PERSONA/exceptions.txt") distinct (see $OUT/$PERSONA/exceptions.txt) ==="
+echo "=== exceptions: $(grep -c . "$EXC_FILE") distinct (see $EXC_FILE) ==="
+echo "=== skipped captures: $(grep -c . "$SKIP_FILE") (see $SKIP_FILE) ==="
