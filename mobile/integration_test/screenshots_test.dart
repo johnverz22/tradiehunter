@@ -26,7 +26,9 @@
 
 import 'package:fixo/main.dart' as app;
 import 'package:fixo/router/app_router.dart';
+import 'package:fixo/widgets/notification_center.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -136,6 +138,56 @@ Future<void> _push(
   ExceptionLog.mark(name);
   appRouter.push(location);
   await _shot(tester, name, settle: settle);
+}
+
+/// The feed is local and FCM-fed (no backend inbox), so a fresh simulator
+/// shows only the empty state, which cannot be compared with the mockup's five
+/// rows. Seed five capture-only samples (three read, two unread), take the
+/// shot, then clear the feed so nothing persists in the simulator's prefs.
+/// If the store cannot be reached the shot is skipped, never silently empty.
+Future<void> _captureNotifications(WidgetTester tester) async {
+  const name = 'homeowner/22_notifications';
+  final NotificationCenter center;
+  try {
+    center = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp).first),
+      listen: false,
+    ).read(notificationCenterProvider);
+    await center.ensureLoaded();
+    await center.clear();
+    final now = DateTime.now();
+    const samples = [
+      ('payments', 'Approve final amount', 'Final amount ready for approval.'),
+      ('jobs', 'Extra cost request', 'A tradie asked to add an extra cost.'),
+      ('jobs', 'Request accepted', 'A tradie accepted your job.'),
+      ('jobs', 'Quote received', 'A new quote is waiting for you.'),
+      ('reminders', 'Reminder', 'Your job is scheduled for tomorrow.'),
+    ];
+    // add() puts the newest first, so seed oldest to newest.
+    for (var i = samples.length - 1; i >= 0; i--) {
+      final (category, title, body) = samples[i];
+      await center.add(
+        FixoNotification(
+          id: 'shot-$i',
+          title: title,
+          body: body,
+          category: category,
+          receivedAt: now.subtract(Duration(hours: i * 6)),
+        ),
+      );
+    }
+    for (var i = 2; i < samples.length; i++) {
+      await center.markRead('shot-$i'); // rows 0 and 1 stay unread
+    }
+  } catch (e) {
+    shotSkipped(name, 'could not seed the notification feed: $e');
+    return;
+  }
+  try {
+    await _go(tester, '/notifications', name);
+  } finally {
+    await center.clear();
+  }
 }
 
 void main() {
@@ -263,7 +315,7 @@ Future<void> _captureHomeowner(WidgetTester tester) async {
     'homeowner/15b_payment_status_awaiting',
   );
   await _go(tester, '/jobs/$_paymentJobId/dispute', 'homeowner/18_dispute');
-  await _go(tester, '/notifications', 'homeowner/22_notifications');
+  await _captureNotifications(tester);
   await _go(tester, '/find-tradie', 'homeowner/23_browse');
   await _go(tester, '/categories', 'homeowner/24_categories');
   await _go(
