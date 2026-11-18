@@ -83,7 +83,7 @@ Reasons, in order of weight:
 
 **Change:** `src/theme/*`, `src/index.css`, `index.html`, `public/fonts`, `src/components/*`, `src/layout/*`, and the JSX/class names inside page files.
 
-**Branching:** one long-lived branch `design-web-migration` off `dev`; one PR per phase (Phase 3 and 4: one PR per page or small group). Each PR must be buildable, lint-clean and e2e-green on its own.
+**Branching:** one long-lived branch `design-web-migration`, created from `design` (the design system lives there and `dev` has 12 commits `design` lacks; merge `dev` in before the final merge); one PR per phase (Phase 3 and 4: one PR per page or small group). Each PR must be buildable, lint-clean and e2e-green on its own.
 
 ### The compat shim (temporary)
 
@@ -105,7 +105,8 @@ Every shim rule carries a `/* legacy: remove in P6 */` comment so Phase 6 can fi
 - Confirm strategy (§2) and the open decisions (§6).
 - Capture before-shots of every route in light and dark at 1280, 820 and 390 with `web/e2e/admin-shots.mjs`; store outside the repo (CI artifact or a zip). Used for diffing, not committed.
 - Record the baseline: `npm run lint`, `npm run build`, `npm run test:e2e` all green on `dev`.
-- Tag `pre-web-design-migration` on the starting commit.
+- Tag `pre-web-design-migration` on the starting commit. Done 2026-11-18.
+- e2e and screenshots need a browser and live API: run locally before Phase 1 (todo 0.3, 0.4).
 
 ### Phase 1 — Foundation (app looks nearly the same, new tokens live)
 

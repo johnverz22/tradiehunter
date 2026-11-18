@@ -11,10 +11,10 @@
 
 - [x] **0.1** Owner confirms strategy D1: **B approved 2026-11-18** (S)
 - [x] **0.2** Owner answers D2–D8: **all proposed defaults approved 2026-11-18** (S)
-- [ ] **0.3** Confirm `dev` is green: `npm run lint`, `npm run build`, `npm run test:e2e` in `web/` (S)
-- [ ] **0.4** Capture before-shots of all 17 routes, light + dark, 1280/820/390 via `web/e2e/admin-shots.mjs`; keep outside the repo (M)
-- [ ] **0.5** Tag `pre-web-design-migration`; create branch `design-web-migration` off `dev` (S)
-- [ ] **0.6** Run `node docs/design/web/tools/build.mjs --check` and confirm green (S)
+- [~] **0.3** Baseline in `web/` on the `design` branch: `npm ci`, `npm run lint` (0 errors, 1 warning: `isAdminAuthenticated` in `services/adminApi.ts`) and `npm run build` pass. **Parked — e2e not run:** `npm run test:e2e` needs a live API and a Chromium install, neither available in the cloud session; run it locally and record the result here (S)
+- [~] **0.4** Capture before-shots of all 17 routes, light + dark, via `web/e2e/admin-shots.mjs` (it uses 1440/900x1180/390 and writes to `docs/runs/...` inside the repo; set it to write outside the repo or do not commit the output). **Parked — needs a browser and the live app; run locally before starting Phase 1** (M)
+- [x] **0.5** Tag `pre-web-design-migration` and create branch `design-web-migration`. Branched off `design`, not `dev`: `dev` lacks `docs/design/web` and `design` lacks 12 `dev` commits, so merge `dev` into the branch before the final merge (S)
+- [x] **0.6** Run `node docs/design/web/tools/build.mjs --check` and confirm green: `check ok: 18 frames, 26 files, contrast 126/126 pass` (S)
 
 ## Phase 1 — Foundation
 
