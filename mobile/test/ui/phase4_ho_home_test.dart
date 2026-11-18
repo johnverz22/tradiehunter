@@ -16,11 +16,13 @@ import 'package:fixo/ui/homeowner/ho_home_screen.dart';
 import 'package:fixo/ui/homeowner/ho_job_navigation.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
+import 'package:fixo/widgets/notification_center.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'phase3_test_setup.dart';
 
@@ -216,6 +218,9 @@ void main() {
   });
 
   group('ThHomeScreen', () {
+    // NotificationCenter persists to SharedPreferences; keep tests isolated.
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
     Future<(GoRouter, _JobsRepo)> pump(
       WidgetTester tester,
       List<Job> jobs, {
@@ -356,6 +361,68 @@ void main() {
       await tester.tap(find.byKey(const Key('home_category_More')));
       await tester.pumpAndSettle();
       expect(find.text('At /categories'), findsOneWidget);
+    });
+
+    testWidgets('bell dot follows the unread notification count', (
+      tester,
+    ) async {
+      await pump(tester, const []);
+      bool dot() => tester.widget<THIconButton>(find.byType(THIconButton)).dot;
+      expect(dot(), isFalse);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byKey(const Key('homeowner_dashboard'))),
+      );
+      final center = container.read(notificationCenterProvider.notifier);
+      await center.add(
+        FixoNotification(
+          id: 'n1',
+          title: 'Quote received',
+          category: 'jobs',
+          receivedAt: DateTime(2026, 11, 3, 9),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(dot(), isTrue);
+
+      await center.markAllRead();
+      await tester.pumpAndSettle();
+      expect(dot(), isFalse);
+    });
+
+    for (final empty in [true, false]) {
+      testWidgets('trust note shows (empty account=$empty)', (tester) async {
+        await pump(tester, [
+          if (!empty) _job('r', 'Requested', title: 'Fence'),
+        ]);
+        expect(find.byKey(const Key('home_trust_note')), findsOneWidget);
+        expect(
+          find.text(
+            'Pay only after you approve the final amount. '
+            'Rates always include GST.',
+          ),
+          findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets('active jobs are capped at three; See all jobs stays', (
+      tester,
+    ) async {
+      await pump(tester, [
+        for (var i = 1; i <= 5; i++) _job('a$i', 'Requested', title: 'Job $i'),
+      ]);
+      expect(kThHomeActiveJobsMax, 3);
+      for (final shown in ['Job 1', 'Job 2', 'Job 3']) {
+        expect(find.text(shown), findsOneWidget);
+      }
+      expect(find.text('Job 4'), findsNothing);
+      expect(find.text('Job 5'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('home_see_all')));
+      await tester.pumpAndSettle();
+      // `context.go('/jobs')` replaces the stack, so there is nothing to pop.
+      expect(find.text('At /jobs'), findsOneWidget);
     });
   });
 }

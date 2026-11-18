@@ -8,10 +8,12 @@
 // same card navigation (see ho_job_navigation.dart) and the same Key
 // `homeowner_dashboard`. Hosted inside ThShell, which supplies the dock.
 //
-// API gaps (plan §4.1, G-3 / G-5): the "Needs your attention" hero is derived
-// client-side from job statuses; the mockup's "Top rated near you" list and
-// per-tradie rating/distance have no source on this screen's endpoints, so
-// that section is omitted rather than invented.
+// API gaps (plan §4.1, G-3 / G-5 / G-13): the "Needs your attention" hero is
+// derived client-side from job statuses. The mockup's "Top rated near you"
+// list is still omitted, not invented: `GET /api/services/search`
+// (ServiceSearchResultDto) returns name, rate and distance but no rating or
+// review count, needs a serviceId, and the home screen has no search location.
+// The fix-plan default for D-7 assumed a rating in that DTO; see G-13.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -24,6 +26,7 @@ import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
+import '../../widgets/notification_center.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
@@ -43,6 +46,10 @@ const List<(IconData, String)> kThHomeCategories = [
   (Icons.auto_awesome_rounded, 'Cleaning'),
   (Icons.home_rounded, 'Roofing'),
 ];
+
+/// Active jobs shown on the home screen; the rest sit behind "See all jobs"
+/// (fix plan §4.3.1: max 3 cards + See all).
+const int kThHomeActiveJobsMax = 3;
 
 class ThHomeScreen extends ConsumerStatefulWidget {
   const ThHomeScreen({super.key});
@@ -91,6 +98,9 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
     final firstName = (profile?['firstName'] as String? ?? '').trim();
     final groups = HoHomeGroups.from(jobsState.jobs);
     final hero = thAttentionHero(groups.attention);
+    final unreadNotifications = ref.watch(
+      notificationCenterProvider.select((c) => c.unreadCount),
+    );
 
     return ThScope(
       themeMode: ref.watch(themeModeProvider),
@@ -122,6 +132,7 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
                     constraints: const BoxConstraints(maxWidth: 760),
                     child: _Content(
                       firstName: firstName,
+                      hasUnread: unreadNotifications > 0,
                       hasRefreshError: jobsState.error != null,
                       onRetry: _reload,
                       hero: hero,
@@ -151,6 +162,7 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
 class _Content extends StatelessWidget {
   const _Content({
     required this.firstName,
+    required this.hasUnread,
     required this.hasRefreshError,
     required this.onRetry,
     required this.hero,
@@ -161,6 +173,7 @@ class _Content extends StatelessWidget {
   });
 
   final String firstName;
+  final bool hasUnread;
   final bool hasRefreshError;
   final Future<void> Function() onRetry;
   final HoAttentionHero? hero;
@@ -175,7 +188,7 @@ class _Content extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: Space.s3,
       children: [
-        _Greeting(firstName: firstName),
+        _Greeting(firstName: firstName, hasUnread: hasUnread),
         if (hasRefreshError) _RefreshNotice(onRetry: onRetry),
         if (hero != null) _AttentionHero(hero: hero!),
         Semantics(
@@ -208,7 +221,10 @@ class _Content extends StatelessWidget {
           if (groups.booked.isNotEmpty)
             _Section(title: 'Booked', jobs: groups.booked),
           if (groups.active.isNotEmpty)
-            _Section(title: 'Active jobs', jobs: groups.active),
+            _Section(
+              title: 'Active jobs',
+              jobs: groups.active.take(kThHomeActiveJobsMax).toList(),
+            ),
           if (groups.past.isNotEmpty) ...[
             Semantics(
               button: true,
@@ -231,6 +247,7 @@ class _Content extends StatelessWidget {
             onPressed: () => context.go('/jobs'),
           ),
         ],
+        const _TrustNote(),
       ],
     );
   }
@@ -241,8 +258,12 @@ List<Widget> _jobCards(List<Job> jobs) => [
 ];
 
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.firstName});
+  const _Greeting({required this.firstName, required this.hasUnread});
   final String firstName;
+
+  /// The bell shows its dot only while the notification centre holds unread
+  /// items (fix plan §4.3.1); it used to be drawn unconditionally.
+  final bool hasUnread;
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +288,7 @@ class _Greeting extends StatelessWidget {
         THIconButton(
           icon: Icons.notifications_rounded,
           kind: THButtonKind.secondary,
-          dot: true,
+          dot: hasUnread,
           semanticLabel: 'Notifications',
           onPressed: () => context.push('/notifications'),
         ),
@@ -417,6 +438,41 @@ class _Section extends StatelessWidget {
         const SizedBox(height: Space.s1),
         Semantics(header: true, child: THText(title, style: THTextStyle.title)),
         ..._jobCards(jobs),
+      ],
+    );
+  }
+}
+
+/// Static reassurance from the mockup (fix plan §4.3.1). Copy mirrors
+/// `docs/design/ast/screens.mjs` `ho_home`; no figure or claim beyond what
+/// SPECS/MVP state (pay after approval, rates incl. GST).
+class _TrustNote extends StatelessWidget {
+  const _TrustNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return THCard(
+      key: const Key('home_trust_note'),
+      padding: Space.s3_5,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: Space.s2_5,
+          children: [
+            const THIcon(
+              Icons.info_outline_rounded,
+              size: 18.0,
+              tone: THTone.brand,
+            ),
+            const Expanded(
+              child: THText(
+                'Pay only after you approve the final amount. '
+                'Rates always include GST.',
+                style: THTextStyle.meta,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
