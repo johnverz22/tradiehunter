@@ -67,6 +67,10 @@ abstract class Sizes {
   static const double unreadDot = 9.0;
   static const double quickReplyHeight = 64.0;
   static const double quickReplyWidth = 180.0;
+  static const double radarDiameter = 240.0;
+  static const double radarCore = 96.0;
+  static const double radarCoreIcon = 48.0;
+  static const double radarTextBlock = 88.0;
 }
 
 abstract class THDurations {
@@ -81,6 +85,7 @@ abstract class THDurations {
   static const Duration splashRingLate = Duration(milliseconds: 1200);
   static const Duration onboardingPage = Duration(milliseconds: 220);
   static const Duration chatScroll = Duration(milliseconds: 150);
+  static const Duration radarCycle = Duration(milliseconds: 2000);
 }
 abstract class THMotion {
   THMotion._();
