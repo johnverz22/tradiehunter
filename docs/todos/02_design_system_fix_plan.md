@@ -231,8 +231,8 @@ All rows: code **absent** unless stated. Keep `tradie_onboarding_viewmodel` and 
 Each phase ends with pair images and passing tests. Each screen is one PR (or a small group), per the migration plan recipe (§4.0). **Order matters:** evidence first, then flags, then tradie.
 
 ### Fix-0 — Evidence and harness (unblocks everything)
-- [ ] **0.1** P-01 fix v1 payment-status asset.
-- [ ] **0.2** P-02 `run-shots.sh` flag support, `run.json`.
+- [x] **0.1** P-01 fix v1 payment-status asset. *Done 2026-11-18: `views/payment/payment_status_screen.dart` now loads `assets/illustrations/il-05-{light,dark}.svg` with `SvgPicture.asset`. Scan of all literal `assets/…` references in `lib/` finds no other missing file; the v2 payment status references no asset. Needs a local look at the expired state in both themes.*
+- [x] **0.2** P-02 `run-shots.sh` flag support, `run.json`. *Done 2026-11-18: `UI_V2` defaults to `all` (override with env var or a `UI_V2=…` argument; empty = shipped flags), printed in the run header and passed as a dart-define; `SHOT_TEXT_SCALE` (default 1.0) is passed through and recorded. `run.json` (ui_v2, commit, device, udid, persona, theme, text_scale, started_at) is written to `<theme>/<persona>/` and `<theme>/shared/`. Tested with stubbed `flutter`/`xcrun` only, not on a simulator; `screenshots_test.dart` does not read `SHOT_TEXT_SCALE` yet (0.5).*
 - [ ] **0.3** P-04 fix fixtures (seed drift), then P-03 triage capture exceptions.
 - [ ] **0.4** P-06 mockup PNG export + comparison script; commit `docs/design/mockups/png/`.
 - [ ] **0.5** P-05 extend capture list (§7.3) incl. tradie persona and `SHOT_TEXT_SCALE`.

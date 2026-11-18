@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/payment.dart';
@@ -206,9 +207,11 @@ class _PaymentStatusScreenState extends ConsumerState<PaymentStatusScreen> {
         // ── Hero ────────────────────────────────────────────────────────────
         Center(
           child: isExpired
-              ? Image.asset(
-                  'assets/illustrations/il-05-${isDark ? 'dark' : 'light'}.png',
+              // il-05 ships as paired SVGs only (no PNG export exists).
+              ? SvgPicture.asset(
+                  'assets/illustrations/il-05-${isDark ? 'dark' : 'light'}.svg',
                   width: 196,
+                  excludeFromSemantics: true,
                 )
               : Container(
                   width: heroSize,
