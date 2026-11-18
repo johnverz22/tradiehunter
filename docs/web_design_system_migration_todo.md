@@ -261,10 +261,17 @@ Detail
 
 ## Phase 5 — Review sweep
 
-- [ ] **5.1** Whole-app screenshot pass vs 0.4 and frames, light + dark, 3 widths; log and fix differences (L)
-- [ ] **5.2** Cross-page consistency audit with the `ui-audit` skill (M)
-- [ ] **5.3** Accessibility pass: focus rings, keyboard on dialogs/menus/tables, 44 px targets, `forced-colors`, `prefers-reduced-motion` (M)
-- [ ] **5.4** `responsive.spec.ts` and all e2e specs green on the final UI (S)
+- [~] **5.1** Whole-app screenshot pass vs 0.4 and frames, light + dark, 3 widths; log and fix differences (L) — **deferred by owner (2026-11-18): needs a browser and the live app, and 0.4 has no before-shots.** Every "Known visual deltas" and "Deferred (manual)" line under Phases 2–4 is the checklist for it
+- [x] **5.2** Cross-page consistency audit with the `ui-audit` skill (M)
+  - Done as a code audit (the `ui-audit` skill is not in this session, so the repo was checked with greps; no rendered check). Clean: no raw hex/rgb/hsl, no Tailwind palette colours, no `outline: none` and no new legacy names anywhere in `web/src` outside the synced theme files; every `target="_blank"` link has `rel="noopener noreferrer"`; all 8 icon-only buttons are `IconButton`s with a label or carry an `aria-label`; the only inline `style` props are safe-area and layout offsets on tokens; at most one gold `accent` button per view (the two in `UserDetailPage` are the desktop header and the phone bar, never shown together); page titles are one `h1`, sections are `h2`.
+  - Fixed: link-styled `<button class="cell-link">` (the "Go to page N" action in five empty queue pages) had no cursor or reset because the kit's `.cell-link` is for anchors: added an app-level `button.cell-link` rule in `index.css`.
+  - Left as is, logged: (1) detail pages use a muted line for empty sections, queues use `EmptyState`: both are intended (a card section is not a whole empty page); (2) `DataTable`'s phone "More" menu and `UserDetailPage`'s are `<details>` disclosures, not the kit `.menu` with arrow keys (D9 / task 4.8); (3) a handful of `[var(--token)]` Tailwind utilities remain in `DataTable`, `App.tsx` and `AppShell` (tokens, not legacy names).
+  - [~] Deferred (reviewer): an independent `ui-audit` / `design-vs-run-crosscheck` pass on rendered pages.
+- [x] **5.3** Accessibility pass: focus rings, keyboard on dialogs/menus/tables, 44 px targets, `forced-colors`, `prefers-reduced-motion` (M) — static part only
+  - Done (code review of the kit and app): the kit's global `:focus-visible` ring covers `a`, `button`, `input`, `select`, `textarea`, `summary` and `[tabindex]`, so the new `.more-menu` items, scroll regions (`tabIndex=0` on the chat lists and the audit `<pre>` blocks) and photo links get a ring; the kit sets 44 px minimum height on buttons, nav items and page buttons on coarse pointers; `prefers-reduced-motion` is handled globally in the kit (animations shortened to 1 ms) plus the app's slide-in rule; badges get a border in `forced-colors`; status is text or icon plus colour everywhere (Urgent, No details, wait bands, flag status). Fixed: the "Checking session…" and "Loading…" fallbacks in `App.tsx` now have `role="status"`.
+  - Gaps logged, not built: app-level boxes with a border only (`.photo-tile`, `.evidence-item`, `.diff-pre`, `.action-bar`) rely on the border for `forced-colors`, which works; the avatar-less user header is fine; the `<details>` menus have no arrow-key roving (see 5.2).
+  - [~] Deferred (manual): the actual keyboard walks, screen-reader pass, `forced-colors` and reduced-motion check in a browser, and the 44 px check on a real touch device, as listed under each page task.
+- [~] **5.4** `responsive.spec.ts` and all e2e specs green on the final UI (S) — deferred by owner (2026-11-18): needs a live API and Chromium
 
 ## Phase 6 — Cutover and cleanup
 
@@ -279,6 +286,7 @@ Detail
 
 ## Verification log
 
+- 2026-11-18, tasks 5.2–5.3: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (1 use, 1 file, unchanged), design gate (126/126) pass. 5.1 and 5.4 deferred (browser and live API).
 - 2026-11-18, task 3.3: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (23 → 1 use, 1 file: `PageHeader.tsx`), design gate (126/126) pass. **Deferred (manual):** dashboard visual and keyboard checks, see task 3.3.
 - 2026-11-18, tasks 4.7–4.11: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (94 → 23 uses, 4 files left: dashboard and PageHeader), design gate (126/126) pass. **Deferred (manual):** detail-page and dialog visual, keyboard and e2e checks, see the tasks.
 - 2026-11-18, tasks 4.2, 4.4, 4.6: `npm run lint` (0 errors, same 1 warning), `npm run build`, `design:check` (24 files identical), `design:legacy` (151 → 94 uses, 9 files), design gate (126/126) pass. **Deferred (manual):** queue and dialog visual, keyboard and e2e checks, see the tasks.

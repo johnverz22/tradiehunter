@@ -361,3 +361,16 @@ hr {
   font: var(--ty-title);
   color: var(--ink);
 }
+
+/* A link-styled <button> (e.g. "Go to page N" in an empty queue page). The kit's `.cell-link`
+   is for anchors; Tailwind's preflight leaves buttons with a default cursor. App-level,
+   tokens only; found in the 5.2 audit. */
+button.cell-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: inherit;
+  cursor: pointer;
+}

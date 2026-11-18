@@ -92,7 +92,7 @@ const RequireAdmin: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--paper)]">
-        <span className="text-[var(--ink-soft)] text-sm">Checking session…</span>
+        <span role="status" className="text-[var(--ink-soft)] text-sm">Checking session…</span>
       </div>
     );
   }
@@ -109,7 +109,7 @@ function App() {
     <React.Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-[var(--paper)]">
-          <span className="text-[var(--ink-soft)] text-sm">Loading…</span>
+          <span role="status" className="text-[var(--ink-soft)] text-sm">Loading…</span>
         </div>
       }
     >
