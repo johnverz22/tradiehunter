@@ -86,6 +86,26 @@ code {
   transform: none;
 }
 
+/* ── Sidebar footer ───────────────────────────────────
+   The kit's .nav-item is for links. The footer also needs a
+   Logout button and a non-interactive "signed in as" row, which
+   the frames do not show; these two rules adapt .nav-item.
+   Tokens only. */
+button.nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+div.nav-item-static {
+  cursor: default;
+}
+div.nav-item-static:hover {
+  background: transparent;
+  color: var(--on-sidebar-soft);
+}
+
 /* ── Focus ────────────────────────────────────────────
    Thin 2px outline sitting outside the field, per the
    mockups. A box-shadow ring (Tailwind's ring-2) stacks
