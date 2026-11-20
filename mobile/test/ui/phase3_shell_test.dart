@@ -156,7 +156,19 @@ void main() {
     );
     expect(find.byType(THDock), findsOneWidget);
     expect(find.byKey(const Key('post_job_fab')), findsOneWidget);
+    expect(find.text('Post job'), findsOneWidget);
     expect(find.text('HOME SCREEN'), findsOneWidget);
+
+    // Full-bleed bar flush with the bottom edge; routed content ends where it
+    // begins (nothing renders behind or around it).
+    final dock = tester.getRect(find.byType(THDock));
+    expect(dock.left, 0);
+    expect(dock.right, 390);
+    expect(dock.bottom, 1400);
+    expect(
+      tester.getRect(find.text('HOME SCREEN')).bottom,
+      lessThanOrEqualTo(dock.top),
+    );
 
     // Tap the Chat tab → /messages inside the same shell.
     await tester.tap(find.text('Chat'));
@@ -406,6 +418,7 @@ void main() {
     // Rail renders the same four destinations + its own new-request action.
     expect(find.text('Home'), findsOneWidget);
     expect(find.byTooltip('New request'), findsOneWidget);
+    expect(find.text('Post job'), findsOneWidget);
   });
 
   testWidgets('shell renders in light and dark without exceptions', (

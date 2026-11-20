@@ -1,5 +1,6 @@
-// S-01 (fix plan): the floating dock must not let list rows show through, and
-// lists must clear it including the home-indicator inset.
+// S-01 (fix plan, revised): the dock is a full-bleed, opaque bar laid out below
+// the content, so list rows can never show through or around it. Lists only
+// need breathing room above it; the bar owns the home-indicator inset itself.
 import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:flutter/material.dart';
@@ -33,20 +34,20 @@ void main() {
         ),
       );
 
-      final dockBox = tester.widget<Container>(
+      final bar = tester.widget<Material>(
         find
             .descendant(
               of: find.byType(THDock),
-              matching: find.byType(Container),
+              matching: find.byType(Material),
             )
             .first,
       );
-      final fill = (dockBox.decoration! as BoxDecoration).color!;
+      final fill = bar.color!;
       expect(fill.a, 1.0, reason: 'glass alpha must not leak page content');
     });
   }
 
-  testWidgets('thDockClearance adds the bottom inset to the base clearance', (
+  testWidgets('thDockClearance is breathing room only, with no inset or dock', (
     tester,
   ) async {
     late double none;
@@ -69,6 +70,7 @@ void main() {
         inset: const EdgeInsets.only(bottom: 34),
       ),
     );
-    expect(notched, Sizes.dockClearance + 34);
+    // The bar consumes the inset itself; content does not add it again.
+    expect(notched, Sizes.dockClearance);
   });
 }

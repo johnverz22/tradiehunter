@@ -50,6 +50,6 @@ export const bar = (v, sub, p = {}) => n('bar', { v, sub, ...p });
 // screen(meta, ...bodyNodes)
 //   meta.id, title, route, role (shared|homeowner|tradie)
 //   meta.nav   = 'home'|'jobs'|'chat'|'profile'   (omit for no dock)
-//   meta.dock  = 'homeowner' (5 slots with edge FAB) | 'tradie' (4 slots)
+//   meta.dock  = 'homeowner' (5 equal slots, Post job centre, in-line) | 'tradie' (4 slots); full-bleed bar
 //   meta.bar   = bar(...)        meta.sticky = [nodes]    meta.bg = 'hero'
 export const screen = (meta, ...body) => ({ ...meta, body: body.flat() });

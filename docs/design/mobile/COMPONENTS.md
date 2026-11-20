@@ -7,7 +7,7 @@
 | Element | Widget | Description |
 |---|---|---|
 | **Hero card** | `THHero` | Navy gradient, gold eyebrow label, one large figure. Used for the attention item, amount to pay, offer countdown, net earnings. |
-| **Floating glass dock** | `THDock` | Homeowner dock has a raised gold **New request** FAB carrying `THHuntGlyph` (a hunter's crosshair with a plus — ring, four ticks, plus). Tradie dock has no FAB (`fab: false`). |
+| **Bottom dock** | `THDock` | full-bleed bottom bar (opaque, flush with the bottom edge, 1 px `line` top hairline, no radius or shadow). Homeowner: five equal slots, Home, Jobs, **Post job**, Chat, Profile; Post job is the in-line gold centre slot (48 px rounded-square tile with `THHuntGlyph` in `onAccent`, label "Post job" in `accentText`). Tradie: four equal slots, same bar. The bar pads itself by the home-indicator inset and is laid out *below* routed content (`Column(Expanded(child), THDock)`), never overlaid. 744 to 1023 px: bar stays full width, slots centred in a 560 px column. 1024 px and wider: left rail, with the same gold Post job tile and label at the top. Labels are clamped to 1.3× text scale (Semantics labels stay full); no other text scaling changes (P4-12 stays open). Semantics label stays `New request`, key `post_job_fab`. `THHuntGlyph` is a hunter's crosshair with a plus (ring, four ticks, plus). |
 | **Sticky action bar** | `THStickyBar` | Glass-blurred bar above the home indicator. Decline/accept pairs or a single CTA. Always above the home indicator. |
 | **Progress segments** | `THProgress` | Five segments for the job lifecycle: Posted, Requested, Booked, In progress, Complete. Green = done, gold = current. |
 | **Timeline** | `THTimeline` | Vertical timeline for what-happens-next and job history. |
@@ -88,7 +88,7 @@ Each screen has a Flutter class in `flutter/screens/<id>_screen.dart` and a rout
 
 | | Homeowner | Tradie |
 |---|---|---|
-| Dock | Home, Jobs, **New request FAB**, Chat, Profile | Home, Jobs, Chat, Profile (no FAB) |
+| Dock | Home, Jobs, **Post job** (in-line, centre), Chat, Profile | Home, Jobs, Chat, Profile |
 | Home hero | Approve final amount | Online switch and net this week |
 | Primary gold actions | Choose a tradie, Request, Approve, Upload receipt | Accept job, Check in, Send for approval |
 | Money shown | Total to pay, extras awaiting approval | Rate locked, commission, amount received |

@@ -2163,14 +2163,19 @@ class THStickyBar extends StatelessWidget {
   }
 }
 
-/// Bottom padding a scrolling list needs so its last item clears the floating
-/// [THDock] (S-01): [Sizes.dockClearance] covers the dock, its 16 pt float and
-/// the raised FAB; the home-indicator inset is added on top because the shell
-/// lifts the dock by that inset. Zero inset (no notch) gives exactly
-/// [Sizes.dockClearance].
-double thDockClearance(BuildContext context) =>
-    Sizes.dockClearance + MediaQuery.viewPaddingOf(context).bottom;
+/// Bottom padding a scrolling list needs above the end of its content so the
+/// last item is not flush with the [THDock]. The dock is a full-bleed bar laid
+/// out *below* the routed content (see [ThShell] and [THScaffold]), so content
+/// already ends where the bar begins: this is breathing room only
+/// ([Sizes.dockClearance]), with no dock height and no home-indicator inset.
+double thDockClearance(BuildContext context) => Sizes.dockClearance;
 
+/// The bottom navigation bar (S-01, revised): full-bleed, flush with the
+/// bottom edge, opaque, one 1 px top hairline. Homeowner has five equal slots
+/// (Home, Jobs, Post job, Chat, Profile) with Post job as the centre slot;
+/// tradie has four. It pads itself by the home-indicator inset, so callers must
+/// not wrap it in a SafeArea. Between 744 and 1023 px the bar stays full width
+/// but its slots are centred in a [Sizes.dockMaxContent] column.
 class THDock extends StatelessWidget {
   const THDock({
     super.key,
@@ -2192,7 +2197,45 @@ class THDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    Widget item(THDockTab t, IconData icon, String label) {
+    // Opaque (S-01): `glass` is 82-86% alpha, so list rows showed through the
+    // bar. Composite it over the page colour instead of blurring.
+    final barColor = Color.alphaBlend(c.glass, c.paper);
+
+    // Only the label is clamped (audit P4-13d); the Semantics label and every
+    // other text on screen keep the user's full text scale.
+    Widget label(String text, Color color) => MediaQuery.withClampedTextScaling(
+      maxScaleFactor: Sizes.dockLabelMaxScale,
+      child: Text(
+        text,
+        maxLines: 1,
+        softWrap: false,
+        textAlign: TextAlign.center,
+        style: THType.label.copyWith(
+          fontSize: 10.5,
+          letterSpacing: 0,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
+
+    // Every slot shares one layout: a Sizes.dockPost-high icon area (icon or
+    // Post job tile centred in it) and a label below, so icons and labels sit
+    // on common baselines.
+    Widget slot({required Widget icon, required Widget text}) => Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 2,
+      children: [
+        SizedBox(
+          height: Sizes.dockPost,
+          child: Center(child: icon),
+        ),
+        text,
+      ],
+    );
+
+    Widget item(THDockTab t, IconData icon, String text) {
       final on = t == active;
       final count = badges[t] ?? 0;
       final badge = count > 0 ? (count > 99 ? '99+' : '$count') : null;
@@ -2202,129 +2245,117 @@ class THDock extends StatelessWidget {
         THDockTab.chat => (const Key('dock_chat'), 'dock_chat'),
         THDockTab.profile => (const Key('dock_profile'), 'dock_profile'),
       };
-      return Semantics(
-        button: true,
-        selected: on,
-        identifier: dockId,
-        label: count > 0 ? '$label, $count unread' : label,
-        child: InkWell(
-          key: dockKey,
-          onTap: onSelected == null ? null : () => onSelected!(t),
-          borderRadius: BorderRadius.circular(Radii.control),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: Sizes.railItem,
-              minHeight: Sizes.tapMin,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 2,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(icon, size: 22, color: on ? c.textBrand : c.textSoft),
-                    if (badge != null)
-                      Positioned(
-                        top: -4,
-                        right: -8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Space.s1,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.accent,
-                            borderRadius: BorderRadius.circular(Radii.pill),
-                            border: Border.all(color: c.glass, width: 1.5),
-                          ),
-                          child: Text(
-                            badge,
-                            style: THType.label.copyWith(
-                              fontSize: 9.5,
-                              letterSpacing: 0,
-                              color: c.onAccent,
-                            ),
+      final color = on ? c.textBrand : c.textSoft;
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: on,
+          identifier: dockId,
+          label: count > 0 ? '$text, $count unread' : text,
+          child: InkWell(
+            key: dockKey,
+            onTap: onSelected == null ? null : () => onSelected!(t),
+            borderRadius: BorderRadius.circular(Radii.control),
+            child: slot(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, size: 22, color: color),
+                  if (badge != null)
+                    Positioned(
+                      top: -4,
+                      right: -8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.s1,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: c.accent,
+                          borderRadius: BorderRadius.circular(Radii.pill),
+                          // Same colour as the bar so the badge reads as cut out.
+                          border: Border.all(color: barColor, width: 1.5),
+                        ),
+                        child: Text(
+                          badge,
+                          style: THType.label.copyWith(
+                            fontSize: 9.5,
+                            letterSpacing: 0,
+                            color: c.onAccent,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                Text(
-                  label,
-                  style: THType.label.copyWith(
-                    fontSize: 10.5,
-                    letterSpacing: 0,
-                    fontWeight: FontWeight.w500,
-                    color: on ? c.textBrand : c.textSoft,
-                  ),
-                ),
-              ],
+                    ),
+                ],
+              ),
+              text: label(text, color),
             ),
           ),
         ),
       );
     }
 
-    final fab = Semantics(
-      button: true,
-      identifier: 'post_job_fab',
-      label: 'New request',
-      child: GestureDetector(
-        // Same key as the v1 FAB (Key('post_job_fab')) so integration
-        // helpers survive the shell swap.
-        key: const Key('post_job_fab'),
-        onTap: onNewRequest,
-        child: Transform.translate(
-          offset: const Offset(0, -Space.s7 - 2),
-          child: Container(
-            width: Sizes.fab,
-            height: Sizes.fab,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: c.accent,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: c.paper, width: 4),
-              boxShadow: [
-                BoxShadow(
-                  color: c.accent.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+    // The one gold action. In the row like the other items: no translate, no
+    // overflow past the bar, no ring. Only the existing ink response animates.
+    final post = Expanded(
+      child: Semantics(
+        button: true,
+        identifier: 'post_job_fab',
+        label: 'New request',
+        excludeSemantics: true,
+        child: InkWell(
+          // Same key as the v1 FAB (Key('post_job_fab')) so integration
+          // helpers survive the shell swap.
+          key: const Key('post_job_fab'),
+          onTap: onNewRequest,
+          borderRadius: BorderRadius.circular(Radii.control),
+          child: slot(
+            icon: Container(
+              width: Sizes.dockPost,
+              height: Sizes.dockPost,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: c.accent,
+                borderRadius: BorderRadius.circular(Radii.control),
+              ),
+              child: THHuntGlyph(size: Sizes.dockPostGlyph, color: c.onAccent),
             ),
-            child: THHuntGlyph(color: c.onAccent),
+            text: label('Post job', c.accentText),
           ),
         ),
       ),
     );
 
-    return Container(
-      height: Sizes.dock,
-      decoration: BoxDecoration(
-        // Opaque (S-01): `glass` is 82–86% alpha, so list rows showed through
-        // the dock. Composite it over the page colour instead of blurring.
-        color: Color.alphaBlend(c.glass, c.paper),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: c.line),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2E0A143C),
-            blurRadius: 30,
-            offset: Offset(0, 10),
+    return Material(
+      color: barColor,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: c.line)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewPaddingOf(context).bottom,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          item(THDockTab.home, Icons.home_rounded, 'Home'),
-          item(THDockTab.jobs, Icons.work_rounded, 'Jobs'),
-          if (role == THDockRole.homeowner) fab,
-          item(THDockTab.chat, Icons.chat_bubble_rounded, 'Chat'),
-          item(THDockTab.profile, Icons.person_rounded, 'Profile'),
-        ],
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: Sizes.dockMaxContent),
+              child: SizedBox(
+                height: Sizes.dock,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    item(THDockTab.home, Icons.home_rounded, 'Home'),
+                    item(THDockTab.jobs, Icons.work_rounded, 'Jobs'),
+                    if (role == THDockRole.homeowner) post,
+                    item(THDockTab.chat, Icons.chat_bubble_rounded, 'Chat'),
+                    item(THDockTab.profile, Icons.person_rounded, 'Profile'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2349,7 +2380,7 @@ class THScaffold extends StatelessWidget {
   final bool heroBackground;
 
   /// Overrides the default bottom body clearance — used by screens hosted in
-  /// the v2 shell, whose floating dock comes from [ThShell] instead of [dock].
+  /// the v2 shell, whose dock comes from [ThShell] instead of [dock].
   final double? bottomClearance;
 
   @override
@@ -2370,31 +2401,43 @@ class THScaffold extends StatelessWidget {
       ),
       child: body,
     );
+    final content = SafeArea(
+      bottom: false,
+      child: scrollable ? SingleChildScrollView(child: padded) : padded,
+    );
     final scaffold = thTestIdWrap(
       Scaffold(
         backgroundColor: heroBackground ? Colors.transparent : c.paper,
         appBar: appBar,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: SafeArea(
-                bottom: false,
-                child: scrollable
-                    ? SingleChildScrollView(child: padded)
-                    : padded,
+        body: dock != null
+            // Dock below the content (not overlaid) so the scroll area ends
+            // where the bar begins and nothing renders behind it.
+            ? Column(
+                children: [
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(child: content),
+                        if (stickyBar != null)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: stickyBar!,
+                          ),
+                      ],
+                    ),
+                  ),
+                  dock!,
+                ],
+              )
+            : Stack(
+                children: [
+                  Positioned.fill(child: content),
+                  if (stickyBar != null)
+                    Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
+                ],
               ),
-            ),
-            if (dock != null)
-              Positioned(
-                left: Space.s3_5,
-                right: Space.s3_5,
-                bottom: Space.s4,
-                child: SafeArea(top: false, child: dock!),
-              ),
-            if (stickyBar != null)
-              Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
-          ],
-        ),
       ),
       key,
     );

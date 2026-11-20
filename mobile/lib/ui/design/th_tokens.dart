@@ -57,11 +57,15 @@ abstract class Sizes {
   static const double icon = 20.0;
   static const double iconSm = 16.0;
   static const double iconLg = 24.0;
-  static const double dock = 68.0;
+  static const double dock = 72.0;
+  static const double dockPost = 48.0;
+  static const double dockPostGlyph = 28.0;
+  static const double dockMaxContent = 560.0;
+  static const double dockLabelMaxScale = 1.3;
   static const double fab = 56.0;
   static const double gutter = 20.0;
   static const double stickyClearance = 96.0;
-  static const double dockClearance = 120.0;
+  static const double dockClearance = 24.0;
   static const double railItem = 56.0;
   static const double railAction = 48.0;
   static const double unreadDot = 9.0;

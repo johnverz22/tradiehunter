@@ -42,7 +42,7 @@ All mobile client code must strictly adhere to the Model-View-ViewModel (MVVM) a
     - **Alpha/opacity**: Use `Alpha.*` tokens. Never `.withValues(alpha: 0.12)` with a raw number.
     - **Durations**: Use `THDurations.fast` (150 ms) / `.base` (220 ms) / `.slow` (320 ms). Never `Duration(milliseconds: N)` raw.
     - **Letter spacing**: Use `Tracking.*` tokens. Never `letterSpacing: N` raw.
-    - **Component sizes**: Use `Sizes.button` (54), `Sizes.buttonSm` (44), `Sizes.input` (56), `Sizes.dock` (68), `Sizes.fab` (56), `Sizes.tapMin` (44). Never raw heights/widths for buttons, inputs, dock.
+    - **Component sizes**: Use `Sizes.button` (54), `Sizes.buttonSm` (44), `Sizes.input` (56), `Sizes.dock` (72), `Sizes.dockPost` (48), `Sizes.fab` (56), `Sizes.tapMin` (44). Never raw heights/widths for buttons, inputs, dock.
     - If a needed token doesn't exist, **add it to `design_tokens.dart` and `docs/design/mobile/tokens/tokens.json`** rather than inlining the value.
   - **Reusable widgets**: Use `TH*` family before creating anything new. Existing library: `THAppBar`, `THButton` (kinds: accent/primary/secondary/ghost/inverse/danger), `THCard`, `THHero`, `THDock`, `THStickyBar`, `THBadge`, `THProgress`, `THAvatar`, `THNotice`, `THText`, `THIcon`, `THField`, `THPills`, `THKeyValue`, `THTimeline`, `THDashBox`, `THRing`, `THSwitch`, `THBubble`, `THListRow`, `THDivider`, `THWordmark`. Do not re-inline patterns these already cover.
   - v1 → v2 widget mapping: `FixoPrimaryButton` → `THButton(kind: accent or primary)`, `FixoAppBar` → `THAppBar`, `FixoCard` → `THCard`, `FixoNotice` → `THNotice`, `StickyActionBar` → `THStickyBar`, `CustomBottomNavBar` + FAB → `THDock`.

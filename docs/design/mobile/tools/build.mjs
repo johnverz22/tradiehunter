@@ -238,11 +238,11 @@ const NAV = [['home', 'Home'], ['job', 'Jobs'], ['+', ''], ['chat', 'Chat'], ['u
 const NAVKEY = { home: 'home', jobs: 'job', chat: 'chat', profile: 'user' };
 function frame(s, mode) {
   const bar = s.bar ? `<div class="appbar"><div class="ibtn k-secondary">${svg('back', 20)}</div><div style="flex:1;min-width:0"><div class="s-title">${esc(s.bar.v)}</div>${s.bar.sub ? `<div class="s-meta c-soft">${esc(s.bar.sub)}</div>` : ''}</div></div>` : '';
-  const dock = s.dock ? `<div class="dock">${NAV.filter((x) => s.dock === 'homeowner' || x[0] !== '+').map((x) => x[0] === '+' ? `<div class="fabi">${svg('hunt', 30)}</div>` : `<div class="${NAVKEY[s.nav] === x[0] ? 'on' : ''}">${svg(x[0], 22)}${x[1]}</div>`).join('')}</div>` : '';
+  const dock = s.dock ? `<div class="dock">${NAV.filter((x) => s.dock === 'homeowner' || x[0] !== '+').map((x) => x[0] === '+' ? `<div class="post"><span class="ico"><span class="tile">${svg('hunt', 28)}</span></span>Post job</div>` : `<div class="${NAVKEY[s.nav] === x[0] ? 'on' : ''}"><span class="ico">${svg(x[0], 22)}</span>${x[1]}</div>`).join('')}</div>` : '';
   const sticky = s.sticky ? `<div class="sticky">${s.sticky.map((c) => html(c)).join('')}</div>` : '';
   const body = s.body.map((c, i) => html(c, s.body[i - 1])).join('');
   const sb = `<div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>`;
-  return `<div class="ph${s.bg === 'hero' ? ' herobg' : ''}" data-t="${mode}">${sb}${bar}<div class="sc" style="padding-bottom:${s.dock ? 120 : s.sticky ? 100 : 24}px"><div class="col body" style="gap:12px;padding:6px 20px 0">${body}</div></div>${sticky}${dock}</div>`;
+  return `<div class="ph${s.bg === 'hero' ? ' herobg' : ''}" data-t="${mode}">${sb}${bar}<div class="sc" style="padding-bottom:${s.dock ? 24 : s.sticky ? 100 : 24}px"><div class="col body" style="gap:12px;padding:6px 20px 0">${body}</div></div>${sticky}${dock}</div>`;
 }
 
 // ───────────────────────── 5. Dart emitter ─────────────────────────

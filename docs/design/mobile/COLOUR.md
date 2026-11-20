@@ -24,7 +24,7 @@
 | `heroStart` → `heroEnd` | #1E3A8A → #2849B5 | #17255C → #2A44A0 | Hero card gradient |
 | `onHero`, `heroGold` | #FFF, #FFD495 | #FFF, #FFD495 | Text on hero cards |
 | `line`, `track` | #DCE2EF | #26345A | Borders, dividers, inactive progress |
-| `glass` | white 86% | surface 82% | Dock and sticky bar (blurred) |
+| `glass` | white 86% | surface 82% | Dock (composited over `paper`, opaque) and sticky bar (blurred) |
 
 ## Contrast gate
 

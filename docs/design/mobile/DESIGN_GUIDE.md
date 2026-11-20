@@ -9,7 +9,7 @@ Single source of truth: `tokens/tokens.json` and `ast/screens.mjs`. Everything e
 1. **Trust first.** Navy carries structure. Verified and Insured badges are always visible on a tradie. Money is always labelled `incl. GST` and NZD.
 2. **One gold action per screen.** Gold (`accent`) is the single primary CTA: Choose a tradie, Request this tradie, Accept job, Approve, Upload receipt. Navy `primary` is for secondary-importance filled actions (Message, Approve an extra cost, Sign in).
 3. **Money is the loudest thing on screen.** Final amounts use `moneyLg` on a hero card.
-4. **Same system, two points of view.** Homeowner and tradie screens share every component. Differences are content and the dock (homeowner has the edge FAB, tradie does not).
+4. **Same system, two points of view.** Homeowner and tradie screens share every component. Differences are content and the dock (homeowner has the in-line Post job slot, tradie does not).
 5. **Long screens, not cramped screens.** Screens scroll. Primary actions live in the sticky bar, never below the fold.
 6. **Dark is a first-class theme**, not an inversion. Brand lightens to periwinkle, gold lightens, surfaces step up in blue-black.
 
@@ -36,7 +36,7 @@ Use through `context.th.<name>` (Flutter) or `var(--<name>)` (CSS). Never hardco
 | `heroStart` → `heroEnd` | #1E3A8A → #2849B5 | #17255C → #2A44A0 | Hero card gradient |
 | `onHero`, `heroGold` | #FFF, #FFD495 | #FFF, #FFD495 | Text on hero cards |
 | `line`, `track` | #DCE2EF | #26345A | Borders, dividers, inactive progress |
-| `glass` | white 86% | surface 82% | Sticky bar (blurred). The dock paints `glass` over `paper`, so it is opaque and list rows never show through |
+| `glass` | white 86% | surface 82% | Sticky bar (blurred). The dock paints `glass` over `paper` and runs full-bleed to the bottom edge, so it is opaque and nothing shows through or around it |
 
 **Contrast is enforced by the build.** 19 text/background pairs per theme must reach 4.5:1 (WCAG AA) or the build fails. See `tokens/contrast-report.txt`. Two earlier values failed and were corrected (`success` light, `heroGold`).
 
@@ -69,7 +69,7 @@ Add the fonts to `pubspec.yaml` (bundled assets, weights 400 to 800 for Lexend, 
 
 4pt scale: `s1` 4, `s1_5` 6, `s2` 8, `s2_5` 10, `s3` 12, `s3_5` 14, `s4` 16, `s5` 20, `s6` 24, `s7` 32.
 Radii: control 16, tile 18, card 20, hero 28, sheet 32, pill 999.
-Screen gutter 20. Button 54 (sm 44). Input 56. Tap target never below 44. Dock 68, FAB 56.
+Screen gutter 20. Button 54 (sm 44). Input 56. Tap target never below 44. Dock 72 (Post job tile 48, glyph 28, content cap 560, label clamp 1.3×), FAB 56.
 Editable field labels use the small-caps uppercase treatment shown in the mockups; field labels and values sit inside the same outlined surface.
 Elevation: cards use a two-layer soft shadow in light mode and a 1px border only in dark mode. Hero cards use the gradient and a gold glow circle. No other shadows.
 Motion: 150 / 220 / 320 ms (`THDurations.fast/base/slow`). Use for toggles, dots, progress.
@@ -77,7 +77,9 @@ Motion: 150 / 220 / 320 ms (`THDurations.fast/base/slow`). Use for toggles, dots
 ## 5. Signature elements
 
 - **Hero card** (`hero`): navy gradient, gold eyebrow label, one large figure. Used for the attention item, amount to pay, offer countdown, net earnings.
-- **Floating glass dock** with raised gold **New request** button. The button carries a custom glyph: a hunter's crosshair with a plus at its centre (ring, four ticks, plus). It replaces the generic `+`. In Flutter it is `THHuntGlyph`, not an icon font entry.
+- **Bottom dock** with an in-line gold **Post job** slot (Semantics label `New request`). The tile carries a custom glyph: a hunter's crosshair with a plus at its centre (ring, four ticks, plus). It replaces the generic `+`. In Flutter it is `THHuntGlyph`, not an icon font entry. The bar is full-bleed (opaque, flush with the bottom edge, 1 px `line` top hairline, no radius or shadow). Full spec: COMPONENTS.md.
+
+  > **Deviation from the original mockups (2026-11-20).** The first mockups drew a floating, rounded, shadowed pill inset 14 px from the sides and 16 px from the bottom, with a raised 56 px gold FAB that broke out of it. Content showed through the gap around the pill, so it was replaced by the full-bleed bar above. `mockups/index.html` is regenerated from the AST. `mockups/png/*` still show the old pill until `mockup-shots.mjs` is re-run (needs network for fonts).
 - **Sticky action bar** (glass): decline and accept pairs, or a single CTA. Always above the home indicator.
 - **Progress segments** (`prog`): five segments for the job lifecycle (Posted, Requested, Booked, In progress, Complete). Green done, gold current.
 - **Timeline** (`timeline`): vertical, for what-happens-next and job history.
@@ -129,7 +131,7 @@ The **tradie lead** is a full screen, not a card. It shows the offer countdown, 
 
 | | Homeowner | Tradie |
 |---|---|---|
-| Dock | Home, Jobs, **New request FAB**, Chat, Profile | Home, Jobs, Chat, Profile |
+| Dock | Home, Jobs, **Post job** (in-line, centre), Chat, Profile | Home, Jobs, Chat, Profile |
 | Home hero | Approve final amount | Online switch and net this week |
 | Primary gold actions | Choose a tradie, Request, Approve, Upload receipt | Accept job, Check in, Send for approval |
 | Money shown | Total to pay, extras awaiting approval | Rate locked, commission, amount received |
@@ -138,7 +140,7 @@ The **tradie lead** is a full screen, not a card. It shows the offer countdown, 
 ## 9. Accessibility
 
 - Contrast gate in the build (AA, 4.5:1).
-- Tap targets 44 minimum (buttons 54 or 44, dock items 56 wide, icon buttons 44).
+- Tap targets 44 minimum (buttons 54 or 44, dock slots a fifth or quarter of the width and at least 48 high, icon buttons 44).
 - Every icon button needs `semanticLabel`. Generated code sets it from the icon name; replace with a real label ("Notifications").
 - `THSwitch` exposes `toggled`. `THDock` items expose `selected`.
 - Never convey state by colour alone.

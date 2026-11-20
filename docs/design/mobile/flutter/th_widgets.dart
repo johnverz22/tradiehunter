@@ -952,6 +952,11 @@ class THStickyBar extends StatelessWidget {
   }
 }
 
+/// Bottom nav: full-bleed, flush with the bottom edge, opaque, one 1 px top
+/// hairline. Homeowner = five equal slots (Home, Jobs, Post job, Chat,
+/// Profile) with Post job as the in-line gold centre slot; tradie = four. It
+/// pads itself by the home-indicator inset (no SafeArea wrapper). 744-1023 px:
+/// full-width bar, slots centred in a Sizes.dockMaxContent column.
 class THDock extends StatelessWidget {
   const THDock({super.key, required this.role, this.active, this.onSelected, this.onNewRequest});
   final THDockRole role;
@@ -962,51 +967,81 @@ class THDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    Widget item(THDockTab t, IconData icon, String label) {
+    final barColor = Color.alphaBlend(c.glass, c.paper);
+    // Only the label is clamped (audit P4-13d); Semantics labels stay full.
+    Widget label(String text, Color color) => MediaQuery.withClampedTextScaling(
+      maxScaleFactor: Sizes.dockLabelMaxScale,
+      child: Text(text, maxLines: 1, softWrap: false, textAlign: TextAlign.center, style: THType.label.copyWith(fontSize: 10.5, letterSpacing: 0, fontWeight: FontWeight.w500, color: color)),
+    );
+    // Icon area is Sizes.dockPost high in every slot so icons and labels share baselines.
+    Widget slot({required Widget icon, required Widget text}) => Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, spacing: 2, children: [
+      SizedBox(height: Sizes.dockPost, child: Center(child: icon)),
+      text,
+    ]);
+    Widget item(THDockTab t, IconData icon, String text) {
       final on = t == active;
-      return Semantics(
-        button: true,
-        selected: on,
-        label: label,
-        child: InkWell(
-          onTap: onSelected == null ? null : () => onSelected!(t),
-          borderRadius: BorderRadius.circular(Radii.control),
-          child: SizedBox(width: 56, child: Column(mainAxisSize: MainAxisSize.min, spacing: 2, children: [
-            Icon(icon, size: 22, color: on ? c.textBrand : c.textSoft),
-            Text(label, style: THType.label.copyWith(fontSize: 10.5, letterSpacing: 0, fontWeight: FontWeight.w500, color: on ? c.textBrand : c.textSoft)),
-          ])),
+      final color = on ? c.textBrand : c.textSoft;
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: on,
+          label: text,
+          child: InkWell(
+            onTap: onSelected == null ? null : () => onSelected!(t),
+            borderRadius: BorderRadius.circular(Radii.control),
+            child: slot(icon: Icon(icon, size: 22, color: color), text: label(text, color)),
+          ),
         ),
       );
     }
 
-    final fab = Semantics(
-      button: true,
-      label: 'New request',
-      child: GestureDetector(
-        onTap: onNewRequest,
-        child: Transform.translate(
-          offset: const Offset(0, -Space.s7 - 2),
-          child: Container(
-            width: Sizes.fab,
-            height: Sizes.fab,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: c.accent, borderRadius: BorderRadius.circular(20), border: Border.all(color: c.paper, width: 4), boxShadow: [BoxShadow(color: c.accent.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))]),
-            child: THHuntGlyph(color: c.onAccent),
+    // The one gold action, in the row: no translate, no overflow, no ring.
+    final post = Expanded(
+      child: Semantics(
+        button: true,
+        label: 'New request',
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onNewRequest,
+          borderRadius: BorderRadius.circular(Radii.control),
+          child: slot(
+            icon: Container(
+              width: Sizes.dockPost,
+              height: Sizes.dockPost,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: c.accent, borderRadius: BorderRadius.circular(Radii.control)),
+              child: THHuntGlyph(size: Sizes.dockPostGlyph, color: c.onAccent),
+            ),
+            text: label('Post job', c.accentText),
           ),
         ),
       ),
     );
 
-    return Container(
-      height: Sizes.dock,
-      decoration: BoxDecoration(color: c.glass, borderRadius: BorderRadius.circular(30), border: Border.all(color: c.line), boxShadow: const [BoxShadow(color: Color(0x2E0A143C), blurRadius: 30, offset: Offset(0, 10))]),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        item(THDockTab.home, Icons.home_rounded, 'Home'),
-        item(THDockTab.jobs, Icons.work_rounded, 'Jobs'),
-        if (role == THDockRole.homeowner) fab,
-        item(THDockTab.chat, Icons.chat_bubble_rounded, 'Chat'),
-        item(THDockTab.profile, Icons.person_rounded, 'Profile'),
-      ]),
+    return Material(
+      color: barColor,
+      child: DecoratedBox(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: c.line))),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.viewPaddingOf(context).bottom),
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: Sizes.dockMaxContent),
+              child: SizedBox(
+                height: Sizes.dock,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  item(THDockTab.home, Icons.home_rounded, 'Home'),
+                  item(THDockTab.jobs, Icons.work_rounded, 'Jobs'),
+                  if (role == THDockRole.homeowner) post,
+                  item(THDockTab.chat, Icons.chat_bubble_rounded, 'Chat'),
+                  item(THDockTab.profile, Icons.person_rounded, 'Profile'),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1025,14 +1060,23 @@ class THScaffold extends StatelessWidget {
     final c = context.th;
     final clearance = dock != null ? Sizes.dockClearance : (stickyBar != null ? Sizes.stickyClearance + Space.s3 : Space.s6);
     final padded = Padding(padding: EdgeInsets.fromLTRB(Sizes.gutter, Space.s1_5, Sizes.gutter, clearance), child: body);
+    final content = SafeArea(bottom: false, child: scrollable ? SingleChildScrollView(child: padded) : padded);
     final scaffold = Scaffold(
       backgroundColor: heroBackground ? Colors.transparent : c.paper,
       appBar: appBar,
-      body: Stack(children: [
-        Positioned.fill(child: SafeArea(bottom: false, child: scrollable ? SingleChildScrollView(child: padded) : padded)),
-        if (dock != null) Positioned(left: Space.s3_5, right: Space.s3_5, bottom: Space.s4, child: SafeArea(top: false, child: dock!)),
-        if (stickyBar != null) Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
-      ]),
+      body: dock != null
+          // Dock below the content, not overlaid: nothing renders behind the bar.
+          ? Column(children: [
+              Expanded(child: Stack(children: [
+                Positioned.fill(child: content),
+                if (stickyBar != null) Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
+              ])),
+              dock!,
+            ])
+          : Stack(children: [
+              Positioned.fill(child: content),
+              if (stickyBar != null) Positioned(left: 0, right: 0, bottom: 0, child: stickyBar!),
+            ]),
     );
     if (!heroBackground) return scaffold;
     return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c.heroStart, c.heroEnd])), child: scaffold);

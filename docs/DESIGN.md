@@ -55,7 +55,7 @@ Fonts: **Lexend** (headings, money, controls) and **Source Sans 3** (body). Bund
 | Token class | Key values |
 |---|---|
 | `Radii` | control 16, tile 18, card 20, hero 28, sheet 32, pill 999 |
-| `Sizes` | button 54 (sm 44), input 56, tap min 44, dock 68, fab 56, stickyClearance 96, dockClearance 120 |
+| `Sizes` | button 54 (sm 44), input 56, tap min 44, dock 72, dockPost 48, dockMaxContent 560, fab 56, stickyClearance 96, dockClearance 24 (breathing room only; the dock is laid out below content) |
 
 Screen gutter: 20. Elevation: cards use a two-layer soft shadow in light and a 1 px border only in dark. Hero cards use the gradient and a gold glow circle. No other shadows. Motion: 150 / 220 / 320 ms (`THDurations.fast/base/slow`).
 
@@ -70,7 +70,7 @@ See [COMPONENTS.md](design/mobile/COMPONENTS.md) for the full component table, v
 | `THAppBar` | Screen app bar |
 | `THCard` | Cards |
 | `THHero` | Hero card (navy gradient + gold eyebrow + large figure) |
-| `THDock` | Bottom nav. HO gets FAB with `THHuntGlyph`; tradie does not |
+| `THDock` | Full-bleed bottom nav, flush with the bottom edge. HO gets an in-line gold Post job slot (`THHuntGlyph`, centre of five equal slots); tradie gets four. Pads its own home-indicator inset; do not wrap in `SafeArea` or overlay it |
 | `THStickyBar` | Glass sticky action bar above home indicator |
 | `THBadge` / `THProgress` | Status badges and job-lifecycle progress |
 

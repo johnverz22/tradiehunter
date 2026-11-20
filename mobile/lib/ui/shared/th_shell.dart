@@ -6,6 +6,8 @@
 //   • role-dependent landing route (tab 0 → /tradie or /home)
 //   • homeowner-only centre action → context.push('/jobs/new')
 //   • wide layout (≥1024): left rail replica in TH tokens
+//   • narrow layout: Column(Expanded(child), THDock): full-bleed bar flush
+//     with the bottom edge; routed content ends where the bar begins
 //
 // Visual layer is the v2 THDock / TH tokens instead of CustomBottomNavBar.
 // The rail is a needs-design stand-in (D-4): TH tokens, same structure as the
@@ -101,18 +103,14 @@ class _ThShellState extends ConsumerState<ThShell> {
               onSelected: (tab) => _go(tab, isTradie),
               onNewRequest: () => context.push('/jobs/new'),
             )
-          : Material(
-              type: MaterialType.transparency,
-              child: SafeArea(
-                top: false,
-                child: THDock(
-                  role: isTradie ? THDockRole.tradie : THDockRole.homeowner,
-                  active: _activeTab(location),
-                  badges: {THDockTab.chat: unread},
-                  onSelected: (tab) => _go(tab, isTradie),
-                  onNewRequest: () => context.push('/jobs/new'),
-                ),
-              ),
+          // The dock is full-bleed, opaque and pads itself by the
+          // home-indicator inset, so it is not wrapped in a SafeArea.
+          : THDock(
+              role: isTradie ? THDockRole.tradie : THDockRole.homeowner,
+              active: _activeTab(location),
+              badges: {THDockTab.chat: unread},
+              onSelected: (tab) => _go(tab, isTradie),
+              onNewRequest: () => context.push('/jobs/new'),
             ),
     );
 
@@ -128,17 +126,37 @@ class _ThShellState extends ConsumerState<ThShell> {
               ],
             ),
           )
-        : Stack(
+        : Column(
             children: [
-              Positioned.fill(child: widget.child),
-              Positioned(
-                left: Space.s3_5,
-                right: Space.s3_5,
-                bottom: Space.s4,
-                child: chrome,
-              ),
+              // Content ends where the bar begins (nothing renders behind it).
+              Expanded(child: _aboveDock(context, widget.child)),
+              chrome,
             ],
           );
+  }
+
+  /// The dock now owns the bottom home-indicator inset and the keyboard sits
+  /// over it, so the routed content sees only what is left: no bottom
+  /// padding/viewPadding (no double gap from a child SafeArea), and a keyboard
+  /// inset reduced by the dock's height (the bar stays at the bottom edge,
+  /// under the keyboard, instead of being pushed above it).
+  Widget _aboveDock(BuildContext context, Widget child) {
+    final mq = MediaQuery.of(context);
+    final dockHeight =
+        Sizes.dock + Radii.hairline + mq.viewPadding.bottom;
+    return MediaQuery(
+      data: mq.copyWith(
+        padding: mq.padding.copyWith(bottom: 0),
+        viewPadding: mq.viewPadding.copyWith(bottom: 0),
+        viewInsets: mq.viewInsets.copyWith(
+          bottom: (mq.viewInsets.bottom - dockHeight).clamp(
+            0.0,
+            double.infinity,
+          ),
+        ),
+      ),
+      child: child,
+    );
   }
 }
 
@@ -290,30 +308,49 @@ class _RailPostJobButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
+    // Same emphasis as the dock's Post job slot: gold rounded-square tile with
+    // the hunt glyph, "Post job" label in accentText. The single gold action.
     return Semantics(
       button: true,
       label: 'New request',
+      excludeSemantics: true,
       child: Tooltip(
         message: 'New request',
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(Radii.sheet),
-          child: Container(
-            width: Sizes.railAction,
-            height: Sizes.railAction,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c.accent,
-              boxShadow: [
-                BoxShadow(
-                  color: c.accent.withValues(alpha: 0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+          borderRadius: BorderRadius.circular(Radii.control),
+          child: SizedBox(
+            width: Sizes.railItem,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 2,
+              children: [
+                Container(
+                  width: Sizes.dockPost,
+                  height: Sizes.dockPost,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.accent,
+                    borderRadius: BorderRadius.circular(Radii.control),
+                  ),
+                  child: THHuntGlyph(
+                    size: Sizes.dockPostGlyph,
+                    color: c.onAccent,
+                  ),
+                ),
+                Text(
+                  'Post job',
+                  maxLines: 1,
+                  softWrap: false,
+                  style: THType.label.copyWith(
+                    fontSize: THType.railLabel.fontSize,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w500,
+                    color: c.accentText,
+                  ),
                 ),
               ],
             ),
-            alignment: Alignment.center,
-            child: THHuntGlyph(size: 24, color: c.onAccent),
           ),
         ),
       ),
