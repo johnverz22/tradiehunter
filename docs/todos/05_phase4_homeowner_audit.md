@@ -34,9 +34,9 @@ Rev 1 found that the committed screenshots were old v1 captures. Commit `5fdc781
 | 2b. Capture content problems | 4 | 0 | 0 | 0 |
 | 3. Owner observation O-1: normal text is thinner than the mockup | 2 | 0 | 1 | 1 |
 | 4. Owner observation O-2: the 200% scale is messy | 10 | 0 | 1 | 0 |
-| 5. Visual deviations at 100% (confirmed from the images) | 14 | 2 | 0 | 0 |
+| 5. Visual deviations at 100% (confirmed from the images) | 13 | 3 | 0 | 0 |
 | 6. Open items carried over from the fix plan (IDs P4-40…50 were P4-30…40 in rev 1) | 6 | 2 | 1 | 0 |
-| **Total (53)** | **41** | **5** | **3** | **4** |
+| **Total (53)** | **40** | **6** | **3** | **4** |
 
 The five things that matter most:
 
@@ -120,10 +120,10 @@ The five things that matter most:
 | P4-27 | P2 | Open | `ho_job_booked` | Title says "Booked", not "Booked for <date>"; no sticky "Message <name>" CTA (inline Message button instead); kv values left-aligned in a column, mockup right-aligned with dashed dividers; timeline is a simple checklist, not the connected 5-stage stepper; profile link uses an external-link icon for an in-app screen. |
 | P4-28 | P1 | Open | `ho_extra_cost` | The extra-cost request, the screen's primary action, is **below the Job details card** (below the fold at 100% and 200%). Mockup puts it directly under the status card. No "Checked in" line. |
 | P4-29 | P1 | Open | `ho_payment_status` | **Lost its structure:** the mockup has a large icon tile, a headline "Receipt sent for review" and subtitle; the app shows a small pill and a paragraph, leaving most of the screen empty. The "Under review" badge replaces the mockup's "In review". |
-| P4-30 | P2 | Open | `ho_payment` | "Method: BankTransfer" prints the raw enum value (needs a label). |
+| P4-30 | P2 | Verify | `ho_payment` | "Method: BankTransfer" prints the raw enum value (needs a label). Group 4: `paymentMethodLabel()` in `models/payment.dart`, used by the v1 and v2 payment screens; unit test added. Not run (no Flutter in the agent sandbox): confirm with `flutter analyze` and `flutter test`. |
 | P4-31 | P1 | Open | `ho_dispute` | Pills are API reasons (Poor Quality, Damage to Property, Overcharged, Other) as decided (D-10) but the mockup PNG still shows the old set (P4-09); title "Open dispute" vs "Dispute amount"; evidence is a large empty tile instead of a dashed "Add evidence" row; "DETAILS" eyebrow is "TELL US WHAT HAPPENED". |
 | P4-32 | P1 | Open | `ho_quotes` | No "View quote" button and no duration / "fixed" pricing label (mockup shows both), so inclusions and start dates are unreachable from the list. No rating star. Pending-invite row omitted (known, H-08). |
-| P4-33 | P1 | Open | `ho_review_completion` | Button reads "Approve & pay", not "Approve $<amount>" (H-10 acceptance); shows a **raw timestamp** "2026-11-18 17:02:50.152525" under "Completion submitted"; on-site times absent (no DTO, known). |
+| P4-33 | P1 | Open | `ho_review_completion` | Button reads "Approve & pay", not "Approve $<amount>" (H-10 acceptance); shows a **raw timestamp** "2026-11-18 17:02:50.152525" under "Completion submitted"; on-site times absent (no DTO, known). Group 4 (partial): the raw timestamp now renders as `DateFormat.MMMEd().add_jm()`. The "Approve $<amount>" button label is not changed. |
 | P4-34 | P2 | Open | `ho_review` | Mockup PNG still shows chips (P4-09). Rating sheet not captured (P4-17). |
 | P4-35 | P2 | Verify | dark theme | Home dark mirrors light (same defects, tokens look right). The rest of dark was not reviewed; the same pair images exist and need a pass. |
 

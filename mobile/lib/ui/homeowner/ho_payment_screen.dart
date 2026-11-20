@@ -204,7 +204,11 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
               strong: true,
               divider: hasLabour || hasLegacy || hasExtras,
             ),
-            THKeyValue('Method', payment.method, divider: true),
+            THKeyValue(
+              'Method',
+              paymentMethodLabel(payment.method),
+              divider: true,
+            ),
           ],
         ),
         if (disclaimer?.isNotEmpty == true)

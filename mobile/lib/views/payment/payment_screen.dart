@@ -565,8 +565,5 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     PaymentStage.pending || PaymentStage.unknown => FixoBadgeKind.actionNeeded,
   };
 
-  static String _method(String method) => switch (method) {
-    'BankTransfer' => 'Bank transfer',
-    _ => method.isEmpty ? 'Unavailable' : method,
-  };
+  static String _method(String method) => paymentMethodLabel(method);
 }

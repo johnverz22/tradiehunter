@@ -45,6 +45,14 @@ enum PaymentStage {
 
 /// Bank account the transfer is sent to (P4-04). Comes from the
 /// `PaymentInstructions` config section, never hardcoded in the app.
+/// Human label for a payment `method` wire value. Unknown values pass through
+/// so a new backend method is visible rather than hidden; empty is unavailable.
+String paymentMethodLabel(String method) => switch (method) {
+  'BankTransfer' => 'Bank transfer',
+  '' => 'Unavailable',
+  _ => method,
+};
+
 class BankDetails {
   final String accountName;
   final String accountNumber;

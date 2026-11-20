@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/marketplace.dart';
 import '../../utils/money.dart';
@@ -213,7 +214,7 @@ class _HoReviewCompletionScreenState
                 const THText('Completion submitted', style: THTextStyle.title),
                 const SizedBox(height: Space.s1),
                 THText(
-                  '${submitted.toLocal()}',
+                  DateFormat.MMMEd().add_jm().format(submitted.toLocal()),
                   style: THTextStyle.meta,
                   tone: THTone.soft,
                 ),

@@ -169,4 +169,15 @@ void main() {
       expect(past.isOverdue, isTrue);
     });
   });
+
+  group('paymentMethodLabel', () {
+    test('labels the manual bank transfer method', () {
+      expect(paymentMethodLabel('BankTransfer'), 'Bank transfer');
+    });
+
+    test('shows unknown methods as sent and empty as unavailable', () {
+      expect(paymentMethodLabel('Cash'), 'Cash');
+      expect(paymentMethodLabel(''), 'Unavailable');
+    });
+  });
 }
