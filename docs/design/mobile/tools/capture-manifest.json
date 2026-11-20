@@ -1,5 +1,5 @@
 {
-  "_comment": "Capture-name manifest for the screenshot drivers (fix plan P-05). `required` is generated from docs/todos/02_design_system_fix_plan.md section 7.3 and checked against it by scripts/check-capture-names.py. `extra` = names the drivers take that are not in 7.3. `pending` = required names no driver takes yet, with the reason. `legacy` = v1-era capture names that shot-map.json still falls back to.",
+  "_comment": "Capture-name manifest for the screenshot drivers (fix plan P-05). `required` is generated from docs/todos/02_design_system_fix_plan.md section 7.3 and checked against it by scripts/check-capture-names.py. `extra` = names the drivers take that are not in 7.3. `pending` = required names no driver takes yet, with the reason. `legacy` = v1-era capture names (empty since P4-03; shot-map.json no longer falls back to them).",
   "required": [
     "homeowner/01_home",
     "homeowner/01b_home_empty",
@@ -83,19 +83,5 @@
     "homeowner/01b_home_empty": "needs a homeowner account with no jobs; no such account is seeded yet",
     "homeowner/01c_home_no_attention": "needs a homeowner whose jobs need no action; no fixture creates it yet"
   },
-  "legacy": [
-    "homeowner/01_dashboard",
-    "homeowner/02_jobs_list",
-    "homeowner/06_post_job",
-    "homeowner/08_choose_tradie",
-    "homeowner/09_job_detail_inprogress",
-    "homeowner/10_job_detail_booked",
-    "homeowner/11_chat",
-    "homeowner/12_payment",
-    "homeowner/13_payment_status",
-    "homeowner/14_dispute",
-    "homeowner/15_tradie_profile",
-    "shared/02_onboarding",
-    "shared/05_verify_email"
-  ]
+  "legacy": []
 }

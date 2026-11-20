@@ -30,13 +30,13 @@ Rev 1 found that the committed screenshots were old v1 captures. Commit `5fdc781
 
 | Section | Open | Verify | Decision | Fixed |
 |---|---|---|---|---|
-| 2. Evidence and process | 6 | 1 | 0 | 2 |
+| 2. Evidence and process | 5 | 1 | 0 | 3 |
 | 2b. Capture content problems | 4 | 0 | 0 | 0 |
 | 3. Owner observation O-1: normal text is thinner than the mockup | 3 | 0 | 1 | 0 |
 | 4. Owner observation O-2: the 200% scale is messy | 10 | 0 | 1 | 0 |
 | 5. Visual deviations at 100% (confirmed from the images) | 14 | 2 | 0 | 0 |
 | 6. Open items carried over from the fix plan (IDs P4-40…50 were P4-30…40 in rev 1) | 6 | 2 | 1 | 0 |
-| **Total (53)** | **43** | **5** | **3** | **2** |
+| **Total (53)** | **42** | **5** | **3** | **3** |
 
 The five things that matter most:
 
@@ -54,7 +54,7 @@ The five things that matter most:
 |---|---|---|---|---|---|
 | P4-01 | P0 | Fixed | No committed Phase 4 run (rev 1). | Run committed in `5fdc781`: 100% and 200%, `UI_V2=all`. | — |
 | P4-02 | P0 | Fixed | Pair images compared mockup against v1 (rev 1). | `compare/` regenerated, 54/60 paired; the 6 gaps are tradie T-04/T-05/T-06 (unbuilt). | — |
-| P4-03 | P1 | Open | Legacy v1-era images still sit beside the new ones (e.g. `01_dashboard.png`, `02_jobs_list.png`, `12_payment.png`, `13_payment_status.png`; 59 homeowner files per theme vs 45 in the 200% run). `shot-map.json` falls back to old names, so a missing new capture would silently pair a v1 image. | `ls screenshots/light/homeowner` | Delete files not in the §7.3 name list; drop the legacy fallbacks from `shot-map.json`. |
+| P4-03 | P1 | Fixed | Legacy v1-era images still sit beside the new ones (e.g. `01_dashboard.png`, `02_jobs_list.png`, `12_payment.png`, `13_payment_status.png`; 59 homeowner files per theme vs 45 in the 200% run). `shot-map.json` falls back to old names, so a missing new capture would silently pair a v1 image. | `ls screenshots/light/homeowner` | Deleted the 32 legacy PNGs (16 names × light/dark) from `screenshots/`; removed the v1 fallbacks from `shot-map.json` and emptied `legacy` in the manifest; `check-capture-names.py` now fails on any stray capture. Pairing unchanged (54/60). Group 1. |
 | P4-04 | P1 | Open | The run was made from an uncommitted tree: `run.json` says `14e1feb-dirty` for both runs, started 09:19Z (100%) and 12:47Z (200%), and the 200% fixes landed afterwards in `5fdc781`. The images cannot be reproduced from a commit. | `screenshots*/light/homeowner/run.json` | Re-run from a clean commit; make `run-shots.sh` refuse a dirty tree (or warn loudly). |
 | P4-05 | P1 | Open | Test baseline still the pre-fix `e2e-baseline-2026-11.md` (2026-11-17). Post-Phase 4 C1 (homeowner e2e suites) result not recorded. | `docs/runs/v2/e2e-baseline-2026-11.md` | Re-run C1, write a new baseline file. |
 | P4-06 | P1 | Verify | Plan notes for 2.1 and 2.2 say the Dart was never formatted, analyzed or tested in the authoring sandbox. No later note closes them. | plan §6 | Run `dart format`, `flutter analyze --fatal-infos` and the named `phase4_*` tests. |

@@ -14,7 +14,9 @@ Fails (exit 1) when:
   * a driver mentions a name that is neither required nor an `extra`;
   * a required name is neither mentioned by a driver nor listed as `pending`
     (with the reason), or a `pending` name is mentioned after all (stale);
-  * shot-map.json uses a name that is not required, extra or legacy.
+  * shot-map.json uses a name that is not required, extra or legacy;
+  * a committed capture under docs/runs/v2/screenshots*/<theme>/ has a name
+    that is not required or extra (a stale v1-era image, P4-03).
 
 Usage: scripts/check-capture-names.py [--list]
 """
@@ -134,6 +136,15 @@ def main() -> int:
         for name in names:
             if name not in known:
                 errors.append(f"shot-map.json '{mockup_id}' uses unknown name: {name}")
+
+    for run_dir in sorted((ROOT / "docs/runs/v2").glob("screenshots*")):
+        for png in sorted(run_dir.glob("*/*/*.png")):
+            if png.relative_to(run_dir).parts[0] == "compare":
+                continue  # generated side-by-side output, not a capture
+            theme_dir = run_dir / png.relative_to(run_dir).parts[0]
+            name = png.relative_to(theme_dir).with_suffix("").as_posix()
+            if name not in required | extra:
+                errors.append(f"stray capture not in manifest: {png.relative_to(ROOT)}")
 
     if args.list:
         for name, reason in sorted(pending.items()):
