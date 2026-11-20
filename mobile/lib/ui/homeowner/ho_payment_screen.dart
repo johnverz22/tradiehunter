@@ -72,24 +72,32 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
         stickyBar: payment?.canUploadReceipt == true
             ? THStickyBar(
                 children: [
-                  if (!bankReady) ...[
-                    const THText(
-                      'Upload is available once valid bank details are shown.',
-                      key: Key('upload_disabled_hint'),
-                      style: THTextStyle.meta,
-                      align: TextAlign.center,
-                    ),
-                    const SizedBox(height: Space.s2),
-                    THButton(
-                      label: state.isLoading
-                          ? 'Refreshing…'
-                          : 'Refresh payment details',
-                      loading: state.isLoading,
-                      onPressed: () => ref
-                          .read(paymentViewModelProvider(widget.jobId).notifier)
-                          .load(),
-                    ),
-                  ] else
+                  if (!bankReady)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const THText(
+                          'Upload is available once valid bank details are shown.',
+                          key: Key('upload_disabled_hint'),
+                          style: THTextStyle.meta,
+                          align: TextAlign.center,
+                        ),
+                        const SizedBox(height: Space.s2),
+                        THButton(
+                          label: state.isLoading
+                              ? 'Refreshing…'
+                              : 'Refresh payment details',
+                          loading: state.isLoading,
+                          onPressed: () => ref
+                              .read(
+                                paymentViewModelProvider(widget.jobId).notifier,
+                              )
+                              .load(),
+                        ),
+                      ],
+                    )
+                  else
                     THButton(
                       key: const Key('upload_receipt_button'),
                       label: state.isUploading

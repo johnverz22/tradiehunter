@@ -142,8 +142,7 @@ class _ThShellState extends ConsumerState<ThShell> {
   /// under the keyboard, instead of being pushed above it).
   Widget _aboveDock(BuildContext context, Widget child) {
     final mq = MediaQuery.of(context);
-    final dockHeight =
-        Sizes.dock + Radii.hairline + mq.viewPadding.bottom;
+    final dockHeight = Sizes.dock + Radii.hairline + mq.viewPadding.bottom;
     return MediaQuery(
       data: mq.copyWith(
         padding: mq.padding.copyWith(bottom: 0),
