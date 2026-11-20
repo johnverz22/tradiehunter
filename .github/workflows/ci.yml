@@ -58,6 +58,10 @@ jobs:
       run: node docs/design/mobile/tools/build.mjs --check
     - name: Web design tokens, kit lint and WCAG contrast gate
       run: node docs/design/web/tools/build.mjs --check
+    - name: Mockup PNGs are newer than mockups/index.html (P4-09)
+      # Warn-only until the PNGs are re-exported once (writes png/source.json);
+      # then drop --warn so a stale export fails the build.
+      run: python3 scripts/check-mockup-pngs.py --warn
 
   web-build-test:
     runs-on: ubuntu-latest

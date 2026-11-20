@@ -35,23 +35,25 @@ flutter:
   fonts:
     - family: Lexend
       fonts:
-        - asset: fonts/Lexend-Regular.ttf
+        - asset: assets/fonts/v2/Lexend-Regular.ttf
           weight: 400
-        - asset: fonts/Lexend-Medium.ttf
+        - asset: assets/fonts/v2/Lexend-Medium.ttf
           weight: 500
-        - asset: fonts/Lexend-SemiBold.ttf
+        - asset: assets/fonts/v2/Lexend-SemiBold.ttf
           weight: 600
-        - asset: fonts/Lexend-Bold.ttf
+        - asset: assets/fonts/v2/Lexend-Bold.ttf
           weight: 700
-        - asset: fonts/Lexend-ExtraBold.ttf
+        - asset: assets/fonts/v2/Lexend-ExtraBold.ttf
           weight: 800
     - family: Source Sans 3
       fonts:
-        - asset: fonts/SourceSans3-Regular.ttf
+        - asset: assets/fonts/v2/SourceSans3-Regular.ttf
           weight: 400
-        - asset: fonts/SourceSans3-SemiBold.ttf
+        - asset: assets/fonts/v2/SourceSans3-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/v2/SourceSans3-SemiBold.ttf
           weight: 600
-        - asset: fonts/SourceSans3-Bold.ttf
+        - asset: assets/fonts/v2/SourceSans3-Bold.ttf
           weight: 700
 ```
 

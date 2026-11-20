@@ -10,10 +10,16 @@
 // ast/screens.mjs), so regenerate the mockup first if it is stale:
 //   node docs/design/mobile/tools/build.mjs
 //
+// A full run (no --only) also writes <out>/source.json: the sha256 of
+// mockups/index.html the PNGs were rendered from, the scale and whether the web
+// fonts loaded. `scripts/check-mockup-pngs.py` (CI) compares it with the current
+// index.html, so PNGs that are older than the mockup are caught (P4-09).
+//
 // Needs Playwright, which is deliberately not a dependency of this package:
 //   npm i --no-save playwright && npx playwright install chromium
 // The mockup loads Lexend + Source Sans 3 from Google Fonts, so run this with
 // network access or the frames render in a fallback font.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -69,6 +75,19 @@ try {
       await frame.screenshot({ path: path.join(OUT, `${id}-${theme}.png`), animations: 'disabled' });
       n++;
     }
+  }
+  if (!ONLY) {
+    // Normalise line endings so the hash matches on every checkout.
+    const html = fs.readFileSync(HTML, 'utf8').replace(/\r\n/g, '\n');
+    const manifest = {
+      source: 'mockups/index.html',
+      sha256: crypto.createHash('sha256').update(html).digest('hex'),
+      scale: SCALE,
+      fonts_loaded: !!fontsOk,
+      screens: ids.length,
+      generated_at: new Date().toISOString(),
+    };
+    fs.writeFileSync(path.join(OUT, 'source.json'), JSON.stringify(manifest, null, 2) + '\n');
   }
   console.log(`wrote ${n} PNGs to ${path.relative(process.cwd(), OUT) || '.'} (scale ${SCALE}, fonts ${fontsOk ? 'ok' : 'FALLBACK'})`);
   if (ONLY) {

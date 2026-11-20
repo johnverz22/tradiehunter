@@ -32,11 +32,11 @@ Rev 1 found that the committed screenshots were old v1 captures. Commit `5fdc781
 |---|---|---|---|---|
 | 2. Evidence and process | 5 | 1 | 0 | 3 |
 | 2b. Capture content problems | 4 | 0 | 0 | 0 |
-| 3. Owner observation O-1: normal text is thinner than the mockup | 3 | 0 | 1 | 0 |
+| 3. Owner observation O-1: normal text is thinner than the mockup | 2 | 0 | 1 | 1 |
 | 4. Owner observation O-2: the 200% scale is messy | 10 | 0 | 1 | 0 |
 | 5. Visual deviations at 100% (confirmed from the images) | 14 | 2 | 0 | 0 |
 | 6. Open items carried over from the fix plan (IDs P4-40…50 were P4-30…40 in rev 1) | 6 | 2 | 1 | 0 |
-| **Total (53)** | **42** | **5** | **3** | **3** |
+| **Total (53)** | **41** | **5** | **3** | **4** |
 
 The five things that matter most:
 
@@ -60,7 +60,7 @@ The five things that matter most:
 | P4-06 | P1 | Verify | Plan notes for 2.1 and 2.2 say the Dart was never formatted, analyzed or tested in the authoring sandbox. No later note closes them. | plan §6 | Run `dart format`, `flutter analyze --fatal-infos` and the named `phase4_*` tests. |
 | P4-07 | P1 | Open | No Phase 4 id is in `v2Screens` (gated on sign-off). By default the shipped app is still v1 for homeowners. | `ui_flags.dart` | Flip one id at a time after fixes below. |
 | P4-08 | P2 | Open | Golden harness: 393×852, 1×, icon font not loaded (icons are squares), no scaled variant. | `mobile/test/ui/goldens` | Load the icon font; add `_200` goldens (P4-11). |
-| P4-09 | P1 | Open | **Mockup PNGs are stale.** `index.html` and `ast/screens.mjs` no longer contain "What stood out" or "Hours too high"/"What would be fair" (D-9, D-10 amendments), but `mockups/png/` (exported in `12bb2cf`, before those edits) still shows them, so pair images for review and dispute compare against an outdated mockup. | grep of AST vs PNGs | Re-run `node docs/design/mobile/tools/mockup-shots.mjs`, then `scripts/compare-shots.py`; add a CI check that PNGs are newer than the AST. |
+| P4-09 | P1 | Open | **Mockup PNGs are stale.** `index.html` and `ast/screens.mjs` no longer contain "What stood out" or "Hours too high"/"What would be fair" (D-9, D-10 amendments), but `mockups/png/` (exported in `12bb2cf`, before those edits) still shows them, so pair images for review and dispute compare against an outdated mockup. | grep of AST vs PNGs | Re-run `node docs/design/mobile/tools/mockup-shots.mjs`, then `scripts/compare-shots.py`; add a CI check that PNGs are newer than the AST. **Check done (group 3):** `mockup-shots.mjs` now writes `mockups/png/source.json` (sha256 of `index.html`, fonts flag); `scripts/check-mockup-pngs.py` runs in CI in warn-only mode and fails on a stale, missing or fallback-font export. Still open: the re-export itself (needs Chromium and Google Fonts access; not possible in the agent sandbox), then drop `--warn` in `ci.yml`. |
 
 ### 2b. Capture content problems
 
@@ -81,7 +81,7 @@ The five things that matter most:
 |---|---|---|---|
 | P4-10 | P1 | Open | Every reading style (`body`, `meta`, `input`, `detail`) is Source Sans 3 Regular (400), the lightest bundled weight. Medium (500) is bundled and declared in `pubspec.yaml` but no token uses it. Fonts verified as genuine static weights (stem of `l`: 135 → 209 units from 400 to 700). Contrast passes (`textSoft` 6.5–7.0:1 light), so this is stroke weight, not colour. |
 | P4-10b | P1 | Open | The gap comes from the renderer: the mockup is rasterised by desktop Chromium from Google Fonts, which draws the same weight heavier than Flutter on iOS. The mockup is therefore a poor reference for stroke weight. Light-grey `textSoft` text at 13 pt (meta, labels, kv labels) suffers most. |
-| P4-10c | P2 | Open | `TYPOGRAPHY.md` pubspec snippet omits Source Sans 3 Medium, which the real `pubspec.yaml` declares. |
+| P4-10c | P2 | Fixed | `TYPOGRAPHY.md` pubspec snippet omits Source Sans 3 Medium, which the real `pubspec.yaml` declares. Snippet now matches `mobile/pubspec.yaml` (adds Medium, uses `assets/fonts/v2/` paths). Group 3. |
 | P4-10d | P1 | Decision | Pick: **(A)** body, meta, input, detail → w500 (one edit in `tokens.json`, then `node docs/design/mobile/tools/build.mjs`, regenerate goldens); **(B)** only `meta` and `detail` → w500; **(C)** keep 400 and change how the mockup is rendered (heavier PNG export) so it stops over-promising. Recommend A or B; try a 400/500 A/B on one screen on the simulator first. Headings (Lexend 600) look equivalent in both. |
 
 ---
