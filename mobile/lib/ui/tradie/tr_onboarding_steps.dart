@@ -76,7 +76,11 @@ class TrOnboardingStep0Work extends StatelessWidget {
           THCard(
             padding: Space.s3,
             children: [
-              THText(state.step1Error!, style: THTextStyle.meta, tone: THTone.danger),
+              THText(
+                state.step1Error!,
+                style: THTextStyle.meta,
+                tone: THTone.danger,
+              ),
             ],
           ),
         THText('YOUR DETAILS', style: THTextStyle.label, tone: THTone.soft),
@@ -145,7 +149,11 @@ class TrOnboardingStep0Work extends StatelessWidget {
             }
           },
         ),
-        THText('WEEKLY AVAILABILITY', style: THTextStyle.label, tone: THTone.soft),
+        THText(
+          'WEEKLY AVAILABILITY',
+          style: THTextStyle.label,
+          tone: THTone.soft,
+        ),
         THCard(
           padding: Space.s3,
           children: [
@@ -216,7 +224,11 @@ class _DayRow extends StatelessWidget {
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: Space.s1),
-            child: THText(errorText!, style: THTextStyle.meta, tone: THTone.danger),
+            child: THText(
+              errorText!,
+              style: THTextStyle.meta,
+              tone: THTone.danger,
+            ),
           ),
       ],
     );
@@ -256,7 +268,11 @@ class TrOnboardingStep1Trades extends StatelessWidget {
           THCard(
             padding: Space.s3,
             children: [
-              THText(state.step2Error!, style: THTextStyle.meta, tone: THTone.danger),
+              THText(
+                state.step2Error!,
+                style: THTextStyle.meta,
+                tone: THTone.danger,
+              ),
             ],
           ),
         THText('PRIMARY TRADE', style: THTextStyle.label, tone: THTone.soft),
@@ -273,10 +289,22 @@ class TrOnboardingStep1Trades extends StatelessWidget {
           ],
         ),
         if (errors['tradeType'] != null)
-          THText(errors['tradeType']!, style: THTextStyle.meta, tone: THTone.danger),
-        THText('SERVICES & HOURLY RATES', style: THTextStyle.label, tone: THTone.soft),
+          THText(
+            errors['tradeType']!,
+            style: THTextStyle.meta,
+            tone: THTone.danger,
+          ),
+        THText(
+          'SERVICES & HOURLY RATES',
+          style: THTextStyle.label,
+          tone: THTone.soft,
+        ),
         if (errors['services'] != null)
-          THText(errors['services']!, style: THTextStyle.meta, tone: THTone.danger),
+          THText(
+            errors['services']!,
+            style: THTextStyle.meta,
+            tone: THTone.danger,
+          ),
         for (final service in state.catalog)
           _ServiceRateCard(
             service: service,
@@ -315,17 +343,18 @@ class _ServiceRateCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Checkbox(
-              value: selected,
-              onChanged: (_) => onToggle(),
-            ),
+            Checkbox(value: selected, onChanged: (_) => onToggle()),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   THText(service.name, style: THTextStyle.body),
                   if (service.category.isNotEmpty)
-                    THText(service.category, style: THTextStyle.meta, tone: THTone.soft),
+                    THText(
+                      service.category,
+                      style: THTextStyle.meta,
+                      tone: THTone.soft,
+                    ),
                 ],
               ),
             ),
@@ -366,7 +395,11 @@ class TrOnboardingStep2Verification extends StatelessWidget {
           THCard(
             padding: Space.s3,
             children: [
-              THText(state.step3Error!, style: THTextStyle.meta, tone: THTone.danger),
+              THText(
+                state.step3Error!,
+                style: THTextStyle.meta,
+                tone: THTone.danger,
+              ),
             ],
           ),
         THText('DOCUMENTS', style: THTextStyle.label, tone: THTone.soft),
@@ -457,7 +490,11 @@ class TrOnboardingStep3Payout extends StatelessWidget {
           THCard(
             padding: Space.s3,
             children: [
-              THText(state.step4Error!, style: THTextStyle.meta, tone: THTone.danger),
+              THText(
+                state.step4Error!,
+                style: THTextStyle.meta,
+                tone: THTone.danger,
+              ),
             ],
           ),
         THText('PAYOUT DETAILS', style: THTextStyle.label, tone: THTone.soft),

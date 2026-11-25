@@ -15,14 +15,15 @@ Future<(String, Decimal, String)?> pushTrExtraCost(
   BuildContext context, {
   String? homeownerFirstName,
 }) {
-  return Navigator.of(context, rootNavigator: true)
-      .push<(String, Decimal, String)?>(
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) =>
-              TrExtraCostPage(homeownerFirstName: homeownerFirstName),
-        ),
-      );
+  return Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push<(String, Decimal, String)?>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => TrExtraCostPage(homeownerFirstName: homeownerFirstName),
+    ),
+  );
 }
 
 class TrExtraCostPage extends ConsumerStatefulWidget {
@@ -69,11 +70,8 @@ class _TrExtraCostPageState extends ConsumerState<TrExtraCostPage> {
   void _submit() {
     if (!_canSubmit) return;
     setState(() => _submitting = true);
-    Navigator.of(context).pop((
-      _kind,
-      _parsedAmount!,
-      _descriptionController.text.trim(),
-    ));
+    Navigator.of(context)
+        .pop((_kind, _parsedAmount!, _descriptionController.text.trim()));
   }
 
   @override

@@ -75,9 +75,9 @@ class _TrOnboardingScreenState extends ConsumerState<TrOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) => ThScope(
-        themeMode: ref.watch(themeModeProvider),
-        child: Builder(builder: (ctx) => _page(ctx)),
-      );
+    themeMode: ref.watch(themeModeProvider),
+    child: Builder(builder: (ctx) => _page(ctx)),
+  );
 
   Widget _page(BuildContext context) {
     final state = ref.watch(tradieOnboardingProvider);

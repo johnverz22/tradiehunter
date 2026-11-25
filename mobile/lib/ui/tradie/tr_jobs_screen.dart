@@ -10,8 +10,11 @@ import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_state_view.dart';
+import '../shared/th_shell.dart' show kThBreakpointMasterDetail;
+import '../ui_flags.dart';
 import 'tr_home_mapper.dart';
 import 'tr_job_card.dart';
+import 'tr_job_router.dart';
 
 enum TrJobFilter { today, upcoming, awaitingPayment, done, all }
 
@@ -34,23 +37,24 @@ class TrDayGroup {
 
 List<Job> filterTradieJobs(List<Job> jobs, TrJobFilter filter, DateTime now) {
   return switch (filter) {
-    TrJobFilter.today => jobs
-        .where(
-          (j) =>
-              _workStatuses.contains(j.status) &&
-              thIsScheduledOnOrBeforeToday(j, now),
-        )
-        .toList(),
-    TrJobFilter.upcoming => jobs
-        .where(
-          (j) =>
-              _workStatuses.contains(j.status) &&
-              !thIsScheduledOnOrBeforeToday(j, now),
-        )
-        .toList(),
-    TrJobFilter.awaitingPayment => jobs
-        .where((j) => _awaitingPaymentStatuses.contains(j.status))
-        .toList(),
+    TrJobFilter.today =>
+      jobs
+          .where(
+            (j) =>
+                _workStatuses.contains(j.status) &&
+                thIsScheduledOnOrBeforeToday(j, now),
+          )
+          .toList(),
+    TrJobFilter.upcoming =>
+      jobs
+          .where(
+            (j) =>
+                _workStatuses.contains(j.status) &&
+                !thIsScheduledOnOrBeforeToday(j, now),
+          )
+          .toList(),
+    TrJobFilter.awaitingPayment =>
+      jobs.where((j) => _awaitingPaymentStatuses.contains(j.status)).toList(),
     TrJobFilter.done => jobs.where((j) => j.status == 'Completed').toList(),
     TrJobFilter.all => jobs,
   };
@@ -101,6 +105,10 @@ class TrJobsScreen extends ConsumerStatefulWidget {
 class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
   TrJobFilter _filter = TrJobFilter.today;
 
+  /// Wide master-detail: the job currently shown in the right pane.
+  /// Non-null only when [kThBreakpointMasterDetail] width is reached.
+  String? _selectedJobId;
+
   @override
   void initState() {
     super.initState();
@@ -109,19 +117,23 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
     );
   }
 
-  void _openJob(BuildContext context, Job job) {
-    if (job.status == 'Requested') {
-      context.push('/tradie/requests/${job.id}');
+  void _openJob(BuildContext context, Job job, {required bool isWide}) {
+    final id = job.id.toString();
+    if (isWide && job.status != 'Requested') {
+      // Wide layout: show detail in the right pane, no push.
+      setState(() => _selectedJobId = id);
+    } else if (job.status == 'Requested') {
+      context.push('/tradie/requests/$id');
     } else {
-      context.push('/tradie/jobs/${job.id}');
+      context.push('/tradie/jobs/$id');
     }
   }
 
   @override
   Widget build(BuildContext context) => ThScope(
-        themeMode: ref.watch(themeModeProvider),
-        child: Builder(builder: (ctx) => _page(ctx)),
-      );
+    themeMode: ref.watch(themeModeProvider),
+    child: Builder(builder: (ctx) => _page(ctx)),
+  );
 
   Widget _page(BuildContext context) {
     final state = ref.watch(jobsViewModelProvider);
@@ -135,34 +147,79 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
       newestFirst: _filter == TrJobFilter.done || _filter == TrJobFilter.all,
     );
 
+    final c = context.th;
+
     return THScaffold(
-      appBar: const THAppBar(
-        title: 'My jobs',
-      ),
+      appBar: const THAppBar(title: 'My jobs'),
       scrollable: false,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SingleChildScrollView(
-            key: const Key('tradie_filter_row'),
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(bottom: Space.s3),
-            child: Row(
-              spacing: Space.s2,
-              children: [
-                for (final f in TrJobFilter.values)
-                  ChoiceChip(
-                    label: Text(_filterLabel(f)),
-                    selected: _filter == f,
-                    onSelected: (_) => setState(() => _filter = f),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _body(context, state, notifier, groups),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide =
+              isV2Screen('wide_layout') &&
+              constraints.maxWidth >= kThBreakpointMasterDetail;
+
+          // On resize from wide→narrow, clear selection so it isn't stale.
+          if (!isWide && _selectedJobId != null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => setState(() => _selectedJobId = null),
+            );
+          }
+
+          final masterPanel = Column(
+            key: const Key('tr_jobs_master_panel'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SingleChildScrollView(
+                key: const Key('tradie_filter_row'),
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(bottom: Space.s3),
+                child: Row(
+                  spacing: Space.s2,
+                  children: [
+                    for (final f in TrJobFilter.values)
+                      ChoiceChip(
+                        label: Text(_filterLabel(f)),
+                        selected: _filter == f,
+                        onSelected: (_) => setState(() {
+                          _filter = f;
+                          _selectedJobId = null;
+                        }),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _body(
+                  context,
+                  state,
+                  notifier,
+                  groups,
+                  isWide: isWide,
+                ),
+              ),
+            ],
+          );
+
+          if (!isWide) return masterPanel;
+
+          // ── Wide: master list + detail pane ───────────────────────────────
+          final detailPane = _selectedJobId != null
+              ? TrJobRouter(
+                  key: ValueKey('tr_job_detail_$_selectedJobId'),
+                  jobId: _selectedJobId!,
+                  v1Fallback: () => const SizedBox.shrink(),
+                )
+              : const _TrJobsEmptyDetail();
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: masterPanel),
+              VerticalDivider(width: 1, color: c.line),
+              Expanded(child: detailPane),
+            ],
+          );
+        },
       ),
     );
   }
@@ -171,8 +228,9 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
     BuildContext context,
     JobsState state,
     JobsNotifier notifier,
-    List<TrDayGroup> groups,
-  ) {
+    List<TrDayGroup> groups, {
+    required bool isWide,
+  }) {
     if (state.isLoading && state.jobs.isEmpty) {
       return ThStateView.loading();
     }
@@ -199,10 +257,7 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
         children: [
           for (final group in groups) ...[
             Padding(
-              padding: const EdgeInsets.only(
-                top: Space.s2,
-                bottom: Space.s2,
-              ),
+              padding: const EdgeInsets.only(top: Space.s2, bottom: Space.s2),
               child: THText(
                 group.label.toUpperCase(),
                 style: THTextStyle.label,
@@ -210,10 +265,7 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
               ),
             ),
             for (final job in group.jobs) ...[
-              TrJobCard(
-                job: job,
-                onTap: () => _openJob(context, job),
-              ),
+              TrJobCard(job: job, onTap: () => _openJob(context, job, isWide: isWide)),
               const SizedBox(height: Space.s2_5),
             ],
           ],
@@ -223,27 +275,39 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
   }
 
   static String _filterLabel(TrJobFilter f) => switch (f) {
-        TrJobFilter.today => 'Today',
-        TrJobFilter.upcoming => 'Upcoming',
-        TrJobFilter.awaitingPayment => 'Awaiting payment',
-        TrJobFilter.done => 'Done',
-        TrJobFilter.all => 'All',
-      };
+    TrJobFilter.today => 'Today',
+    TrJobFilter.upcoming => 'Upcoming',
+    TrJobFilter.awaitingPayment => 'Awaiting payment',
+    TrJobFilter.done => 'Done',
+    TrJobFilter.all => 'All',
+  };
 
   static String _emptyTitle(TrJobFilter f) => switch (f) {
-        TrJobFilter.today => 'Nothing scheduled today',
-        TrJobFilter.upcoming => 'No upcoming jobs',
-        TrJobFilter.awaitingPayment => 'No jobs awaiting payment',
-        TrJobFilter.done => 'No completed jobs yet',
-        TrJobFilter.all => 'No jobs yet',
-      };
+    TrJobFilter.today => 'Nothing scheduled today',
+    TrJobFilter.upcoming => 'No upcoming jobs',
+    TrJobFilter.awaitingPayment => 'No jobs awaiting payment',
+    TrJobFilter.done => 'No completed jobs yet',
+    TrJobFilter.all => 'No jobs yet',
+  };
 
   static String _emptyMessage(TrJobFilter f) => switch (f) {
-        TrJobFilter.today => 'Check Upcoming or All to see other jobs.',
-        TrJobFilter.upcoming => 'Accepted jobs for future days will appear here.',
-        TrJobFilter.awaitingPayment =>
-          'Completed jobs waiting on payment will appear here.',
-        TrJobFilter.done => 'Finished jobs will be listed here.',
-        TrJobFilter.all => 'Jobs you accept or are requested for will appear here.',
-      };
+    TrJobFilter.today => 'Check Upcoming or All to see other jobs.',
+    TrJobFilter.upcoming => 'Accepted jobs for future days will appear here.',
+    TrJobFilter.awaitingPayment =>
+      'Completed jobs waiting on payment will appear here.',
+    TrJobFilter.done => 'Finished jobs will be listed here.',
+    TrJobFilter.all => 'Jobs you accept or are requested for will appear here.',
+  };
+}
+
+/// Right-pane placeholder shown in wide layout before a job is selected.
+class _TrJobsEmptyDetail extends StatelessWidget {
+  const _TrJobsEmptyDetail();
+
+  @override
+  Widget build(BuildContext context) => ThStateView.empty(
+    icon: Icons.work_outline_rounded,
+    title: 'Select a job',
+    body: 'Tap a job on the left to view its details here.',
+  );
 }

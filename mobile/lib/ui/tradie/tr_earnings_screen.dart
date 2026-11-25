@@ -108,7 +108,11 @@ class _LoadedEarningsBody extends StatelessWidget {
               tone: THTone.onHero,
             ),
             const SizedBox(height: Space.s1),
-            THText(periodLabel, style: THTextStyle.meta, tone: THTone.onHeroSoft),
+            THText(
+              periodLabel,
+              style: THTextStyle.meta,
+              tone: THTone.onHeroSoft,
+            ),
             THText(asOfLabel, style: THTextStyle.meta, tone: THTone.onHeroSoft),
           ],
         ),

@@ -48,6 +48,7 @@ const Set<String> nonGalleryV2Screens = <String>{
   'ho_user_profile', // homeowner public profile /users/:id (N-02)
   // Phase 5 non-gallery screens (no mockup; composed from TH*, needs-design)
   'tr_jobs', // tradie Jobs tab at /jobs (plan 5.8)
+  'wide_layout', // TrJobsScreen master-detail pane at ≥744 px (plan 5.10)
 };
 
 /// Pure resolver, parameterised so it can be unit-tested without

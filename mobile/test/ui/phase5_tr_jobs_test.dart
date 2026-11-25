@@ -26,19 +26,18 @@ Job _job({
   required String id,
   required String status,
   DateTime? scheduledStartUtc,
-}) =>
-    Job(
-      id: id,
-      title: 'Fix tap $id',
-      description: 'Leaking tap',
-      category: 'Plumbing',
-      status: status,
-      stage: 0,
-      suburb: 'Ponsonby',
-      hourlyRate: Decimal.fromInt(90),
-      createdAtUtc: DateTime.utc(2026, 1, 1),
-      scheduledStartUtc: scheduledStartUtc,
-    );
+}) => Job(
+  id: id,
+  title: 'Fix tap $id',
+  description: 'Leaking tap',
+  category: 'Plumbing',
+  status: status,
+  stage: 0,
+  suburb: 'Ponsonby',
+  hourlyRate: Decimal.fromInt(90),
+  createdAtUtc: DateTime.utc(2026, 1, 1),
+  scheduledStartUtc: scheduledStartUtc,
+);
 
 void main() {
   test('filterTradieJobs and groupTradieJobsByDay bucket jobs', () {
@@ -58,17 +57,28 @@ void main() {
       _job(id: '4', status: 'Completed'),
     ];
 
-    expect(filterTradieJobs(jobs, TrJobFilter.today, now).map((j) => j.id), ['1']);
-    expect(filterTradieJobs(jobs, TrJobFilter.upcoming, now).map((j) => j.id), ['2']);
-    expect(filterTradieJobs(jobs, TrJobFilter.awaitingPayment, now).map((j) => j.id), ['3']);
-    expect(filterTradieJobs(jobs, TrJobFilter.done, now).map((j) => j.id), ['4']);
+    expect(filterTradieJobs(jobs, TrJobFilter.today, now).map((j) => j.id), [
+      '1',
+    ]);
+    expect(filterTradieJobs(jobs, TrJobFilter.upcoming, now).map((j) => j.id), [
+      '2',
+    ]);
+    expect(
+      filterTradieJobs(jobs, TrJobFilter.awaitingPayment, now).map((j) => j.id),
+      ['3'],
+    );
+    expect(filterTradieJobs(jobs, TrJobFilter.done, now).map((j) => j.id), [
+      '4',
+    ]);
     expect(filterTradieJobs(jobs, TrJobFilter.all, now).length, 4);
 
     final groups = groupTradieJobsByDay(jobs, now, newestFirst: false);
     expect(groups.map((g) => g.label), ['Today', 'Tomorrow', 'Unscheduled']);
   });
 
-  testWidgets('renders filter row and empty state when no jobs', (tester) async {
+  testWidgets('renders filter row and empty state when no jobs', (
+    tester,
+  ) async {
     final vm = _FakeJobsNotifier(const JobsState(jobs: []));
     await tester.pumpWidget(
       ProviderScope(

@@ -31,28 +31,35 @@ void main() {
   }
 
   group('TrExtraCostPage', () {
-    testWidgets('renders subtitle with homeowner first name in light and dark', (
-      tester,
-    ) async {
-      for (final dark in [false, true]) {
-        await tester.pumpWidget(
-          buildPage(dark: dark, homeownerFirstName: 'Aroha'),
-        );
-        await tester.pumpAndSettle();
+    testWidgets(
+      'renders subtitle with homeowner first name in light and dark',
+      (tester) async {
+        for (final dark in [false, true]) {
+          await tester.pumpWidget(
+            buildPage(dark: dark, homeownerFirstName: 'Aroha'),
+          );
+          await tester.pumpAndSettle();
 
-        expect(find.text('Request extra cost'), findsOneWidget);
-        expect(find.text('Aroha must approve before billing'), findsOneWidget);
-        expect(find.byKey(const Key('extra_cost_amount_field')), findsOneWidget);
-        expect(
-          find.byKey(const Key('extra_cost_description_field')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const Key('extra_cost_submit_button')),
-          findsOneWidget,
-        );
-      }
-    });
+          expect(find.text('Request extra cost'), findsOneWidget);
+          expect(
+            find.text('Aroha must approve before billing'),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('extra_cost_amount_field')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('extra_cost_description_field')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('extra_cost_submit_button')),
+            findsOneWidget,
+          );
+        }
+      },
+    );
 
     testWidgets('validation matrix disables submit for invalid inputs', (
       tester,

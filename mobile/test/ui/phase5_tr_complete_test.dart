@@ -39,7 +39,9 @@ void main() {
         platformBrightness: dark ? Brightness.dark : Brightness.light,
       ),
       child: ProviderScope(
-        overrides: [localeConfigProvider.overrideWith((ref) async => localeConfig)],
+        overrides: [
+          localeConfigProvider.overrideWith((ref) async => localeConfig),
+        ],
         child: MaterialApp(
           home: TrCompletePage(
             job: job ?? _job(),
@@ -56,10 +58,7 @@ void main() {
     ) async {
       for (final dark in [false, true]) {
         await tester.pumpWidget(
-          buildPage(
-            dark: dark,
-            approvedExtras: Decimal.parse('48.50'),
-          ),
+          buildPage(dark: dark, approvedExtras: Decimal.parse('48.50')),
         );
         await tester.pumpAndSettle();
 

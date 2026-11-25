@@ -10,8 +10,7 @@ import 'package:fixo/ui/tradie/tr_onboarding_screen.dart';
 import 'package:fixo/viewmodels/tradie_onboarding_viewmodel.dart';
 
 class _FakeOnboardingNotifier extends TradieOnboardingNotifier {
-  _FakeOnboardingNotifier(TradieOnboardingState initial)
-      : super(_DummyRepo()) {
+  _FakeOnboardingNotifier(TradieOnboardingState initial) : super(_DummyRepo()) {
     state = initial;
   }
 
@@ -52,9 +51,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          tradieOnboardingProvider.overrideWith((ref) => notifier),
-        ],
+        overrides: [tradieOnboardingProvider.overrideWith((ref) => notifier)],
         child: const MaterialApp(home: TrOnboardingScreen()),
       ),
     );
@@ -88,9 +85,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          tradieOnboardingProvider.overrideWith((ref) => notifier),
-        ],
+        overrides: [tradieOnboardingProvider.overrideWith((ref) => notifier)],
         child: const MaterialApp(home: TrOnboardingScreen()),
       ),
     );
