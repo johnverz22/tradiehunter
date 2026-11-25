@@ -241,10 +241,7 @@ void main() {
     expect(find.text('Expired'), findsOneWidget);
     expect(find.text('Account name'), findsNothing);
     expect(find.byKey(const Key('upload_receipt_button')), findsNothing);
-    expect(
-      find.textContaining('payment window has closed'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('payment window has closed'), findsOneWidget);
   });
 }
 

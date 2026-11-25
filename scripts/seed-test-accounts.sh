@@ -94,6 +94,10 @@ else
   fi
 fi
 
+# Reset any stale OverduePayment flags or leftover Shot fixture jobs for seed homeowner
+psql_run "UPDATE \"Jobs\" SET \"Status\"='Cancelled', \"CancelReasonCode\"='homeowner_changed_mind', \"UpdatedAtUtc\"=NOW() WHERE \"Title\" LIKE 'Shot %' AND \"Status\"='AwaitingPayment';" || true
+psql_run "UPDATE \"AccountFlags\" SET \"Resolved\"=true, \"ResolvedAtUtc\"=NOW(), \"Note\"=COALESCE(\"Note\",'') || E'\nResolved: seed account reset' WHERE \"UserId\"=(SELECT \"Id\" FROM \"AspNetUsers\" WHERE \"Email\"='$EMAIL') AND \"Type\"='OverduePayment' AND \"Resolved\"=false;" || true
+
 # ── 2. tradie-verified@fixo.test ─────────────────────────────────────────────
 EMAIL="tradie-verified@fixo.test"
 if ! account_exists "$EMAIL"; then

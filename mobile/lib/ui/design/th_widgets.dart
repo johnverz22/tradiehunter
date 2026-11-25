@@ -2135,33 +2135,60 @@ class THAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class THStickyBar extends StatelessWidget {
-  const THStickyBar({super.key, required this.children});
+  const THStickyBar({
+    super.key,
+    required this.children,
+    this.stackAtScale = 1.3,
+  });
   final List<Widget> children;
+  final double stackAtScale;
 
   @override
   Widget build(BuildContext context) {
     final c = context.th;
-    return ClipRect(
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          Sizes.gutter,
-          Space.s3_5,
-          Sizes.gutter,
-          Space.s3 + MediaQuery.paddingOf(context).bottom,
-        ),
+    final barColor = Color.alphaBlend(c.glass, c.paper);
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final shouldStack = children.length > 1 && textScale >= stackAtScale;
+
+    Widget content;
+    if (shouldStack) {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s2,
+        children: children.map((child) {
+          if (child is Expanded) return child.child;
+          if (child is Flexible) return child.child;
+          return child;
+        }).toList(),
+      );
+    } else {
+      content = Row(
+        spacing: Space.s2_5,
+        children: children.map((child) {
+          // Wrap bare (non-flex) children in Expanded so full-width
+          // THButtons don't overflow. Callers that already pass Expanded
+          // or Flexible are left as-is.
+          if (child is Expanded || child is Flexible) return child;
+          return Expanded(child: child);
+        }).toList(),
+      );
+    }
+
+    return Material(
+      color: barColor,
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          color: c.glass,
           border: Border(top: BorderSide(color: c.line)),
         ),
-        child: Row(
-          spacing: Space.s2_5,
-          children: children.map((child) {
-            // Wrap bare (non-flex) children in Expanded so full-width
-            // THButtons don't overflow. Callers that already pass Expanded
-            // or Flexible are left as-is.
-            if (child is Expanded || child is Flexible) return child;
-            return Expanded(child: child);
-          }).toList(),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            Sizes.gutter,
+            Space.s3_5,
+            Sizes.gutter,
+            Space.s3 + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: content,
         ),
       ),
     );

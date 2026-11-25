@@ -1,0 +1,1 @@
+[after homeowner/06b_post_quick_bottom] A call to tap() with finder "Found 1 widget with text "Project" (ignoring all but first): [

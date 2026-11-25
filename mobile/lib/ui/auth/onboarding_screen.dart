@@ -187,6 +187,7 @@ class _ThOnboardingScreenState extends ConsumerState<ThOnboardingScreen> {
                           },
                         ),
                         THButton(
+                          key: const Key('skip_button'),
                           label: 'Skip',
                           kind: THButtonKind.ghost,
                           onPressed: () => context.go('/auth'),

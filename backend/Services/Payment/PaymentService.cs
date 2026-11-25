@@ -32,6 +32,7 @@ public class PaymentService : IPaymentService
     private readonly IOptions<PaymentOptions> _paymentOptions;
     private readonly IOptions<LocaleOptions> _locale;
     private readonly ILogger<PaymentService> _logger;
+    private readonly IAccountFlagService _accountFlagService;
 
     public PaymentService(
         FixoDbContext db,
@@ -43,7 +44,8 @@ public class PaymentService : IPaymentService
         IAuditLogService audit,
         IOptions<PaymentOptions> paymentOptions,
         IOptions<LocaleOptions> locale,
-        ILogger<PaymentService> logger)
+        ILogger<PaymentService> logger,
+        IAccountFlagService accountFlagService)
     {
         _db = db;
         _jobStatus = jobStatus;
@@ -55,6 +57,7 @@ public class PaymentService : IPaymentService
         _paymentOptions = paymentOptions;
         _locale = locale;
         _logger = logger;
+        _accountFlagService = accountFlagService;
     }
 
     private string ReceiptsContainer => _paymentOptions.Value.PaymentsContainer;
@@ -270,6 +273,12 @@ public class PaymentService : IPaymentService
         await _jobStatus.TransitionAsync(
             payment.JobId, targetStatus, adminUserId, actorRole,
             note: "Payment verified.");
+
+        // P12-12: Auto-clear OverduePayment flag on homeowner if outstanding overdue payment(s) are resolved.
+        await _accountFlagService.ResolveOverdueFlagAsync(
+            payment.Job.HomeownerId,
+            adminUserId,
+            $"Payment for job {payment.JobId} verified.");
 
         _logger.LogInformation(
             "Payment {PaymentId} (job {JobId}) verified by {AdminId} — job now {Status}.",

@@ -168,6 +168,7 @@ class ThRoleToggle extends StatelessWidget {
       final selected = selectedRole == role;
       return Expanded(
         child: Semantics(
+          key: key,
           button: true,
           selected: selected,
           identifier: thTestId(key),

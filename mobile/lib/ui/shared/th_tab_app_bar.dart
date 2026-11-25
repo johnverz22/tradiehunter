@@ -23,8 +23,7 @@ class ThTabAppBar extends StatelessWidget implements PreferredSizeWidget {
   // h1 row + the same s1_5 top / s3 bottom rhythm as the Jobs body; a bit
   // taller when an icon button sets the row height.
   @override
-  Size get preferredSize =>
-      Size.fromHeight(actions.isEmpty ? 48 : 64);
+  Size get preferredSize => Size.fromHeight(actions.isEmpty ? 48 : 64);
 
   @override
   Widget build(BuildContext context) {

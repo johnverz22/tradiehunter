@@ -186,6 +186,14 @@ public class JobStatusService : IJobStatusService
 
         await _context.SaveChangesAsync();
 
+        if (newStatus == JobStatus.Cancelled && from == JobStatus.AwaitingPayment)
+        {
+            await _accountFlagService.ResolveOverdueFlagAsync(
+                job.HomeownerId,
+                userId,
+                $"Job {job.Id} was cancelled.");
+        }
+
         var payload = new JobStatusChangedPayload
         {
             JobId          = jobId,

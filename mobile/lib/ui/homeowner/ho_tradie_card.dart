@@ -31,6 +31,9 @@ class HoTradieCard extends StatelessWidget {
         ? [if (reviewCount.isNotEmpty) reviewCount, distance].join(' · ')
         : '$fallback · $distance';
 
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final isLargeScale = textScale >= 1.3;
+
     return Semantics(
       button: true,
       label: [
@@ -46,78 +49,148 @@ class HoTradieCard extends StatelessWidget {
         child: THCard(
           padding: Space.s3_5,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: Space.s3,
-              children: [
-                THAvatar(
-                  entry.initials.isEmpty ? '?' : entry.initials,
-                  size: THAvatarSize.md,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: Space.s1,
+            if (isLargeScale) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3,
+                children: [
+                  THAvatar(
+                    entry.initials.isEmpty ? '?' : entry.initials,
+                    size: THAvatarSize.md,
+                  ),
+                  Expanded(
+                    child: Text(
+                      entry.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: THType.title.copyWith(color: c.text),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Space.s2),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: Space.s2,
+                runSpacing: Space.s1,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Two lines, not one: at 200% text a one-line ellipsis
-                      // cut the name the homeowner is choosing by (H-06).
-                      Text(
-                        entry.displayName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: THType.title.copyWith(color: c.text),
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: Space.s1,
-                        children: [
-                          if (score != null)
-                            const THIcon(
-                              Icons.star_rounded,
-                              size: Sizes.iconSm,
-                              tone: THTone.accent,
-                            ),
-                          Flexible(
-                            child: Text(
-                              score ?? meta,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: THType.meta.copyWith(
-                                color: c.text,
-                                fontWeight: score != null
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                              ),
-                            ),
+                      if (score != null) ...[
+                        const THIcon(
+                          Icons.star_rounded,
+                          size: Sizes.iconSm,
+                          tone: THTone.accent,
+                        ),
+                        const SizedBox(width: Space.s1),
+                        Text(
+                          score,
+                          style: THType.meta.copyWith(
+                            color: c.text,
+                            fontWeight: FontWeight.w700,
                           ),
-                          if (score != null)
+                        ),
+                        const SizedBox(width: Space.s1),
+                      ],
+                      Text(
+                        meta,
+                        style: THType.meta.copyWith(color: c.textSoft),
+                      ),
+                    ],
+                  ),
+                  if (rate != null)
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: Space.s1,
+                      children: [
+                        THText(rate.amount, style: THTextStyle.money),
+                        THText(
+                          rate.gstNote == null ? '/hr' : '/hr ${rate.gstNote}',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ] else ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s3,
+                children: [
+                  THAvatar(
+                    entry.initials.isEmpty ? '?' : entry.initials,
+                    size: THAvatarSize.md,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: Space.s1,
+                      children: [
+                        // Two lines, not one: at 200% text a one-line ellipsis
+                        // cut the name the homeowner is choosing by (H-06).
+                        Text(
+                          entry.displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: THType.title.copyWith(color: c.text),
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: Space.s1,
+                          children: [
+                            if (score != null)
+                              const THIcon(
+                                Icons.star_rounded,
+                                size: Sizes.iconSm,
+                                tone: THTone.accent,
+                              ),
                             Flexible(
                               child: Text(
-                                meta,
+                                score ?? meta,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: THType.meta.copyWith(color: c.textSoft),
+                                style: THType.meta.copyWith(
+                                  color: c.text,
+                                  fontWeight: score != null
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                ),
                               ),
                             ),
-                        ],
-                      ),
-                    ],
+                            if (score != null)
+                              Flexible(
+                                child: Text(
+                                  meta,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: THType.meta.copyWith(
+                                    color: c.textSoft,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                if (rate != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      THText(rate.amount, style: THTextStyle.money),
-                      THText(
-                        rate.gstNote == null ? '/hr' : '/hr ${rate.gstNote}',
-                        style: THTextStyle.meta,
-                        tone: THTone.soft,
-                      ),
-                    ],
-                  ),
-              ],
-            ),
+                  if (rate != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        THText(rate.amount, style: THTextStyle.money),
+                        THText(
+                          rate.gstNote == null ? '/hr' : '/hr ${rate.gstNote}',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: Space.s2_5),
             Wrap(
               spacing: Space.s1_5,

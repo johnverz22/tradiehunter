@@ -4,9 +4,11 @@ appId: nz.co.fixo.fixo
 # Uses Semantics identifiers mirrored from Flutter Keys (Phase E3).
 - runFlow:
     when:
-      visible: "Skip"
+      visible:
+        id: "skip_button"
     commands:
-      - tapOn: "Skip"
+      - tapOn:
+          id: "skip_button"
 
 - runFlow:
     when:
@@ -15,10 +17,10 @@ appId: nz.co.fixo.fixo
     commands:
       - tapOn:
           id: "email_field"
-      - inputText: ${EMAIL:-"homeowner-a@fixo.test"}
+      - inputText: ${EMAIL:-homeowner-a@fixo.test}
       - tapOn:
           id: "password_field"
-      - inputText: ${PASSWORD:-"Test1234!"}
+      - inputText: ${PASSWORD:-Test1234!}
       - tapOn:
           id: "login_button"
 
