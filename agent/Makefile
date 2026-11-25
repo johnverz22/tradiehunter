@@ -1,29 +1,17 @@
-# TradieHunter agent toolchain — design audit + HTML->Flutter pipeline.
-# Usage: make -C agent <target>. Requires: node>=18, python3, playwright+chromium.
-.PHONY: setup audit transpile check smoke flutter verify clean
+# TradieHunter agent toolchain: design gate + Flutter checks.
+# Usage: make -C agent <target>. Requires node>=18 (and the Flutter SDK for `flutter`).
+.PHONY: setup audit build flutter verify
 
-DESIGN   ?= docs/design
-GEN      := tools/design2flutter/output
-
-setup:            ## install deps + run the full verification
+setup:            ## run the design gate
 	bash agent/setup.sh
 
-audit:            ## run the design audit gates on $(DESIGN)
-	bash agent/skills/ui-audit/scripts/audit.sh $(DESIGN)
+audit:            ## tokens, screens, WCAG contrast, stale-output check
+	node docs/design/mobile/tools/build.mjs --check
 
-transpile:        ## regenerate Flutter scaffolds from mockups
-	node tools/design2flutter/src/index.js --design $(DESIGN) --out $(GEN)
-
-check:            ## structural lint of generated Dart
-	node tools/design2flutter/src/index.js --check $(GEN)
-
-smoke:            ## end-to-end pipeline proof
-	node tools/design2flutter/test/smoke.js
+build:            ## regenerate tokens + screen stubs from tokens.json / mockups
+	node docs/design/mobile/tools/build.mjs
 
 flutter:          ## dart format + analyze + test (needs Flutter SDK)
-	cd mobile && dart format lib && flutter analyze && flutter test
+	cd mobile && dart format lib test integration_test && flutter analyze --fatal-infos && flutter test
 
-verify: audit transpile check smoke   ## everything except flutter
-
-clean:
-	rm -rf $(GEN) /tmp/audit-*.json
+verify: audit     ## everything except flutter

@@ -2,17 +2,11 @@
   "name": "tradiehunter-design-toolchain",
   "version": "1.7.0",
   "private": true,
-  "description": "Agent toolchain for the TradieHunter design system: HTML->Flutter AST transpiler, design audit runner, scaffolding scripts.",
+  "description": "Agent toolchain for the TradieHunter design system: design build/check gate.",
   "scripts": {
     "setup": "bash agent/setup.sh",
-    "audit": "bash agent/skills/ui-audit/scripts/audit.sh docs/design",
-    "transpile": "node tools/design2flutter/src/index.js --design docs/design --out tools/design2flutter/output",
-    "transpile:frames": "node tools/design2flutter/src/index.js --design docs/design --out tools/design2flutter/output --frames",
-    "check": "node tools/design2flutter/src/index.js --check tools/design2flutter/output",
-    "smoke": "node tools/design2flutter/test/smoke.js",
-    "new-screen": "bash agent/skills/mockup-to-flutter/scripts/new-screen.sh",
-    "refactor-check": "bash agent/skills/widget-refactor/scripts/refactor-check.sh",
-    "verify": "npm run audit && npm run transpile && npm run check && npm run smoke"
+    "audit": "node docs/design/mobile/tools/build.mjs --check",
+    "verify": "npm run audit"
   },
   "dependencies": {
     "parse5": "^8.0.0"

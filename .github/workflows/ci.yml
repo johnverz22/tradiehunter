@@ -34,13 +34,14 @@ jobs:
       with:
         flutter-version: '3.x'
         channel: 'stable'
-    - name: UI import boundary (v1/v2 side-by-side guard)
-      run: python3 scripts/check_ui_boundary.py
     - name: Install dependencies
       run: flutter pub get
       working-directory: ./mobile
+    - name: Format check
+      run: dart format --output=none --set-exit-if-changed lib test integration_test
+      working-directory: ./mobile
     - name: Analyze project source
-      run: flutter analyze
+      run: flutter analyze --fatal-infos
       working-directory: ./mobile
     - name: Run tests
       run: flutter test
