@@ -145,10 +145,14 @@ class TrStatTiles extends StatelessWidget {
           label: 'Rating',
         ),
     ];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: Space.s2_5,
-      children: [for (final t in tiles) Expanded(child: t)],
+    // IntrinsicHeight: a stretch row inside the scrolling column would force
+    // an infinite height (same fix as auth_common.dart).
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: Space.s2_5,
+        children: [for (final t in tiles) Expanded(child: t)],
+      ),
     );
   }
 }
