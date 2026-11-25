@@ -1,15 +1,14 @@
-// Phase 5.3 PR A: v2 tradie job detail routing (`tr_job`).
-//
-// The selector is a total function over `Job.status`; the router loads once
-// and (PR A) hands every state to the injected v1 screen, with its own
-// not-found / error states and the v1 loading rules for the contact.
+// Phase 5.3: v2 tradie job detail routing & pure state rules (`tr_job`).
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
+import 'package:fixo/network/external_launcher.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/ui/tradie/tr_job_router.dart';
 import 'package:fixo/ui/tradie/tr_job_state.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
+import 'package:fixo/viewmodels/locale_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -18,14 +17,22 @@ import 'package:go_router/go_router.dart';
 
 import 'phase3_test_setup.dart';
 
-Job _job(String status, {String? disputeStatus}) => Job(
+Job _job(
+  String status, {
+  String? disputeStatus,
+  DateTime? scheduledStartUtc,
+  String? address,
+  String? suburb,
+}) => Job(
   id: 'j1',
   title: 'Leaking tap',
   category: 'Plumbing',
-  suburb: 'Ponsonby',
+  suburb: suburb ?? 'Ponsonby',
+  address: address ?? '12 Ponsonby Road, Ponsonby',
   status: status,
   stage: 0,
   disputeStatus: disputeStatus,
+  scheduledStartUtc: scheduledStartUtc,
 );
 
 class _JobsRepo extends JobsRepository {
@@ -47,7 +54,11 @@ class _JobsRepo extends JobsRepository {
   Future<JobContact?> getJobContact(String jobId) async {
     contactCalls++;
     if (failContact) throw Exception('no contact');
-    return const JobContact(userId: 'h1', firstName: 'Sam');
+    return const JobContact(
+      userId: 'h1',
+      firstName: 'Sam',
+      phoneNumber: '021123456',
+    );
   }
 
   @override
@@ -137,8 +148,8 @@ void main() {
     });
   });
 
-  group('status sets (pinned to the v1 tables)', () {
-    test('contactable', () {
+  group('pure rules & helpers', () {
+    test('status sets (pinned to the v1 tables)', () {
       expect(trContactableStatuses, {
         'Booked',
         'InProgress',
@@ -148,9 +159,7 @@ void main() {
       });
       expect(trIsContactable('Requested'), isFalse);
       expect(trIsContactable('Cancelled'), isFalse);
-    });
 
-    test('booked or later shows the address, Disputed does not', () {
       expect(trBookedOrLaterStatuses, {
         'Booked',
         'InProgress',
@@ -159,6 +168,125 @@ void main() {
       });
       expect(trIsBookedOrLater('Disputed'), isFalse);
       expect(trIsBookedOrLater('Requested'), isFalse);
+    });
+
+    test('cancellable, dispute and extra-cost permissions', () {
+      expect(trCanCancel('Booked'), isTrue);
+      expect(trCanCancel('InProgress'), isTrue);
+      expect(trCanCancel('AwaitingConfirmation'), isTrue);
+      expect(trCanCancel('Completed'), isFalse);
+      expect(trCanCancel('Requested'), isFalse);
+
+      expect(trCanDispute('Booked'), isTrue);
+      expect(trCanDispute('InProgress'), isTrue);
+      expect(trCanDispute('Completed'), isTrue);
+      expect(trCanDispute('Requested'), isFalse);
+      expect(trCanDispute('Cancelled'), isFalse);
+
+      expect(trCanRequestExtraCost('Booked'), isTrue);
+      expect(trCanRequestExtraCost('InProgress'), isTrue);
+      expect(trCanRequestExtraCost('AwaitingConfirmation'), isTrue);
+      expect(trCanRequestExtraCost('Completed'), isFalse);
+    });
+
+    test('trCanReportNoShow: only Booked and >15 min after scheduled', () {
+      final start = DateTime.utc(2026, 11, 25, 10, 0);
+      final job = _job('Booked', scheduledStartUtc: start);
+
+      expect(
+        trCanReportNoShow(job, DateTime.utc(2026, 11, 25, 10, 10)),
+        isFalse,
+      );
+      expect(
+        trCanReportNoShow(job, DateTime.utc(2026, 11, 25, 10, 15)),
+        isFalse,
+      );
+      expect(
+        trCanReportNoShow(job, DateTime.utc(2026, 11, 25, 10, 15, 1)),
+        isTrue,
+      );
+
+      // Not Booked => false
+      expect(
+        trCanReportNoShow(
+          _job('InProgress', scheduledStartUtc: start),
+          DateTime.utc(2026, 11, 25, 11, 0),
+        ),
+        isFalse,
+      );
+
+      // No scheduled start => false
+      expect(
+        trCanReportNoShow(_job('Booked'), DateTime.utc(2026, 11, 25, 11, 0)),
+        isFalse,
+      );
+    });
+
+    test('trApprovedAdjustmentsTotal sums only approved adjustments', () {
+      final adjustments = [
+        JobAdjustment(
+          id: 'a1',
+          jobId: 'j1',
+          proposedByTradieId: 't1',
+          proposedByTradieName: 'Tradie',
+          kind: 'Materials',
+          description: 'Tap',
+          amount: Decimal.parse('50.00'),
+          status: 'Approved',
+          createdAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+        JobAdjustment(
+          id: 'a2',
+          jobId: 'j1',
+          proposedByTradieId: 't1',
+          proposedByTradieName: 'Tradie',
+          kind: 'Travel',
+          description: 'Ferry',
+          amount: Decimal.parse('30.00'),
+          status: 'Pending',
+          createdAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+        JobAdjustment(
+          id: 'a3',
+          jobId: 'j1',
+          proposedByTradieId: 't1',
+          proposedByTradieName: 'Tradie',
+          kind: 'Other',
+          description: 'Extra',
+          amount: Decimal.parse('20.00'),
+          status: 'Approved',
+          createdAtUtc: DateTime.utc(2026, 11, 1),
+        ),
+      ];
+
+      expect(trApprovedAdjustmentsTotal(adjustments), Decimal.parse('70.00'));
+    });
+
+    test('trAddressLabel masks pre-booked address', () {
+      final job = _job(
+        'Requested',
+        address: '12 Secret Lane',
+        suburb: 'Ponsonby',
+      );
+      expect(trAddressLabel(job), 'Ponsonby');
+
+      final booked = _job(
+        'Booked',
+        address: '12 Secret Lane',
+        suburb: 'Ponsonby',
+      );
+      expect(trAddressLabel(booked), '12 Secret Lane');
+    });
+
+    test('trTradieCancelReasons has the 5 expected codes', () {
+      final codes = trTradieCancelReasons.map((r) => r.$1).toList();
+      expect(codes, [
+        'tradie_unavailable',
+        'emergency',
+        'scope_change_declined',
+        'tradie_issue',
+        'homeowner_no_show',
+      ]);
     });
   });
 
@@ -189,6 +317,10 @@ void main() {
           overrides: [
             jobsRepositoryProvider.overrideWithValue(repo),
             jobHubClientProvider.overrideWithValue(_Hub()),
+            externalLauncherProvider.overrideWithValue(ExternalLauncher()),
+            localeConfigProvider.overrideWith(
+              (ref) async => {'commissionPercent': '10.0'},
+            ),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -197,22 +329,55 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    for (final status in [
-      'Booked',
-      'InProgress',
-      'AwaitingConfirmation',
-      'Completed',
-      'Cancelled',
-      'Disputed',
-      'Requested',
-      'SomethingNewFromTheServer',
-    ]) {
-      testWidgets('$status renders the injected v1 screen', (tester) async {
-        await pump(tester, _JobsRepo(job: _job(status)));
-        expect(find.text('v1 job detail'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
-    }
+    testWidgets('Booked renders TrJobBookedScreen with check-in button', (
+      tester,
+    ) async {
+      await pump(tester, _JobsRepo(job: _job('Booked')));
+      expect(find.byKey(const Key('check_in_button')), findsOneWidget);
+      expect(find.text('Ready to start?'), findsOneWidget);
+    });
+
+    testWidgets(
+      'InProgress renders TrJobInProgressScreen with check-out button',
+      (tester) async {
+        await pump(tester, _JobsRepo(job: _job('InProgress')));
+        expect(find.byKey(const Key('check_out_button')), findsOneWidget);
+        expect(find.text('In progress'), findsOneWidget);
+      },
+    );
+
+    testWidgets('AwaitingConfirmation renders confirmation banner', (
+      tester,
+    ) async {
+      await pump(tester, _JobsRepo(job: _job('AwaitingConfirmation')));
+      expect(find.text('Awaiting confirmation'), findsAtLeast(1));
+    });
+
+    testWidgets(
+      'Completed renders completion view with rate homeowner button',
+      (tester) async {
+        await pump(tester, _JobsRepo(job: _job('Completed')));
+        expect(find.text('Job completed. Thank you!'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Cancelled renders cancellation banner', (tester) async {
+      await pump(tester, _JobsRepo(job: _job('Cancelled')));
+      expect(find.text('This job was cancelled.'), findsOneWidget);
+    });
+
+    testWidgets('Disputed renders dispute banner', (tester) async {
+      await pump(tester, _JobsRepo(job: _job('Disputed')));
+      expect(
+        find.text('This job has an active dispute under review.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('fallback renders for unrecognized status', (tester) async {
+      await pump(tester, _JobsRepo(job: _job('UnknownStatusFromFuture')));
+      expect(find.text('UnknownStatusFromFuture'), findsOneWidget);
+    });
 
     testWidgets('contact is fetched only for contactable statuses', (
       tester,
@@ -228,7 +393,7 @@ void main() {
 
     testWidgets('a contact failure never blocks the detail', (tester) async {
       await pump(tester, _JobsRepo(job: _job('Booked'), failContact: true));
-      expect(find.text('v1 job detail'), findsOneWidget);
+      expect(find.byKey(const Key('check_in_button')), findsOneWidget);
     });
 
     testWidgets('missing job shows the unavailable state and goes back', (
@@ -244,7 +409,6 @@ void main() {
     testWidgets('a load failure shows a retryable error', (tester) async {
       await pump(tester, _JobsRepo(failLoad: true));
       expect(find.textContaining('Could not load this job'), findsOneWidget);
-      expect(find.text('v1 job detail'), findsNothing);
     });
   });
 }

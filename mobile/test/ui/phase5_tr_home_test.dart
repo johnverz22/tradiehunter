@@ -358,7 +358,12 @@ void main() {
       await tester.tap(find.text('Go offline'));
       await tester.pumpAndSettle();
       expect(profileRepo.availabilityCalls, [false]);
-      expect(find.text('You’re currently paused. Toggle back on to receive new job offers.'), findsOneWidget);
+      expect(
+        find.text(
+          'You’re currently paused. Toggle back on to receive new job offers.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('going offline with no work needs no confirm', (tester) async {
@@ -418,6 +423,5 @@ void main() {
 }
 
 /// Container of the pumped app, for loading the profile deterministically.
-ProviderContainer ref(WidgetTester tester) => ProviderScope.containerOf(
-  tester.element(find.byType(TradieHomeScreen)),
-);
+ProviderContainer ref(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(TradieHomeScreen)));

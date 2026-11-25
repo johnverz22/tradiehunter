@@ -15,10 +15,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../repositories/job_hub_client.dart';
+import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../feedback/th_state_view.dart';
+import 'tr_job_booked_screen.dart';
+import 'tr_job_inprogress_screen.dart';
 import 'tr_job_providers.dart';
+import 'tr_job_review_states.dart';
 import 'tr_job_state.dart';
 
 class TrJobRouter extends ConsumerStatefulWidget {
@@ -88,14 +92,29 @@ class _TrJobRouterState extends ConsumerState<TrJobRouter> {
             );
           }
           return switch (trSelectJobView(job)) {
-            // PR A: every view is still the v1 screen.
-            TrJobView.booked ||
-            TrJobView.inProgress ||
-            TrJobView.awaitingConfirmation ||
-            TrJobView.completed ||
-            TrJobView.cancelled ||
-            TrJobView.disputed ||
-            TrJobView.fallback => widget.v1Fallback(),
+            TrJobView.booked => TrJobBookedScreen(
+              job: job,
+              contact: detail.contact,
+              adjustments: detail.adjustments,
+            ),
+            TrJobView.inProgress => TrJobInProgressScreen(
+              job: job,
+              contact: detail.contact,
+              adjustments: detail.adjustments,
+            ),
+            TrJobView.awaitingConfirmation => TrJobAwaitingConfirmationScreen(
+              job: job,
+              contact: detail.contact,
+              adjustments: detail.adjustments,
+            ),
+            TrJobView.completed => TrJobCompletedScreen(
+              job: job,
+              contact: detail.contact,
+              adjustments: detail.adjustments,
+            ),
+            TrJobView.cancelled => TrJobCancelledScreen(job: job),
+            TrJobView.disputed => TrJobDisputedScreen(job: job),
+            TrJobView.fallback => TrJobFallbackScreen(job: job),
           };
         },
       ),

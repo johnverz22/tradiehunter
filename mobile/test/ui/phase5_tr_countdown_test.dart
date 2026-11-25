@@ -53,7 +53,10 @@ void main() {
   test('tone bands: calm > 2 min, soon <= 2 min, urgent <= 30 s', () {
     expect(trCountdownTone(const Duration(minutes: 5)), TrCountdownTone.calm);
     expect(trCountdownTone(const Duration(minutes: 2)), TrCountdownTone.soon);
-    expect(trCountdownTone(const Duration(seconds: 30)), TrCountdownTone.urgent);
+    expect(
+      trCountdownTone(const Duration(seconds: 30)),
+      TrCountdownTone.urgent,
+    );
     expect(trCountdownTone(Duration.zero), TrCountdownTone.urgent);
   });
 

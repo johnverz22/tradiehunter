@@ -31,7 +31,9 @@ String trPriceTotal(Job job) =>
 String? trPriceBreakdown(Job job) {
   final rate = job.hourlyRate;
   if (job.hours <= 0) return null;
-  return rate != null ? '${job.hours} h × ${formatRate(rate)}' : '${job.hours}h';
+  return rate != null
+      ? '${job.hours} h × ${formatRate(rate)}'
+      : '${job.hours}h';
 }
 
 /// `Monday 24 November · 9:30 am · 3h` in local time, or null when the job

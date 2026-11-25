@@ -149,8 +149,14 @@ void main() {
     });
 
     test('relative photo URLs resolve against the base URL', () {
-      expect(trResolvePhotoUrl('/api/photos/1', 'https://h'), 'https://h/api/photos/1');
-      expect(trResolvePhotoUrl('https://x/y.jpg', 'https://h'), 'https://x/y.jpg');
+      expect(
+        trResolvePhotoUrl('/api/photos/1', 'https://h'),
+        'https://h/api/photos/1',
+      );
+      expect(
+        trResolvePhotoUrl('https://x/y.jpg', 'https://h'),
+        'https://x/y.jpg',
+      );
     });
   });
 
@@ -167,10 +173,22 @@ void main() {
     );
 
     test('buckets', () {
-      expect(trReceivedLabel(offered(const Duration(seconds: 20)), now), 'Received just now');
-      expect(trReceivedLabel(offered(const Duration(minutes: 2)), now), 'Received 2 min ago');
-      expect(trReceivedLabel(offered(const Duration(hours: 3)), now), 'Received 3 h ago');
-      expect(trReceivedLabel(offered(const Duration(days: 2)), now), 'Received 2 d ago');
+      expect(
+        trReceivedLabel(offered(const Duration(seconds: 20)), now),
+        'Received just now',
+      );
+      expect(
+        trReceivedLabel(offered(const Duration(minutes: 2)), now),
+        'Received 2 min ago',
+      );
+      expect(
+        trReceivedLabel(offered(const Duration(hours: 3)), now),
+        'Received 3 h ago',
+      );
+      expect(
+        trReceivedLabel(offered(const Duration(days: 2)), now),
+        'Received 2 d ago',
+      );
       expect(trReceivedLabel(null, now), isNull);
     });
 
@@ -188,7 +206,10 @@ void main() {
   group('bar variant', () {
     test('gone, expired, accept, quote', () {
       expect(trLeadBar(null), TrLeadBar.gone);
-      expect(trLeadBar(_offer(left: const Duration(seconds: -5))), TrLeadBar.expired);
+      expect(
+        trLeadBar(_offer(left: const Duration(seconds: -5))),
+        TrLeadBar.expired,
+      );
       expect(trLeadBar(_offer()), TrLeadBar.accept);
       expect(trLeadBar(_offer(kind: 'QuoteRequest')), TrLeadBar.quote);
     });
@@ -264,9 +285,18 @@ void main() {
     });
 
     test('GST helper copy', () {
-      expect(trGstHelper(fromProfile: true, included: true), contains('GST-registered'));
-      expect(trGstHelper(fromProfile: false, included: false), contains('not GST-registered'));
-      expect(trGstHelper(fromProfile: null, included: false), contains('Tick only'));
+      expect(
+        trGstHelper(fromProfile: true, included: true),
+        contains('GST-registered'),
+      );
+      expect(
+        trGstHelper(fromProfile: false, included: false),
+        contains('not GST-registered'),
+      );
+      expect(
+        trGstHelper(fromProfile: null, included: false),
+        contains('Tick only'),
+      );
     });
   });
 
@@ -324,7 +354,9 @@ void main() {
     }
 
     ProviderContainer container(WidgetTester tester) =>
-        ProviderScope.containerOf(tester.element(find.byType(TradieLeadScreen)));
+        ProviderScope.containerOf(
+          tester.element(find.byType(TradieLeadScreen)),
+        );
 
     for (final dark in [false, true]) {
       testWidgets('renders the request (dark=$dark)', (tester) async {
@@ -436,7 +468,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Submit quote'), findsWidgets);
 
-      await tester.enterText(find.byKey(const Key('quote_amount_field')), '450');
+      await tester.enterText(
+        find.byKey(const Key('quote_amount_field')),
+        '450',
+      );
       await tester.pump();
       await tester.ensureVisible(find.byKey(const Key('quote_submit_button')));
       await tester.tap(find.byKey(const Key('quote_submit_button')));
@@ -456,7 +491,11 @@ void main() {
     testWidgets('quote send stays disabled until the form is valid', (
       tester,
     ) async {
-      await pump(tester, job: _job(), offer: _offer(kind: 'QuoteRequest'));
+      await pump(
+        tester,
+        job: _job(),
+        offer: _offer(kind: 'QuoteRequest'),
+      );
       await tester.tap(find.byKey(const Key('submit_quote_button')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('quote_submit_button')));

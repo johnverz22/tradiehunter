@@ -53,11 +53,7 @@ class TrHomeHero extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 2.0,
                 children: [
-                  THText(
-                    greeting,
-                    style: THTextStyle.label,
-                    tone: THTone.gold,
-                  ),
+                  THText(greeting, style: THTextStyle.label, tone: THTone.gold),
                   THText(
                     online ? 'You’re online' : 'You’re paused',
                     style: THTextStyle.h2,
@@ -236,7 +232,12 @@ class TrVerificationBanner extends StatelessWidget {
 
 /// Section heading with an optional count badge.
 class TrSectionLabel extends StatelessWidget {
-  const TrSectionLabel(this.title, {super.key, this.count, this.accent = false});
+  const TrSectionLabel(
+    this.title, {
+    super.key,
+    this.count,
+    this.accent = false,
+  });
   final String title;
   final int? count;
   final bool accent;
@@ -289,9 +290,7 @@ class TrLeadsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isFirstLoad) {
       return const THCard(
-        children: [
-          THText('Checking for new leads…', style: THTextStyle.meta),
-        ],
+        children: [THText('Checking for new leads…', style: THTextStyle.meta)],
       );
     }
     if (hasError && leads.isEmpty) {
@@ -455,13 +454,14 @@ class _TrCollapsedSectionState extends State<TrCollapsedSection> {
             child: Row(
               children: [
                 Expanded(
-                  child: TrSectionLabel(widget.title, count: widget.jobs.length),
+                  child: TrSectionLabel(
+                    widget.title,
+                    count: widget.jobs.length,
+                  ),
                 ),
                 const SizedBox(width: Space.s2),
                 THIcon(
-                  _open
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
+                  _open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
                   tone: THTone.soft,
                 ),
               ],

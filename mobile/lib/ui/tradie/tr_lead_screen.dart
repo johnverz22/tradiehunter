@@ -249,10 +249,8 @@ class _TradieLeadScreenState extends ConsumerState<TradieLeadScreen>
   }
 
   @override
-  Widget build(BuildContext context) => ThScope(
-    themeMode: ref.watch(themeModeProvider),
-    child: _page(),
-  );
+  Widget build(BuildContext context) =>
+      ThScope(themeMode: ref.watch(themeModeProvider), child: _page());
 
   Widget _page() {
     if (_loading) {

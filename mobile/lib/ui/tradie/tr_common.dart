@@ -164,10 +164,7 @@ class _TrOfferCountdownState extends State<TrOfferCountdown> {
             color: color,
           ),
           Flexible(
-            child: Text(
-              label,
-              style: THType.compact.copyWith(color: color),
-            ),
+            child: Text(label, style: THType.compact.copyWith(color: color)),
           ),
         ],
       ),

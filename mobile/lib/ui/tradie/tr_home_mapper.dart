@@ -224,7 +224,6 @@ String thTradieGreeting(String? firstName) {
   return 'KIA ORA, ${name.toUpperCase()}';
 }
 
-
 /// What the hero "Net this week" figure should show (plan G-14). Keeps the
 /// four v1 states apart: loading, error, no figure from the server, loaded.
 enum TrNetKind { loading, error, unavailable, loaded }
