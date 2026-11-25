@@ -1,6 +1,6 @@
 // Basic Flutter widget smoke test.
 //
-// The real app entry point (FixoApp in lib/main.dart) requires Firebase
+// The real app entry point (ThApp in lib/main.dart) requires Firebase
 // initialization, so it can't be pumped directly in a unit test without
 // firebase_core_platform_interface mocks. This test verifies the widget
 // testing infrastructure works; add Firebase-mocked tests as needed.

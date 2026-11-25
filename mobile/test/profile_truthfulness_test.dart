@@ -7,7 +7,7 @@ import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:fixo/views/profile/public_profile_screen.dart';
-import 'package:fixo/widgets/rating_sheet.dart';
+import 'package:fixo/ui/shared/th_rating_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -177,11 +177,11 @@ void main() {
       await tester.pumpAndSettle();
       if (eligible) {
         expect(
-          tester.widget<RatingSheet>(find.byType(RatingSheet)).jobId,
+          tester.widget<ThRatingSheet>(find.byType(ThRatingSheet)).jobId,
           'shared',
         );
       } else {
-        expect(find.byType(RatingSheet), findsNothing);
+        expect(find.byType(ThRatingSheet), findsNothing);
         expect(
           find.text('Reviews unlock after a completed job.'),
           findsOneWidget,

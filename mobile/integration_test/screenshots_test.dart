@@ -26,7 +26,7 @@
 
 import 'package:fixo/main.dart' as app;
 import 'package:fixo/router/app_router.dart';
-import 'package:fixo/widgets/notification_center.dart';
+import 'package:fixo/ui/shared/notification_center.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -167,7 +167,7 @@ Future<void> _captureNotifications(WidgetTester tester) async {
     for (var i = samples.length - 1; i >= 0; i--) {
       final (category, title, body) = samples[i];
       await center.add(
-        FixoNotification(
+        ThNotification(
           id: 'shot-$i',
           title: title,
           body: body,

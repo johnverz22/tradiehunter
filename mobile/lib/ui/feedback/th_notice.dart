@@ -1,40 +1,37 @@
-// THNotice: v2 (Trust Navy + Gold) skin for in-app notices (migration plan 2.8, D-3).
+// THNotice: in-app notices (toasts) in the v2 Trust Navy + Gold skin.
 //
-// Reuses the UI-independent logic of the v1 notice system: the same
-// `fixoNoticeProvider` / `FixoNoticeController` / `FixoNoticeState` and the same
-// copy in `NoticeCopy`. Only the presentation is new. The class rename of the
-// old widgets (`FixoNotice*` -> `THNotice*`) happens at cutover (Phase 6.3).
+// Usage:
+//   1. Wrap MaterialApp.router's builder child with [THNoticeHost].
+//   2. At any call site: `THNotice.success(context, NoticeCopy.profileUpdated);`
 //
-// Coexistence: until cutover the app root still mounts the v1 `FixoNoticeHost`,
-// which listens to the same provider. v2 screens can call `THNotice.*` today and
-// the notice appears through that host. Phase 6 swaps the root host for
-// [THNoticeHost]. Do not mount both at once or each notice is drawn twice.
+// State lives in `thNoticeProvider` (th_notice_controller.dart); copy lives in
+// `NoticeCopy` (notice_copy.dart).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../feedback/fixo_notice_controller.dart'
-    show FixoNoticeState, FixoNoticeTone, FixoNoticeToneX, fixoNoticeProvider;
+import 'th_notice_controller.dart'
+    show THNoticeState, THNoticeTone, THNoticeToneX, thNoticeProvider;
 import '../design/th_tokens.dart';
 
-export '../../feedback/notice_copy.dart' show NoticeCopy;
+export 'notice_copy.dart' show NoticeCopy;
 
-/// Static façade, same call shape as the v1 `FixoNotice`.
+/// Static façade that dispatches a notice via [THNoticeController].
 ///
 /// `THNotice.success(context, NoticeCopy.profileUpdated);`
 abstract class THNotice {
   THNotice._();
 
   static void info(BuildContext context, String message) =>
-      _show(context, FixoNoticeTone.info, message);
+      _show(context, THNoticeTone.info, message);
 
   static void success(BuildContext context, String message) =>
-      _show(context, FixoNoticeTone.success, message);
+      _show(context, THNoticeTone.success, message);
 
   static void warning(BuildContext context, String message) =>
-      _show(context, FixoNoticeTone.warning, message);
+      _show(context, THNoticeTone.warning, message);
 
   static void error(
     BuildContext context,
@@ -42,7 +39,7 @@ abstract class THNotice {
     VoidCallback? onRetry,
   }) => _show(
     context,
-    FixoNoticeTone.error,
+    THNoticeTone.error,
     message,
     action: onRetry,
     actionLabel: onRetry != null ? 'Retry' : null,
@@ -56,7 +53,7 @@ abstract class THNotice {
     VoidCallback? onView,
   }) => _show(
     context,
-    FixoNoticeTone.push,
+    THNoticeTone.push,
     body,
     title: title,
     action: onView,
@@ -69,13 +66,13 @@ abstract class THNotice {
 
   static void _show(
     BuildContext context,
-    FixoNoticeTone tone,
+    THNoticeTone tone,
     String message, {
     String? title,
     VoidCallback? action,
     String? actionLabel,
   }) {
-    final notice = FixoNoticeState(
+    final notice = THNoticeState(
       message: message,
       tone: tone,
       title: title,
@@ -86,7 +83,7 @@ abstract class THNotice {
       ProviderScope.containerOf(
         context,
         listen: false,
-      ).read(fixoNoticeProvider.notifier).show(notice);
+      ).read(thNoticeProvider.notifier).show(notice);
     } catch (_) {
       // No ProviderScope above this context: nothing can show the notice.
     }
@@ -94,7 +91,7 @@ abstract class THNotice {
 }
 
 /// Overlay host drawing the active notice with [THNoticeBanner].
-/// Place around `MaterialApp.router`'s builder child (Phase 6.1).
+/// Place around `MaterialApp.router`'s builder child.
 class THNoticeHost extends ConsumerStatefulWidget {
   const THNoticeHost({super.key, required this.child});
 
@@ -119,7 +116,7 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost>
     curve: Curves.easeIn,
   );
 
-  FixoNoticeState? _current;
+  THNoticeState? _current;
 
   @override
   void dispose() {
@@ -127,7 +124,7 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost>
     super.dispose();
   }
 
-  void _onChanged(FixoNoticeState? notice) {
+  void _onChanged(THNoticeState? notice) {
     if (notice == null) {
       _anim.reverse().then((_) {
         if (mounted) setState(() => _current = null);
@@ -140,7 +137,7 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<FixoNoticeState?>(fixoNoticeProvider, (_, next) {
+    ref.listen<THNoticeState?>(thNoticeProvider, (_, next) {
       if (mounted) _onChanged(next);
     });
     final notice = _current;
@@ -160,7 +157,7 @@ class _THNoticeHostState extends ConsumerState<THNoticeHost>
                 child: THNoticeBanner(
                   notice: notice,
                   onDismiss: () =>
-                      ref.read(fixoNoticeProvider.notifier).dismiss(),
+                      ref.read(thNoticeProvider.notifier).dismiss(),
                 ),
               ),
             ),
@@ -179,7 +176,7 @@ class THNoticeBanner extends StatefulWidget {
     required this.onDismiss,
   });
 
-  final FixoNoticeState notice;
+  final THNoticeState notice;
   final VoidCallback onDismiss;
 
   @override
@@ -214,22 +211,22 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
     super.dispose();
   }
 
-  static IconData _icon(FixoNoticeTone tone) => switch (tone) {
-    FixoNoticeTone.info => Icons.info_outline_rounded,
-    FixoNoticeTone.success => Icons.check_circle_outline_rounded,
-    FixoNoticeTone.warning => Icons.warning_amber_rounded,
-    FixoNoticeTone.error => Icons.error_outline_rounded,
-    FixoNoticeTone.push => Icons.notifications_outlined,
+  static IconData _icon(THNoticeTone tone) => switch (tone) {
+    THNoticeTone.info => Icons.info_outline_rounded,
+    THNoticeTone.success => Icons.check_circle_outline_rounded,
+    THNoticeTone.warning => Icons.warning_amber_rounded,
+    THNoticeTone.error => Icons.error_outline_rounded,
+    THNoticeTone.push => Icons.notifications_outlined,
   };
 
   /// (background, border, accent) per tone, all from v2 tokens.
-  static (Color, Color, Color) _palette(FixoNoticeTone tone, THColors c) =>
+  static (Color, Color, Color) _palette(THNoticeTone tone, THColors c) =>
       switch (tone) {
-        FixoNoticeTone.info => (c.surface, c.line, c.textSoft),
-        FixoNoticeTone.success => (c.successTint, c.success, c.success),
-        FixoNoticeTone.warning => (c.accentTint, c.accent, c.accentText),
-        FixoNoticeTone.error => (c.dangerTint, c.danger, c.danger),
-        FixoNoticeTone.push => (c.tintBrand, c.brand, c.textBrand),
+        THNoticeTone.info => (c.surface, c.line, c.textSoft),
+        THNoticeTone.success => (c.successTint, c.success, c.success),
+        THNoticeTone.warning => (c.accentTint, c.accent, c.accentText),
+        THNoticeTone.error => (c.dangerTint, c.danger, c.danger),
+        THNoticeTone.push => (c.tintBrand, c.brand, c.textBrand),
       };
 
   @override
@@ -239,8 +236,8 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
     final notice = widget.notice;
     final (bg, border, accent) = _palette(notice.tone, c);
     final live =
-        notice.tone == FixoNoticeTone.error ||
-        notice.tone == FixoNoticeTone.warning;
+        notice.tone == THNoticeTone.error ||
+        notice.tone == THNoticeTone.warning;
 
     return SafeArea(
       bottom: false,

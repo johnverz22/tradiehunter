@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fixo/feedback/fixo_notice.dart';
+import 'package:fixo/ui/feedback/th_notice.dart';
 import 'package:fixo/theme/design_tokens.dart';
 import 'package:fixo/theme/fixo_theme.dart';
 import 'package:flutter/material.dart';
@@ -37,24 +37,24 @@ void main() {
         violations,
         isEmpty,
         reason:
-            'Legacy SnackBar usage found! All feedback must use FixoNotice instead:\n'
+            'Legacy SnackBar usage found! All feedback must use THNotice instead:\n'
             '${violations.join('\n')}',
       );
     });
   });
 
-  group('FixoNoticeController unit tests', () {
+  group('THNoticeController unit tests', () {
     test('initial state is null', () {
-      final controller = FixoNoticeController();
+      final controller = THNoticeController();
       expect(controller.state, isNull);
       controller.dispose();
     });
 
     test('show sets state and dismiss clears state', () {
-      final controller = FixoNoticeController();
-      const state = FixoNoticeState(
+      final controller = THNoticeController();
+      const state = THNoticeState(
         message: 'Test info',
-        tone: FixoNoticeTone.info,
+        tone: THNoticeTone.info,
       );
 
       controller.show(state);
@@ -66,14 +66,14 @@ void main() {
     });
 
     test('showing a new notice replaces previous state', () {
-      final controller = FixoNoticeController();
-      const first = FixoNoticeState(
+      final controller = THNoticeController();
+      const first = THNoticeState(
         message: 'First',
-        tone: FixoNoticeTone.info,
+        tone: THNoticeTone.info,
       );
-      const second = FixoNoticeState(
+      const second = THNoticeState(
         message: 'Second',
-        tone: FixoNoticeTone.error,
+        tone: THNoticeTone.error,
       );
 
       controller.show(first);
@@ -81,12 +81,12 @@ void main() {
 
       controller.show(second);
       expect(controller.state?.message, 'Second');
-      expect(controller.state?.tone, FixoNoticeTone.error);
+      expect(controller.state?.tone, THNoticeTone.error);
       controller.dispose();
     });
   });
 
-  group('FixoNoticeHost widget tests', () {
+  group('THNoticeHost widget tests', () {
     Widget createTestApp({
       required Widget child,
       ThemeMode themeMode = ThemeMode.light,
@@ -96,7 +96,7 @@ void main() {
           theme: FixoTheme.light(),
           darkTheme: FixoTheme.dark(),
           themeMode: themeMode,
-          builder: (context, c) => FixoNoticeHost(child: c ?? const SizedBox()),
+          builder: (context, c) => THNoticeHost(child: c ?? const SizedBox()),
           home: child,
         ),
       );
@@ -110,7 +110,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => FixoNotice.info(context, NoticeCopy.copied),
+                onPressed: () => THNotice.info(context, NoticeCopy.copied),
                 child: const Text('Show'),
               ),
             ),
@@ -155,7 +155,7 @@ void main() {
             body: Builder(
               builder: (context) => ElevatedButton(
                 onPressed: () =>
-                    FixoNotice.success(context, NoticeCopy.profileUpdated),
+                    THNotice.success(context, NoticeCopy.profileUpdated),
                 child: const Text('Show'),
               ),
             ),
@@ -178,7 +178,7 @@ void main() {
             body: Builder(
               builder: (context) => ElevatedButton(
                 onPressed: () =>
-                    FixoNotice.warning(context, NoticeCopy.noCallApp),
+                    THNotice.warning(context, NoticeCopy.noCallApp),
                 child: const Text('Show'),
               ),
             ),
@@ -202,7 +202,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => FixoNotice.error(
+                onPressed: () => THNotice.error(
                   context,
                   NoticeCopy.checkInFailed,
                   onRetry: () => retried = true,
@@ -241,7 +241,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => FixoNotice.push(
+                onPressed: () => THNotice.push(
                   context,
                   title: 'New Job Request',
                   body: 'Leaking sink in Grey Lynn',
@@ -278,7 +278,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => ElevatedButton(
-                onPressed: () => FixoNotice.info(context, NoticeCopy.copied),
+                onPressed: () => THNotice.info(context, NoticeCopy.copied),
                 child: const Text('Show'),
               ),
             ),

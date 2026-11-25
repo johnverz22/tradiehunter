@@ -8,7 +8,6 @@ import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
 import '../ui/homeowner/ho_matching_screen.dart';
 import '../ui/homeowner/ho_payment_screen.dart';
-import '../feedback/notice_gallery.dart';
 import '../ui/auth/splash_screen.dart';
 import '../ui/auth/onboarding_screen.dart';
 import '../ui/auth/sign_in_screen.dart';
@@ -73,13 +72,6 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
   routes: [
-    // Debug-only notice gallery — stripped from release builds.
-    if (kDebugMode)
-      GoRoute(
-        path: '/debug/notice-gallery',
-        builder: (context, state) =>
-            maybeNoticeGallery() ?? const SizedBox.shrink(),
-      ),
     // v2 design gallery (migration plan 2.6) — debug only.
     if (kDebugMode)
       GoRoute(

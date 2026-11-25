@@ -1,37 +1,37 @@
-// FixoNotice — Riverpod-backed in-app notice (toast) system.
+// THNotice — Riverpod-backed in-app notice (toast) system.
 //
 // Architecture:
-//   FixoNoticeController   StateNotifier<FixoNoticeState?> that holds the
+//   THNoticeController   StateNotifier<THNoticeState?> that holds the
 //                          currently-visible notice and schedules auto-dismiss.
-//   fixoNoticeProvider     Global Riverpod provider for the controller.
+//   thNoticeProvider     Global Riverpod provider for the controller.
 //
 // See: docs/design/feedback-guidelines.md
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../theme/design_tokens.dart';
+import '../design/th_tokens.dart';
 
 // ── Notice tone ──────────────────────────────────────────────────────────────
 
-/// Semantic tone for a [FixoNoticeState].
-enum FixoNoticeTone { info, success, warning, error, push }
+/// Semantic tone for a [THNoticeState].
+enum THNoticeTone { info, success, warning, error, push }
 
-extension FixoNoticeToneX on FixoNoticeTone {
+extension THNoticeToneX on THNoticeTone {
   Duration get autoDismiss => switch (this) {
-    FixoNoticeTone.info => FixoDurations.noticeInfo,
-    FixoNoticeTone.success => FixoDurations.noticeSuccess,
-    FixoNoticeTone.warning => FixoDurations.noticeWarning,
-    FixoNoticeTone.error => FixoDurations.noticeError,
-    FixoNoticeTone.push => FixoDurations.noticePush,
+    THNoticeTone.info => THDurations.noticeInfo,
+    THNoticeTone.success => THDurations.noticeSuccess,
+    THNoticeTone.warning => THDurations.noticeWarning,
+    THNoticeTone.error => THDurations.noticeError,
+    THNoticeTone.push => THDurations.noticePush,
   };
 }
 
 // ── Notice data ──────────────────────────────────────────────────────────────
 
 @immutable
-class FixoNoticeState {
-  const FixoNoticeState({
+class THNoticeState {
+  const THNoticeState({
     required this.message,
     required this.tone,
     this.title,
@@ -40,7 +40,7 @@ class FixoNoticeState {
   });
 
   final String message;
-  final FixoNoticeTone tone;
+  final THNoticeTone tone;
 
   /// Optional bold heading above [message] (used for push notifications).
   final String? title;
@@ -57,12 +57,12 @@ class FixoNoticeState {
 /// Manages the single currently-visible notice.
 ///
 /// Call [show] to display a notice. Any previous notice is immediately
-/// replaced. The notice auto-dismisses after [FixoNoticeTone.autoDismiss].
-class FixoNoticeController extends StateNotifier<FixoNoticeState?> {
-  FixoNoticeController() : super(null);
+/// replaced. The notice auto-dismisses after [THNoticeTone.autoDismiss].
+class THNoticeController extends StateNotifier<THNoticeState?> {
+  THNoticeController() : super(null);
 
   /// Display [notice]. Any previous notice is immediately replaced.
-  void show(FixoNoticeState notice) {
+  void show(THNoticeState notice) {
     state = notice;
   }
 
@@ -73,7 +73,7 @@ class FixoNoticeController extends StateNotifier<FixoNoticeState?> {
 }
 
 /// Global provider.  Kept alive for the app lifetime (autoDispose omitted).
-final fixoNoticeProvider =
-    StateNotifierProvider<FixoNoticeController, FixoNoticeState?>(
-      (ref) => FixoNoticeController(),
+final thNoticeProvider =
+    StateNotifierProvider<THNoticeController, THNoticeState?>(
+      (ref) => THNoticeController(),
     );

@@ -9,7 +9,7 @@ import '../../network/external_launcher.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/locale_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
-import '../../widgets/rating_sheet.dart';
+import '../shared/th_rating_sheet.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
@@ -161,7 +161,7 @@ class _TrJobCompletedScreenState extends ConsumerState<TrJobCompletedScreen> {
     final homeownerId = widget.job.homeownerId ?? '';
     if (homeownerId.isEmpty) return;
 
-    RatingSheet.show(
+    ThRatingSheet.show(
       context,
       jobId: widget.job.id,
       jobTitle: widget.job.title,

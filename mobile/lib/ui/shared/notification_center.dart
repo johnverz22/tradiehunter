@@ -19,16 +19,16 @@ class NotificationCenter extends ChangeNotifier {
 
   NotificationCenter._();
 
-  final List<FixoNotification> _items = [];
+  final List<ThNotification> _items = [];
   bool _loaded = false;
 
   /// Most recent first.
-  List<FixoNotification> get items => List.unmodifiable(_items);
+  List<ThNotification> get items => List.unmodifiable(_items);
 
   /// Ids the user has seen (used for unread dots).
   final Set<String> _readIds = {};
 
-  bool isUnread(FixoNotification n) => !_readIds.contains(n.id);
+  bool isUnread(ThNotification n) => !_readIds.contains(n.id);
 
   int get unreadCount => _items.where(isUnread).length;
 
@@ -46,7 +46,7 @@ class NotificationCenter extends ChangeNotifier {
           ..addAll(
             decoded
                 .map(
-                  (e) => FixoNotification.fromJson(e as Map<String, dynamic>),
+                  (e) => ThNotification.fromJson(e as Map<String, dynamic>),
                 )
                 .toList(),
           );
@@ -77,7 +77,7 @@ class NotificationCenter extends ChangeNotifier {
   }
 
   /// Record a live FCM message (title/body/category). Deduplicates by id.
-  Future<void> add(FixoNotification notification) async {
+  Future<void> add(ThNotification notification) async {
     if (_items.any((n) => n.id == notification.id)) return;
     _items.insert(0, notification);
     if (_items.length > _maxEntries) {
@@ -107,14 +107,14 @@ class NotificationCenter extends ChangeNotifier {
 }
 
 /// One recorded notification. [category] drives the H20 filter chips.
-class FixoNotification {
+class ThNotification {
   final String id;
   final String title;
   final String? body;
   final String category; // jobs | payments | reminders
   final DateTime receivedAt;
 
-  const FixoNotification({
+  const ThNotification({
     required this.id,
     required this.title,
     this.body,
@@ -122,7 +122,7 @@ class FixoNotification {
     required this.receivedAt,
   });
 
-  factory FixoNotification.fromRemote({
+  factory ThNotification.fromRemote({
     required String? title,
     required String? body,
     required Map<String, dynamic> data,
@@ -136,7 +136,7 @@ class FixoNotification {
       'jobs' || 'job' => 'jobs',
       _ => _categoryFromTitle(title),
     };
-    return FixoNotification(
+    return ThNotification(
       id:
           data['messageId'] as String? ??
           'fcm-${DateTime.now().microsecondsSinceEpoch}',
@@ -154,8 +154,8 @@ class FixoNotification {
     return 'jobs';
   }
 
-  factory FixoNotification.fromJson(Map<String, dynamic> json) =>
-      FixoNotification(
+  factory ThNotification.fromJson(Map<String, dynamic> json) =>
+      ThNotification(
         id: json['id'] as String,
         title: json['title'] as String? ?? 'TradieHunter',
         body: json['body'] as String?,

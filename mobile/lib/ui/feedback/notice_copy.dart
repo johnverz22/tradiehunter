@@ -1,4 +1,4 @@
-// All user-visible notice strings for the FixoNotice system.
+// All user-visible notice strings for the THNotice system.
 //
 // Rules:
 //   • Sentence case.

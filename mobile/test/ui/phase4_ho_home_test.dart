@@ -16,7 +16,7 @@ import 'package:fixo/ui/homeowner/ho_home_screen.dart';
 import 'package:fixo/ui/homeowner/ho_job_navigation.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/widgets/notification_center.dart';
+import 'package:fixo/ui/shared/notification_center.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -375,7 +375,7 @@ void main() {
       );
       final center = container.read(notificationCenterProvider.notifier);
       await center.add(
-        FixoNotification(
+        ThNotification(
           id: 'n1',
           title: 'Quote received',
           category: 'jobs',

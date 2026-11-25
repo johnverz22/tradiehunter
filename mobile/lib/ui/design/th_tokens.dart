@@ -90,6 +90,15 @@ abstract class THDurations {
   static const Duration onboardingPage = Duration(milliseconds: 220);
   static const Duration chatScroll = Duration(milliseconds: 150);
   static const Duration radarCycle = Duration(milliseconds: 2000);
+  static const Duration toggle = Duration(milliseconds: 200);
+  static const Duration addressDebounce = Duration(milliseconds: 400);
+  static const Duration sheetDelay = Duration(milliseconds: 800);
+  static const Duration sheetDelayLong = Duration(milliseconds: 1000);
+  static const Duration noticeInfo = Duration(seconds: 3);
+  static const Duration noticeSuccess = Duration(seconds: 3);
+  static const Duration noticeWarning = Duration(seconds: 4);
+  static const Duration noticeError = Duration(seconds: 5);
+  static const Duration noticePush = Duration(seconds: 5);
 }
 
 abstract class THMotion {

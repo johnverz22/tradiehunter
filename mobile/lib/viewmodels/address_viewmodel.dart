@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/address.dart';
 import '../repositories/address_repository.dart';
-import '../theme/design_tokens.dart';
+import '../ui/design/th_tokens.dart' show THDurations;
 import '../repositories/profile_repository.dart';
 import 'auth_viewmodel.dart';
 
@@ -51,7 +51,7 @@ class AddressSearchNotifier extends StateNotifier<AddressSearchState> {
     }
     state = const AddressSearchState(loading: true);
     _timer = Timer(
-      FixoDurations.addressDebounce,
+      THDurations.addressDebounce,
       () => _search(_query, generation),
     );
   }

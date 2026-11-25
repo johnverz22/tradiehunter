@@ -7,12 +7,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
-import 'feedback/fixo_notice.dart';
+import 'ui/feedback/th_notice.dart';
 import 'router/app_router.dart';
 import 'router/notification_route.dart';
-import 'theme/fixo_theme.dart';
+import 'ui/design/th_tokens.dart' show THTheme;
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
-import 'widgets/notification_center.dart'; // notificationCenterProvider (H20)
+import 'ui/shared/notification_center.dart'; // notificationCenterProvider (H20)
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
 import 'viewmodels/theme_mode_viewmodel.dart'; // themeModeProvider
 
@@ -74,7 +74,7 @@ void main() async {
       .getInitialMessage()
       .timeout(const Duration(seconds: 3), onTimeout: () => null);
 
-  runApp(ProviderScope(child: FixoApp(initialMessage: initialMessage)));
+  runApp(ProviderScope(child: ThApp(initialMessage: initialMessage)));
 }
 
 // ─── Permission request ──────────────────────────────────────────────────────
@@ -88,16 +88,16 @@ Future<void> _requestNotificationPermission() async {
 }
 
 // ─── Root widget ─────────────────────────────────────────────────────────────
-class FixoApp extends ConsumerStatefulWidget {
+class ThApp extends ConsumerStatefulWidget {
   final RemoteMessage? initialMessage;
 
-  const FixoApp({super.key, this.initialMessage});
+  const ThApp({super.key, this.initialMessage});
 
   @override
-  ConsumerState<FixoApp> createState() => _FixoAppState();
+  ConsumerState<ThApp> createState() => _ThAppState();
 }
 
-class _FixoAppState extends ConsumerState<FixoApp> {
+class _ThAppState extends ConsumerState<ThApp> {
   @override
   void initState() {
     super.initState();
@@ -142,14 +142,14 @@ class _FixoAppState extends ConsumerState<FixoApp> {
     ref
         .read(notificationCenterProvider.notifier)
         .add(
-          FixoNotification.fromRemote(
+          ThNotification.fromRemote(
             title: notification?.title,
             body: notification?.body,
             data: message.data,
           ),
         );
 
-    FixoNotice.push(
+    THNotice.push(
       context,
       title: notification?.title ?? 'Fixo',
       body: notification?.body ?? '',
@@ -178,13 +178,13 @@ class _FixoAppState extends ConsumerState<FixoApp> {
 
     return MaterialApp.router(
       title: appName,
-      theme: FixoTheme.light(),
-      darkTheme: FixoTheme.dark(),
+      theme: THTheme.light,
+      darkTheme: THTheme.dark,
       themeMode: themeMode,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
       builder: (context, child) =>
-          FixoNoticeHost(child: child ?? const SizedBox()),
+          THNoticeHost(child: child ?? const SizedBox()),
     );
   }
 }

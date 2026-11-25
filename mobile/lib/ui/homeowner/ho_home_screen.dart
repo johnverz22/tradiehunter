@@ -26,7 +26,7 @@ import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
-import '../../widgets/notification_center.dart';
+import '../shared/notification_center.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
