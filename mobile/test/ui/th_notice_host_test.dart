@@ -1,18 +1,12 @@
 import 'dart:io';
 
 import 'package:fixo/ui/feedback/th_notice.dart';
-import 'package:fixo/theme/design_tokens.dart';
-import 'package:fixo/theme/fixo_theme.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
   group('Static lint check (Sub-task 8-H)', () {
     test('Zero occurrences of ScaffoldMessenger / SnackBar in lib/', () {
       final libDir = Directory('lib');
@@ -93,8 +87,8 @@ void main() {
     }) {
       return ProviderScope(
         child: MaterialApp(
-          theme: FixoTheme.light(),
-          darkTheme: FixoTheme.dark(),
+          theme: THTheme.light,
+          darkTheme: THTheme.dark,
           themeMode: themeMode,
           builder: (context, c) => THNoticeHost(child: c ?? const SizedBox()),
           home: child,

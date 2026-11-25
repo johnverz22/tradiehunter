@@ -1,8 +1,5 @@
 // P7 — Disputes
 //
-// Run with: UI_V2=all exercises the v2 ho_dispute screen; default flags
-// exercise the v1 dispute view. Both share the same keys.
-//
 // Self-seeding: each test gets a fresh Booked job from FixtureHelper and
 // navigates straight to /jobs/:id/dispute.
 //

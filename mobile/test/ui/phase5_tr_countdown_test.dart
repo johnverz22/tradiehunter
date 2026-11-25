@@ -1,9 +1,8 @@
 // Phase 5.0: v2 offer countdown (`TrOfferCountdown`) and its pure helpers,
-// compared with the v1 `OfferCountdown` helpers so behaviour stays identical.
+// with the v1 `OfferCountdown` results pinned as literals.
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:fixo/ui/tradie/tr_common.dart';
-import 'package:fixo/views/widgets/offer_countdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,26 +26,28 @@ Widget _host(Widget child, {ThemeData? theme}) => MaterialApp(
 void main() {
   setUpAll(loadPhase3Fixtures);
 
-  group('helpers match v1', () {
-    final durations = <Duration>[
-      Duration.zero,
-      const Duration(seconds: 5),
-      const Duration(minutes: 2, seconds: 9),
-      const Duration(minutes: 59, seconds: 59),
-      const Duration(hours: 1),
-      const Duration(hours: 2, minutes: 3, seconds: 4),
-    ];
-    for (final d in durations) {
+  group('helpers', () {
+    final cases = <Duration, (String, String)>{
+      Duration.zero: ('0:00', 'Offer expired'),
+      const Duration(seconds: 5): ('0:05', 'Expires in 0:05'),
+      const Duration(minutes: 2, seconds: 9): ('2:09', 'Expires in 2:09'),
+      const Duration(minutes: 59, seconds: 59): ('59:59', 'Expires in 59:59'),
+      const Duration(hours: 1): ('1:00:00', 'Expires in 1h 0m'),
+      const Duration(hours: 2, minutes: 3, seconds: 4): (
+        '2:03:04',
+        'Expires in 2h 3m',
+      ),
+    };
+    cases.forEach((d, e) {
       test('$d', () {
-        expect(trFormatCountdown(d), OfferCountdown.formatClock(d));
-        expect(trCompactCountdownLabel(d), OfferCountdown.compactLabel(d));
+        expect(trFormatCountdown(d), e.$1);
+        expect(trCompactCountdownLabel(d), e.$2);
       });
-    }
+    });
     test('remaining is clamped at zero', () {
       final now = DateTime.utc(2026, 11, 25, 10);
       final offer = _offer(now.subtract(const Duration(minutes: 3)));
       expect(trOfferRemaining(offer, () => now), Duration.zero);
-      expect(OfferCountdown.clampedRemaining(offer, () => now), Duration.zero);
     });
   });
 

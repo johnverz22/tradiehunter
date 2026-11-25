@@ -1,8 +1,5 @@
 // P1 — Registration, OTP, Login
 //
-// Run with: works under both default flags and UI_V2=all — auth screens
-// (sign_in, verify_otp, signup, role_select) are v2 in both configs.
-//
 // Two-device note: P1 flows are single-user (no counterpart persona needed).
 // Run on either simulator independently.
 //

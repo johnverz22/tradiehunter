@@ -1,8 +1,5 @@
 // P3 — Matching: Sequential Offers & Timeouts
 //
-// Run with: works under both default flags and UI_V2=all — the matching
-// screen itself is still the v1 view in both configs.
-//
 // Self-seeding: every test creates its own job via ApiHelper/FixtureHelper and
 // polls the API for cross-state assertions, so no pre-seeded data is required.
 // Run each persona on its own simulator (stagger launches — see

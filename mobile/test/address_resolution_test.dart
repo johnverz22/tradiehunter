@@ -7,16 +7,15 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/address_repository.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
-import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/address_viewmodel.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/views/jobs/post_job_screen.dart';
+import 'package:fixo/ui/homeowner/ho_post_job_screen.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 const selectedAddress = AddressCandidate(
   id: 'linz:123113:1',
@@ -91,7 +90,6 @@ Future<void> fill(PostJobNotifier notifier) async {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   test('address parser rejects invalid coordinates and missing identity', () {
     final json = <String, dynamic>{
@@ -366,13 +364,13 @@ void main() {
           profileRepositoryProvider.overrideWithValue(ProfileFixture()),
         ],
         child: MaterialApp(
-          theme: dark ? FixoTheme.dark() : FixoTheme.light(),
+          theme: dark ? THTheme.dark : THTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
           ),
-          home: const PostJobScreen(),
+          home: const ThPostJobScreen(),
         ),
       ),
     );

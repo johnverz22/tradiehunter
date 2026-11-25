@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'th_tokens.dart';
 
-/// Wraps a v2 subtree in the Trust Navy + Gold theme while the rest of the app
-/// keeps `FixoTheme` (migration plan §4.0).
+/// Forces a subtree into the Trust Navy + Gold light or dark theme regardless
+/// of the app theme. The app root already runs on [THTheme]; this wrapper is
+/// kept for the debug gallery, modal routes that must honour the in-app theme
+/// toggle, and widget-test hosts.
 ///
 /// [themeMode] is the app's existing theme preference (`themeModeProvider`);
 /// the caller passes it in so `lib/ui/**` never imports `views/**` (plan 2.4).

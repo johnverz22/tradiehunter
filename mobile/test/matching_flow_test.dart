@@ -5,15 +5,14 @@ import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
-import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
-import 'package:fixo/views/jobs/matching_screen.dart';
+import 'package:fixo/ui/homeowner/ho_matching_screen.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MatchRepo extends JobsRepository {
@@ -107,10 +106,9 @@ class MatchHub extends JobHubClient {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  // The v2 radar (UI_V2=ho_radar|all) reads themeModeProvider, whose notifier
-  // loads SharedPreferences on construction. Harmless on the v1 path.
+  // The v2 radar reads themeModeProvider, whose notifier loads
+  // SharedPreferences on construction.
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   Future<GoRouter> mount(
@@ -156,7 +154,7 @@ void main() {
         ],
         child: MaterialApp.router(
           routerConfig: router,
-          theme: dark ? FixoTheme.dark() : FixoTheme.light(),
+          theme: dark ? THTheme.dark : THTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(scale),
@@ -178,7 +176,7 @@ void main() {
     return router;
   }
 
-  group('MatchingScreen', () {
+  group('ThMatchingScreen', () {
     testWidgets('request-sent v2 renders server offer facts and actions', (
       tester,
     ) async {
@@ -198,9 +196,9 @@ void main() {
         );
       await mount(
         tester,
-        const MatchingScreen(
+        const ThMatchingScreen(
           jobId: '42',
-          mode: MatchingScreenMode.requestSent,
+          mode: ThMatchingMode.requestSent,
           gstLabel: 'Incl. GST',
         ),
         repo: repo,
@@ -230,7 +228,7 @@ void main() {
       ) async {
         await mount(
           tester,
-          const MatchingScreen(jobId: '42'),
+          const ThMatchingScreen(jobId: '42'),
           repo: MatchRepo(),
           hub: MatchHub(),
           dark: dark,
@@ -245,7 +243,7 @@ void main() {
     testWidgets('large text scale 2.0 has no overflow', (tester) async {
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: MatchHub(),
         scale: 2.0,
@@ -261,7 +259,7 @@ void main() {
       final repo = MatchRepo()..triggerSucceeds = false;
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: repo,
         hub: MatchHub(),
         disableAnimations: true,
@@ -284,7 +282,7 @@ void main() {
     testWidgets('stall watchdog fires only in starting phase', (tester) async {
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: MatchHub(),
         disableAnimations: true,
@@ -303,7 +301,7 @@ void main() {
         final hub = MatchHub();
         await mount(
           tester,
-          const MatchingScreen(jobId: '42'),
+          const ThMatchingScreen(jobId: '42'),
           repo: repo,
           hub: hub,
           disableAnimations: true,
@@ -352,7 +350,7 @@ void main() {
       final hub = MatchHub();
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: hub,
         disableAnimations: true,
@@ -371,7 +369,7 @@ void main() {
         final hub = MatchHub();
         await mount(
           tester,
-          const MatchingScreen(jobId: '42'),
+          const ThMatchingScreen(jobId: '42'),
           repo: MatchRepo(),
           hub: hub,
           disableAnimations: true,
@@ -390,7 +388,7 @@ void main() {
       final hub = MatchHub();
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: hub,
         disableAnimations: true,
@@ -411,7 +409,7 @@ void main() {
     testWidgets('reduced motion swaps radar for static badge', (tester) async {
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: MatchHub(),
         disableAnimations: true,
@@ -424,7 +422,7 @@ void main() {
     testWidgets('radar animates only when motion is enabled', (tester) async {
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: MatchRepo(),
         hub: MatchHub(),
         settle: false,
@@ -440,7 +438,7 @@ void main() {
       final hub = MatchHub();
       await mount(
         tester,
-        const MatchingScreen(jobId: '42'),
+        const ThMatchingScreen(jobId: '42'),
         repo: repo,
         hub: hub,
         settle: false,

@@ -9,10 +9,6 @@
 #     SHOT_MATCH_JOB=130 SHOT_PAYMENT_JOB=131 SHOT_BOOKED_JOB=132 \
 #     SHOT_INPROGRESS_JOB=133 SHOT_OFFER_JOB=134
 #
-# Flags (fix plan P-02): captures run with `UI_V2=all` by default so a v1
-# screen cannot be mistaken for a v2 one. Override with the env var
-# (`UI_V2=ho_home,ho_jobs ./scripts/run-shots.sh ...`), `UI_V2=` (empty,
-# i.e. the shipped default flags) or an extra `UI_V2=...` argument.
 # `SHOT_TEXT_SCALE` (default 1.0, 2.0 = 200%) is applied by the driver (it fails
 # the run if the app renders another scale) and recorded in run.json. A run
 # with a scale other than 1.0 writes to `docs/runs/v2/screenshots-text<pct>/`
@@ -42,15 +38,11 @@
 set -u
 PERSONA=$1; THEME=$2; UDID=$3; shift 3
 
-# Capture flags. An explicit `UI_V2=...` extra argument wins over the env var,
-# which wins over the default `all`.
-UI_V2_VALUE=${UI_V2-all}
 ALLOW_DIRTY=${ALLOW_DIRTY:-0}
 TEXT_SCALE=${SHOT_TEXT_SCALE:-1.0}
 EXTRA=()
 for kv in "$@"; do
   case "$kv" in
-    UI_V2=*) UI_V2_VALUE=${kv#UI_V2=} ;;
     ALLOW_DIRTY=*) ALLOW_DIRTY=${kv#ALLOW_DIRTY=} ;;
     SHOT_TEXT_SCALE=*) TEXT_SCALE=${kv#SHOT_TEXT_SCALE=} ;;
     *) EXTRA+=("$kv") ;;
@@ -70,7 +62,7 @@ fi
 OUT=${SHOTS_OUT_ROOT:-$ROOT_DIR}/$THEME
 
 DEFINES=(--dart-define "FIXO_PERSONA=$PERSONA" --dart-define FIXO_DISABLE_PUSH=true --dart-define "SHOT_THEME=$THEME")
-DEFINES+=(--dart-define "UI_V2=$UI_V2_VALUE" --dart-define "SHOT_TEXT_SCALE=$TEXT_SCALE")
+DEFINES+=(--dart-define "SHOT_TEXT_SCALE=$TEXT_SCALE")
 for kv in "${EXTRA[@]+"${EXTRA[@]}"}"; do DEFINES+=(--dart-define "$kv"); done
 
 REPO_ROOT=$REPO
@@ -98,8 +90,8 @@ STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Minimal JSON string escaping (values here are short, plain tokens).
 json_str() { printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"; }
-RUN_JSON=$(printf '{\n  "ui_v2": %s,\n  "commit": %s,\n  "device": %s,\n  "udid": %s,\n  "persona": %s,\n  "theme": %s,\n  "text_scale": %s,\n  "started_at": %s\n}\n' \
-  "$(json_str "$UI_V2_VALUE")" "$(json_str "$COMMIT")" "$(json_str "$DEVICE_NAME")" \
+RUN_JSON=$(printf '{\n  "commit": %s,\n  "device": %s,\n  "udid": %s,\n  "persona": %s,\n  "theme": %s,\n  "text_scale": %s,\n  "started_at": %s\n}\n' \
+  "$(json_str "$COMMIT")" "$(json_str "$DEVICE_NAME")" \
   "$(json_str "$UDID")" "$(json_str "$PERSONA")" "$(json_str "$THEME")" \
   "$(json_str "$TEXT_SCALE")" "$(json_str "$STARTED_AT")")
 printf '%s' "$RUN_JSON" > "$OUT/$PERSONA/run.json"
@@ -115,7 +107,7 @@ SKIP_FILE="$OUT/$PERSONA/skipped$SUFFIX.txt"
 WARN_FILE="$OUT/$PERSONA/warnings$SUFFIX.txt"
 LAST_SHOT=startup
 echo "=== persona=$PERSONA theme=$THEME udid=$UDID out=$OUT file=$SHOT_FILE ==="
-echo "=== UI_V2=${UI_V2_VALUE:-<default flags>} text_scale=$TEXT_SCALE commit=$COMMIT device=$DEVICE_NAME ==="
+echo "=== text_scale=$TEXT_SCALE commit=$COMMIT device=$DEVICE_NAME ==="
 : > "$EXC_FILE"
 : > "$SKIP_FILE"
 : > "$WARN_FILE"

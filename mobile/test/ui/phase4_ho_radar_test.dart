@@ -1,8 +1,6 @@
-// N-03: the v2 quick-match radar (ThRadarScreen) mounted directly, so these
-// tests need no --dart-define=UI_V2. The flow behind it (SignalR, dispatch,
-// stall watchdog, cancel) is covered by test/matching_flow_test.dart, which
-// should also be run with --dart-define=UI_V2=ho_radar before the id is
-// activated.
+// N-03: the v2 quick-match radar (ThRadarScreen) mounted directly. The flow
+// behind it (SignalR, dispatch, stall watchdog, cancel) is covered by
+// test/matching_flow_test.dart.
 import 'package:fixo/ui/homeowner/ho_radar_screen.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:flutter/material.dart';

@@ -9,9 +9,9 @@
 // was not passed prints `__SHOT_SKIPPED__ <name> | <reason>` instead of
 // pushing a job id of 0.
 //
-// Run with the same flags as the base pass (run-shots.sh passes UI_V2,
-// SHOT_THEME and SHOT_TEXT_SCALE). Fixture jobs may be flow v1 or v2
-// depending on backend JobFlow:Version — status-strip keys are shared.
+// Run with the same flags as the base pass (run-shots.sh passes SHOT_THEME
+// and SHOT_TEXT_SCALE). Fixture jobs may be flow v1 or v2 depending on backend
+// JobFlow:Version — status-strip keys are shared.
 //
 // Requires the variant fixtures from scripts/mk-variant-fixtures.sh plus the
 // base set (SHOT_BOOKED_JOB). Pass ids via --dart-define. Optional:

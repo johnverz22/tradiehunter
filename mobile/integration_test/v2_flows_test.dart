@@ -1,9 +1,6 @@
 // V2 — Homeowner Phase-4 flows (quotes, extra cost, tradie profile request)
 //
-// Run with: UI_V2=all (or UI_V2=ho_quotes,ho_extra_cost,ho_tradie_profile for
-// the matching subset). These screens are gated — under default flags the v1
-// views render instead, so each test skips itself unless its screen id is
-// enabled. Covered by scripts/run-e2e.sh config C1.
+// Covered by scripts/run-e2e.sh config C1.
 //
 // Self-seeding: FixtureHelper drives real API state (project job → quote
 // request → submitted quote; booked job → pending adjustment; requested job
@@ -22,33 +19,6 @@ import 'helpers/auth_helper.dart';
 import 'helpers/fixture_helper.dart';
 import 'helpers/test_config.dart';
 
-/// The `UI_V2` dart-define the runner passes (`all`, a comma-separated id
-/// list, or empty for the compiled default allowlist).
-const _uiV2 = String.fromEnvironment('UI_V2', defaultValue: '');
-
-/// Mirrors `resolveV2Screen` in lib/ui/ui_flags.dart: `all` enables
-/// everything, the compiled allowlist always applies, and a non-empty
-/// define enables the listed ids on top of the allowlist.
-bool _v2Enabled(String id) {
-  const shipped = {
-    'shell',
-    'splash',
-    'onboarding',
-    'sign_in',
-    'verify_otp',
-    'role_select',
-    'signup',
-    'chat',
-    'notifications',
-    'profile',
-    'messages_list',
-    'settings',
-  };
-  if (_uiV2.trim() == 'all' || shipped.contains(id)) return true;
-  if (_uiV2.trim().isEmpty) return false;
-  return _uiV2.split(',').map((s) => s.trim()).contains(id);
-}
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -58,10 +28,6 @@ void main() {
   group('V2 — homeowner Phase-4 flows', () {
     // ── ho_quotes: accept a fixed quote below the s362F threshold ─────────
     testWidgets('ho_quotes accepts a quote and books the job', (tester) async {
-      if (!_v2Enabled('ho_quotes')) {
-        markTestSkipped('ho_quotes not enabled (needs UI_V2=all or ho_quotes)');
-        return;
-      }
       final (jobId, quoteId, _) = await FixtureHelper.quotedJob(
         tag: 'v2q-low',
         amount: 2000,
@@ -96,10 +62,6 @@ void main() {
     testWidgets('ho_quotes gates high-value accept behind written contract', (
       tester,
     ) async {
-      if (!_v2Enabled('ho_quotes')) {
-        markTestSkipped('ho_quotes not enabled (needs UI_V2=all or ho_quotes)');
-        return;
-      }
       final (jobId, quoteId, _) = await FixtureHelper.quotedJob(
         tag: 'v2q-high',
         amount: 45000,
@@ -140,12 +102,6 @@ void main() {
     testWidgets('ho_extra_cost approves a pending extra-cost request', (
       tester,
     ) async {
-      if (!_v2Enabled('ho_job_detail')) {
-        markTestSkipped(
-          'ho_job_detail not enabled (needs UI_V2=all or ho_job_detail)',
-        );
-        return;
-      }
       final (jobId, adjustmentId) = await FixtureHelper.pendingAdjustmentJob(
         tag: 'v2adj',
       );
@@ -185,12 +141,6 @@ void main() {
     testWidgets('ho_tradie_profile sends a direct tradie request', (
       tester,
     ) async {
-      if (!_v2Enabled('ho_tradie_profile')) {
-        markTestSkipped(
-          'ho_tradie_profile not enabled (needs UI_V2=all or ho_tradie_profile)',
-        );
-        return;
-      }
       final jobId = await FixtureHelper.requestedJob(tag: 'v2prof');
       final tradieId = await FixtureHelper.tradieProfileId();
 

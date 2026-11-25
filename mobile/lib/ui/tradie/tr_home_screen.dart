@@ -30,7 +30,6 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
-import '../ui_flags.dart';
 import 'tr_home_mapper.dart';
 import 'tr_home_parts.dart';
 
@@ -325,9 +324,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
           rating: rating,
           onRetryEarnings: () =>
               unawaited(ref.read(tradieEarningsProvider.notifier).load()),
-          onOpenEarnings: isV2Screen('tr_earnings')
-              ? () => context.push('/tradie/earnings')
-              : null,
+          onOpenEarnings: () => context.push('/tradie/earnings'),
         ),
         if (!online) const TrPausedBanner(),
         TrStatTiles(

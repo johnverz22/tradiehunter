@@ -8,8 +8,7 @@
 // prints `__SHOT_SKIPPED__ <name> | <reason>` instead of failing or vanishing.
 // States that need special fixtures live in `screenshots_variants_test.dart`.
 //
-// Run through `scripts/run-shots.sh` (it passes SHOT_THEME, SHOT_TEXT_SCALE and
-// UI_V2). By hand (homeowner):
+// Run through `scripts/run-shots.sh` (it passes SHOT_THEME and SHOT_TEXT_SCALE). By hand (homeowner):
 //   flutter test integration_test/screenshots_test.dart \
 //     --device-id <udid> --dart-define FIXO_PERSONA=homeowner \
 //     --dart-define SHOT_MATCH_JOB=<requestedJobId>
@@ -342,7 +341,7 @@ Future<void> _captureJobsFilters(WidgetTester tester) async {
     if (segment.evaluate().isEmpty) {
       shotSkipped(
         name,
-        'no "$label" segment under jobs_filter (v1 list? run with UI_V2=all)',
+        'no "$label" segment under jobs_filter',
       );
       continue;
     }
@@ -371,7 +370,7 @@ Future<void> _capturePostJob(WidgetTester tester) async {
   if (project.evaluate().isEmpty) {
     shotSkipped(
       'homeowner/06c_post_project',
-      'no "Project" segment (v1 post-job screen? run with UI_V2=all)',
+      'no "Project" segment on the post-job screen',
     );
     return;
   }

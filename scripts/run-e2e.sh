@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # scripts/run-e2e.sh — run the Flutter integration_test suites against the
-# local stack in one of the v1/v2 configurations (docs/todos/03_e2e_realignment_plan.md §5).
+# local stack (docs/todos/03_e2e_realignment_plan.md §5). The app is v2-only;
+# a config only chooses which persona(s) run.
 #
 #   scripts/run-e2e.sh <config> [suite ...]
 #   scripts/run-e2e.sh --list-devices
 #
 # Configs
-#   C0            default flags (what ships today); homeowner + tradie suites
-#   C1            UI_V2=all, homeowner persona (the real §4.4 gate)
-#   C2            UI_V2=all, tradie persona (tradie screens still v1; must not regress)
-#   C3:<id,id>    UI_V2=<ids>, homeowner persona (isolate one screen)
+#   C0            homeowner + tradie personas
+#   C1            homeowner persona (the §4.4 gate)
+#   C2            tradie persona
 #
 # Environment (all optional except E2E_DEVICE)
 #   E2E_DEVICE          device id for the homeowner persona (flutter devices)
@@ -50,10 +50,9 @@ for a in "$@"; do
 done
 
 case "$CONFIG" in
-  C0) V2="";            PERSONAS="homeowner tradie" ;;
-  C1) V2="all";         PERSONAS="homeowner" ;;
-  C2) V2="all";         PERSONAS="tradie" ;;
-  C3:*) V2="${CONFIG#C3:}"; PERSONAS="homeowner" ;;
+  C0) PERSONAS="homeowner tradie" ;;
+  C1) PERSONAS="homeowner" ;;
+  C2) PERSONAS="tradie" ;;
   *) echo "Unknown config '$CONFIG'"; usage 1 ;;
 esac
 [ -n "${E2E_DEVICE:-}" ] || { echo "Set E2E_DEVICE (see: $0 --list-devices)"; exit 2; }
@@ -87,7 +86,6 @@ run_one() { # suite persona device
     echo "!! $file not found"; RESULTS+=("MISSING  $name"); FAILED=1; return
   fi
   local defs=(--dart-define FIXO_DISABLE_PUSH=true --dart-define "FIXO_API_URL=$API_URL")
-  [ -n "$V2" ] && defs+=(--dart-define "UI_V2=$V2")
   is_persona_suite "$suite" && defs+=(--dart-define "FIXO_PERSONA=$persona")
 
   echo "=== $name [$CONFIG] device=$device $(date +%H:%M:%S) ==="

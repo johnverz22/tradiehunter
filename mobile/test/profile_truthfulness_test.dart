@@ -3,16 +3,15 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
-import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/views/profile/public_profile_screen.dart';
+import 'package:fixo/ui/homeowner/ho_tradie_profile_screen.dart';
 import 'package:fixo/ui/shared/th_rating_sheet.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ProfileFixture extends ProfileRepository {
   final String viewer;
@@ -66,7 +65,6 @@ Job job(String id, String status, String homeowner, String tradie) => Job(
 );
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   Future<void> mount(
     WidgetTester tester, {
@@ -91,13 +89,13 @@ void main() {
           jobsRepositoryProvider.overrideWithValue(JobsFixture(jobs)),
         ],
         child: MaterialApp(
-          theme: dark ? FixoTheme.dark() : FixoTheme.light(),
+          theme: dark ? THTheme.dark : THTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: const TextScaler.linear(2)),
             child: child!,
           ),
-          home: const PublicProfileScreen(profileId: 'target', isTradie: true),
+          home: const ThTradieProfileScreen(profileId: 'target'),
         ),
       ),
     );
