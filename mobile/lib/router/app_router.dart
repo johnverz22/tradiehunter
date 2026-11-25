@@ -62,6 +62,7 @@ import '../ui/shared/profile_screen.dart';
 import '../ui/shared/settings_screen.dart';
 import '../ui/feedback/th_state_view.dart';
 import '../ui/tradie/tr_home_screen.dart';
+import '../ui/tradie/tr_lead_screen.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
 /// Tabbed screens live inside the [MainLayout] shell; flow screens
@@ -278,10 +279,15 @@ final GoRouter appRouter = GoRouter(
     // 10-request-detail (tradie)
     GoRoute(
       path: '/tradie/requests/:requestId',
-      builder: (context, state) => RequestDetailScreen(
-        key: ValueKey('request_${state.pathParameters['requestId']}'),
-        requestId: state.pathParameters['requestId']!,
-      ),
+      builder: (context, state) {
+        final requestId = state.pathParameters['requestId']!;
+        final key = ValueKey('request_$requestId');
+        return _pick(
+          'tr_lead',
+          RequestDetailScreen(key: key, requestId: requestId),
+          TradieLeadScreen(key: key, requestId: requestId),
+        );
+      },
     ),
     // 11-chat
     GoRoute(
