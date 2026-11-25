@@ -235,6 +235,10 @@ test/ui/phase5_tr_*_test.dart
 
 **Done when:** all items ticked, tests green with the flag on and off, `/tradie` still resolves for deep links and post-job guard redirects (`ho_post_job_screen.dart:32` does `context.go('/tradie')`).
 
+*5.1 progress (2026-11-25): **ported, unverified.** `TradieHomeScreen` (`lib/ui/tradie/tr_home_screen.dart`) with sections in `tr_home_parts.dart` and pure rules added to `tr_home_mapper.dart` (`trHeroNet`, `trWeekJobCount`, `trRating`, `trShowVerificationBanner`, `trNeedsOfflineConfirm`). Parity kept: jobs / earnings / pending-offer loads, accept / decline through `OfferResponder`, optimistic availability with the go-offline confirm sheet, verification banner, paused banner, SignalR (new match, offer lifecycle, status, reconnect) and resume refresh, pull-to-refresh, Keys `tradie_dashboard`, `availability_button`, `stat_tile_pending`, `stat_tile_rating`, `today_card_cta`. Deviations: no response-rate tile (G-13), the rating tile and badge need a real score and review count, \"Jobs this week\" is derived client-side from scheduled start in the local Mon-Sun week. `TrLeadCard` gained `onExpired`. Wired via `_pick('tr_home', ...)` in `app_router.dart`; **not added to `v2Screens`**. Needs: `dart format`, `flutter analyze --fatal-infos`, `test/ui/phase5_tr_home_test.dart`, and the v1 tests listed above with `UI_V2=tr_home`.*
+
+---
+
 ---
 
 ### 5.2 `tr_lead` — Request detail (flag `tr_lead`, route `/tradie/requests/:requestId`)

@@ -95,6 +95,7 @@ class TrJobCard extends StatelessWidget {
                 ),
                 if (actionRequired && actionLabel != null)
                   THButton(
+                    key: const Key('today_card_cta'),
                     label: actionLabel,
                     kind: THButtonKind.accent,
                     size: THButtonSize.sm,
