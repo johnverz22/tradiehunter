@@ -140,15 +140,17 @@ class _ThMessagesListScreenState extends ConsumerState<ThMessagesListScreen> {
                   onRefresh: _load,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      Space.s4,
-                      Space.s4,
-                      Space.s4,
-                      thDockClearance(context),
-                    ),
+                    // Flat inbox: rows run edge to edge (each tile pads itself
+                    // by the gutter) and are split by a hairline, not cards.
+                    padding: EdgeInsets.only(bottom: thDockClearance(context)),
                     itemCount: _conversations.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: Space.s1),
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: c.line,
+                      // Start under the text, past the avatar.
+                      indent: Sizes.gutter + Sizes.avatarSm + Space.s3,
+                    ),
                     itemBuilder: (_, i) {
                       final conversation = _conversations[i];
                       return _ThConversationTile(
@@ -269,17 +271,13 @@ class _ThConversationTile extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radii.tile),
         child: Container(
-          padding: const EdgeInsets.all(Space.s3),
-          decoration: BoxDecoration(
-            color: selected ? c.tintBrand : c.surface,
-            borderRadius: BorderRadius.circular(Radii.tile),
-            border: Border.all(
-              color: selected ? c.brand : c.line,
-              width: selected ? 1.5 : 1,
-            ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Sizes.gutter,
+            vertical: Space.s3,
           ),
+          // No card: only the selected row (wide master/detail) is tinted.
+          color: selected ? c.tintBrand : Colors.transparent,
           child: Row(
             spacing: Space.s3,
             children: [

@@ -872,12 +872,15 @@ class _ThChatDateSeparator extends StatelessWidget {
         spacing: Space.s3,
         children: [
           Expanded(child: Container(height: 1, color: c.line)),
-          Flexible(
-            flex: 4,
+          // Non-flex, so the two hairlines share the leftover space equally
+          // and the label sits exactly in the centre.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.6,
+            ),
             child: Text(
               _label(),
               textAlign: TextAlign.center,
-              softWrap: true,
               style: THType.meta.copyWith(
                 fontWeight: FontWeight.w500,
                 color: c.textSoft,
@@ -1079,7 +1082,7 @@ class _ThChatComposer extends StatelessWidget {
                     ],
                   ),
                   child: Icon(
-                    Icons.arrow_forward_rounded,
+                    Icons.send_rounded,
                     color: c.onAccent,
                     size: Sizes.iconLg,
                   ),
