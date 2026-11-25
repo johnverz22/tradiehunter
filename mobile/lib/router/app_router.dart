@@ -15,6 +15,7 @@ import '../views/auth/otp_verification_screen.dart';
 import '../views/homeowner/homeowner_dashboard_view.dart';
 import '../views/homeowner/homeowner_job_detail_screen.dart';
 import '../views/tradie/tradie_dashboard_view.dart';
+import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
 import '../views/tradie/tradie_onboarding_wizard.dart';
 import '../views/tradie/request_detail_screen.dart';
@@ -471,7 +472,13 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => _pick(
             'ho_jobs',
             const JobsListScreen(),
-            const ThJobsRoute(tradieFallback: JobsListScreen()),
+            ThJobsRoute(
+              tradieFallback: _pick(
+                'tr_jobs',
+                const JobsListScreen(),
+                const TrJobsScreen(),
+              ),
+            ),
           ),
         ),
         GoRoute(
