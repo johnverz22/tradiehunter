@@ -5,8 +5,6 @@
 // loading/error/empty states keep the title.
 import 'package:flutter/material.dart';
 
-import '../design/th_scope.dart';
-import '../design/th_test_id.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 
