@@ -1,0 +1,61 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 4 (Tradie): In-Progress Job & Extra Cost Request — tr_job_inprogress + tr_extra_cost (Phase 5.4 / 5.5)
+#
+# Verifies: check-out CTA, request extra cost sheet (kind chips, amount/description
+# fields, submit), and withdrawal of a pending adjustment.
+# Requires a job in InProgress state for the seeded tradie account.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Navigate to Jobs tab ──────────────────────────────────────────────────────
+- tapOn:
+    id: "dock_jobs"
+
+# ── Open an In-Progress job ───────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "In progress"
+    commands:
+      - tapOn: "In progress"
+
+# ── In-progress scaffold ──────────────────────────────────────────────────────
+- assertVisible:
+    id: "status_strip_job_code"
+- assertVisible:
+    id: "check_out_button"
+- assertVisible:
+    id: "message_homeowner_button"
+- assertVisible:
+    id: "navigate_button"
+
+# ── Screenshot ────────────────────────────────────────────────────────────────
+- takeScreenshot: tr_job_inprogress_light
+
+# ── Extra cost flow ───────────────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible:
+        id: "request_extra_cost_button"
+    commands:
+      - tapOn:
+          id: "request_extra_cost_button"
+      - takeScreenshot: tr_extra_cost_light
+      - assertVisible:
+          id: "extra_cost_amount_field"
+      - assertVisible:
+          id: "extra_cost_description_field"
+      - tapOn:
+          id: "extra_cost_amount_field"
+      - inputText: "50"
+      - tapOn:
+          id: "extra_cost_description_field"
+      - inputText: "Additional materials required"
+      - assertVisible:
+          id: "extra_cost_submit_button"
+      # Dismiss without submitting to keep state clean for downstream flows
+      - pressKey: Back

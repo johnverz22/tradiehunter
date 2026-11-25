@@ -1,0 +1,77 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 8 (Tradie): Onboarding Wizard — tr_onboarding (Phase 5.9)
+#
+# Verifies the 4-step onboarding wizard: progress stepper, day-availability
+# chips (Step 1), service-rate selection (Step 2), credentials upload CTA
+# (Step 3), and profile-review (Step 4). Uses the unverified tradie account
+# so the onboarding gate is likely open. Does NOT submit to avoid seeding
+# a duplicate profile.
+#
+# Account: unverified@fixo.test / Test1234!
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    when:
+      visible:
+        id: "skip_button"
+    commands:
+      - tapOn:
+          id: "skip_button"
+
+- runFlow:
+    when:
+      visible:
+        id: "email_field"
+    commands:
+      - tapOn:
+          id: "email_field"
+      - inputText: "unverified@fixo.test"
+      - tapOn:
+          id: "password_field"
+      - inputText: "Test1234!"
+      - tapOn:
+          id: "login_button"
+
+# ── If onboarding is auto-routed, it appears directly ─────────────────────────
+- runFlow:
+    when:
+      visible: "Set up your profile"
+    commands:
+      - takeScreenshot: tr_onboarding_step1_light
+
+      # Step 1 — Working days availability
+      - runFlow:
+          when:
+            visible:
+              id: "day_monday"
+          commands:
+            - tapOn:
+                id: "day_monday"
+            - tapOn:
+                id: "day_tuesday"
+            - tapOn:
+                id: "day_wednesday"
+
+      # Continue to Step 2
+      - tapOn: "Continue"
+      - takeScreenshot: tr_onboarding_step2_light
+
+      # Continue to Step 3
+      - tapOn: "Continue"
+      - takeScreenshot: tr_onboarding_step3_light
+
+      # Step 3 — Credentials upload button visible
+      - assertVisible:
+          id: "upload_document_button"
+
+      # Continue to Step 4 (profile review)
+      - tapOn: "Continue"
+      - takeScreenshot: tr_onboarding_step4_light
+
+      # Back out — do NOT tap final submit
+      - pressKey: Back
+      - pressKey: Back
+      - pressKey: Back

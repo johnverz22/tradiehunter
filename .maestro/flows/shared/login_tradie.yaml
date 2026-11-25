@@ -1,0 +1,32 @@
+appId: nz.co.fixo.fixo
+---
+# Reusable shared login flow for the tradie persona.
+# Assumes the app is already launched. Skips onboarding splash if shown,
+# then fills credentials and asserts the tradie dashboard is visible.
+# Uses Semantics identifiers mirrored from Flutter Keys (Phase 5 migration).
+
+- runFlow:
+    when:
+      visible:
+        id: "skip_button"
+    commands:
+      - tapOn:
+          id: "skip_button"
+
+- runFlow:
+    when:
+      visible:
+        id: "email_field"
+    commands:
+      - tapOn:
+          id: "email_field"
+      - inputText: ${EMAIL:-tradie-verified@fixo.test}
+      - tapOn:
+          id: "password_field"
+      - inputText: ${PASSWORD:-Test1234!}
+      - tapOn:
+          id: "login_button"
+
+# Wait for the tradie dashboard to settle
+- assertVisible:
+    id: "tradie_dashboard"

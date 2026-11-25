@@ -1,0 +1,49 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 1 (Tradie): Login & Home Dashboard Verification — tr_home (Phase 5.0)
+#
+# Verifies the v2 tradie home screen: dashboard scaffold, availability toggle,
+# stat tiles, dock navigation, and lead/job section headings.
+# Screenshots captured for visual QA against docs/design/mobile/mockups/index.html.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Dock navigation items ────────────────────────────────────────────────────
+- assertVisible:
+    id: "dock_home"
+- assertVisible:
+    id: "dock_jobs"
+- assertVisible:
+    id: "dock_chat"
+- assertVisible:
+    id: "dock_profile"
+
+# ── Dashboard scaffold ───────────────────────────────────────────────────────
+- assertVisible:
+    id: "tradie_dashboard"
+
+# ── Availability toggle ──────────────────────────────────────────────────────
+- assertVisible:
+    id: "availability_button"
+
+# ── Stat tiles ───────────────────────────────────────────────────────────────
+- assertVisible:
+    id: "stat_tile_pending"
+- assertVisible:
+    id: "stat_tile_rating"
+
+# ── Visual evidence (light theme) ────────────────────────────────────────────
+- takeScreenshot: tr_home_light
+
+# ── Toggle availability and screenshot ───────────────────────────────────────
+- tapOn:
+    id: "availability_button"
+- takeScreenshot: tr_home_unavailable_light
+
+# ── Restore availability ─────────────────────────────────────────────────────
+- tapOn:
+    id: "availability_button"

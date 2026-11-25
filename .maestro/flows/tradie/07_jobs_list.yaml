@@ -1,0 +1,35 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 7 (Tradie): Jobs List (All Jobs) — tr_jobs (Phase 5.8)
+#
+# Verifies: tradie jobs list screen, day-grouped layout, and filter row.
+# Navigates via the Jobs dock tab (which mounts tr_jobs when v2 flag is active).
+# Screenshots captured for visual QA against mockup `tr_jobs`.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Navigate to Jobs tab ──────────────────────────────────────────────────────
+- tapOn:
+    id: "dock_jobs"
+
+# ── Assert filter row rendered ────────────────────────────────────────────────
+- assertVisible:
+    id: "tradie_filter_row"
+
+- takeScreenshot: tr_jobs_light
+
+# ── Scroll down to verify day-grouped job cards render ───────────────────────
+- scroll:
+    direction: DOWN
+    duration: 500
+
+- takeScreenshot: tr_jobs_scrolled_light
+
+# ── Return to top ─────────────────────────────────────────────────────────────
+- scroll:
+    direction: UP
+    duration: 500

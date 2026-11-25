@@ -1,0 +1,52 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 5 (Tradie): Job Completion (Check-Out) — tr_complete (Phase 5.6)
+#
+# Verifies: check-out confirmation page, final hours field, pricing summary
+# key-values, and the "Submit & complete" CTA presence.
+# Taps check-out but does NOT submit (to avoid mutating seed data permanently).
+# Requires a job in InProgress state for the seeded tradie account.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Navigate to Jobs tab ──────────────────────────────────────────────────────
+- tapOn:
+    id: "dock_jobs"
+
+# ── Open an In-Progress job ───────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "In progress"
+    commands:
+      - tapOn: "In progress"
+
+# ── Tap Check Out to open completion sheet / page ────────────────────────────
+- assertVisible:
+    id: "check_out_button"
+- tapOn:
+    id: "check_out_button"
+
+# ── Complete page elements ────────────────────────────────────────────────────
+- assertVisible:
+    id: "final_hours_field"
+- assertVisible:
+    id: "check_out_submit_button"
+
+- takeScreenshot: tr_complete_light
+
+# ── Fill final hours for evidence ────────────────────────────────────────────
+- tapOn:
+    id: "final_hours_field"
+- clearText
+- inputText: "2.5"
+
+- takeScreenshot: tr_complete_filled_light
+
+# ── Back out without submitting ───────────────────────────────────────────────
+- pressKey: Back
+- assertVisible:
+    id: "check_out_button"

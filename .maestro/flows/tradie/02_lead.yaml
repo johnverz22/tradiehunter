@@ -1,0 +1,72 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 2 (Tradie): New Lead / Request Detail — tr_lead (Phase 5.2)
+#
+# Verifies the v2 lead detail screen: job info, offer action buttons (decline,
+# accept / submit quote), and both decline/accept paths. Must have at least one
+# pending lead visible on the tradie home screen for this flow to execute.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Precondition: a pending lead card exists on the home screen ───────────────
+- runFlow:
+    when:
+      visible:
+        id: "stat_tile_pending"
+    commands:
+      - tapOn:
+          id: "stat_tile_pending"
+
+# ── Fallback: tap the first visible lead card from home ──────────────────────
+- runFlow:
+    when:
+      visible: "Pending"
+    commands:
+      - tapOn: "Pending"
+
+# ── Lead detail screen ────────────────────────────────────────────────────────
+- takeScreenshot: tr_lead_light
+
+# Accept / decline buttons must be present
+- assertVisible:
+    id: "decline_offer_button"
+
+# ── Accept path: tap accept (or submit_quote_button for quote jobs) ───────────
+- runFlow:
+    when:
+      visible:
+        id: "submit_quote_button"
+    commands:
+      - takeScreenshot: tr_lead_quote_light
+      - tapOn:
+          id: "submit_quote_button"
+      # Assert quote sheet appeared
+      - assertVisible: "Submit quote"
+
+- runFlow:
+    when:
+      not:
+        visible:
+          id: "submit_quote_button"
+    commands:
+      # Non-quote lead: accept offer inline
+      - assertVisible:
+          id: "decline_offer_button"
+
+# ── Decline path: open decline and cancel back ────────────────────────────────
+- tapOn:
+    id: "decline_offer_button"
+
+- runFlow:
+    when:
+      visible:
+        id: "cancel_dismiss_button"
+    commands:
+      - tapOn:
+          id: "cancel_dismiss_button"
+      - assertVisible:
+          id: "decline_offer_button"

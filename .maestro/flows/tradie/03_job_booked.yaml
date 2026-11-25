@@ -1,0 +1,64 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 3 (Tradie): Booked Job Detail & Check-In — tr_job_booked (Phase 5.3)
+#
+# Verifies: status strip / job code, homeowner contact actions, navigate button,
+# cancel-sheet dismiss ("Keep job"), and check-in CTA.
+# Requires a job in Booked state for the seeded tradie account.
+
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_tradie.yaml
+
+# ── Navigate to Jobs tab ──────────────────────────────────────────────────────
+- tapOn:
+    id: "dock_jobs"
+
+# ── Open a Booked job ────────────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "Booked"
+    commands:
+      - tapOn: "Booked"
+
+# ── Job detail scaffold ───────────────────────────────────────────────────────
+- assertVisible:
+    id: "status_strip_job_code"
+
+- assertVisible:
+    id: "job_overflow_menu"
+
+# ── Contact action buttons ────────────────────────────────────────────────────
+- assertVisible:
+    id: "message_homeowner_button"
+- assertVisible:
+    id: "navigate_button"
+
+# ── Screenshot ────────────────────────────────────────────────────────────────
+- takeScreenshot: tr_job_booked_light
+
+# ── Cancel sheet — keep job path ──────────────────────────────────────────────
+- tapOn:
+    id: "job_overflow_menu"
+
+- runFlow:
+    when:
+      visible: "Cancel job"
+    commands:
+      - tapOn: "Cancel job"
+      - assertVisible:
+          id: "cancel_confirm_button"
+      - assertVisible:
+          id: "cancel_dismiss_button"
+      - takeScreenshot: tr_job_cancel_sheet_light
+      - tapOn:
+          id: "cancel_dismiss_button"
+      # Verify still on booked job after dismissal
+      - assertVisible:
+          id: "job_overflow_menu"
+
+# ── Check-in CTA ─────────────────────────────────────────────────────────────
+- assertVisible:
+    id: "check_in_button"
