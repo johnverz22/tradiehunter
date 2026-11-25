@@ -1,13 +1,10 @@
 // TrJobRouter: v2 entry for `/tradie/jobs/:jobId` (plan 5.3, PR A).
 //
 // Loads the job once, picks the state with `trSelectJobView`, and renders it.
-// PR A is behaviour-neutral: no v2 state widgets exist yet, so every selected
-// view injects the v1 screen (`v1Fallback`). Later PRs enable one view at a
-// time by adding a case to the switch below.
 //
 // SignalR (status / adjustment events for this job) refreshes the loader; the
 // subscriptions are cancelled in `dispose`. While a refresh is in flight the
-// previous data stays on screen so the injected screen is not rebuilt.
+// previous data stays on screen so the view is not rebuilt.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -26,12 +23,9 @@ import 'tr_job_review_states.dart';
 import 'tr_job_state.dart';
 
 class TrJobRouter extends ConsumerStatefulWidget {
-  const TrJobRouter({super.key, required this.jobId, required this.v1Fallback});
+  const TrJobRouter({super.key, required this.jobId});
 
   final String jobId;
-
-  /// Builds the v1 screen for views that have no v2 widget yet.
-  final Widget Function() v1Fallback;
 
   @override
   ConsumerState<TrJobRouter> createState() => _TrJobRouterState();

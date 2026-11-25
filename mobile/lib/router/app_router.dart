@@ -3,16 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../ui/gallery/screen_gallery.dart' show ScreenGalleryPage;
-import '../views/homeowner/homeowner_job_detail_screen.dart';
 import '../ui/tradie/tr_earnings_screen.dart';
 import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
-import '../views/tradie/tradie_job_detail_screen.dart';
-import '../views/jobs/matching_screen.dart';
-import '../views/profile/public_profile_screen.dart';
+import '../ui/homeowner/ho_matching_screen.dart';
 import '../ui/homeowner/ho_payment_screen.dart';
-import '../views/states/designed_empty_state.dart';
-import '../widgets/fixo_buttons.dart';
 import '../feedback/notice_gallery.dart';
 import '../ui/auth/splash_screen.dart';
 import '../ui/auth/onboarding_screen.dart';
@@ -72,9 +67,8 @@ final GoRouter appRouter = GoRouter(
   // E-job-not-found (v1.6.2 frames-states.html) — unknown deep links render
   // the designed error screen instead of a blank page.
   errorBuilder: (context, state) => Scaffold(
-    appBar: FixoAppBar(title: 'Job not found'),
-    body: DesignedEmptyState(
-      variant: DesignedStateVariant.jobNotFound,
+    body: ThStateView.preset(
+      ThStatePreset.jobNotFound,
       onAction: () => appRouter.go('/home'),
     ),
   ),
@@ -192,13 +186,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/jobs/:jobId/matching',
       builder: (context, state) =>
-          MatchingScreen(jobId: state.pathParameters['jobId']!),
+          ThMatchingScreen(jobId: state.pathParameters['jobId']!),
     ),
     GoRoute(
       path: '/jobs/:jobId/request',
-      builder: (context, state) => MatchingScreen(
+      builder: (context, state) => ThMatchingScreen(
         jobId: state.pathParameters['jobId']!,
-        mode: MatchingScreenMode.requestSent,
+        mode: ThMatchingMode.requestSent,
         gstLabel: routeGstLabel(state.extra),
       ),
     ),
@@ -260,10 +254,6 @@ final GoRouter appRouter = GoRouter(
         return ThJobDetailRouter(
           key: ValueKey('job_detail_$jobId'),
           jobId: jobId,
-          v1Fallback: () => HomeownerJobDetailScreen(
-            key: ValueKey('job_detail_$jobId'),
-            jobId: jobId,
-          ),
         );
       },
     ),
@@ -281,12 +271,7 @@ final GoRouter appRouter = GoRouter(
       path: '/tradie/jobs/:jobId',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        TradieJobDetailScreen v1() => TradieJobDetailScreen(
-          key: ValueKey('tradie_job_$jobId'),
-          jobId: jobId,
-        );
-        // The Key('tradie_job_<id>') lives on the injected v1 screen.
-        return TrJobRouter(jobId: jobId, v1Fallback: v1);
+        return TrJobRouter(key: ValueKey('tradie_job_$jobId'), jobId: jobId);
       },
     ),
     // P1-09 tradie onboarding wizard. Declared before `/tradie/:id` so the
@@ -313,16 +298,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final profileId = state.pathParameters['id']!;
         final jobId = state.uri.queryParameters['jobId'];
-        final v1 = PublicProfileScreen(
-          profileId: profileId,
-          isTradie: true,
-          jobId: jobId,
-        );
-        return ThTradieProfileRoute(
-          profileId: profileId,
-          jobId: jobId,
-          fallback: v1,
-        );
+        return ThTradieProfileRoute(profileId: profileId, jobId: jobId);
       },
     ),
     // 15-homeowner-profile (public)

@@ -208,7 +208,6 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
                   child: TrJobRouter(
                     key: ValueKey('tr_job_detail_$_selectedJobId'),
                     jobId: _selectedJobId!,
-                    v1Fallback: () => const SizedBox.shrink(),
                   ),
                 )
               : const _TrJobsEmptyDetail();

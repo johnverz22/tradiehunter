@@ -40,6 +40,7 @@ class HoJobDetailFallbackScreen extends StatelessWidget {
       'AwaitingPayment' => 'Payment is due',
       'PaymentReview' => 'Payment is under review',
       'Expired' => 'This request has expired',
+      'Draft' => 'This request is still a draft',
       _ => 'Status unavailable',
     };
     final message = switch (job.status) {
@@ -50,6 +51,7 @@ class HoJobDetailFallbackScreen extends StatelessWidget {
       'PaymentReview' =>
         'Your payment receipt is being reviewed. Open its status for updates.',
       'Expired' => 'This request is no longer active.',
+      'Draft' => 'It has not been sent to a tradie yet. Post a new request to continue.',
       _ => 'Return to your jobs list to see the latest status.',
     };
     return THScaffold(

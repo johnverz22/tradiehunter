@@ -63,40 +63,13 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: ThTradieProfileRoute(
-              profileId: 't2',
-              fallback: Text('v1 fallback'),
-            ),
+            home: ThTradieProfileRoute(profileId: 't2'),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('ho_tradie_profile')), findsOneWidget);
-      expect(find.text('v1 fallback'), findsNothing);
     });
   }
-
-  testWidgets('other roles keep the v1 fallback', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          reviewsRepositoryProvider.overrideWithValue(_Reviews()),
-          themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
-          profileViewModelProvider.overrideWith(
-            (ref) => _FakeProfileNotifier({'id': 'staff-1', 'role': 2}),
-          ),
-        ],
-        child: const MaterialApp(
-          home: ThTradieProfileRoute(
-            profileId: 't2',
-            fallback: Text('v1 fallback'),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('v1 fallback'), findsOneWidget);
-  });
 }

@@ -17,18 +17,13 @@ import 'ho_job_detail_state.dart';
 import 'ho_review_completion_screen.dart';
 import 'ho_review_screen.dart';
 
-/// Routes supported v2 states to their dedicated view and injects the v1
-/// screen for states that have no v2 design yet. PR A deliberately sends every
-/// state through the fallback; later 4.2 increments enable one state at a time.
+/// Routes each job status to its dedicated v2 view. Statuses without a design
+/// frame (cancelled, dispute, requested, matching, payment, draft, expired)
+/// render the composed [HoJobDetailFallbackScreen].
 class ThJobDetailRouter extends ConsumerStatefulWidget {
-  const ThJobDetailRouter({
-    super.key,
-    required this.jobId,
-    required this.v1Fallback,
-  });
+  const ThJobDetailRouter({super.key, required this.jobId});
 
   final String jobId;
-  final Widget Function() v1Fallback;
 
   @override
   ConsumerState<ThJobDetailRouter> createState() => _ThJobDetailRouterState();
@@ -116,17 +111,10 @@ class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter> {
               tradie: detail.tradie,
               hasReview: detail.hasReview,
             ),
-            HoJobDetailView.fallback => switch (selection.fallback) {
-              HoJobDetailFallback.cancelled ||
-              HoJobDetailFallback.dispute ||
-              HoJobDetailFallback.unsupportedStatus
-                  when job.status != 'Draft' =>
-                HoJobDetailFallbackScreen(
-                  job: job,
-                  reason: selection.fallback!,
-                ),
-              _ => widget.v1Fallback(),
-            },
+            HoJobDetailView.fallback => HoJobDetailFallbackScreen(
+              job: job,
+              reason: selection.fallback!,
+            ),
           };
         },
       ),

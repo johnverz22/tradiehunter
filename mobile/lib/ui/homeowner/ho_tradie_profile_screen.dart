@@ -16,29 +16,20 @@ import 'ho_tradie_profile_mapper.dart';
 import 'ho_tradie_profile_providers.dart';
 import 'ho_tradie_profile_sections.dart';
 
-/// Role gate for `/tradie/:id`. The v2 screen is only safe for a homeowner
-/// viewing a tradie; every other viewer keeps the v1 screen.
+/// Entry for `/tradie/:id`. Homeowner and tradie viewers both get the v2
+/// screen (plan 5.8); the actions bar hides homeowner-only actions for tradies.
+/// While the viewer's own profile is still loading a pending frame is shown so
+/// the role-dependent actions do not flash.
 class ThTradieProfileRoute extends ConsumerWidget {
-  const ThTradieProfileRoute({
-    super.key,
-    required this.profileId,
-    required this.fallback,
-    this.jobId,
-  });
+  const ThTradieProfileRoute({super.key, required this.profileId, this.jobId});
 
   final String profileId;
   final String? jobId;
-  final Widget fallback;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileViewModelProvider);
     final role = profile.profile?['role'];
-    // Homeowner and tradie viewers both get the v2 screen (plan 5.8); the
-    // actions bar already hides homeowner-only actions for tradies.
-    if (role == 0 || role == 1) {
-      return ThTradieProfileScreen(profileId: profileId, jobId: jobId);
-    }
     if (role == null && profile.isLoading) {
       return ThScope(
         themeMode: ref.watch(themeModeProvider),
@@ -51,7 +42,7 @@ class ThTradieProfileRoute extends ConsumerWidget {
         ),
       );
     }
-    return fallback;
+    return ThTradieProfileScreen(profileId: profileId, jobId: jobId);
   }
 }
 
