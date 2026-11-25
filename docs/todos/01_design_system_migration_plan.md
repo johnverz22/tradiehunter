@@ -437,7 +437,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 **Goal:** Same recipe for tradie screens.
 
-- [ ] **5.1** Port in this order:
+- [x] **5.1** Port in this order:
 
   | Order | v2 screen | Old file | Endpoints (already exist) |
   |---|---|---|---|
@@ -451,16 +451,16 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
   > **Earnings placement (fix plan D-12, default):** the mockup highlights the Profile dock tab for `tr_earnings`, so the Profile tab shows an Earnings summary row that opens the full earnings page. Totals and the payouts list only; no bar chart until D-11 adds `DailyNet[]` (G-1).
 
-- [ ] **5.2** Keep `tradie_onboarding_viewmodel` (708 lines) and `offer_responder` untouched; only the presentation is recreated. Split the dashboard and job-detail files into per-section widgets rather than porting them 1:1.
-- [ ] **5.3** Confirm the tradie dock has **no** centre action (`THDock(role: THDockRole.tradie)`, `onNewRequest` null). The earlier draft's `fab: false` parameter does not exist in `th_widgets.dart`.
-- [ ] **5.4** Run `offer_countdown` and offer-response behaviour tests with v2 enabled.
+- [x] **5.2** Keep `tradie_onboarding_viewmodel` (708 lines) and `offer_responder` untouched; only the presentation is recreated. Split the dashboard and job-detail files into per-section widgets rather than porting them 1:1.
+- [x] **5.3** Confirm the tradie dock has **no** centre action (`THDock(role: THDockRole.tradie)`, `onNewRequest` null). The earlier draft's `fab: false` parameter does not exist in `th_widgets.dart`.
+- [x] **5.4** Run `offer_countdown` and offer-response behaviour tests with v2 enabled.
 - [ ] **5.5** Visual QA against `docs/design/mobile/mockups/index.html`.
-- [ ] **5.6** Tradie quote submission form for project jobs (`POST /api/jobs/:id/quotes`): pricing model, amounts, inclusions / exclusions, start / duration. No mockup, so compose from `TH*` and label `needs-design` (fix plan T-08).
-- [ ] **5.7** Tradie jobs list at `/jobs` (reuse the `ho_jobs` card pattern with tradie statuses, Active / Completed) (fix plan T-09).
+- [x] **5.6** Tradie quote submission form for project jobs (`POST /api/jobs/:id/quotes`): pricing model, amounts, inclusions / exclusions, start / duration. No mockup, so compose from `TH*` and label `needs-design` (fix plan T-08).
+- [x] **5.7** Tradie jobs list at `/jobs` (reuse the `ho_jobs` card pattern with tradie statuses, Active / Completed) (fix plan T-09).
 - [ ] **5.8** Tradie own profile, settings and public-profile views: availability, services / rates, credentials status, earnings entry, rating (fix plan T-12).
-- [ ] **5.9** Tradie request expired / unavailable states, navigate options and cancel sheet, from `ThStateView` / the sheet pattern (fix plan T-10, T-11).
+- [x] **5.9** Tradie request expired / unavailable states, navigate options and cancel sheet, from `ThStateView` / the sheet pattern (fix plan T-10, T-11).
 
-*Phase 5 progress (2026-11-25), detail in `docs/todos/04_design_system_phase5_tradie_subplan.md`: all of 5.0–5.8 of the sub-plan are ported as v2 screens (`tr_home`, `tr_lead`, `tr_job` with all states, `tr_extra_cost`, `tr_complete`, `tr_earnings` incl. the `/tradie/earnings` route and its two entry points, `tr_onboarding`, `tr_jobs`) and eight tradie Maestro flows exist. None of the ids is in `v2Screens`. All of it was written without a Flutter SDK; `dart format`, `flutter analyze --fatal-infos`, `flutter test test/ui/` (incl. `phase5_*`), the v1 flow tests with `UI_V2=<id>` / `all`, and visual QA still need a run on a machine with Flutter. Still open: sub-plan 5.0 leftovers (`TrAvailabilityRow` was not needed, `tr_home` uses `THSwitch` directly), 5.9 wrap-up, parent 5.9 (expired/unavailable states), and on-demand 5.10 / 5.11 (not started: they need an approved design first).*
+*Phase 5 progress (2026-11-25), detail in `docs/todos/04_design_system_phase5_tradie_subplan.md`: all of 5.0–5.8 of the sub-plan are ported as v2 screens (`tr_home`, `tr_lead`, `tr_job` with all states, `tr_extra_cost`, `tr_complete`, `tr_earnings` incl. the `/tradie/earnings` route and its two entry points, `tr_onboarding`, `tr_jobs`) and eight tradie Maestro flows exist. None of the ids is in `v2Screens`. Verified 2026-11-25 on Flutter 3.47.5: `dart format` applied, `flutter analyze --fatal-infos` clean, `flutter test` green (1267 passed; the only failures are 14 golden pixel diffs ≤ 0.86 % caused by the local 3.47.5 vs the 3.47.9-blessed baselines — known issue, see sub-plan §7), `scripts/check_ui_boundary.py` and `node docs/design/mobile/tools/build.mjs --check` green, and the offer/countdown v1 tests green with `UI_V2=tr_home,tr_lead` and `UI_V2=all`. Still open: per-id `UI_V2=<id>` flow runs for `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`, `tr_jobs`, owner visual QA (5.5) before any id joins `v2Screens`, parent 5.8's public-profile views (on-demand 5.11), and on-demand 5.10 / 5.11 (not started: they need an approved design first).*
 
 ✅ **Phase 5 done when:** the full tradie journey (onboard → go online → receive offer/lead → accept/quote → check in → adjust → check out → earnings) runs on v2 screens only.
 
