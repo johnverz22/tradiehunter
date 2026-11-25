@@ -18,6 +18,7 @@ class TrLeadCard extends StatefulWidget {
     required this.onAccept,
     required this.onDecline,
     required this.onOpen,
+    this.onExpired,
   });
 
   final Job job;
@@ -27,6 +28,9 @@ class TrLeadCard extends StatefulWidget {
   final VoidCallback onAccept;
   final VoidCallback onDecline;
   final VoidCallback onOpen;
+
+  /// Fired once when a live offer's countdown reaches zero (caller refetches).
+  final VoidCallback? onExpired;
 
   @override
   State<TrLeadCard> createState() => _TrLeadCardState();
@@ -78,6 +82,7 @@ class _TrLeadCardState extends State<TrLeadCard> {
       setState(() => _remaining = next);
       if (next <= Duration.zero) {
         _timer?.cancel();
+        widget.onExpired?.call();
       }
     });
   }

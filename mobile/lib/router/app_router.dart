@@ -61,6 +61,7 @@ import '../ui/shared/notifications_screen.dart';
 import '../ui/shared/profile_screen.dart';
 import '../ui/shared/settings_screen.dart';
 import '../ui/feedback/th_state_view.dart';
+import '../ui/tradie/tr_home_screen.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
 /// Tabbed screens live inside the [MainLayout] shell; flow screens
@@ -436,7 +437,11 @@ final GoRouter appRouter = GoRouter(
         // 09-tradie-home
         GoRoute(
           path: '/tradie',
-          builder: (context, state) => const TradieDashboardView(),
+          builder: (context, state) => _pick(
+            'tr_home',
+            const TradieDashboardView(),
+            const TradieHomeScreen(),
+          ),
         ),
         GoRoute(
           path: '/jobs',

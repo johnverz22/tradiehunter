@@ -3,9 +3,11 @@
 // Ports the grouping / sorting rules of views/tradie/tradie_dashboard_view.dart
 // without importing them (lib/ui/** must not import v1). No Flutter widgets here,
 // so every rule is unit-testable.
+import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/marketplace.dart';
+import '../../viewmodels/profile_viewmodel.dart' show TradieEarningsState;
 import '../design/th_widgets.dart' show THBadgeKind;
 
 /// Statuses that count as booked work for the tradie.
@@ -38,6 +40,17 @@ bool thIsOverdue(Job job, DateTime now) {
   if (scheduled == null) return false;
   final startOfToday = DateTime(now.year, now.month, now.day);
   return scheduled.toLocal().isBefore(startOfToday);
+}
+
+/// True when [job] is scheduled on or before the end of today (today +
+/// overdue; unscheduled counts as today). Port of v1
+/// `isScheduledOnOrBeforeToday` (tradie_dashboard_view.dart) for the Jobs
+/// tab "Today" filter, which shows everything due today or earlier.
+bool thIsScheduledOnOrBeforeToday(Job job, DateTime now) {
+  final scheduled = job.scheduledStartUtc;
+  if (scheduled == null) return true;
+  final endOfToday = DateTime(now.year, now.month, now.day + 1);
+  return scheduled.toLocal().isBefore(endOfToday);
 }
 
 /// True when [job] requires immediate tradie action.
@@ -209,4 +222,87 @@ String thTradieGreeting(String? firstName) {
   final name = (firstName ?? '').trim();
   if (name.isEmpty) return 'KIA ORA';
   return 'KIA ORA, ${name.toUpperCase()}';
+}
+
+
+/// What the hero "Net this week" figure should show (plan G-14). Keeps the
+/// four v1 states apart: loading, error, no figure from the server, loaded.
+enum TrNetKind { loading, error, unavailable, loaded }
+
+class TrHeroNet {
+  const TrHeroNet(this.kind, [this.amount]);
+  final TrNetKind kind;
+
+  /// Set only when [kind] is [TrNetKind.loaded]; a loaded zero stays zero.
+  final Decimal? amount;
+}
+
+/// Maps the earnings provider state 1:1 (same precedence as v1 `_TradieHero`).
+TrHeroNet trHeroNet(TradieEarningsState state) {
+  final summary = state.summary;
+  if (state.error != null && summary == null) {
+    return const TrHeroNet(TrNetKind.error);
+  }
+  if (state.isLoading && summary == null) {
+    return const TrHeroNet(TrNetKind.loading);
+  }
+  final earned = summary?.earnedNet;
+  if (summary != null && earned == null) {
+    return const TrHeroNet(TrNetKind.unavailable);
+  }
+  if (earned == null) return const TrHeroNet(TrNetKind.unavailable);
+  return TrHeroNet(TrNetKind.loaded, earned);
+}
+
+/// Pending (all-time outstanding) payout, or null when the server sent none.
+/// Never added to the weekly figure (plan G-14 / G-15).
+Decimal? trPendingNet(TradieEarningsState state) => state.summary?.pendingNet;
+
+/// Jobs scheduled in the local calendar week of [now] (Monday to Sunday) that
+/// are real work: booked, in progress, awaiting confirmation or completed.
+/// Derived client-side from the job list (plan G-13); never invented.
+int trWeekJobCount(List<Job> jobs, DateTime now) {
+  final startOfToday = DateTime(now.year, now.month, now.day);
+  final weekStart = startOfToday.subtract(
+    Duration(days: startOfToday.weekday - DateTime.monday),
+  );
+  final weekEnd = weekStart.add(const Duration(days: 7));
+  const counted = {...kBookedWorkStatuses, 'Completed'};
+  return jobs.where((j) {
+    final at = j.scheduledStartUtc?.toLocal();
+    return at != null &&
+        counted.contains(j.status) &&
+        !at.isBefore(weekStart) &&
+        at.isBefore(weekEnd);
+  }).length;
+}
+
+/// Verification banner rule (v1): show once the profile finished loading and
+/// the tradie is not verified.
+bool trShowVerificationBanner({
+  required bool profileLoading,
+  required bool? isVerified,
+}) => !profileLoading && isVerified != true;
+
+/// Rating tile/badge needs a real score and at least one review (v1 rule).
+({String score, int count})? trRating(Map<String, dynamic>? profile) {
+  final avg = profile?['averageRating'] as num?;
+  final count = profile?['reviewCount'] as int?;
+  if (avg == null || count == null || count <= 0 || avg <= 0) return null;
+  return (score: avg.toStringAsFixed(1), count: count);
+}
+
+/// Whether going offline needs the confirm sheet: any lead or booked work.
+bool trNeedsOfflineConfirm(List<Job> jobs) => jobs.any(
+  (j) => j.status == 'Requested' || kBookedWorkStatuses.contains(j.status),
+);
+
+/// Lead card subtitle: category, suburb, timing. Real fields only (G-13/G-16).
+String trLeadSubtitle(Job job) {
+  final parts = <String>[
+    if (job.category.isNotEmpty) job.category,
+    if (job.suburb.isNotEmpty) job.suburb,
+    if ((job.timingPreference ?? '').isNotEmpty) job.timingPreference!,
+  ];
+  return parts.isEmpty ? 'New request' : parts.join(' · ');
 }
