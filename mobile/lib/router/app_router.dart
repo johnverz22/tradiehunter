@@ -15,6 +15,7 @@ import '../views/auth/otp_verification_screen.dart';
 import '../views/homeowner/homeowner_dashboard_view.dart';
 import '../views/homeowner/homeowner_job_detail_screen.dart';
 import '../views/tradie/tradie_dashboard_view.dart';
+import '../ui/tradie/tr_onboarding_screen.dart';
 import '../views/tradie/tradie_onboarding_wizard.dart';
 import '../views/tradie/request_detail_screen.dart';
 import '../views/tradie/tradie_job_detail_screen.dart';
@@ -398,7 +399,9 @@ final GoRouter appRouter = GoRouter(
     //   context.push('/tradie/onboarding')
     GoRoute(
       path: '/tradie/onboarding',
-      builder: (context, state) => const TradieOnboardingWizard(),
+      builder: (context, state) => isV2Screen('tr_onboarding')
+          ? const TrOnboardingScreen()
+          : const TradieOnboardingWizard(),
     ),
     // 12-profile (tradie public/self). v1.7 P12-07: an optional `jobId`
     // query parameter switches the screen into job context — the tradie's
