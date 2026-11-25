@@ -104,7 +104,7 @@ void main() {
   group('wide master-detail (plan 5.10, wide_layout)', () {
     final cancelled = _job(id: '2', status: 'Cancelled');
 
-    Widget app({required double width, required bool? wide}) {
+    Widget app({required bool? wide}) {
       final vm = _FakeJobsNotifier(JobsState(jobs: [cancelled]));
       return ProviderScope(
         overrides: [
@@ -118,10 +118,9 @@ void main() {
             ),
           ),
         ],
-        child: MediaQuery(
-          data: MediaQueryData(size: Size(width, 900)),
-          child: MaterialApp(home: TrJobsScreen(wideLayoutOverride: wide)),
-        ),
+        // No static MediaQuery: width must follow tester.view so resizes
+        // are seen by the screen.
+        child: MaterialApp(home: TrJobsScreen(wideLayoutOverride: wide)),
       );
     }
 
@@ -136,7 +135,7 @@ void main() {
       tester.view.physicalSize = const Size(360, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(app(width: 360, wide: true));
+      await tester.pumpWidget(app(wide: true));
       await tester.pumpAndSettle();
       expect(find.text('Select a job'), findsNothing);
     });
@@ -147,7 +146,7 @@ void main() {
         tester.view.physicalSize = Size(w, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
-        await tester.pumpWidget(app(width: w, wide: true));
+        await tester.pumpWidget(app(wide: true));
         await tester.pumpAndSettle();
         expect(find.text('Select a job'), findsOneWidget);
 
@@ -165,7 +164,7 @@ void main() {
       tester.view.physicalSize = const Size(1024, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(app(width: 1024, wide: false));
+      await tester.pumpWidget(app(wide: false));
       await tester.pumpAndSettle();
       expect(find.text('Select a job'), findsNothing);
     });
@@ -174,7 +173,7 @@ void main() {
       tester.view.physicalSize = const Size(1024, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(app(width: 1024, wide: true));
+      await tester.pumpWidget(app(wide: true));
       await tester.pumpAndSettle();
       await showAll(tester);
       await tester.tap(find.text('Fix tap 2'));
