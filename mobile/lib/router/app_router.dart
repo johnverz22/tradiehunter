@@ -15,6 +15,7 @@ import '../views/auth/otp_verification_screen.dart';
 import '../views/homeowner/homeowner_dashboard_view.dart';
 import '../views/homeowner/homeowner_job_detail_screen.dart';
 import '../views/tradie/tradie_dashboard_view.dart';
+import '../ui/tradie/tr_earnings_screen.dart';
 import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
 import '../views/tradie/tradie_onboarding_wizard.dart';
@@ -403,6 +404,16 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => isV2Screen('tr_onboarding')
           ? const TrOnboardingScreen()
           : const TradieOnboardingWizard(),
+    ),
+    // D-P5-1 tradie earnings (v2 only). Declared before `/tradie/:id` so the
+    // static segment wins over the public-profile parameter. With the flag
+    // off, v1 shows earnings in the dashboard hero, so this redirects there.
+    //   context.push('/tradie/earnings')
+    GoRoute(
+      path: '/tradie/earnings',
+      redirect: (context, state) =>
+          isV2Screen('tr_earnings') ? null : '/tradie',
+      builder: (context, state) => const TrEarningsScreen(),
     ),
     // 12-profile (tradie public/self). v1.7 P12-07: an optional `jobId`
     // query parameter switches the screen into job context — the tradie's

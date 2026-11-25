@@ -65,6 +65,7 @@ void main() {
       '/jobs/:jobId/dispute',
       '/tradie/jobs/:jobId',
       '/tradie/onboarding',
+      '/tradie/earnings',
       '/tradie/:id',
       '/users/:id',
       '/home',

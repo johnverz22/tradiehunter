@@ -22,6 +22,7 @@ class TrHomeHero extends StatelessWidget {
     required this.onToggle,
     required this.net,
     required this.onRetryEarnings,
+    this.onOpenEarnings,
     this.rating,
   });
 
@@ -31,6 +32,9 @@ class TrHomeHero extends StatelessWidget {
   final VoidCallback onToggle;
   final TrHeroNet net;
   final VoidCallback onRetryEarnings;
+
+  /// Opens the earnings page; null while `tr_earnings` is not enabled.
+  final VoidCallback? onOpenEarnings;
   final ({String score, int count})? rating;
 
   @override
@@ -88,7 +92,9 @@ class TrHomeHero extends StatelessWidget {
                     tone: THTone.onHeroSoft,
                   ),
                   InkWell(
-                    onTap: net.kind == TrNetKind.error ? onRetryEarnings : null,
+                    onTap: net.kind == TrNetKind.error
+                        ? onRetryEarnings
+                        : onOpenEarnings,
                     child: THText(
                       netText,
                       style: isMoney ? THTextStyle.moneyLg : THTextStyle.title,

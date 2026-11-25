@@ -303,6 +303,8 @@ test/ui/phase5_tr_*_test.dart
 
 *5.3 progress (2026-11-25): **PR A in, unverified.** `tr_job_state.dart` (`TrJobView`, total selector `trSelectJobView`, contactable / booked-or-later sets pinned to v1), `tr_job_providers.dart` (`trJobDetailProvider`: job, contact only for contactable statuses with failures swallowed, adjustments — the same calls as v1 `_load()`), `tr_job_router.dart` (`TrJobRouter`: own loading / error / unavailable states, SignalR status + adjustment events refresh the loader with `skipLoadingOnReload`, subscriptions cancelled in `dispose`; every selected view injects the v1 screen). Wired in `app_router.dart` via `_pick('tr_job', …)` (the `tradie_job_<id>` Key stays on the injected v1 screen); **not added to `v2Screens`**. Deviations from the text above: `hasReview` is **not** loaded, because v1 only sets `_hasReview` in-session after a rating is submitted, so it stays screen state in PR C; not-found uses `ThStatePreset.jobUnavailable` (v1 copy \"This job is no longer available\", back to `/tradie`) with no support link. Tests: `test/ui/phase5_tr_job_state_test.dart` (selector over every status incl. unknown and dispute precedence, pinned sets, router with fakes). Needs: `dart format`, `flutter analyze --fatal-infos`, the new test, and `tradie_job_detail_test` with `UI_V2=tr_job`. Next: PR B (Booked + check-in, contact, navigate, cancel, no-show, dispute).*
 
+*5.3 PR B+C (2026-11-25, commit `58d4c6a`): **ported, unverified.** `TrJobBookedScreen`, `TrJobInProgressScreen` (also drives AwaitingConfirmation) and the review / cancelled / disputed states (`tr_job_review_states.dart`), with the shared action and adjustment widgets in `tr_job_parts.dart`. The selector no longer falls back to v1 for these states. Tests: `phase5_tr_job_test.dart`. Needs `dart format`, `flutter analyze --fatal-infos`, and `tradie_job_detail_test` / `cancellation_test` / `dispute_test` with `UI_V2=tr_job`.*
+
 ---
 
 ### 5.4 `tr_extra_cost` — Request extra cost (flag `tr_extra_cost`)
@@ -315,6 +317,8 @@ test/ui/phase5_tr_*_test.dart
 - Tests: validation matrix (empty / zero / negative / too long), payload equals v1 payload for same inputs, light/dark, keyboard with sticky bar (`THScaffold.bottomClearance`).
 - Job detail launches v2 page only if `isV2Screen('tr_extra_cost')`, else the v1 sheet.
 
+*5.4 progress (2026-11-25, commit `332e6ef`): **ported, unverified.** `tr_extra_cost_page.dart` as a full-screen page launched from the Booked / InProgress states when `isV2Screen('tr_extra_cost')`; the v1 sheet stays for flag-off. Tests: `phase5_tr_extra_cost_test.dart`.*
+
 ### 5.5 `tr_complete` — Check-out / complete job (flag `tr_complete`)
 
 **Source:** stub `tr_complete_screen.dart` (131). **Old:** `_checkOut()` (line ~207), `_CheckOutSheet`, `_showCheckOutSummary`. **File:** `tr_complete_page.dart`.
@@ -326,6 +330,8 @@ test/ui/phase5_tr_*_test.dart
 - Sticky **Send for approval** (`check_out_submit_button`), disabled while submitting; success → v1 navigation after summary.
 - Tests: stepper bounds, totals math with `Decimal`, tolerance note shown iff `exceedsTolerance`, missing commission hides rows, payload equals v1.
 
+*5.5 progress (2026-11-25, commit `8685b55`): **ported, unverified.** `tr_complete_page.dart` launched from the InProgress state; on-site card omitted (G-20). Tests: `phase5_tr_complete_test.dart`.*
+
 ### 5.6 `tr_earnings` — Earnings (flag `tr_earnings`, route per D-P5-1)
 
 **Source:** stub `tr_earnings_screen.dart` (82). **Old:** earnings section of the dashboard hero + `TradieEarningsState`.
@@ -333,6 +339,8 @@ test/ui/phase5_tr_*_test.dart
 - Hero: "Net this week" = `earnedNet` with period label from `periodStartUtc`–`periodEndUtc` in the **DTO's `timeZone`** (default `Pacific/Auckland`) and "as of" from `asOfUtc`. Cards: processed, pending (label "Outstanding (all time)" — never summed with weekly), failed (only if > 0, with a retry/contact hint copy from v1 if present).
 - **No `THBars`** (G-15). Recent-payouts list only from jobs data if amounts exist; else omit the section entirely.
 - Tests: all four amount states, timezone formatting around a week boundary, pending not added to weekly, route contract snapshot update.
+
+*5.6 progress (2026-11-25, commit `a5eedb6` + route wiring below): **ported, unverified.** `TrEarningsScreen` (`tr_earnings_screen.dart`); totals only (G-15). **D-P5-1 route done:** `GoRoute('/tradie/earnings')` in `app_router.dart`, declared before `/tradie/:id`; flag off redirects to `/tradie` (v1 shows earnings in the hero). Entry points: the net figure on the `tr_home` hero (`onOpenEarnings`) and an "Earnings" row (`profile_earnings_row`) on the v2 profile for tradies; both only appear when `isV2Screen('tr_earnings')`. `route_contract_test.dart` snapshot updated. Tests: `phase5_tr_earnings_test.dart`.*
 
 ### 5.7 `tr_onboarding` — Setup wizard (flag `tr_onboarding`, route `/tradie/onboarding`)
 
@@ -358,12 +366,16 @@ test/ui/phase5_tr_*_test.dart
 **Tests:** extend from `tradie_onboarding_wizard_test.dart` patterns (446 lines): step navigation, validation per step, `day:2` toggle, credential upload outcomes with a fake repo, back/PopScope, controller disposal (no leaks), light/dark, 200% text with keyboard open (`viewInsets`).
 **Run with `UI_V2=tr_onboarding`:** `tradie_onboarding_wizard_test`, `tradie_onboarding_test`, `auth_test` (role select → onboarding).
 
+*5.7 progress (2026-11-25, commit `c8e4022`): **ported, unverified.** `TrOnboardingScreen` + one class per step in `tr_onboarding_steps.dart`; the viewmodel is untouched; the three undrawn steps use interim `TH*` compositions (`needs-design`, D-P5-4). Wired via `_pick('tr_onboarding', …)`. Tests: `phase5_tr_onboarding_test.dart`.*
+
 ### 5.8 `tr_jobs` — Tradie Jobs tab (new non-gallery id, route `/jobs` for role 1) — *needs-design*
 
 Compose from `TH*` (`THPills`/`ThChoicePills` filters, `THCard`/`THListRow`/`THBadge` cards, `ThStateView`). Reuse `TrJobCard` from 5.1.
 - Port: filters **Today / Upcoming / Awaiting payment / Disputed / All** (confirm exact set from `_TradieJobFilter`; keep `Key('tradie_filter_row')`), local-day grouping via `tradieDayGroups` (moved in 5.0), pull-to-refresh, loading/error/empty per filter, **status-aware navigation** (`Requested` → `/tradie/requests/:id`, else `/tradie/jobs/:id`; v1 `jobs_list_screen.dart` lines ~128–141), wide-screen master-detail left as D-P5-5 (push navigation only).
 - Wiring: replace `tradieFallback: const JobsListScreen()` in the `/jobs` route with `_pick('tr_jobs', const JobsListScreen(), const TrJobsScreen())` passed to `ThJobsRoute`.
 - Tests: grouping/filters (move existing `tradie_dashboard_test` group tests to the mapper), navigation targets, empty states.
+
+*5.8 progress (2026-11-25, commit `88d0554`): **ported, unverified.** `TrJobsScreen` wired through `_pick('tr_jobs', …)` into `ThJobsRoute`. Tests: `phase5_tr_jobs_test.dart`.*
 
 ### 5.10 (on demand) Wide-screen navigation and job master-detail — *design + backend check on request*
 
