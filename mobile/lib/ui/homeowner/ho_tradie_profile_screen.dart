@@ -34,7 +34,9 @@ class ThTradieProfileRoute extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileViewModelProvider);
     final role = profile.profile?['role'];
-    if (role == 0) {
+    // Homeowner and tradie viewers both get the v2 screen (plan 5.8); the
+    // actions bar already hides homeowner-only actions for tradies.
+    if (role == 0 || role == 1) {
       return ThTradieProfileScreen(profileId: profileId, jobId: jobId);
     }
     if (role == null && profile.isLoading) {

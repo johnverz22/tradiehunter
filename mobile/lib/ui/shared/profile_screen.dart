@@ -17,6 +17,7 @@ import '../design/th_widgets.dart';
 import 'th_tab_app_bar.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
+import '../tradie/tr_profile_summary.dart';
 import '../ui_flags.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 
@@ -229,6 +230,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
               required IconData icon,
               required String title,
               required VoidCallback onTap,
+              String? subtitle,
               bool divider = true,
             }) => Column(
               children: [
@@ -242,6 +244,12 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                     title,
                     style: THType.button.copyWith(color: c.text),
                   ),
+                  subtitle: subtitle == null
+                      ? null
+                      : Text(
+                          subtitle,
+                          style: THType.meta.copyWith(color: c.textSoft),
+                        ),
                   trailing: Icon(Icons.chevron_right, color: c.textSoft),
                   onTap: onTap,
                 ),
@@ -325,6 +333,45 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                             onTap: () => context.push('/tradie/earnings'),
                           ),
                         ),
+                      if (isTradie && isV2Screen('tr_profile')) ...[
+                        KeyedSubtree(
+                          key: const Key('profile_rating_row'),
+                          child: row(
+                            icon: Icons.star_rounded,
+                            title: 'Rating',
+                            subtitle: trRatingLabel(
+                              profile['averageRating'],
+                              profile['reviewCount'],
+                            ),
+                            onTap: () =>
+                                context.push('/tradie/${profile['id']}'),
+                          ),
+                        ),
+                        KeyedSubtree(
+                          key: const Key('profile_rates_row'),
+                          child: row(
+                            icon: Icons.sell_rounded,
+                            title: 'Services and rates',
+                            subtitle: trSummaryOr(
+                              ref.watch(trProfileRatesProvider),
+                              trRatesSummary,
+                            ),
+                            onTap: () => context.push('/tradie/onboarding'),
+                          ),
+                        ),
+                        KeyedSubtree(
+                          key: const Key('profile_credentials_row'),
+                          child: row(
+                            icon: Icons.verified_user_rounded,
+                            title: 'Credentials',
+                            subtitle: trSummaryOr(
+                              ref.watch(trProfileCredentialsProvider),
+                              trCredentialsSummary,
+                            ),
+                            onTap: () => context.push('/tradie/onboarding'),
+                          ),
+                        ),
+                      ],
                       row(
                         icon: Icons.credit_card_rounded,
                         title: 'Payments and receipts',
