@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -96,7 +97,11 @@ List<TrDayGroup> groupTradieJobsByDay(
 }
 
 class TrJobsScreen extends ConsumerStatefulWidget {
-  const TrJobsScreen({super.key});
+  const TrJobsScreen({super.key, @visibleForTesting this.wideLayoutOverride});
+
+  /// Test seam: forces the `wide_layout` flag on/off without `--dart-define`.
+  /// Null (production) defers to `isV2Screen('wide_layout')`.
+  final bool? wideLayoutOverride;
 
   @override
   ConsumerState<TrJobsScreen> createState() => _TrJobsScreenState();
@@ -155,13 +160,15 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide =
-              isV2Screen('wide_layout') &&
+              (widget.wideLayoutOverride ?? isV2Screen('wide_layout')) &&
               constraints.maxWidth >= kThBreakpointMasterDetail;
 
           // On resize from wide→narrow, clear selection so it isn't stale.
           if (!isWide && _selectedJobId != null) {
             WidgetsBinding.instance.addPostFrameCallback(
-              (_) => setState(() => _selectedJobId = null),
+              (_) {
+                if (mounted) setState(() => _selectedJobId = null);
+              },
             );
           }
 
@@ -204,10 +211,12 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
 
           // ── Wide: master list + detail pane ───────────────────────────────
           final detailPane = _selectedJobId != null
-              ? TrJobRouter(
-                  key: ValueKey('tr_job_detail_$_selectedJobId'),
-                  jobId: _selectedJobId!,
-                  v1Fallback: () => const SizedBox.shrink(),
+              ? ThEmbeddedPane(
+                  child: TrJobRouter(
+                    key: ValueKey('tr_job_detail_$_selectedJobId'),
+                    jobId: _selectedJobId!,
+                    v1Fallback: () => const SizedBox.shrink(),
+                  ),
                 )
               : const _TrJobsEmptyDetail();
 

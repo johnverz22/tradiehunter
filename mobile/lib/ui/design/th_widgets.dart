@@ -2393,6 +2393,18 @@ class THDock extends StatelessWidget {
   }
 }
 
+/// Marks a subtree as a pane embedded in a larger screen (wide master-detail,
+/// plan 5.10). [THScaffold] drops its own [THScaffold.dock] inside it.
+class ThEmbeddedPane extends InheritedWidget {
+  const ThEmbeddedPane({super.key, required super.child});
+
+  static bool isEmbedded(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<ThEmbeddedPane>() != null;
+
+  @override
+  bool updateShouldNotify(ThEmbeddedPane oldWidget) => false;
+}
+
 class THScaffold extends StatelessWidget {
   const THScaffold({
     super.key,
@@ -2418,6 +2430,9 @@ class THScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.th;
+    // A detail screen hosted in a master-detail pane must not draw its own
+    // dock: the shell already owns navigation (plan 5.10).
+    final dock = ThEmbeddedPane.isEmbedded(context) ? null : this.dock;
     final clearance = dock != null
         ? Sizes.dockClearance
         : (bottomClearance ??
