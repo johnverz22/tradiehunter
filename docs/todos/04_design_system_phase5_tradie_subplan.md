@@ -237,6 +237,8 @@ test/ui/phase5_tr_*_test.dart
 
 *5.1 progress (2026-11-25): **ported, unverified.** `TradieHomeScreen` (`lib/ui/tradie/tr_home_screen.dart`) with sections in `tr_home_parts.dart` and pure rules added to `tr_home_mapper.dart` (`trHeroNet`, `trWeekJobCount`, `trRating`, `trShowVerificationBanner`, `trNeedsOfflineConfirm`). Parity kept: jobs / earnings / pending-offer loads, accept / decline through `OfferResponder`, optimistic availability with the go-offline confirm sheet, verification banner, paused banner, SignalR (new match, offer lifecycle, status, reconnect) and resume refresh, pull-to-refresh, Keys `tradie_dashboard`, `availability_button`, `stat_tile_pending`, `stat_tile_rating`, `today_card_cta`. Deviations: no response-rate tile (G-13), the rating tile and badge need a real score and review count, \"Jobs this week\" is derived client-side from scheduled start in the local Mon-Sun week. `TrLeadCard` gained `onExpired`. Wired via `_pick('tr_home', ...)` in `app_router.dart`; **not added to `v2Screens`**. Needs: `dart format`, `flutter analyze --fatal-infos`, `test/ui/phase5_tr_home_test.dart`, and the v1 tests listed above with `UI_V2=tr_home`.*
 
+*5.1 fixes (2026-11-25): stat-tile row wrapped in `IntrinsicHeight` (infinite height at 200% text); go-offline sheet now re-applies `ThScope` (route sits above the screen's scope); tests assert notices through `fixoNoticeProvider` (no host is mounted in the harness). Re-run `flutter test test/ui/phase5_*` to confirm.*
+
 ---
 
 ---

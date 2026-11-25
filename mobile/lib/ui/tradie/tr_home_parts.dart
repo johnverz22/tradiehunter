@@ -474,17 +474,35 @@ class _TrCollapsedSectionState extends State<TrCollapsedSection> {
 }
 
 /// Confirm sheet shown when going offline with leads or booked work.
-/// Resolves true only on "Go offline".
-Future<bool> showTrGoOfflineSheet(BuildContext context) async {
+/// Resolves true only on "Go offline". The sheet route sits above the
+/// screen's [ThScope], so it re-applies the scope itself.
+Future<bool> showTrGoOfflineSheet(
+  BuildContext context, {
+  required ThemeMode themeMode,
+}) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
-    backgroundColor: context.th.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.sheet)),
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) =>
+        ThScope(themeMode: themeMode, child: const _TrGoOfflineSheet()),
+  );
+  return result ?? false;
+}
+
+class _TrGoOfflineSheet extends StatelessWidget {
+  const _TrGoOfflineSheet();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: context.th.surface,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(Radii.sheet),
+      ),
     ),
-    builder: (sheetContext) => SafeArea(
+    child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(Space.s5),
         child: Column(
@@ -507,13 +525,13 @@ Future<bool> showTrGoOfflineSheet(BuildContext context) async {
                   child: THButton(
                     label: 'Cancel',
                     kind: THButtonKind.secondary,
-                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                    onPressed: () => Navigator.of(context).pop(false),
                   ),
                 ),
                 Expanded(
                   child: THButton(
                     label: 'Go offline',
-                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                    onPressed: () => Navigator.of(context).pop(true),
                   ),
                 ),
               ],
@@ -523,5 +541,4 @@ Future<bool> showTrGoOfflineSheet(BuildContext context) async {
       ),
     ),
   );
-  return result ?? false;
 }

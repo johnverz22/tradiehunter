@@ -209,7 +209,10 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
     if (_availabilityLoading) return;
     if (currentlyOnline &&
         trNeedsOfflineConfirm(ref.read(jobsViewModelProvider).jobs)) {
-      final confirmed = await showTrGoOfflineSheet(context);
+      final confirmed = await showTrGoOfflineSheet(
+        context,
+        themeMode: ref.read(themeModeProvider),
+      );
       if (!confirmed || !mounted) return;
     }
     setState(() => _availabilityLoading = true);

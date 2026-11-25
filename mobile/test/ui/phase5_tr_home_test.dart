@@ -5,6 +5,7 @@
 // light and dark, keeping the preserved v1 Keys.
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
+import 'package:fixo/feedback/fixo_notice_controller.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
@@ -82,10 +83,9 @@ class _JobsRepo extends JobsRepository {
 }
 
 class _ProfileRepo extends ProfileRepository {
-  _ProfileRepo({this.verified = true, this.earnings, this.failAvailability = false})
+  _ProfileRepo({this.verified = true, this.failAvailability = false})
     : super(Dio(), const FlutterSecureStorage());
   final bool verified;
-  final TradieEarnings? earnings;
   final bool failAvailability;
   final List<bool> availabilityCalls = [];
 
@@ -101,7 +101,7 @@ class _ProfileRepo extends ProfileRepository {
 
   @override
   Future<TradieEarnings> getEarnings() async =>
-      earnings ?? _earnings(earned: Decimal.parse('1284.5'));
+      _earnings(earned: Decimal.parse('1284.5'));
 
   @override
   Future<void> updateAvailability(bool isAvailable) async {
@@ -329,9 +329,11 @@ void main() {
       await tester.tap(find.text('Accept'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
+      // THNotice publishes to the notice provider; the host is mounted by
+      // the app root, so assert on the provider state here.
       expect(
-        find.text('Could not accept this offer — it may have expired.'),
-        findsOneWidget,
+        ref(tester).read(fixoNoticeProvider)?.message,
+        'Could not accept this offer — it may have expired.',
       );
     });
 
