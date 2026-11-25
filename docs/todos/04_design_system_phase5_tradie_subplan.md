@@ -190,6 +190,8 @@ test/ui/phase5_tr_*_test.dart
 
 **Done when:** analyze + boundary guard green; mapper/status parity tests green; app behaviour unchanged.
 
+*5.0 progress (2026-11-25): **partially done, unverified.** Added `thIsScheduledOnOrBeforeToday` (`tr_home_mapper.dart`), `tr_jobs_mapper.dart` (`trDayGroups`, work / awaiting-payment sets), `tr_job_status.dart` (`TrJobStatus`, copied from `JobStatusPresentation`), `TrOfferCountdown` + helpers (`tr_common.dart`) and the non-gallery id `tr_jobs` in `ui_flags.dart`. Parity tests: `test/ui/phase5_tr_prep_test.dart` (v1 vs v2 for schedule rule, day groups, status table, pinned status sets) and `test/ui/phase5_tr_countdown_test.dart`. **Not yet done:** `TrAvailabilityRow` (needs a `THSwitch.onChanged` check) and `TrPhotoStrip` / viewer, both deferred to 5.1 / 5.2 where they are first used. Written without a Flutter SDK, so `dart format`, `flutter analyze --fatal-infos` and the new tests still need a run; `scripts/check_ui_boundary.py` was run (see PR).*
+
 ---
 
 ### 5.1 `tr_home` — Tradie dashboard (flag `tr_home`, route `/tradie`)

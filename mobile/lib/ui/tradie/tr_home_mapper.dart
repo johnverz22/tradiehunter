@@ -40,6 +40,17 @@ bool thIsOverdue(Job job, DateTime now) {
   return scheduled.toLocal().isBefore(startOfToday);
 }
 
+/// True when [job] is scheduled on or before the end of today (today +
+/// overdue; unscheduled counts as today). Port of v1
+/// `isScheduledOnOrBeforeToday` (tradie_dashboard_view.dart) for the Jobs
+/// tab "Today" filter, which shows everything due today or earlier.
+bool thIsScheduledOnOrBeforeToday(Job job, DateTime now) {
+  final scheduled = job.scheduledStartUtc;
+  if (scheduled == null) return true;
+  final endOfToday = DateTime(now.year, now.month, now.day + 1);
+  return scheduled.toLocal().isBefore(endOfToday);
+}
+
 /// True when [job] requires immediate tradie action.
 bool thIsTradieActionRequired(String status) => switch (status) {
   'Booked' || 'InProgress' || 'AwaitingConfirmation' => true,
