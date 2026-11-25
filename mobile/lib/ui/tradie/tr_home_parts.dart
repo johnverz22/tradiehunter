@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/marketplace.dart';
 import '../../utils/money.dart';
+import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import 'tr_home_mapper.dart';
