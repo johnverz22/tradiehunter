@@ -37,6 +37,8 @@ void main() {
       );
       expect(find.byKey(const Key('upload_disabled_hint')), findsOneWidget);
       expect(find.byKey(const Key('upload_receipt_button')), findsNothing);
+      expect(find.text('Payment status'), findsNothing);
+      expect(find.text('Awaiting payment'), findsNothing);
     },
   );
 
@@ -58,11 +60,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Transfer to the tradie'), findsOneWidget);
+      // Mockup ho_payment: bank card is three rows, then the dashed upload
+      // box; no titled card, copy buttons, Method row or status sub-screen.
+      expect(find.text('Account name'), findsOneWidget);
       expect(find.text('Fixo Ltd Client Funds'), findsOneWidget);
       expect(find.text('12-3456-7890123-00'), findsOneWidget);
-      expect(find.text('Copy reference'), findsOneWidget);
-      expect(find.text('Copy all payment details'), findsOneWidget);
+      expect(find.byKey(const Key('copy_reference_button')), findsOneWidget);
+      expect(find.text('Upload your receipt'), findsOneWidget);
+      expect(find.text('Transfer to the tradie'), findsNothing);
+      expect(find.text('Copy all payment details'), findsNothing);
+      expect(find.text('Method'), findsNothing);
+      expect(find.text('Payment status'), findsNothing);
       expect(find.byKey(const Key('upload_receipt_button')), findsOneWidget);
       expect(find.byKey(const Key('upload_disabled_hint')), findsNothing);
     },

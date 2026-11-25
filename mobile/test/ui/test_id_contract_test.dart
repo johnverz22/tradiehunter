@@ -46,7 +46,7 @@ const contractIds = <String>[
   // job detail (v2)
   'job_overflow_menu', 'cancel_confirm_button', 'cancel_dismiss_button',
   'approve_pay_button', 'dispute_amount_button',
-  'leave_review_button', 'submit_review_button', 'cancellation_policy_tile',
+  'leave_review_button', 'submit_review_button',
   'open_chat_button', 'job_message_tradie',
   'adjustment_approve_button', 'adjustment_decline_button',
   'adjustment_decision_confirm',

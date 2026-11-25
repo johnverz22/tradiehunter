@@ -39,22 +39,36 @@ String bookedTradieName(Job job, UserProfile? profile) {
   return job.matchedTradieName ?? '';
 }
 
+/// Initials for the avatar when no public profile loaded (never invented:
+/// derived only from the name we already show).
+String bookedInitials(String name) {
+  final parts = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
+  if (parts.isEmpty) return '';
+  if (parts.length == 1) return parts.first[0].toUpperCase();
+  return (parts.first[0] + parts[1][0]).toUpperCase();
+}
+
+/// Matched-tradie card (mockup ho_job_booked): avatar, business name,
+/// "rate incl. GST · locked" and a single chat icon button. The card opens the
+/// tradie's public profile; chat is the only inline action.
 class HoBookedTradieCard extends StatelessWidget {
   const HoBookedTradieCard({
     super.key,
     required this.name,
     required this.profile,
-    required this.canViewProfile,
+    required this.subtitle,
     required this.onViewProfile,
     required this.onChat,
-    required this.onCall,
   });
   final String name;
   final UserProfile? profile;
-  final bool canViewProfile;
+  final String? subtitle;
   final VoidCallback? onViewProfile;
   final VoidCallback onChat;
-  final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) => THCard(
@@ -62,96 +76,54 @@ class HoBookedTradieCard extends StatelessWidget {
       Row(
         spacing: Space.s3,
         children: [
-          if (profile != null) THAvatar(profile!.initials),
-          Expanded(child: THText(name, style: THTextStyle.title)),
-          if (canViewProfile)
-            IconButton(
-              tooltip: 'View tradie profile',
-              onPressed: onViewProfile,
-              icon: const Icon(Icons.open_in_new),
-            ),
-        ],
-      ),
-      if (profile?.isVerified == true || profile?.hasInsurance == true) ...[
-        const SizedBox(height: Space.s2),
-        Wrap(
-          spacing: Space.s2,
-          children: [
-            if (profile?.isVerified == true)
-              const THBadge('Verified', kind: THBadgeKind.ok),
-            if (profile?.hasInsurance == true)
-              const THBadge('Insured', kind: THBadgeKind.ok),
-          ],
-        ),
-      ],
-      const SizedBox(height: Space.s2),
-      Row(
-        spacing: Space.s2,
-        children: [
           Expanded(
-            child: THButton(
-              key: const Key('tradie_card_chat_button'),
-              label: 'Message',
-              icon: Icons.chat_bubble_outline,
-              kind: THButtonKind.secondary,
-              onPressed: onChat,
-            ),
-          ),
-          if (onCall != null)
-            Expanded(
-              child: THButton(
-                key: const Key('tradie_card_call_button'),
-                label: 'Call',
-                icon: Icons.phone_outlined,
-                kind: THButtonKind.secondary,
-                onPressed: onCall,
+            child: Semantics(
+              button: onViewProfile != null,
+              label: onViewProfile != null ? 'View tradie profile' : null,
+              child: InkWell(
+                key: const Key('tradie_card_profile_button'),
+                onTap: onViewProfile,
+                borderRadius: BorderRadius.circular(Radii.control),
+                child: Row(
+                  spacing: Space.s3,
+                  children: [
+                    THAvatar(
+                      profile?.initials.isNotEmpty == true
+                          ? profile!.initials
+                          : bookedInitials(name),
+                      size: THAvatarSize.md,
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
+                        children: [
+                          THText(name, style: THTextStyle.title),
+                          if (subtitle != null)
+                            THText(
+                              subtitle!,
+                              style: THTextStyle.meta,
+                              tone: THTone.soft,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+          THIconButton(
+            key: const Key('tradie_card_chat_button'),
+            icon: Icons.chat_bubble_rounded,
+            kind: THButtonKind.secondary,
+            semanticLabel: 'chat',
+            onPressed: onChat,
+          ),
         ],
       ),
     ],
   );
-}
-
-class HoJobTimelineRow extends StatelessWidget {
-  const HoJobTimelineRow(
-    this.label, {
-    super.key,
-    this.done = false,
-    this.current = false,
-  });
-  final String label;
-  final bool done;
-  final bool current;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = done || current ? context.th.textBrand : context.th.textSoft;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Space.s1),
-      child: Row(
-        spacing: Space.s2,
-        children: [
-          Icon(
-            done
-                ? Icons.check_circle
-                : current
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
-            size: Sizes.iconSm,
-            color: color,
-          ),
-          Expanded(
-            child: THText(
-              label,
-              style: THTextStyle.body,
-              tone: done || current ? THTone.base : THTone.soft,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class HoCancelJobSheet extends StatefulWidget {

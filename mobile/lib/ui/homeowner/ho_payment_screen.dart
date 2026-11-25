@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../feedback/fixo_notice.dart';
+import '../../models/marketplace.dart';
 import '../../models/payment.dart';
 import '../../utils/money.dart';
 import '../../viewmodels/locale_viewmodel.dart';
@@ -144,15 +145,16 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: Space.s3,
       children: [
-        THBadge(
-          payment.stage.label,
-          kind: payment.stage == PaymentStage.verified
-              ? THBadgeKind.ok
-              : payment.stage == PaymentStage.rejected ||
-                    payment.stage == PaymentStage.expired
-              ? THBadgeKind.danger
-              : THBadgeKind.accent,
-        ),
+        if (payment.stage != PaymentStage.pending)
+          THBadge(
+            payment.stage.label,
+            kind: payment.stage == PaymentStage.verified
+                ? THBadgeKind.ok
+                : payment.stage == PaymentStage.rejected ||
+                      payment.stage == PaymentStage.expired
+                ? THBadgeKind.danger
+                : THBadgeKind.accent,
+          ),
         if (state.error != null) THText(state.error!, tone: THTone.danger),
         THHero(
           children: [
@@ -172,22 +174,20 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
               style: THTextStyle.meta,
               tone: THTone.onHeroSoft,
             ),
-            if (job != null)
-              THText(
-                job.title,
-                style: THTextStyle.meta,
-                tone: THTone.onHeroSoft,
-              ),
           ],
         ),
         THCard(
           children: [
             if (hasLabour)
-              THKeyValue('Labour', formatMoney(job!.labourAmount!), bold: true)
+              THKeyValue(
+                _labourLabel(job!),
+                formatMoney(job.labourAmount!),
+                bold: true,
+              )
             else if (hasLegacy)
               THKeyValue(
-                'Labour',
-                '${job.hours} h × ${formatRate(job.hourlyRate!)}',
+                _labourLabel(job),
+                formatMoney(job.hourlyRate! * Decimal.fromInt(job.hours)),
                 bold: true,
               ),
             if (hasExtras)
@@ -204,11 +204,6 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
               strong: true,
               divider: hasLabour || hasLegacy || hasExtras,
             ),
-            THKeyValue(
-              'Method',
-              paymentMethodLabel(payment.method),
-              divider: true,
-            ),
           ],
         ),
         if (disclaimer?.isNotEmpty == true)
@@ -216,52 +211,41 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
             tone: THCardTone.accent,
             children: [THText(disclaimer!, style: THTextStyle.meta)],
           ),
-        if (bankReady)
+        if (bankReady) ...[
           THCard(
             children: [
-              THText('Transfer to the tradie', style: THTextStyle.title),
-              const SizedBox(height: Space.s3),
               THKeyValue('Account name', bank!.accountName, bold: true),
               THKeyValue(
                 'Account number',
                 bank.accountNumber,
                 bold: true,
                 divider: true,
-                copy: true,
               ),
-              THButton(
-                label: 'Copy all payment details',
-                kind: THButtonKind.ghost,
-                icon: Icons.copy_all_outlined,
-                onPressed: () => _copy(
-                  'Account name: ${bank.accountName}\nAccount number: ${bank.accountNumber}\nAmount: ${formatMoney(payment.amount)}\nReference: ${payment.reference}',
-                  'Payment details',
+              InkWell(
+                key: const Key('copy_reference_button'),
+                onTap: () => _copy(payment.reference, 'Reference'),
+                child: THKeyValue(
+                  'Reference',
+                  payment.reference,
+                  bold: true,
+                  divider: true,
+                  copy: true,
                 ),
               ),
-              THKeyValue(
-                'Payment reference',
-                payment.reference,
-                bold: true,
-                divider: true,
-              ),
-              THButton(
-                label: 'Copy reference',
-                kind: THButtonKind.ghost,
-                icon: Icons.copy_rounded,
-                onPressed: () => _copy(payment.reference, 'Reference'),
-              ),
-              THText(
-                'Quote this exact reference and amount so our team can match your transfer.',
-                style: THTextStyle.meta,
-                tone: THTone.soft,
-              ),
-              const SizedBox(height: Space.s3),
-              const THText(
-                'Upload your receipt. Our team checks it within one business day.',
-                style: THTextStyle.meta,
-              ),
             ],
-          )
+          ),
+          if (payment.canUploadReceipt)
+            InkWell(
+              key: const Key('upload_receipt_box'),
+              onTap: state.isUploading ? null : _upload,
+              borderRadius: BorderRadius.circular(Radii.tile),
+              child: const THDashBox(
+                icon: Icons.upload_rounded,
+                title: 'Upload your receipt',
+                subtitle: 'Staff verify it, then the job completes',
+              ),
+            ),
+        ]
         else
           THCard(
             tone: THCardTone.danger,
@@ -292,13 +276,21 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
                 ),
             ],
           ),
-        THButton(
-          label: 'Payment status',
-          kind: THButtonKind.secondary,
-          onPressed: () => context.push('/jobs/${widget.jobId}/payment/status'),
-        ),
       ],
     );
+  }
+
+  /// "Labour · 2.5 h × $85" (mockup ho_payment). Falls back to "Labour" when
+  /// hours or rate are missing; never invents a figure.
+  String _labourLabel(Job job) {
+    final hours = job.finalHours ?? job.estimatedHours ?? job.hours.toDouble();
+    final rate = job.hourlyRate;
+    if (hours <= 0 || rate == null) return 'Labour';
+    final h = hours == hours.roundToDouble()
+        ? hours.toInt().toString()
+        : hours.toString();
+    final r = formatMoney(rate).replaceFirst(RegExp(r'\.00$'), '');
+    return 'Labour · $h h × $r';
   }
 }
 
@@ -324,6 +316,14 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(paymentViewModelProvider(widget.jobId));
     final payment = state.payment;
+    // Status is a post-submission view. While the transfer is still pending
+    // the payment screen is the one place to act, so never show a "status"
+    // sub-screen for it.
+    if (payment?.stage == PaymentStage.pending) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.pushReplacement('/jobs/${widget.jobId}/payment');
+      });
+    }
     final isV2 =
         ref.watch(paymentJobProvider(widget.jobId)).valueOrNull?.usesV2Flow ??
         true;

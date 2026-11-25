@@ -106,7 +106,7 @@ void main() {
         );
 
         // Labels never wrap or break mid-word.
-        for (final label in ['Home', 'Jobs', 'Post job', 'Chat', 'Profile']) {
+        for (final label in ['Home', 'Jobs', 'Chat', 'Profile']) {
           final text = tester.widget<Text>(find.text(label));
           expect(text.maxLines, 1, reason: label);
           expect(text.softWrap, isFalse, reason: label);
@@ -115,7 +115,7 @@ void main() {
     }
   }
 
-  testWidgets('post job tile is in the row, sized by token, with its label', (
+  testWidgets('post job tile is in the row, sized by token, centred, no title', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -133,10 +133,10 @@ void main() {
     final bar = tester.getRect(find.byType(THDock));
     expect(tile.top, greaterThanOrEqualTo(bar.top));
     expect(slot.center.dx, closeTo(tile.center.dx, 0.01));
-    // Same icon-area centre line as a regular item's icon.
-    final homeIcon = tester.getCenter(find.byIcon(Icons.home_rounded));
-    expect(tile.center.dy, closeTo(homeIcon.dy, 0.01));
-    expect(find.text('Post job'), findsOneWidget);
+    // Icon-only: vertically centred in the dock row (below the hairline).
+    final rowCentre = bar.top + Radii.hairline + Sizes.dock / 2;
+    expect(tile.center.dy, closeTo(rowCentre, 0.5));
+    expect(find.text('Post job'), findsNothing);
     expect(find.bySemanticsLabel('New request'), findsOneWidget);
   });
 

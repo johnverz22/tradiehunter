@@ -133,9 +133,44 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
     final scheduled = job.scheduledStartUtc == null
         ? null
         : DateFormat.MMMEd().add_jm().format(job.scheduledStartUtc!.toLocal());
+    final tradieName = bookedTradieName(job, widget.tradie);
+    final firstName = tradieName.split(' ').first;
+    final phone = widget.contact?.phoneNumber?.trim().isNotEmpty == true
+        ? widget.contact!.phoneNumber!.trim()
+        : null;
+    final canChat = tradieId?.isNotEmpty == true;
+    final estimate = bookedEstimate(job);
     return ThScope(
       themeMode: ref.watch(themeModeProvider),
       child: THScaffold(
+        // Two stacked buttons: room for the taller sticky bar.
+        bottomClearance: Sizes.stickyClearance + Sizes.button + Space.s3,
+        // The action always lives in the sticky bottom bar (never inline at
+        // the end of the scroll): primary Message, ghost Cancel job.
+        stickyBar: THStickyBar(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: Space.s1,
+              children: [
+                THButton(
+                  key: const Key('open_chat_button'),
+                  label: firstName.isEmpty ? 'Message' : 'Message $firstName',
+                  icon: Icons.chat_bubble_rounded,
+                  kind: THButtonKind.primary,
+                  onPressed: canChat ? () => context.push('/chat/${job.id}') : null,
+                ),
+                THButton(
+                  key: const Key('cancel_job_button'),
+                  label: 'Cancel job',
+                  kind: THButtonKind.ghost,
+                  onPressed: _busy ? null : _cancel,
+                ),
+              ],
+            ),
+          ],
+        ),
         appBar: THAppBar(
           title: job.title,
           subtitle: 'Booked',
@@ -146,8 +181,8 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                 key: const Key('job_overflow_menu'),
                 enabled: !_busy,
                 onSelected: (value) {
-                  if (value == 'cancel') {
-                    _cancel();
+                  if (value == 'call' && phone != null) {
+                    ref.read(externalLauncherProvider).callPhone(phone);
                   }
                   if (value == 'dispute') {
                     context.push('/jobs/${job.id}/dispute');
@@ -157,6 +192,11 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                   }
                 },
                 itemBuilder: (context) => [
+                  if (phone != null)
+                    const PopupMenuItem(
+                      value: 'call',
+                      child: Text('Call tradie'),
+                    ),
                   if (canReportNoShow)
                     const PopupMenuItem(
                       value: 'noshow',
@@ -165,10 +205,6 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                   const PopupMenuItem(
                     value: 'dispute',
                     child: Text('Open dispute'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'cancel',
-                    child: Text('Cancel job'),
                   ),
                 ],
               ),
@@ -184,13 +220,12 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                 THProgress(steps: 5, done: 2, current: true),
                 const SizedBox(height: Space.s3),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   spacing: Space.s2,
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: Space.s1,
                         children: [
                           THText(
                             scheduled == null
@@ -198,8 +233,10 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                                 : 'Booked for $scheduled',
                             style: THTextStyle.title,
                           ),
-                          const THText(
-                            'Your tradie will check in on arrival.',
+                          THText(
+                            tradieName.isEmpty
+                                ? 'Your tradie will check in on arrival.'
+                                : '$tradieName will check in on arrival.',
                             style: THTextStyle.meta,
                             tone: THTone.soft,
                           ),
@@ -211,97 +248,62 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                 ),
               ],
             ),
-            if (bookedTradieName(job, widget.tradie).isNotEmpty)
+            if (tradieName.isNotEmpty)
               HoBookedTradieCard(
-                name: bookedTradieName(job, widget.tradie),
+                name: tradieName,
                 profile: widget.tradie,
-                canViewProfile: tradieId?.isNotEmpty == true,
-                onViewProfile: tradieId?.isNotEmpty == true
+                subtitle: job.hourlyRate != null
+                    ? '${formatMoney(job.hourlyRate!)}/hr incl. GST · locked'
+                    : null,
+                onViewProfile: canChat
                     ? () => context.push('/tradie/$tradieId')
                     : null,
                 onChat: () => context.push('/chat/${job.id}'),
-                onCall: widget.contact?.phoneNumber?.trim().isNotEmpty == true
-                    ? () => ref
-                          .read(externalLauncherProvider)
-                          .callPhone(widget.contact!.phoneNumber!.trim())
-                    : null,
               ),
             THCard(
               children: [
-                const THText('Job details', style: THTextStyle.title),
-                const SizedBox(height: Space.s2),
                 THKeyValue('Service', job.category),
                 THKeyValue(
                   'Address',
                   job.address?.isNotEmpty == true
                       ? job.address!
                       : 'Not provided',
+                  divider: true,
                 ),
                 THKeyValue(
                   'Timing',
                   scheduled ?? bookedTimingLabel(job.timingPreference),
+                  divider: true,
                 ),
-                THKeyValue('Duration', bookedDurationLabel(job)),
-                if (job.hourlyRate != null)
-                  THKeyValue(
-                    'Rate · incl. GST',
-                    '${formatMoney(job.hourlyRate!)}/hr',
-                  ),
-                if (bookedEstimate(job) case final estimate?)
-                  THKeyValue('Estimated total', formatMoney(estimate))
-                else
-                  const THKeyValue('Total', 'Confirmed on completion'),
-                if (job.description?.isNotEmpty == true) ...[
-                  const SizedBox(height: Space.s2),
-                  THText(job.description!, style: THTextStyle.body),
-                ],
+                THKeyValue(
+                  'Estimate',
+                  estimate != null
+                      ? formatMoney(estimate)
+                      : 'Confirmed on completion',
+                  divider: true,
+                ),
               ],
             ),
             THCard(
               children: [
-                const THText('Job timeline', style: THTextStyle.title),
-                const SizedBox(height: Space.s2),
-                const HoJobTimelineRow('Request accepted', done: true),
-                HoJobTimelineRow(
-                  scheduled == null ? 'Booked' : 'Booked · $scheduled',
-                  current: true,
+                THTimeline(
+                  items: [
+                    THTimelineItem(
+                      'Request accepted',
+                      state: THTimelineState.done,
+                      subtitle: tradieName.isEmpty ? null : tradieName,
+                    ),
+                    THTimelineItem(
+                      'Booked',
+                      state: THTimelineState.cur,
+                      subtitle: scheduled,
+                    ),
+                    const THTimelineItem('Check-in on site'),
+                    const THTimelineItem('Work complete and hours entered'),
+                    const THTimelineItem('Approve final amount and pay'),
+                  ],
                 ),
-                const HoJobTimelineRow('Check-in on site'),
-                const HoJobTimelineRow('Work complete and hours entered'),
-                const HoJobTimelineRow('Approve final amount and pay'),
               ],
-            ),
-            Semantics(
-              identifier: 'cancellation_policy_tile',
-              child: ExpansionTile(
-                key: const Key('cancellation_policy_tile'),
-                title: const THText(
-                  'Cancellation policy',
-                  style: THTextStyle.title,
-                ),
-                tilePadding: const EdgeInsets.symmetric(horizontal: Space.s4),
-                childrenPadding: const EdgeInsets.fromLTRB(
-                  Space.s4,
-                  0,
-                  Space.s4,
-                  Space.s4,
-                ),
-                children: [
-                  const THText(
-                    bookedCancellationNotice,
-                    style: THTextStyle.body,
-                  ),
-                ],
-              ),
-            ),
-            THButton(
-              key: const Key('open_chat_button'),
-              label: 'Open Chat',
-              icon: Icons.chat_bubble_outline,
-              kind: THButtonKind.primary,
-              onPressed: tradieId?.isNotEmpty == true
-                  ? () => context.push('/chat/${job.id}')
-                  : null,
             ),
           ],
         ),

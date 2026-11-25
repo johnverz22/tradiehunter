@@ -156,7 +156,7 @@ void main() {
     );
     expect(find.byType(THDock), findsOneWidget);
     expect(find.byKey(const Key('post_job_fab')), findsOneWidget);
-    expect(find.text('Post job'), findsOneWidget);
+    expect(find.text('Post job'), findsNothing);
     expect(find.text('HOME SCREEN'), findsOneWidget);
 
     // Full-bleed bar flush with the bottom edge; routed content ends where it

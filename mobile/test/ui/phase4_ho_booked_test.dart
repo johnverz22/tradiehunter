@@ -20,11 +20,34 @@ void main() {
     expect(find.text('Booked'), findsWidgets);
     expect(find.textContaining('Booked for'), findsOneWidget);
     expect(find.text('Aroha Plumbing'), findsOneWidget);
-    expect(find.text('Verified'), findsOneWidget);
-    expect(find.text('Insured'), findsNothing);
-    expect(find.text('Job timeline'), findsOneWidget);
-    expect(find.byKey(const Key('open_chat_button')), findsOneWidget);
-    expect(find.byKey(const Key('cancellation_policy_tile')), findsOneWidget);
+    // Mockup ho_job_booked: no badges, no titled cards, no duplicate Message.
+    expect(find.text('Verified'), findsNothing);
+    expect(find.text('Job details'), findsNothing);
+    expect(find.text('Job timeline'), findsNothing);
+    expect(find.text('Aroha Plumbing will check in on arrival.'), findsOneWidget);
+    expect(find.text('Estimate'), findsOneWidget);
+    expect(find.text('Duration'), findsNothing);
+    expect(find.text('Request accepted'), findsOneWidget);
+    expect(find.byKey(const Key('tradie_card_chat_button')), findsOneWidget);
+    expect(find.byKey(const Key('cancellation_policy_tile')), findsNothing);
+  });
+
+  testWidgets('Booked action is the sticky bottom bar, not inline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(HoBookedScreen(job: _job, tradie: _tradie, contact: null)),
+    );
+    final view = tester.getRect(find.byType(THScaffold));
+    final message = tester.getRect(find.byKey(const Key('open_chat_button')));
+    final cancel = tester.getRect(find.byKey(const Key('cancel_job_button')));
+    expect(find.text('Message Aroha'), findsOneWidget);
+    expect(find.descendant(
+      of: find.byType(THStickyBar),
+      matching: find.byKey(const Key('open_chat_button')),
+    ), findsOneWidget);
+    expect(message.bottom, lessThan(cancel.top));
+    expect(cancel.bottom, lessThanOrEqualTo(view.bottom));
   });
 
   testWidgets('Booked cancellation action discloses fee and requires reason', (
@@ -33,9 +56,7 @@ void main() {
     await tester.pumpWidget(
       _app(HoBookedScreen(job: _job, tradie: null, contact: null)),
     );
-    await tester.tap(find.byType(PopupMenuButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancel job'));
+    await tester.tap(find.byKey(const Key('cancel_job_button')));
     await tester.pumpAndSettle();
 
     expect(

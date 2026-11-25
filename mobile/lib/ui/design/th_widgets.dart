@@ -2296,7 +2296,8 @@ class THDock extends StatelessWidget {
     }
 
     // The one gold action. In the row like the other items: no translate, no
-    // overflow past the bar, no ring. Only the existing ink response animates.
+    // overflow past the bar, no ring. Icon-only (no title) and centred
+    // vertically in the dock; the semantics label keeps it accessible.
     final post = Expanded(
       child: Semantics(
         button: true,
@@ -2309,8 +2310,8 @@ class THDock extends StatelessWidget {
           key: const Key('post_job_fab'),
           onTap: onNewRequest,
           borderRadius: BorderRadius.circular(Radii.control),
-          child: slot(
-            icon: Container(
+          child: Center(
+            child: Container(
               width: Sizes.dockPost,
               height: Sizes.dockPost,
               alignment: Alignment.center,
@@ -2320,7 +2321,6 @@ class THDock extends StatelessWidget {
               ),
               child: THHuntGlyph(size: Sizes.dockPostGlyph, color: c.onAccent),
             ),
-            text: label('Post job', c.accentText),
           ),
         ),
       ),
