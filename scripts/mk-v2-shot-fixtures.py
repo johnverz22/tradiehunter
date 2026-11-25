@@ -256,7 +256,21 @@ def psql(sql):
     )
 
 
+def cleanup_stale_shot_jobs():
+    """Cancel previous Shot fixtures left in AwaitingPayment so they don't expire and flag accounts."""
+    try:
+        psql(
+            "UPDATE \"Jobs\" SET \"Status\"='Cancelled', \"CancelReasonCode\"='homeowner_changed_mind', "
+            "\"UpdatedAtUtc\"=NOW() "
+            "WHERE \"Title\" LIKE 'Shot %' AND \"Status\"='AwaitingPayment';"
+        )
+        log("Prior Shot AwaitingPayment jobs cancelled (hygiene).")
+    except Exception as e:
+        log(f"Warning: could not cancel prior shot jobs: {e}")
+
+
 def main():
+    cleanup_stale_shot_jobs()
     ts = int(time.time())
     out = {}
 

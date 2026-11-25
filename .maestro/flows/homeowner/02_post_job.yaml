@@ -24,6 +24,15 @@ appId: nz.co.fixo.fixo
 - inputText: "Tap is dripping under the kitchen sink, need repair as soon as possible."
 
 - tapOn:
+    id: "service_dropdown"
+- tapOn: "Plumbing"
+
+- scrollUntilVisible:
+    element:
+      id: "address_search_field"
+    direction: DOWN
+
+- tapOn:
     id: "address_search_field"
 - inputText: "10 Queen Street, Auckland"
 

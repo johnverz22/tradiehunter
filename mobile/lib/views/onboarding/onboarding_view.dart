@@ -68,6 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: [
                     const FixoWordmark(fontSize: DesignTokens.fontSizeH1),
                     TextButton(
+                      key: const Key('skip_button'),
                       onPressed: () => context.go('/auth'),
                       style: TextButton.styleFrom(
                         foregroundColor: colors.text,
