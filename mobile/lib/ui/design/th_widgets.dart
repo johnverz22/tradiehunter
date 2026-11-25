@@ -602,6 +602,11 @@ class THField extends StatelessWidget {
         constraints: BoxConstraints(
           minHeight: math.max(Sizes.input, height ?? 0),
         ),
+        // Label-less fields (e.g. the home search) centre their text
+        // vertically in the min-height box; labelled fields stay top-aligned.
+        alignment: label == null || label!.isEmpty
+            ? Alignment.centerLeft
+            : null,
         padding: const EdgeInsets.symmetric(
           horizontal: Space.s3_5,
           vertical: Space.s2_5,
