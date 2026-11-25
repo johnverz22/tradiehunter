@@ -14,7 +14,12 @@
 library;
 
 /// Raw `--dart-define=UI_V2=…` value: empty, `all`, or comma-separated ids.
-const String kUiV2Define = String.fromEnvironment('UI_V2');
+///
+/// Phase 6.1: the default is now `all` (v2 everywhere). Pass
+/// `--dart-define=UI_V2=` (empty) to fall back to the [v2Screens] allowlist
+/// while the remaining v1 branches still exist; the whole flag is deleted
+/// together with `lib/views/` in 6.2.
+const String kUiV2Define = String.fromEnvironment('UI_V2', defaultValue: 'all');
 
 /// Screens shipped on v2 (migration plan Phase 3). One id per ported screen;
 /// rolling a screen back is a one-line removal here.
