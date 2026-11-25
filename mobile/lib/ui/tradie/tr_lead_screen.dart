@@ -17,7 +17,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
-import '../../repositories/profile_repository.dart' show ProfileApiException;
 import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';

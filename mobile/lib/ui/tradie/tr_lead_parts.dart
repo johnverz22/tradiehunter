@@ -102,6 +102,9 @@ class TrLeadPriceCard extends StatelessWidget {
   }
 }
 
+/// Text scale from which long badge values switch to wrapping text.
+const double _wrapAtTextScale = 1.3;
+
 /// Suburb plus the (truthful) address-sharing rule, and the schedule row
 /// when the job has a scheduled start.
 class TrLeadLocationCard extends StatelessWidget {
@@ -111,16 +114,29 @@ class TrLeadLocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final schedule = trScheduleLabel(job);
+    // THKeyValue lays a badge out unbounded and the badge never wraps, so the
+    // long rule overflows on a narrow phone at large text. From the same scale
+    // THStickyBar stacks at, show it as wrapping text instead.
+    final largeText =
+        MediaQuery.textScalerOf(context).scale(1.0) >= _wrapAtTextScale;
     return THCard(
       padding: Space.s4,
       children: [
         THKeyValue('Area', trLocationLabel(job), bold: true),
-        const THKeyValue(
-          'Exact address',
-          'Shared after the job is booked',
-          badge: THBadgeKind.brand,
-          divider: true,
-        ),
+        if (largeText)
+          const THKeyValue(
+            'Exact address',
+            'Shared after the job is booked',
+            tone: THTone.brand,
+            divider: true,
+          )
+        else
+          const THKeyValue(
+            'Exact address',
+            'Shared after the job is booked',
+            badge: THBadgeKind.brand,
+            divider: true,
+          ),
         if (schedule != null)
           THKeyValue('Scheduled', schedule, bold: true, divider: true),
       ],

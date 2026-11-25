@@ -460,6 +460,8 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [ ] **5.8** Tradie own profile, settings and public-profile views: availability, services / rates, credentials status, earnings entry, rating (fix plan T-12).
 - [ ] **5.9** Tradie request expired / unavailable states, navigate options and cancel sheet, from `ThStateView` / the sheet pattern (fix plan T-10, T-11).
 
+*Phase 5 progress (2026-11-25), detail in `docs/todos/04_design_system_phase5_tradie_subplan.md`: 5.0 prep, `tr_home` (5.1) and `tr_lead` (5.2) are ported; `tr_job` PR A (loader + total selector + router that still injects the v1 screen, behaviour-neutral) is in. None of the ids is in `v2Screens`. All of this was written without a Flutter SDK; `dart format`, `flutter analyze --fatal-infos` and `flutter test test/ui/phase5_*` still need a run on a machine with Flutter.*
+
 ✅ **Phase 5 done when:** the full tradie journey (onboard → go online → receive offer/lead → accept/quote → check in → adjust → check out → earnings) runs on v2 screens only.
 
 ---

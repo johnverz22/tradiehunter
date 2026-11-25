@@ -62,6 +62,7 @@ import '../ui/shared/profile_screen.dart';
 import '../ui/shared/settings_screen.dart';
 import '../ui/feedback/th_state_view.dart';
 import '../ui/tradie/tr_home_screen.dart';
+import '../ui/tradie/tr_job_router.dart';
 import '../ui/tradie/tr_lead_screen.dart';
 
 /// Route map for the 15 mobile mockups (docs/design/mockup/mobile/).
@@ -375,10 +376,21 @@ final GoRouter appRouter = GoRouter(
     //   context.push('/tradie/jobs/:jobId')
     GoRoute(
       path: '/tradie/jobs/:jobId',
-      builder: (context, state) => TradieJobDetailScreen(
-        key: ValueKey('tradie_job_${state.pathParameters['jobId']}'),
-        jobId: state.pathParameters['jobId']!,
-      ),
+      builder: (context, state) {
+        final jobId = state.pathParameters['jobId']!;
+        TradieJobDetailScreen v1() => TradieJobDetailScreen(
+          key: ValueKey('tradie_job_$jobId'),
+          jobId: jobId,
+        );
+        // Plan 5.3 PR A: the v2 router still injects the v1 screen for every
+        // state; v2 state widgets arrive in PR B / C.
+        return _pick(
+          'tr_job',
+          v1(),
+          // The Key('tradie_job_<id>') lives on the injected v1 screen.
+          TrJobRouter(jobId: jobId, v1Fallback: v1),
+        );
+      },
     ),
     // P1-09 tradie onboarding wizard. Declared before `/tradie/:id` so the
     // static segment wins over the public-profile parameter, and kept at
