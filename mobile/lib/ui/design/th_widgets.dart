@@ -2475,7 +2475,7 @@ class THScaffold extends StatelessWidget {
                       ],
                     ),
                   ),
-                  dock!,
+                  dock,
                 ],
               )
             : Stack(

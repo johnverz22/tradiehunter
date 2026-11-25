@@ -19,7 +19,8 @@ void main() {
 
     expect(find.text('Booked'), findsWidgets);
     expect(find.textContaining('Booked for'), findsOneWidget);
-    expect(find.text('Aroha Plumbing'), findsOneWidget);
+    // Tradie card name + "Request accepted" timeline subtitle (mockup).
+    expect(find.text('Aroha Plumbing'), findsNWidgets(2));
     // Mockup ho_job_booked: no badges, no titled cards, no duplicate Message.
     expect(find.text('Verified'), findsNothing);
     expect(find.text('Job details'), findsNothing);

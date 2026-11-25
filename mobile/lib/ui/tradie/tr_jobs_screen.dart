@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -157,19 +156,19 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
     return THScaffold(
       appBar: const THAppBar(title: 'My jobs'),
       scrollable: false,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
+      body: Builder(
+        builder: (context) {
+          // Window width, not the pane's constraints: THScaffold's gutter
+          // would otherwise make an exactly-744 window fall short.
           final isWide =
               (widget.wideLayoutOverride ?? isV2Screen('wide_layout')) &&
-              constraints.maxWidth >= kThBreakpointMasterDetail;
+              MediaQuery.sizeOf(context).width >= kThBreakpointMasterDetail;
 
           // On resize from wide→narrow, clear selection so it isn't stale.
           if (!isWide && _selectedJobId != null) {
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) {
-                if (mounted) setState(() => _selectedJobId = null);
-              },
-            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _selectedJobId = null);
+            });
           }
 
           final masterPanel = Column(
@@ -196,13 +195,7 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
                 ),
               ),
               Expanded(
-                child: _body(
-                  context,
-                  state,
-                  notifier,
-                  groups,
-                  isWide: isWide,
-                ),
+                child: _body(context, state, notifier, groups, isWide: isWide),
               ),
             ],
           );
@@ -274,7 +267,10 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
               ),
             ),
             for (final job in group.jobs) ...[
-              TrJobCard(job: job, onTap: () => _openJob(context, job, isWide: isWide)),
+              TrJobCard(
+                job: job,
+                onTap: () => _openJob(context, job, isWide: isWide),
+              ),
               const SizedBox(height: Space.s2_5),
             ],
           ],
