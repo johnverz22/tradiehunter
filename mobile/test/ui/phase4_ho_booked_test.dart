@@ -24,7 +24,10 @@ void main() {
     expect(find.text('Verified'), findsNothing);
     expect(find.text('Job details'), findsNothing);
     expect(find.text('Job timeline'), findsNothing);
-    expect(find.text('Aroha Plumbing will check in on arrival.'), findsOneWidget);
+    expect(
+      find.text('Aroha Plumbing will check in on arrival.'),
+      findsOneWidget,
+    );
     expect(find.text('Estimate'), findsOneWidget);
     expect(find.text('Duration'), findsNothing);
     expect(find.text('Request accepted'), findsOneWidget);
@@ -42,10 +45,13 @@ void main() {
     final message = tester.getRect(find.byKey(const Key('open_chat_button')));
     final cancel = tester.getRect(find.byKey(const Key('cancel_job_button')));
     expect(find.text('Message Aroha'), findsOneWidget);
-    expect(find.descendant(
-      of: find.byType(THStickyBar),
-      matching: find.byKey(const Key('open_chat_button')),
-    ), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(THStickyBar),
+        matching: find.byKey(const Key('open_chat_button')),
+      ),
+      findsOneWidget,
+    );
     expect(message.bottom, lessThan(cancel.top));
     expect(cancel.bottom, lessThanOrEqualTo(view.bottom));
   });

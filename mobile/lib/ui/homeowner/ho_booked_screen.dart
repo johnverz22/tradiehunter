@@ -159,7 +159,9 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
                   label: firstName.isEmpty ? 'Message' : 'Message $firstName',
                   icon: Icons.chat_bubble_rounded,
                   kind: THButtonKind.primary,
-                  onPressed: canChat ? () => context.push('/chat/${job.id}') : null,
+                  onPressed: canChat
+                      ? () => context.push('/chat/${job.id}')
+                      : null,
                 ),
                 THButton(
                   key: const Key('cancel_job_button'),

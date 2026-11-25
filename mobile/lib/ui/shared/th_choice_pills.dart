@@ -112,20 +112,24 @@ class _Pill extends StatelessWidget {
                       ),
                     )
                   : Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: Space.s1_5,
-                children: [
-                  if (item.icon != null)
-                    Icon(item.icon, size: Sizes.iconSm, color: foreground),
-                  Text(
-                    item.label,
-                    style: THType.meta.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: foreground,
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: Space.s1_5,
+                      children: [
+                        if (item.icon != null)
+                          Icon(
+                            item.icon,
+                            size: Sizes.iconSm,
+                            color: foreground,
+                          ),
+                        Text(
+                          item.label,
+                          style: THType.meta.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: foreground,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

@@ -112,33 +112,34 @@ void main() {
     }
   }
 
-  testWidgets('post job tile is in the row, sized by token, centred, no title', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await _pump(tester, width: 393, role: THDockRole.homeowner);
-      final slot = tester.getRect(find.byKey(const Key('post_job_fab')));
-      final tile = tester.getRect(
-        find.descendant(
-          of: find.byKey(const Key('post_job_fab')),
-          matching: find.byType(Container),
-        ),
-      );
-      expect(tile.size, const Size.square(Sizes.dockPost));
-      // Inside the bar: no overflow past its top edge.
-      final bar = tester.getRect(find.byType(THDock));
-      expect(tile.top, greaterThanOrEqualTo(bar.top));
-      expect(slot.center.dx, closeTo(tile.center.dx, 0.01));
-      // Icon-only: vertically centred in the dock row.
-      final rowCentre = bar.top + Sizes.dock / 2;
-      expect(tile.center.dy, closeTo(rowCentre, 0.5));
-      expect(find.text('Post job'), findsNothing);
-      expect(find.bySemanticsLabel('New request'), findsOneWidget);
-    } finally {
-      semantics.dispose();
-    }
-  });
+  testWidgets(
+    'post job tile is in the row, sized by token, centred, no title',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await _pump(tester, width: 393, role: THDockRole.homeowner);
+        final slot = tester.getRect(find.byKey(const Key('post_job_fab')));
+        final tile = tester.getRect(
+          find.descendant(
+            of: find.byKey(const Key('post_job_fab')),
+            matching: find.byType(Container),
+          ),
+        );
+        expect(tile.size, const Size.square(Sizes.dockPost));
+        // Inside the bar: no overflow past its top edge.
+        final bar = tester.getRect(find.byType(THDock));
+        expect(tile.top, greaterThanOrEqualTo(bar.top));
+        expect(slot.center.dx, closeTo(tile.center.dx, 0.01));
+        // Icon-only: vertically centred in the dock row.
+        final rowCentre = bar.top + Sizes.dock / 2;
+        expect(tile.center.dy, closeTo(rowCentre, 0.5));
+        expect(find.text('Post job'), findsNothing);
+        expect(find.bySemanticsLabel('New request'), findsOneWidget);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
 
   testWidgets('tradie dock keeps four equal slots and no Post job', (
     tester,
