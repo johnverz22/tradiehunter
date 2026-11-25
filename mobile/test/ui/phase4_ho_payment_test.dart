@@ -193,6 +193,59 @@ void main() {
       expect(find.text('Back to job'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'overdue-but-payable payment reads Overdue (not Expired), keeps bank details and upload',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            paymentsRepositoryProvider.overrideWithValue(
+              _PaymentFixture(_overduePayment),
+            ),
+            paymentJobProvider('42').overrideWith((ref) async => null),
+          ],
+          child: const MaterialApp(
+            home: ThScope(child: HoPaymentScreen(jobId: '42')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Overdue'), findsOneWidget);
+      expect(find.text('Expired'), findsNothing);
+      expect(find.text('Was due'), findsOneWidget);
+      expect(find.text('Fixo Ltd Client Funds'), findsOneWidget);
+      expect(find.byKey(const Key('upload_receipt_button')), findsOneWidget);
+    },
+  );
+
+  testWidgets('closed (released) payment hides bank details and upload', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          paymentsRepositoryProvider.overrideWithValue(
+            _PaymentFixture(_closedPayment),
+          ),
+          paymentJobProvider('42').overrideWith((ref) async => null),
+        ],
+        child: const MaterialApp(
+          home: ThScope(child: HoPaymentScreen(jobId: '42')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Expired'), findsOneWidget);
+    expect(find.text('Account name'), findsNothing);
+    expect(find.byKey(const Key('upload_receipt_button')), findsNothing);
+    expect(
+      find.textContaining('payment window has closed'),
+      findsOneWidget,
+    );
+  });
 }
 
 final _unavailableBankPayment = PaymentStatus.fromJson({
@@ -297,3 +350,26 @@ class _PaymentFixture extends PaymentsRepository {
   @override
   Future<PaymentStatus> getPayment(String jobId) async => payment;
 }
+
+Map<String, dynamic> _expiredJson({required bool canUpload}) => {
+  'paymentId': 1,
+  'jobId': 42,
+  'jobTitle': 'Leaking kitchen tap',
+  'jobStatus': canUpload ? 'AwaitingPayment' : 'Expired',
+  'amount': '171.00',
+  'currency': 'NZD',
+  'method': 'BankTransfer',
+  'provider': 'Manual',
+  'reference': 'FX-42',
+  'status': 'Expired',
+  'bankDetails': {
+    'accountName': 'Fixo Ltd Client Funds',
+    'accountNumber': '12-3456-7890123-00',
+  },
+  'dueAtUtc': '2026-01-01T00:00:00Z',
+  'createdAtUtc': '2025-12-30T00:00:00Z',
+  'canUploadReceipt': canUpload,
+};
+
+final _overduePayment = PaymentStatus.fromJson(_expiredJson(canUpload: true));
+final _closedPayment = PaymentStatus.fromJson(_expiredJson(canUpload: false));

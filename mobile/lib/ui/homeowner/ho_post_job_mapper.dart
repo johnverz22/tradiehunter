@@ -127,13 +127,11 @@ List<ThTimingOption> thTimingOptions(String jobType) => const [
     wireValue: 'SpecificDate',
     label: 'Pick a date',
     helper: 'Choose a start date and time',
-    icon: Icons.calendar_today_rounded,
   ),
   ThTimingOption(
     wireValue: 'DateRange',
     label: 'Date range',
     helper: 'Choose a start and end window',
-    icon: Icons.date_range_rounded,
   ),
 ];
 

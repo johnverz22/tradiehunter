@@ -14,6 +14,7 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import 'th_tab_app_bar.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
@@ -167,7 +168,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
           final c = context.th;
           final profileState = ref.watch(profileViewModelProvider);
 
-          final appBar = THAppBar(title: 'Profile', showBack: false);
+          final appBar = ThTabAppBar(title: 'Profile');
 
           if (profileState.isLoading && profileState.profile == null) {
             return Scaffold(
@@ -262,9 +263,8 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
 
             return Scaffold(
               backgroundColor: c.paper,
-              appBar: THAppBar(
+              appBar: ThTabAppBar(
                 title: 'Profile',
-                showBack: false,
                 actions: [
                   THIconButton(
                     icon: Icons.settings_outlined,

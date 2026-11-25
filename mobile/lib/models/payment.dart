@@ -170,6 +170,19 @@ class PaymentStatus {
     canUploadReceipt: json['canUploadReceipt'] as bool? ?? false,
   );
 
+  /// Past due but still payable: the server keeps a v2 job in AwaitingPayment
+  /// after the window (PaymentExpiryJob flags the homeowner instead of
+  /// expiring the job), so the payment reads Expired while upload is open.
+  bool get isOverdueButPayable =>
+      stage == PaymentStage.expired && canUploadReceipt;
+
+  /// Window closed for good (v1 expiry released the job): nothing to pay.
+  bool get isClosed => stage == PaymentStage.expired && !canUploadReceipt;
+
+  /// Homeowner-facing stage label. "Expired" is only true when the job was
+  /// released; an overdue-but-payable payment is "Overdue".
+  String get displayLabel => isOverdueButPayable ? 'Overdue' : stage.label;
+
   /// Time left before the job expires. Negative once past the deadline.
   Duration get timeRemaining => dueAtUtc.difference(DateTime.now());
 

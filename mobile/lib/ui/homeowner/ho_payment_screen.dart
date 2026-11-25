@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../feedback/fixo_notice.dart';
 import '../../models/marketplace.dart';
@@ -145,16 +146,6 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: Space.s3,
       children: [
-        if (payment.stage != PaymentStage.pending)
-          THBadge(
-            payment.stage.label,
-            kind: payment.stage == PaymentStage.verified
-                ? THBadgeKind.ok
-                : payment.stage == PaymentStage.rejected ||
-                      payment.stage == PaymentStage.expired
-                ? THBadgeKind.danger
-                : THBadgeKind.accent,
-          ),
         if (state.error != null) THText(state.error!, tone: THTone.danger),
         THHero(
           children: [
@@ -204,14 +195,58 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
               strong: true,
               divider: hasLabour || hasLegacy || hasExtras,
             ),
+            // Stage lives in the card, not above the hero. Nothing to say
+            // while the transfer is simply pending.
+            if (payment.stage != PaymentStage.pending)
+              THKeyValue(
+                'Status',
+                payment.displayLabel,
+                badge: payment.stage == PaymentStage.verified
+                    ? THBadgeKind.ok
+                    : payment.stage == PaymentStage.rejected ||
+                          payment.isClosed ||
+                          payment.isOverdueButPayable
+                    ? THBadgeKind.danger
+                    : THBadgeKind.accent,
+                divider: true,
+              ),
+            if (payment.isOverdueButPayable)
+              THKeyValue(
+                'Was due',
+                DateFormat.MMMEd().add_jm().format(payment.dueAtUtc),
+                divider: true,
+              ),
           ],
         ),
+        if (payment.isOverdueButPayable)
+          const THCard(
+            tone: THCardTone.accent,
+            children: [
+              THText(
+                'This payment is past its due date, but you can still pay. '
+                'Transfer the amount and upload your receipt.',
+                style: THTextStyle.meta,
+              ),
+            ],
+          ),
+        if (payment.isClosed)
+          const THCard(
+            tone: THCardTone.danger,
+            children: [
+              THText(
+                'This payment window has closed and the job was released. '
+                'If you have already paid, contact support.',
+                tone: THTone.danger,
+              ),
+            ],
+          ),
         if (disclaimer?.isNotEmpty == true)
           THCard(
             tone: THCardTone.accent,
             children: [THText(disclaimer!, style: THTextStyle.meta)],
           ),
-        if (bankReady) ...[
+        if (payment.isClosed) const SizedBox.shrink()
+        else if (bankReady) ...[
           THCard(
             children: [
               THKeyValue('Account name', bank!.accountName, bold: true),
@@ -331,7 +366,8 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
     final title = switch (stage) {
       PaymentStage.verified => 'Payment confirmed',
       PaymentStage.rejected => 'Receipt needs another look',
-      PaymentStage.expired => 'Payment window expired',
+      PaymentStage.expired =>
+        payment!.isOverdueButPayable ? 'Payment overdue' : 'Payment window expired',
       PaymentStage.submitted => 'Receipt sent for review',
       _ => 'Payment status',
     };
@@ -343,7 +379,10 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
       PaymentStage.rejected =>
         payment?.rejectReason ?? 'Please upload a clearer receipt.',
       PaymentStage.expired =>
-        isV2
+        payment!.isOverdueButPayable
+            ? 'This payment is past its due date, but you can still pay. '
+                  'Transfer the amount and upload your receipt.'
+            : isV2
             ? 'The payment window closed without a receipt. Contact support for help.'
             : 'This match has been released. Start again to find another tradie.',
       PaymentStage.submitted => 'Our team is checking your receipt. We usually verify within one business day.',
@@ -375,7 +414,15 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
                         }
                       },
                     ),
-                  if (stage == PaymentStage.expired && isV2)
+                  if (payment.isOverdueButPayable)
+                    THButton(
+                      label: 'Pay now',
+                      kind: THButtonKind.accent,
+                      onPressed: () => context.pushReplacement(
+                        '/jobs/${widget.jobId}/payment',
+                      ),
+                    )
+                  else if (stage == PaymentStage.expired && isV2)
                     THButton(
                       label: 'Contact support',
                       onPressed: () => context.push('/settings'),
@@ -432,7 +479,7 @@ class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
                       ),
                       THKeyValue(
                         'Status',
-                        payment.stage.label,
+                        payment.displayLabel,
                         badge: stage == PaymentStage.verified
                             ? THBadgeKind.ok
                             : kind,

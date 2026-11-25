@@ -64,6 +64,7 @@ class HoPostJobTiming extends ConsumerWidget {
         ),
         const SizedBox(height: Space.s2),
         ThChoicePills(
+          singleRow: true,
           items: [
             for (final option in options)
               ThChoicePillItem(

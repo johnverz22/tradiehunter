@@ -17,6 +17,7 @@ import '../../viewmodels/jobs_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import 'th_tab_app_bar.dart';
 import '../feedback/th_state_view.dart';
 import 'chat_unread_provider.dart';
 import 'th_shell.dart' show kThBreakpointMasterDetail;
@@ -97,7 +98,7 @@ class _ThMessagesListScreenState extends ConsumerState<ThMessagesListScreen> {
       child: Builder(
         builder: (context) {
           final c = context.th;
-          final appBar = THAppBar(title: 'Messages', showBack: false);
+          final appBar = ThTabAppBar(title: 'Messages');
 
           if (_loading && _conversations.isEmpty) {
             return Scaffold(

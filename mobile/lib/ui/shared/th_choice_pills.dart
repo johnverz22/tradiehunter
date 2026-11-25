@@ -27,12 +27,29 @@ class ThChoicePillItem {
 }
 
 class ThChoicePills extends StatelessWidget {
-  const ThChoicePills({super.key, required this.items});
+  const ThChoicePills({super.key, required this.items, this.singleRow = false});
 
   final List<ThChoicePillItem> items;
 
+  /// Lay every pill out on one row, sharing the width equally. Labels scale
+  /// down rather than wrap, so a short fixed set (e.g. the post-job timing
+  /// choices) never spills onto a second line.
+  final bool singleRow;
+
   @override
   Widget build(BuildContext context) {
+    if (singleRow) {
+      return thTestIdWrap(
+        Row(
+          spacing: Space.s2,
+          children: [
+            for (final item in items)
+              Expanded(child: _Pill(item: item, fill: true)),
+          ],
+        ),
+        key,
+      );
+    }
     return thTestIdWrap(
       Wrap(
         spacing: Space.s2,
@@ -45,9 +62,10 @@ class ThChoicePills extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.item});
+  const _Pill({required this.item, this.fill = false});
 
   final ThChoicePillItem item;
+  final bool fill;
 
   @override
   Widget build(BuildContext context) {
@@ -75,11 +93,25 @@ class _Pill extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: Sizes.buttonSm),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Space.s3_5,
+              padding: EdgeInsets.symmetric(
+                horizontal: fill ? Space.s2 : Space.s3_5,
                 vertical: Space.s2,
               ),
-              child: Row(
+              child: fill
+                  ? Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          style: THType.meta.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Row(
                 mainAxisSize: MainAxisSize.min,
                 spacing: Space.s1_5,
                 children: [
