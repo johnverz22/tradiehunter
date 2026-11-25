@@ -404,6 +404,8 @@ Compose from `TH*` (`THPills`/`ThChoicePills` filters, `THCard`/`THListRow`/`THB
 - **Notifications:** tradie notification-to-destination mapping (`routeNotification…`) must still land on `/tradie`, `/tradie/requests/:id`, `/tradie/jobs/:id`. Add cases to the existing destination test (no mapping change).
 - **Screenshots/integration:** update `screenshots_*` only in Phase 6 (parent 6.6); do not touch here.
 
+*Runner (2026-11-25):* `scripts/run-tradie-v2-flows.sh` runs the pending per-id `UI_V2=<id>` headless tests (`tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`, `tr_jobs`, `tr_profile`, `wide_layout`) and then `UI_V2=all`, after the boundary guard and `flutter analyze --fatal-infos`, and prints a pass/fail table. Written without a Flutter SDK in the authoring sandbox: **not executed**; owner runs it. Owner visual QA (5.5) is unchanged.
+
 *5.9 wrap-up verified 2026-11-25:* **5.3 dock check** — covered by `th_dock_layout_test.dart` ("tradie dock keeps four equal slots and no Post job"), green. **5.4 offer/countdown tests** — `offer_response_test.dart`, `tradie_dashboard_test.dart`, `tradie_dashboard_redesign_test.dart` all green (87 tests) with `--dart-define=UI_V2=tr_home,tr_lead` and again with `UI_V2=all`. **Notifications** — no mapping cases added: `routeNotification…` has no tradie request/job destinations to assert (mapping unchanged). Still pending per-id `UI_V2=<id>` runs for `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`, `tr_jobs` and owner visual QA before any id joins `v2Screens`.
 
 ---
