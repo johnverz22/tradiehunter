@@ -2,13 +2,16 @@
 // driven at human speed (visible cursor, captions, typed input) so it can be
 // screen-recorded next to the two iOS simulators.
 //
-// Not meant to be run directly. Env: DEMO_CTL, DEMO_WEB_URL, DEMO_API_URL,
-// DEMO_PACE (seconds), DEMO_ADMIN_EMAIL / DEMO_ADMIN_PASSWORD,
+// Not meant to be run directly. Env: E2E_MANIFEST (required: the persona-fabric
+// manifest from scripts/e2e-personas.py; the admin logs in as its `staff`
+// persona), DEMO_CTL, DEMO_WEB_URL, DEMO_API_URL, DEMO_PACE (seconds),
 // DEMO_WINDOW (WxH+X+Y, default 1280x860+0+0),
 // DEMO_SINGLE_FLOW ("true" = skip dispute / audit sub-flows, end after payout).
-// Only credential rows whose file name contains "demo-tour-" (seeded by the
-// orchestrator) are ever touched.
+// Only credential rows whose file name contains "demo-tour-" (uploaded as the
+// manifest tradie by the orchestrator) are ever touched, and every job, payment
+// and dispute the admin acts on must be a job id recorded in the manifest.
 
+import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,10 +24,31 @@ const CTL = process.env.DEMO_CTL ?? 'http://127.0.0.1:5099';
 const WEB = process.env.DEMO_WEB_URL ?? 'http://localhost:8090';
 const API = process.env.DEMO_API_URL ?? 'http://localhost:5000/api';
 const PACE = Number(process.env.DEMO_PACE ?? 3) * 1000;
-const EMAIL = process.env.DEMO_ADMIN_EMAIL ?? 'staff@fixo.test';
-const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? 'Test1234!';
+const MANIFEST_PATH = process.env.E2E_MANIFEST;
+if (!MANIFEST_PATH || !fs.existsSync(MANIFEST_PATH)) {
+  console.error('admin_pov: E2E_MANIFEST is not set or the file is missing — run via scripts/e2e-demo.py');
+  process.exit(2);
+}
+const readManifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+const staff = readManifest().personas?.find((p) => p.role === 'staff');
+if (!staff) {
+  console.error('admin_pov: manifest has no staff persona (provision with e2e-personas.py --staff 1)');
+  process.exit(2);
+}
+const EMAIL = staff.email;
+const PASSWORD = staff.password;
 const ACTOR = 'admin';
 const SINGLE_FLOW = process.env.DEMO_SINGLE_FLOW === 'true';
+
+/** The job must be one the fabric manifest knows (recorded by the orchestrator), never a hardcoded id. */
+function assertManifestJob(id, what) {
+  const jobs = readManifest().jobs ?? [];
+  const hit = jobs.find((j) => Number(j.id) === Number(id) && String(j.scenario).startsWith('demo'));
+  if (!hit) {
+    throw new Error(`${what} job ${id} is not a demo job in the manifest (${jobs.map((j) => j.id).join(', ') || 'none'})`);
+  }
+  return hit;
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const beat = (m = 1) => sleep(PACE * m);
@@ -190,16 +214,16 @@ try {
 
   // Payment verification once the homeowner has uploaded a receipt.
   const jobId = Number(await waitData('job'));
+  assertManifestJob(jobId, 'demo');
   await waitSignal('receipt_uploaded');
   await scene('payment', async () => {
     await caption('Admin: verifies the homeowner’s bank-transfer receipt');
     const token = await apiToken(EMAIL, PASSWORD);
     const pending = await apiGet('/admin/payments/pending?pageSize=100', token);
     const payment = (pending?.items ?? pending?.data ?? []).find((p) => p.jobId === jobId);
+    if (!payment) throw new Error(`no pending payment for manifest job ${jobId} — refusing to verify another job's receipt`);
     await goto('/payments');
-    const row = payment
-      ? page.locator('table tbody tr', { hasText: payment.reference })
-      : page.locator('table tbody tr').first();
+    const row = page.locator('table tbody tr', { hasText: payment.reference });
     await row.first().waitFor({ state: 'visible', timeout: 10_000 });
     await click(row.first().getByRole('button', { name: /^verify$/i }));
     await beat();
@@ -249,6 +273,7 @@ try {
     await scene('dispute', async () => {
       await caption('Admin: reviews and resolves the homeowner’s dispute');
       const disputeJob = await waitData('dispute_job');
+      assertManifestJob(disputeJob, 'dispute');
       await goto('/disputes');
       await goto(`/disputes/${disputeJob}`);
       await beat(2);

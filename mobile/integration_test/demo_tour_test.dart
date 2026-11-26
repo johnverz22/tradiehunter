@@ -1,7 +1,10 @@
 // Screen-recording tour of the mobile points of view (homeowner + tradie).
 //
-// Run with: driven by scripts/e2e-demo.py against default flags — the tour
-// choreographs the v1 flows (tradie side is v1 until Phase 5).
+// Run with: driven by scripts/e2e-demo.py, which provisions (or reuses) a
+// persona-fabric manifest (plan 08) and passes it as --dart-define
+// E2E_MANIFEST=<path>. Both actors sign in as the manifest homeowner/tradie and
+// read credentials via helpers/manifest_helper.dart — never the seeded
+// test_config.dart accounts (ManifestData.require() fails loudly without it).
 //
 // Not a pass/fail regression suite — it is one scripted walkthrough per
 // persona, choreographed by `scripts/e2e-demo.py` through the signal server
@@ -15,6 +18,11 @@
 //   Task 6 — Tradie request detail: OfferCountdown, photo gallery, sticky bar
 //   Task 7 — Tradie active job: StatusStrip timeline, job-code long-press
 //   Task 8 — THNotice appearances during check-in, check-out, confirm
+//
+// The job is created through the same path scripts/e2e-journey.py uses: a
+// direct request (POST /jobs/{id}/request) to the manifest tradie, because the
+// post-job form needs LINZ_API_KEY and quick match could offer the job to a
+// seeded tradie. The orchestrator records the job id in the manifest.
 //
 // Every UI step that cannot be driven natively (photo picker, LINZ address
 // lookup when no key is configured) falls back to the API and is reported with
@@ -31,7 +39,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'helpers/api_helper.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/demo_helper.dart';
-import 'helpers/fixture_helper.dart';
+import 'helpers/manifest_helper.dart';
 import 'helpers/test_config.dart';
 
 const _persona = String.fromEnvironment(
@@ -49,8 +57,15 @@ const _singleFlow =
 const _ho = 'homeowner';
 const _tr = 'tradie';
 
+Future<String> _homeownerToken(ManifestData m) =>
+    ApiHelper.getToken(m.homeownerEmail, m.homeownerPassword);
+
+Future<String> _tradieToken(ManifestData m) =>
+    ApiHelper.getToken(m.tradieEmail, m.tradiePassword);
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final manifest = ManifestData.require();
 
   testWidgets('demo tour — $_persona', (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -60,9 +75,9 @@ void main() {
     await pumpFor(tester, const Duration(seconds: 2));
 
     if (_persona == 'tradie') {
-      await _tradieTour(tester);
+      await _tradieTour(tester, manifest);
     } else {
-      await _homeownerTour(tester);
+      await _homeownerTour(tester, manifest);
     }
     print('__DEMO_DONE__ $_persona');
   }, timeout: const Timeout(Duration(minutes: 45)));
@@ -70,9 +85,9 @@ void main() {
 
 // ── Homeowner ────────────────────────────────────────────────────────────────
 
-Future<void> _homeownerTour(WidgetTester tester) async {
+Future<void> _homeownerTour(WidgetTester tester, ManifestData manifest) async {
   // Pre-roll (before the recording starts): build a Booked job to dispute later.
-  final disputeJob = await FixtureHelper.bookedJob(tag: 'demo-dispute');
+  final disputeJob = await _bookedJob(manifest, tag: 'demo-dispute');
   await Demo.setData('dispute_job', '$disputeJob');
   await gotoLogin(tester);
   await Demo.signal('homeowner_ready');
@@ -89,11 +104,11 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.type(
     tester,
     find.byKey(const Key('email_field')),
-    kHomeownerEmail,
+    manifest.homeownerEmail,
   );
   await tester.enterText(
     find.byKey(const Key('password_field')),
-    kHomeownerPassword,
+    manifest.homeownerPassword,
   );
   await Demo.beat(tester, 0.5);
   await tester.tap(find.byKey(const Key('login_button')));
@@ -114,7 +129,7 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.step(_ho, 'Homeowner: posts a new job');
   appRouter.go('/jobs/new');
   await Demo.beat(tester);
-  final jobId = await _postJob(tester);
+  final jobId = await _postJob(tester, manifest);
   await Demo.setData('job', '$jobId');
   await Demo.signal('job_posted');
 
@@ -135,45 +150,13 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   appRouter.go('/jobs/$jobId/detail');
   await Demo.beat(tester, 2);
 
-  // 5b. Payment instructions and bank-transfer receipt upload.
-  await Demo.step(
-    _ho,
-    'Homeowner: pays by bank transfer — payment instructions',
-  );
-  appRouter.go('/jobs/$jobId/payment');
-  await Demo.beat(tester, 2);
-  // Scroll down to show payment reference details, then scroll back up.
-  await Demo.scrollScreen(tester, pixels: 350);
-  final homeowner = await ApiHelper.homeownerToken;
-  await Demo.note(
-    _ho,
-    'receipt uploaded via API (native photo picker cannot be driven)',
-  );
-  await ApiHelper.getPayment(jobId, homeowner);
-  await ApiHelper.uploadReceipt(jobId, homeowner);
-  await Demo.step(
-    _ho,
-    'Homeowner: receipt submitted — awaiting admin verification',
-  );
-  appRouter.go('/jobs/$jobId/payment/status');
-  await Demo.beat(tester, 2);
-  // Scroll to reveal the full payment-status card and any action buttons.
-  await Demo.scrollScreen(tester, pixels: 300);
-  await Demo.signal('receipt_uploaded');
-  await Demo.waitSignal(tester, 'payment_verified');
-
-  // 5c. Job detail — progress banner with on-dark StatusBadge and step nodes.
-  await Demo.step(
-    _ho,
-    'Homeowner: payment verified — job detail and progress banner',
-  );
-  appRouter.go('/jobs/$jobId/detail');
-  await Demo.beat(tester, 2);
-  // Scroll to show the progress timeline nodes and job description.
+  // v2 order: Booked -> work -> approve the itemised amount -> pay -> staff
+  // verifies -> Completed. Scroll the booked job while the tradie works.
   await Demo.scrollScreen(tester, pixels: 450);
   await Demo.waitSignal(tester, 'checked_out');
+  final homeowner = await _homeownerToken(manifest);
 
-  // 6. Work done: chat reply, confirm completion (triggers THNotice.success), review.
+  // 6. Work done: chat, approve the itemised amount (triggers THNotice.success).
   await Demo.step(_ho, 'Homeowner: tradie checked out — reviews chat');
   appRouter.go('/chat/$jobId');
   await Demo.beat(tester, 2);
@@ -196,6 +179,42 @@ Future<void> _homeownerTour(WidgetTester tester) async {
         await ApiHelper.getJobStatus(jobId, homeowner) == 'AwaitingPayment',
   );
   await pumpFor(tester, const Duration(seconds: 3));
+  // 7. Payment (v2: after approval). Instructions, then the receipt.
+  await Demo.step(
+    _ho,
+    'Homeowner: pays by bank transfer — payment instructions',
+  );
+  appRouter.go('/jobs/$jobId/payment');
+  await Demo.beat(tester, 2);
+  await Demo.scrollScreen(tester, pixels: 350);
+  await Demo.note(
+    _ho,
+    'receipt uploaded via API (native photo picker cannot be driven)',
+  );
+  await ApiHelper.getPayment(jobId, homeowner);
+  await ApiHelper.uploadReceipt(jobId, homeowner);
+  await Demo.step(
+    _ho,
+    'Homeowner: receipt submitted — awaiting admin verification',
+  );
+  appRouter.go('/jobs/$jobId/payment/status');
+  await Demo.beat(tester, 2);
+  await Demo.scrollScreen(tester, pixels: 300);
+  await Demo.signal('receipt_uploaded');
+  await Demo.waitSignal(tester, 'payment_verified');
+
+  // 8. Staff verification completes the job; show it and leave a review.
+  await Demo.until(
+    tester,
+    () async => await ApiHelper.getJobStatus(jobId, homeowner) == 'Completed',
+  );
+  await Demo.step(
+    _ho,
+    'Homeowner: payment verified — job completed, progress banner',
+  );
+  appRouter.go('/jobs/$jobId/detail');
+  await Demo.beat(tester, 2);
+  await Demo.scrollScreen(tester, pixels: 450);
   await Demo.step(_ho, 'Homeowner: leaves a review for the tradie');
   await _leaveReview(tester, 'Fast, tidy and friendly. Highly recommend!');
   await Demo.signal('completed');
@@ -234,9 +253,13 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.beat(tester);
 }
 
-/// Fills the Post Job form; returns the new job's id. Falls back to the API
-/// when a required field can't be completed through the UI.
-Future<int> _postJob(WidgetTester tester) async {
+/// Fills the Post Job form on camera, then creates the job the way
+/// scripts/e2e-journey.py does: POST /jobs followed by a direct request to the
+/// manifest tradie. Submitting the form would need LINZ_API_KEY for the address
+/// lookup and would quick-match (offering the job to the top-ranked tradie,
+/// which on a shared stack is a seeded one), so that step is an API fallback and
+/// is reported as such. Returns the new job's id.
+Future<int> _postJob(WidgetTester tester, ManifestData manifest) async {
   const title = 'Leaking kitchen tap — demo';
   await Demo.type(tester, find.byKey(const Key('title_field')), title);
   await Demo.type(
@@ -260,24 +283,59 @@ Future<int> _postJob(WidgetTester tester) async {
     }
   }
 
-  final before = appRouter.state.uri.path;
-  final post = find.byKey(const Key('post_job_button'));
-  if (post.evaluate().isNotEmpty) {
-    await tester.ensureVisible(post);
-    await tester.tap(post);
-    await pumpFor(tester, const Duration(seconds: 8));
-  }
-  final match = RegExp(r'/jobs/(\d+)/matching')
-      .firstMatch(appRouter.state.uri.path);
-  if (match != null && appRouter.state.uri.path != before) {
-    return int.parse(match.group(1)!);
-  }
-
   await Demo.note(
     _ho,
-    'job created via API (post-job form not submittable through the UI — address lookup needs LINZ_API_KEY)',
+    'job created via API + direct request to the manifest tradie (same path as '
+    'e2e-journey.py; the post-job form needs LINZ_API_KEY and quick match could '
+    'offer the job to a seeded tradie)',
   );
-  return ApiHelper.createJob(await ApiHelper.homeownerToken, title: title);
+  final homeowner = await _homeownerToken(manifest);
+  final jobId = await ApiHelper.createJob(homeowner, title: title, hours: 2);
+  await _requestManifestTradie(manifest, jobId, homeowner);
+  return jobId;
+}
+
+/// Direct request (POST /jobs/{id}/request) to the manifest tradie. Needs a v2
+/// job, exactly like e2e-journey.py's direct match mode.
+Future<Map<String, dynamic>> _requestManifestTradie(
+  ManifestData manifest,
+  int jobId,
+  String homeowner,
+) async {
+  final job = await ApiHelper.getJob(jobId, homeowner);
+  final flow = (job['flowVersion'] as num?)?.toInt() ?? 1;
+  if (flow < 2) {
+    throw StateError(
+      'direct requests need a v2 job (job $jobId is flow $flow) — the demo '
+      'runs on the persona fabric, which targets the v2 stack',
+    );
+  }
+  final tradieId =
+      (await ApiHelper.getMyProfile(await _tradieToken(manifest)))['id']
+          as String;
+  return ApiHelper.requestTradie(jobId, tradieId, homeowner);
+}
+
+/// A job in `Booked` for the dispute scene, built on the manifest personas:
+/// create, direct-request the manifest tradie, tradie accepts (v2 books on
+/// accept, no payment gate). Replaces FixtureHelper.bookedJob, which drives the
+/// seeded accounts through quick match.
+Future<int> _bookedJob(ManifestData manifest, {required String tag}) async {
+  final homeowner = await _homeownerToken(manifest);
+  final tradie = await _tradieToken(manifest);
+  final jobId = await ApiHelper.createJob(
+    homeowner,
+    title: 'Demo — $tag ${DateTime.now().millisecondsSinceEpoch}',
+    hours: 2,
+  );
+  final offer = await _requestManifestTradie(manifest, jobId, homeowner);
+  await ApiHelper.respondToOffer(jobId, offer['id'] as int, 'Accepted', tradie);
+  await pollUntil(
+    () async => await ApiHelper.getJobStatus(jobId, homeowner) == 'Booked',
+    timeout: const Duration(seconds: 45),
+    interval: const Duration(seconds: 2),
+  );
+  return jobId;
 }
 
 Future<void> _leaveReview(WidgetTester tester, String text) async {
@@ -296,7 +354,7 @@ Future<void> _leaveReview(WidgetTester tester, String text) async {
 
 // ── Tradie ───────────────────────────────────────────────────────────────────
 
-Future<void> _tradieTour(WidgetTester tester) async {
+Future<void> _tradieTour(WidgetTester tester, ManifestData manifest) async {
   await gotoLogin(tester);
   await Demo.signal('tradie_ready');
   await Demo.waitSignal(tester, 'admin_creds_done');
@@ -306,10 +364,14 @@ Future<void> _tradieTour(WidgetTester tester) async {
     _tr,
     'Tradie: login, dashboard, profile and onboarding wizard',
   );
-  await Demo.type(tester, find.byKey(const Key('email_field')), kTradieEmail);
+  await Demo.type(
+    tester,
+    find.byKey(const Key('email_field')),
+    manifest.tradieEmail,
+  );
   await tester.enterText(
     find.byKey(const Key('password_field')),
-    kTradiePassword,
+    manifest.tradiePassword,
   );
   await Demo.beat(tester, 0.5);
   await tester.tap(find.byKey(const Key('login_button')));
@@ -337,7 +399,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
     _tr,
     'Tradie: receives a job offer — request detail with live countdown',
   );
-  final tradie = await ApiHelper.tradieToken;
+  final tradie = await _tradieToken(manifest);
   Map<String, dynamic>? offer;
   await Demo.until(tester, () async {
     offer = await ApiHelper.getPendingOffer(jobId, tradie);
@@ -359,7 +421,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
   var accepted = await Demo.until(
     tester,
     () async =>
-        await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingPayment',
+        await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
     timeout: const Duration(seconds: 25),
   );
   if (!accepted && offer != null) {
@@ -373,18 +435,17 @@ Future<void> _tradieTour(WidgetTester tester) async {
     await Demo.until(
       tester,
       () async =>
-          await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingPayment',
+          await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
     );
   }
   // THNotice.success briefly appears after acceptance — hold for visibility.
   await Demo.beat(tester, 0.75);
   await Demo.signal('offer_accepted');
-  await Demo.waitSignal(tester, 'payment_verified');
 
   // Active job screen (tradie_job_detail_screen): StatusStrip, timeline, notices.
   await Demo.step(
     _tr,
-    'Tradie: payment verified — active job and status timeline',
+    'Tradie: booked — active job and status timeline',
   );
   appRouter.go('/tradie/jobs/$jobId');
   await Demo.beat(tester, 2);
@@ -417,7 +478,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
   await Demo.beat(tester);
   await ApiHelper.sendMessage(
     jobId,
-    await ApiHelper.homeownerToken,
+    await _homeownerToken(manifest),
     'Hi! The tap is under the sink — spare key is with the neighbour.',
   );
   await Demo.beat(tester, 2);

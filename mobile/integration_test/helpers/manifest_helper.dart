@@ -15,7 +15,12 @@ class ManifestData {
     required this.tradieEmail,
     required this.tradiePassword,
     required this.jobs,
+    this.path,
   });
+
+  /// Manifest file this data came from; null when the test_config.dart
+  /// defaults were used (no `E2E_MANIFEST`).
+  final String? path;
 
   final String homeownerEmail;
   final String homeownerPassword;
@@ -30,6 +35,20 @@ class ManifestData {
       }
     }
     return null;
+  }
+
+  /// Like [load] but never falls back to the seeded test_config.dart accounts:
+  /// callers that must run on the persona fabric (the demo tour) fail loudly
+  /// instead of silently driving the wrong users.
+  static ManifestData require() {
+    final data = load();
+    if (data.path == null) {
+      throw StateError(
+        'E2E_MANIFEST is not set — run via scripts/e2e-demo.py, or pass '
+        '--dart-define=E2E_MANIFEST=<path to e2e-personas.py manifest.json>',
+      );
+    }
+    return data;
   }
 
   static ManifestData load() {
@@ -69,6 +88,7 @@ class ManifestData {
       tradieEmail: tr?['email'] as String? ?? kTradieEmail,
       tradiePassword: tr?['password'] as String? ?? kTradiePassword,
       jobs: jobs,
+      path: path,
     );
   }
 }

@@ -26,7 +26,7 @@ How verification works (no DB writes, ever)
 Manifest (JSON, schemaVersion 1)
   {schemaVersion, runId, createdAtUtc, apiUrl, serviceId, tradeType,
    personas: [{role, index, email, password, firstName, lastName, userId,
-               verified, credentialId, hourlyRate}],
+               verified, credentialId, hourlyRate, bankAccountLast4}],
    jobs: []}            <- later tiers append {id, scenario, homeownerEmail, ...}
 It holds throw-away test passwords in clear text; the file is chmod 600 and
 lives under test-logs/ (git-ignored) by default.
@@ -348,6 +348,55 @@ def pick_service(token: str, forced):
     return want, "Plumber"  # service list unavailable; 1 is the seeded/journey id
 
 
+def upload_credential(jwt: str, filename: str, cred_type: str, tag: str) -> int:
+    """POST /tradie/credentials (multipart) as the tradie; returns the credential id."""
+    body, ctype = multipart(
+        {"type": cred_type},
+        "file",
+        filename,
+        _PNG + ("|qa-%s-%d" % (tag, time.time_ns())).encode(),
+        "image/png",
+    )
+    cred = call("POST", "/tradie/credentials", jwt, raw=body, content_type=ctype)
+    cred_id = (cred or {}).get("id")
+    if cred_id is None:
+        listing = call("GET", "/tradie/credentials", jwt)
+        cred_id = (listing[-1] if isinstance(listing, list) and listing else {}).get("id")
+    if cred_id is None:
+        raise StepFailed("credential upload (%s) returned no id" % filename)
+    return int(cred_id)
+
+
+def ensure_payout_details(jwt: str, p: dict):
+    """Give the tradie payout bank details through PUT /profile (real API, no DB
+    writes) unless the profile already has them, so the admin payout queue can
+    process this persona. NZ format XX-XXXX-XXXXXXX-XX; a throw-away test number.
+    PUT /profile overwrites first/last name and phone, so those are echoed back."""
+    profile = call("GET", "/profile", jwt) or {}
+    existing = str(profile.get("bankAccountNumber") or "")
+    if existing:
+        p["bankAccountLast4"] = re.sub(r"\D", "", existing)[-4:]
+        return False
+    number = "12-3456-%07d-00" % (9000000 + p["index"])
+    call(
+        "PUT",
+        "/profile",
+        jwt,
+        {
+            "firstName": profile.get("firstName") or p["firstName"],
+            "lastName": profile.get("lastName") or p["lastName"],
+            "phoneNumber": profile.get("phoneNumber"),
+            "bankAccountName": "%s %s" % (p["firstName"], p["lastName"]),
+            "bankAccountNumber": number,
+        },
+    )
+    check = call("GET", "/profile", jwt) or {}
+    if str(check.get("bankAccountNumber") or "") != number:
+        raise StepFailed("payout bank details for %s did not round-trip through /profile" % p["email"])
+    p["bankAccountLast4"] = re.sub(r"\D", "", number)[-4:]
+    return True
+
+
 def onboard_tradie(p: dict, jwt: str, service_id: int, trade_type: str, reviewer: str, run_id: str):
     n = p["index"]
     call(
@@ -375,21 +424,7 @@ def onboard_tradie(p: dict, jwt: str, service_id: int, trade_type: str, reviewer
         raise StepFailed("rate round-trip mismatch for %s: sent %s, stored %s" % (p["email"], rate, got))
     p["hourlyRate"] = "%d.00" % rate
 
-    body, ctype = multipart(
-        {"type": "License"},
-        "file",
-        "license-%s-%d.png" % (run_id, n),
-        _PNG + ("|qa-%s-%d-%d" % (run_id, n, time.time_ns())).encode(),
-        "image/png",
-    )
-    cred = call("POST", "/tradie/credentials", jwt, raw=body, content_type=ctype)
-    cred_id = (cred or {}).get("id")
-    if cred_id is None:
-        listing = call("GET", "/tradie/credentials", jwt)
-        cred_id = (listing[-1] if isinstance(listing, list) and listing else {}).get("id")
-    if cred_id is None:
-        raise StepFailed("credential upload for %s returned no id" % p["email"])
-    p["credentialId"] = int(cred_id)
+    p["credentialId"] = upload_credential(jwt, "license-%s-%d.png" % (run_id, n), "License", "%s-%d" % (run_id, n))
 
     call("POST", "/admin/credentials/%d/review" % p["credentialId"], reviewer, {"status": "Approved"})
     profile = call("GET", "/profile", jwt) or {}
@@ -400,6 +435,7 @@ def onboard_tradie(p: dict, jwt: str, service_id: int, trade_type: str, reviewer
             "credential %s approved but /profile.isVerified is %r for %s — verification rule changed?"
             % (p["credentialId"], profile.get("isVerified"), p["email"])
         )
+    ensure_payout_details(jwt, p)
 
 
 def mk_persona(run_id: str, role: str, n: int) -> dict:
@@ -414,6 +450,7 @@ def mk_persona(run_id: str, role: str, n: int) -> dict:
         "verified": False,
         "credentialId": None,
         "hourlyRate": None,
+        "bankAccountLast4": None,
     }
 
 
@@ -480,7 +517,7 @@ def provision(args) -> int:
             if manifest["serviceId"] is None:
                 manifest["serviceId"], manifest["tradeType"] = pick_service(jwt, args.service_id)
             onboard_tradie(p, jwt, manifest["serviceId"], manifest["tradeType"], reviewer, run_id)
-            say("tradie    %s  (credential %s approved, $%s/h)" % (p["email"], p["credentialId"], p["hourlyRate"]))
+            say("tradie    %s  (credential %s approved, $%s/h, payout ••%s)" % (p["email"], p["credentialId"], p["hourlyRate"], p["bankAccountLast4"]))
             save()
     except Unreachable:
         raise

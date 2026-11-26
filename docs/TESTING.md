@@ -98,7 +98,7 @@ Specs: `auth`, `credentials`, `payments`, `refunds`, `disputes`, `users`. Login 
 |---|---|---|
 | `scripts/web/render-probe.py` | A React page's rendered HTML against a JSON fixture (19 fixtures passing at last run) | `web/node_modules`, node |
 | `scripts/e2e-credentials.py` | Credential-review API end to end incl. DB state; cleans up after itself (`--inspect`, `--keep`) | stack up |
-| `scripts/e2e-demo.py` | Recordable three-POV walkthrough | stack, 2 iOS sims, Playwright Chromium |
+| `scripts/e2e-demo.py` | Recordable three-POV walkthrough on the persona fabric (provisions/reuses a manifest, `--manifest`, `--cleanup`) | stack + MailHog, 2 iOS sims, Playwright Chromium |
 | `scripts/p3-smoke.sh`, `p4-smoke.sh` | Offer flows; payment data seeding (manual exploration only) | stack |
 | `scripts/p12-smoke.sh` | Full v2 flow: post → pick → accept → in progress → adjust → complete → approve → pay → verify → payout | stack, `JobFlow:Version=2` |
 | `scripts/address-resolution-tests`, `flutter test test/address_resolution_test.dart` | LINZ resolver contract and client behaviour | LINZ key (server) |

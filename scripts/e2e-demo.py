@@ -8,8 +8,8 @@ record and watch it:
                                   payment verification, completed job, payout,
                                   dispute resolution, audit log
     homeowner (iOS simulator)     onboarding, login, post job, matching (radar
-                                  animation), match result, pay by bank transfer,
-                                  confirm completion, review, dispute
+                                  animation), booked job, approve itemised amount,
+                                  pay by bank transfer, review, dispute
     tradie    (iOS simulator)     login, dashboard, onboarding wizard, request
                                   detail + OfferCountdown, accept offer, check
                                   in, chat, check out, rate homeowner
@@ -21,9 +21,22 @@ paced (--pace) with captions, a visible cursor and a console + timeline of what
 is on screen. Anything the UI cannot do natively (native photo picker, LINZ
 address lookup without a key) falls back to the API and is listed at the end.
 
-Usage (repo root, `docker compose up` running, two iOS simulators available):
+Accounts: the demo runs on the persona fabric (docs/todos/08_e2e_persona_fabric_plan.md),
+not the seeded *@fixo.test accounts. It provisions a fresh run through
+scripts/e2e-personas.py (real signup / OTP / credential review, no DB writes),
+hands the manifest to every actor (E2E_MANIFEST), records the demo jobs in the
+manifest's `jobs` array (scenario "demo" / "demo-dispute", same shape as
+e2e-journey.py's record_job) and deactivates the run's accounts on exit.
+The homeowner's job is a direct request to the manifest tradie (the same path
+e2e-journey.py uses), because the post-job form needs LINZ_API_KEY and quick
+match would offer the job to a seeded tradie instead.
 
-    python3 scripts/e2e-demo.py                    # 15s countdown, then play
+Usage (repo root, `docker compose up` + MailHog running, two iOS simulators):
+
+    python3 scripts/e2e-demo.py                    # provision personas, 15s countdown, play
+    python3 scripts/e2e-demo.py --manifest PATH    # reuse an existing fabric run (not deactivated on exit)
+    python3 scripts/e2e-demo.py --keep-accounts    # leave the provisioned accounts active
+    python3 scripts/e2e-demo.py --cleanup --manifest PATH   # deactivate that run's accounts and exit
     python3 scripts/e2e-demo.py --record           # screen-record the main display
     python3 scripts/e2e-demo.py --capture-sims     # save a PNG per scene per simulator
     python3 scripts/e2e-demo.py --record --capture-sims  # both
@@ -32,7 +45,7 @@ Usage (repo root, `docker compose up` running, two iOS simulators available):
     python3 scripts/e2e-demo.py --pace 5 --say     # slower, with spoken scene titles
     python3 scripts/e2e-demo.py --only-preflight   # check the environment, change nothing
 
-Needs python3 (stdlib only), docker compose stack, Flutter, Xcode simulators,
+Needs python3 (stdlib only), docker compose stack + MailHog, Flutter, Xcode simulators,
 node + web/node_modules with Playwright's Chromium. Screen recording needs
 macOS Screen Recording permission for your terminal.
 """
@@ -40,6 +53,7 @@ macOS Screen Recording permission for your terminal.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -62,12 +76,22 @@ ADMIN_SCRIPT = REPO / "scripts" / "e2e-demo" / "admin_pov.mjs"
 
 API = os.environ.get("FIXO_API_URL", "http://localhost:5000").rstrip("/") + "/api"
 FLUTTER = os.environ.get("FLUTTER_BIN") or shutil.which("flutter") or str(Path.home() / "Develop/flutter/bin/flutter")
-PG_USER = os.environ.get("POSTGRES_USER", "fixo")
-PG_DB = os.environ.get("POSTGRES_DB", "fixo")
-STAFF = ("staff@fixo.test", "Test1234!")
-TRADIE = ("tradie-verified@fixo.test", "Test1234!")
-DEMO_TRADIE = ("tradie@fixo.nz", "Demo1!Fixo")
-CRED_PREFIX = "demo-tour-"
+CRED_PREFIX = "demo-tour-"  # file-name marker; admin_pov.mjs only touches credential rows carrying it
+# Signal-server data key -> scenario recorded in the manifest's `jobs` array.
+DEMO_JOB_SCENARIOS = {"job": "demo", "dispute_job": "demo-dispute"}
+
+
+def _load_script(name: str, filename: str):
+    """Import a hyphen-named sibling script so the demo reuses the fabric's own helpers."""
+    spec = importlib.util.spec_from_file_location(name, REPO / "scripts" / filename)
+    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    return mod
+
+
+PERSONAS = _load_script("e2e_personas", "e2e-personas.py")  # provisioning, credential upload, payout details
+JOURNEY = _load_script("e2e_journey", "e2e-journey.py")  # apply_manifest / record_job
 
 COLORS = {"admin": "35", "homeowner": "36", "tradie": "33", "demo": "32", "warn": "31"}
 
@@ -102,6 +126,13 @@ class Show:
         self.say = say
         # step_callbacks are called with the step dict on every new step signal.
         self.step_callbacks: list = []
+        # on_data(key, value) runs BEFORE a data value is published, so a consumer
+        # that sees the value can rely on side effects (manifest job record) being done.
+        self.on_data = None
+
+    def add_note(self, actor: str, message: str) -> None:
+        self.notes.append({"t": round(self.offset(), 1), "actor": actor, "message": message})
+        log("warn", f"{self.stamp()}  [{actor}] fallback: {message}")
 
     def offset(self) -> float:
         return 0.0 if self.t0 is None else time.time() - self.t0
@@ -142,6 +173,11 @@ def make_handler(show: Show):
             parts = self.path.strip("/").split("/")
             body = self._body()
             kind = parts[0]
+            if kind == "data" and len(parts) == 2 and show.on_data:
+                try:
+                    show.on_data(parts[1], str(body.get("value", "")))
+                except Exception as err:  # noqa: BLE001 - never stall the show for bookkeeping
+                    log("warn", f"manifest job record failed for {parts[1]}: {err}")
             with show.lock:
                 if kind == "signal" and len(parts) == 2:
                     show.signals.setdefault(parts[1], time.time())
@@ -198,23 +234,6 @@ def http(method: str, url: str, body: object = None, token: str | None = None, t
 def login(email: str, password: str) -> str | None:
     status, body = http("POST", f"{API}/auth/login", {"email": email, "password": password})
     return body.get("token") if status == 200 and isinstance(body, dict) else None
-
-
-def set_availability(creds: tuple[str, str], available: bool) -> None:
-    token = login(*creds)
-    if token:
-        http("POST", f"{API}/profile/availability", {"available": available}, token)
-
-
-def psql(sql: str) -> str:
-    proc = subprocess.run(
-        ["docker", "compose", "exec", "-T", "db", "psql", "-U", PG_USER, "-d", PG_DB, "-tA",
-         "-v", "ON_ERROR_STOP=1", "-c", sql],
-        cwd=REPO, capture_output=True, text=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip())
-    return proc.stdout.strip()
 
 
 # ── Simulator screenshot capture ───────────────────────────────────────────────
@@ -285,8 +304,59 @@ def pick_simulators(args) -> tuple[str, str]:
     return homeowner, tradie
 
 
+# ── Persona fabric ─────────────────────────────────────────────────────────────
+
+
+def require_local_stack() -> None:
+    """Same safety rule as the fabric: local docker stack only."""
+    try:
+        PERSONAS.api_base()
+        PERSONAS.mailhog_base()
+    except PERSONAS.Unreachable as err:
+        die(str(err))
+
+
+def load_manifest(path: Path) -> dict:
+    try:
+        m = json.loads(Path(path).read_text())
+    except (OSError, ValueError) as err:
+        die(f"cannot read manifest {path}: {err}")
+    if m.get("schemaVersion") != 1:
+        die(f"manifest {path} has schemaVersion {m.get('schemaVersion')!r}, expected 1")
+    missing = [r for r in ("homeowner", "tradie", "staff") if persona_of(m, r) is None]
+    if missing:
+        die(f"manifest {path} has no {'/'.join(missing)} persona — the demo needs staff for the admin scenes "
+            "(provision with e2e-personas.py --staff 1)")
+    return m
+
+
+def persona_of(manifest: dict, role: str) -> dict | None:
+    return next((p for p in manifest.get("personas", []) if p.get("role") == role), None)
+
+
+def check_fabric(manifest: dict) -> list[str]:
+    """Read-only: every persona must log in and the tradie must be verified. Returns warnings."""
+    warnings: list[str] = []
+    tokens = {}
+    for role in ("staff", "homeowner", "tradie"):
+        p = persona_of(manifest, role)
+        tokens[role] = login(p["email"], p["password"])
+        if not tokens[role]:
+            die(f"cannot log in as manifest {role} {p['email']} (deactivated by --cleanup? re-provision)")
+    prof = http("GET", f"{API}/profile", token=tokens["tradie"])[1] or {}
+    if prof.get("isVerified") is not True:
+        die("manifest tradie is not verified — fabric personas must hold an approved credential")
+    if prof.get("isAvailable") is False:
+        warnings.append("manifest tradie is unavailable; the demo will set availability through the API")
+    if not prof.get("bankAccountNumber"):
+        warnings.append("manifest tradie has no payout bank details; the demo will add them through the API "
+                        "(e2e-personas.py ensure_payout_details) so the admin payout scene can run")
+    return warnings
+
+
 def preflight(args) -> tuple[str, str]:
     log("demo", "preflight")
+    require_local_stack()
     status, _ = http("POST", f"{API}/auth/login", {})
     if status == 0:
         die(f"API not reachable at {API} — start the stack: `docker compose up -d`")
@@ -296,15 +366,107 @@ def preflight(args) -> tuple[str, str]:
         die("web/node_modules missing Playwright — run `npm ci` in web/")
     if not any((Path.home() / "Library/Caches/ms-playwright").glob("chromium-*")):
         die("Playwright Chromium missing — run `npx playwright install chromium` in web/")
-    seed = subprocess.run(["bash", str(REPO / "scripts/seed-test-accounts.sh")], cwd=REPO, capture_output=True, text=True)
-    if seed.returncode != 0:
-        die(f"seed-test-accounts.sh failed:\n{seed.stdout[-800:]}{seed.stderr[-400:]}")
-    for label, creds in (("staff", STAFF), ("tradie", TRADIE)):
-        if not login(*creds):
-            die(f"cannot log in as {label} {creds[0]}")
+    if args.manifest:
+        manifest = load_manifest(Path(args.manifest))
+        for w in check_fabric(manifest):
+            log("demo", f"note: {w}")
+        log("demo", f"manifest OK: run {manifest.get('runId')} ({args.manifest})")
+    else:
+        # Fresh provisioning needs MailHog (OTP + staff invite mails) and the superadmin login.
+        if http("GET", f"{PERSONAS.mailhog_base()}/api/v2/messages?limit=1")[0] != 200:
+            die(f"MailHog not reachable at {PERSONAS.mailhog_base()} — e2e-personas.py reads OTPs from it "
+                "(`docker compose up -d`), or pass --manifest PATH to reuse a fabric run")
+        try:
+            PERSONAS.admin_login()
+        except PERSONAS.Unreachable as err:
+            die(str(err))
+        log("demo", "personas will be provisioned fresh (scripts/e2e-personas.py --staff 1)")
     udids = pick_simulators(args)
     log("demo", f"homeowner sim {udids[0]} | tradie sim {udids[1]}")
     return udids
+
+
+def provision_fabric(run_dir: Path) -> Path:
+    """Runs e2e-personas.py for this demo run and returns the manifest path it reports."""
+    run_id = "demo" + time.strftime("%m%d%H%M%S")
+    cmd = [sys.executable, str(REPO / "scripts" / "e2e-personas.py"), "--run-id", run_id,
+           "--homeowners", "1", "--tradies", "1", "--staff", "1", "--retry", "2"]
+    log("demo", f"provisioning personas: {' '.join(cmd[1:])}")
+    proc = subprocess.Popen(cmd, cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    lines: list[str] = []
+    for line in proc.stdout:  # type: ignore[union-attr]
+        lines.append(line.rstrip())
+        if line.strip():
+            log("demo", f"personas | {line.rstrip()}")
+    proc.wait()
+    (run_dir / "personas.log").write_text("\n".join(lines) + "\n")
+    found = re.search(r"^MANIFEST=(.+)$", "\n".join(lines), re.M)
+    if proc.returncode != 0 or not found:
+        partial = re.search(r"partial manifest: (.+?)\)", "\n".join(lines))
+        if partial and Path(partial.group(1)).is_file():  # don't leave half a run active
+            cleanup_fabric(Path(partial.group(1)))
+        die(f"persona provisioning failed (exit {proc.returncode}); see {run_dir / 'personas.log'}")
+    return Path(found.group(1)).resolve()
+
+
+def cleanup_fabric(manifest_path: Path) -> bool:
+    """e2e-personas.py --cleanup: deactivates the run's qa+ accounts (rows stay, logins stop)."""
+    log("demo", f"deactivating personas of {manifest_path}")
+    proc = subprocess.run([sys.executable, str(REPO / "scripts" / "e2e-personas.py"), "--cleanup", str(manifest_path)],
+                          cwd=REPO, capture_output=True, text=True)
+    for line in (proc.stdout + proc.stderr).splitlines():
+        if line.strip():
+            log("demo", f"cleanup | {line}")
+    if proc.returncode != 0:
+        log("warn", f"persona cleanup reported failures (exit {proc.returncode})")
+    return proc.returncode == 0
+
+
+def prepare_fabric(manifest: dict, show: Show) -> None:
+    """Fills gaps the demo needs, strictly through the API (never SQL), and reports each as a fallback."""
+    tr = persona_of(manifest, "tradie")
+    jwt = login(tr["email"], tr["password"])
+    try:
+        prof = http("GET", f"{API}/profile", token=jwt)[1] or {}
+        if prof.get("isAvailable") is False:
+            http("POST", f"{API}/profile/availability", {"available": True}, jwt)
+            show.add_note("demo", "tradie availability set to true through POST /profile/availability "
+                                  "(manifest persona was unavailable)")
+        if PERSONAS.ensure_payout_details(jwt, tr):
+            show.add_note("demo", "tradie payout bank details added through PUT /profile "
+                                  "(manifest persona had none; admin payout scene needs them) — fabric gap, "
+                                  "fixed in e2e-personas.py for new runs")
+        # Two PENDING credentials for the admin's approve/reject scene. Fabric personas arrive
+        # already verified (one approved credential), so these only add queue rows; the tradie stays
+        # verified. Uploaded as the tradie through the real route: the native file picker can't be driven.
+        for cred_type in ("Insurance", "Certification"):
+            PERSONAS.upload_credential(jwt, f"{CRED_PREFIX}{cred_type.lower()}.png", cred_type,
+                                       f"demo-{manifest.get('runId')}-{cred_type.lower()}")
+        show.add_note("demo", "two pending tradie credentials uploaded through POST /tradie/credentials "
+                              "(native file picker can't be driven) for the admin approve/reject scene")
+    except (PERSONAS.StepFailed, PERSONAS.Unreachable) as err:
+        raise RuntimeError(f"preparing the fabric personas failed: {err}") from err
+
+
+def make_job_recorder(manifest_path: Path):
+    """on_data hook: append demo job ids to the manifest with e2e-journey.py's own record_job."""
+    lock = threading.Lock()
+
+    def record(key: str, value: str) -> None:
+        scenario = DEMO_JOB_SCENARIOS.get(key)
+        if not scenario or not value.isdigit():
+            return
+        with lock:
+            JOURNEY.apply_manifest(str(manifest_path))  # binds HOMEOWNER/TRADIE + MANIFEST_PATH
+            if any(j.get("id") == int(value) for j in JOURNEY._read_manifest(str(manifest_path)).get("jobs", [])):
+                return
+            JOURNEY.record_job(int(value), scenario)
+            log("demo", f"recorded job {value} in manifest as scenario '{scenario}'")
+
+    return record
+
+
+# ── Admin web ──────────────────────────────────────────────────────────────────
 
 
 def ensure_web(port: int) -> subprocess.Popen | None:
@@ -327,39 +489,6 @@ def ensure_web(port: int) -> subprocess.Popen | None:
         time.sleep(1)
     proc.terminate()
     die("admin web did not start (is the port taken by another dev server? use --web-port)")
-
-
-def seed_credentials() -> int:
-    profile = psql(f"""select p."Id" from "TradieProfiles" p join "AspNetUsers" u on u."Id" = p."UserId"
-                      where u."Email" = '{TRADIE[0]}';""")
-    if not profile.isdigit():
-        die("tradie-verified has no TradieProfile — run scripts/seed-test-accounts.sh")
-    rows = ", ".join(
-        f"({profile}, '{t}', 'credentials/{CRED_PREFIX}{t.lower()}.pdf', '{CRED_PREFIX}{t.lower()}.pdf', 'Pending')"
-        for t in ("Insurance", "Certification")
-    )
-    psql(f'insert into "TradieCredentials" ("TradieProfileId","Type","FileKey","OriginalFileName","Status") values {rows};')
-    return int(profile)
-
-
-def seed_bank_details(profile: int) -> None:
-    """Gives the test tradie payout bank details if it has none (does not
-    overwrite anything real) so the admin's Process button is enabled."""
-    psql(
-        f'update "TradieProfiles" set "BankAccountName" = \'Tradie Verified\', '
-        f'"BankAccountNumber" = \'12-3456-7890123-00\' '
-        f'where "Id" = {profile} and ("BankAccountNumber" is null or "BankAccountNumber" = \'\');'
-    )
-
-
-def cleanup_credentials(profile: int | None) -> None:
-    try:
-        psql(f"""delete from "TradieCredentials" where "OriginalFileName" like '{CRED_PREFIX}%';""")
-        if profile:
-            psql(f"""update "TradieProfiles" set "IsVerified" = exists (select 1 from "TradieCredentials" c
-                    where c."TradieProfileId" = {profile} and c."Status" = 'Approved') where "Id" = {profile};""")
-    except RuntimeError as err:
-        log("warn", f"credential cleanup failed: {err}")
 
 
 # ── Processes ──────────────────────────────────────────────────────────────────
@@ -423,9 +552,26 @@ def arrange_windows(homeowner_udid: str, tradie_udid: str) -> None:
     subprocess.run(["osascript", "-e", script], capture_output=True, timeout=15)
 
 
-def write_report(show: Show, run_dir: Path, ok: bool) -> None:
-    (run_dir / "timeline.json").write_text(json.dumps({"ok": ok, "steps": show.steps, "notes": show.notes}, indent=2))
-    lines = ["# e2e demo timeline", "", "| time | actor | scene |", "|---|---|---|"]
+def write_report(show: Show, run_dir: Path, ok: bool, manifest_path: Path | None = None,
+                 provisioned: bool = False) -> None:
+    jobs: list = []
+    run_id = None
+    if manifest_path and manifest_path.is_file():
+        try:
+            m = json.loads(manifest_path.read_text())
+            run_id = m.get("runId")
+            jobs = [j for j in m.get("jobs", []) if str(j.get("scenario", "")).startswith("demo")]
+        except ValueError:
+            pass
+    (run_dir / "timeline.json").write_text(json.dumps(
+        {"ok": ok, "manifest": str(manifest_path) if manifest_path else None, "runId": run_id,
+         "provisionedByDemo": provisioned, "demoJobs": jobs, "steps": show.steps, "notes": show.notes}, indent=2))
+    lines = ["# e2e demo timeline", ""]
+    if manifest_path:
+        lines += [f"Persona fabric run `{run_id}` — manifest `{manifest_path}`"
+                  + (" (provisioned by this demo)" if provisioned else " (reused)"),
+                  "Demo jobs: " + (", ".join(f"{j['id']} ({j['scenario']})" for j in jobs) or "none recorded"), ""]
+    lines += ["| time | actor | scene |", "|---|---|---|"]
     for s in show.steps:
         m, sec = divmod(int(s["t"]), 60)
         lines.append(f"| {m:02d}:{sec:02d} | {s['actor']} | {s['title']} |")
@@ -456,8 +602,21 @@ def main() -> int:
     ap.add_argument("--window", default="1280x860+0+0", help="admin browser window WxH+X+Y")
     ap.add_argument("--no-arrange", action="store_true", help="don't try to position simulator windows")
     ap.add_argument("--build-timeout", type=int, default=900, help="seconds allowed for each simulator build")
-    ap.add_argument("--only-preflight", action="store_true")
+    ap.add_argument("--only-preflight", action="store_true", help="check the environment, change nothing")
+    ap.add_argument("--manifest", metavar="PATH",
+                    help="reuse an existing persona-fabric manifest instead of provisioning a new run "
+                         "(its accounts are not deactivated on exit)")
+    ap.add_argument("--keep-accounts", action="store_true",
+                    help="don't deactivate the accounts this run provisioned when it exits")
+    ap.add_argument("--cleanup", action="store_true",
+                    help="with --manifest PATH: deactivate that run's accounts (e2e-personas.py --cleanup) and exit")
     args = ap.parse_args()
+
+    if args.cleanup:
+        if not args.manifest:
+            die("--cleanup needs --manifest PATH (the run printed it, and timeline.md records it)")
+        require_local_stack()
+        return 0 if cleanup_fabric(Path(args.manifest).resolve()) else 1
 
     homeowner_udid, tradie_udid = preflight(args)
     if args.only_preflight:
@@ -481,28 +640,35 @@ def main() -> int:
     actors: list[Actor] = []
     vite: subprocess.Popen | None = None
     recorder: subprocess.Popen | None = None
-    profile: int | None = None
+    manifest_path: Path | None = None
+    provisioned = False
     ok = False
     try:
         vite = ensure_web(args.web_port)
-        set_availability(DEMO_TRADIE, False)
-        set_availability(TRADIE, True)
-        profile = seed_credentials()
-        seed_bank_details(profile)
         log("demo", f"logs: {run_dir}")
+        if args.manifest:
+            manifest_path = Path(args.manifest).resolve()
+        else:
+            manifest_path = provision_fabric(run_dir)
+            provisioned = True
+        manifest = load_manifest(manifest_path)
+        log("demo", f"persona fabric run {manifest.get('runId')} -> {manifest_path}")
+        prepare_fabric(manifest, show)
+        show.on_data = make_job_recorder(manifest_path)
 
         # Pass --single-flow through so the mobile test can skip the dispute step.
         dart = lambda persona: [  # noqa: E731
             FLUTTER, "test", "integration_test/demo_tour_test.dart", "--reporter", "expanded",
             "--device-id", homeowner_udid if persona == "homeowner" else tradie_udid,
-            "--dart-define", f"FIXO_PERSONA={persona}", "--dart-define", f"DEMO_CTL={ctl}",
+            "--dart-define", f"FIXO_PERSONA={persona}", "--dart-define", f"E2E_MANIFEST={manifest_path}",
+            "--dart-define", f"DEMO_CTL={ctl}",
             "--dart-define", f"DEMO_PACE={int(args.pace)}", "--dart-define", f"DEMO_THEME={args.theme}",
             "--dart-define", f"DEMO_SINGLE_FLOW={'true' if args.single_flow else 'false'}",
             "--dart-define", "FIXO_DISABLE_PUSH=true",
         ]
 
         admin = Actor("admin", ["node", str(ADMIN_SCRIPT)], REPO, {
-            **os.environ, "DEMO_CTL": ctl, "DEMO_PACE": str(args.pace), "DEMO_WINDOW": args.window,
+            **os.environ, "E2E_MANIFEST": str(manifest_path), "DEMO_CTL": ctl, "DEMO_PACE": str(args.pace), "DEMO_WINDOW": args.window,
             "DEMO_WEB_URL": f"http://localhost:{args.web_port}", "DEMO_API_URL": API,
             "DEMO_SINGLE_FLOW": "true" if args.single_flow else "false",
         }, run_dir / "admin.log")
@@ -578,10 +744,10 @@ def main() -> int:
             a.stop()
         if vite:
             vite.terminate()
-        set_availability(DEMO_TRADIE, True)
-        cleanup_credentials(profile)
         server.shutdown()
-        write_report(show, run_dir, ok)
+        write_report(show, run_dir, ok, manifest_path, provisioned)
+        if provisioned and manifest_path and not args.keep_accounts:
+            cleanup_fabric(manifest_path)
 
     print()
     log("demo", f"{'PASS' if ok else 'FAIL'} — {len(show.steps)} scenes in {show.stamp()}")
