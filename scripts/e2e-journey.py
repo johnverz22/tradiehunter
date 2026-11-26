@@ -61,6 +61,9 @@ TRADIE = ("tradie-verified@fixo.test", "Test1234!")
 STAFF = ("staff@fixo.test", "Test1234!")
 DEMO_TRADIE = ("tradie@fixo.nz", "Demo1!Fixo")  # competes for offers; parked
 
+# Real-looking street address for fixture jobs (the API path bypasses the LINZ
+# lookup, so any well-formed string works; keep it realistic for the demo).
+DEMO_ADDRESS = "1 Queen Street, Auckland CBD, Auckland 1010"
 HTTP_TIMEOUT = 15
 POLL_TIMEOUT = 45
 POLL_INTERVAL = 2
@@ -406,7 +409,7 @@ def run_journey(rec):
                 "urgency": "Medium",
                 "latitude": -36.8485,
                 "longitude": 174.7633,
-                "address": "1 Test St, Auckland",
+                "address": DEMO_ADDRESS,
                 "serviceId": 1,
                 "timingPreference": "Flexible",
                 "estimatedHours": 2,
@@ -586,7 +589,7 @@ def run_competing_quotes(rec):
             "title": "Quotes — %d" % int(time.time() * 1000),
             "description": "Competing quotes journey job.",
             "urgency": "Medium", "latitude": -36.8485, "longitude": 174.7633,
-            "address": "1 Test St, Auckland", "serviceId": 1, "timingPreference": "Flexible",
+            "address": DEMO_ADDRESS, "serviceId": 1, "timingPreference": "Flexible",
             "jobType": "Project", "budgetMin": 1200, "budgetMax": 2400,
             "scopeNotes": "Competing quotes journey scope.",
         })
@@ -656,7 +659,7 @@ def run_competing_quotes(rec):
     return job
 
 
-def _create_hourly_job(ho, prefix="Hourly", lat=-36.8485, lng=174.7633, address="1 Test St, Auckland"):
+def _create_hourly_job(ho, prefix="Hourly", lat=-36.8485, lng=174.7633, address=DEMO_ADDRESS):
     body = post("/jobs", ho, {
         "title": "%s — %d" % (prefix, int(time.time() * 1000)),
         "description": "%s journey job." % prefix,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -183,8 +184,12 @@ class _ThAppState extends ConsumerState<ThApp> {
       themeMode: themeMode,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
-      builder: (context, child) =>
-          THNoticeHost(child: child ?? const SizedBox()),
+      // Theme-aware status-bar icons for every screen (light theme → dark
+      // icons). `context` here sits below MaterialApp's resolved Theme.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: THTheme.systemOverlayStyle(Theme.of(context).brightness),
+        child: THNoticeHost(child: child ?? const SizedBox()),
+      ),
     );
   }
 }

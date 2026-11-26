@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +18,7 @@ import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import '../shared/job_live_updates.dart';
 
 class HoPaymentScreen extends ConsumerStatefulWidget {
   const HoPaymentScreen({super.key, required this.jobId});
@@ -346,13 +349,29 @@ class HoPaymentStatusScreen extends ConsumerStatefulWidget {
       _HoPaymentStatusScreenState();
 }
 
-class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen> {
+class _HoPaymentStatusScreenState extends ConsumerState<HoPaymentStatusScreen>
+    with JobLiveUpdates<HoPaymentStatusScreen> {
+  @override
+  String get liveJobId => widget.jobId;
+
+  // Verify / reject both move the job status server-side, so the job group's
+  // JobStatusChanged is the cue to re-read the payment. Adjustments don't
+  // affect the receipt.
+  @override
+  bool get liveIncludesAdjustments => false;
+
+  @override
+  void onJobLiveUpdate() {
+    unawaited(ref.read(paymentViewModelProvider(widget.jobId).notifier).load());
+  }
+
   @override
   void initState() {
     super.initState();
     Future.microtask(
       () => ref.read(paymentViewModelProvider(widget.jobId).notifier).load(),
     );
+    startJobLiveUpdates();
   }
 
   @override

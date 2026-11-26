@@ -215,7 +215,6 @@ class _TrJobBookedScreenState extends ConsumerState<TrJobBookedScreen> {
         onReportNoShow: _reportNoShow,
         onDispute: _openDispute,
       ),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       stickyBar: THStickyBar(
         children: [

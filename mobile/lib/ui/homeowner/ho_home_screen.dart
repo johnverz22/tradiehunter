@@ -26,6 +26,7 @@ import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
+import '../shared/job_live_updates.dart' show liveJobIds;
 import '../shared/notification_center.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
@@ -61,6 +62,7 @@ class ThHomeScreen extends ConsumerStatefulWidget {
 class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
   StreamSubscription<JobStatusEvent>? _statusSubscription;
   bool _showPast = false;
+  late final JobHubClient _hub;
 
   @override
   void initState() {
@@ -68,11 +70,19 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
     Future.microtask(
       () => ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs(),
     );
+    _hub = ref.read(jobHubClientProvider);
+    // JobStatusChanged only reaches clients that joined the job's group, so
+    // keep the group joined for every job on this list while it is showing.
+    ref.listenManual<JobsState>(
+      jobsViewModelProvider,
+      (_, next) => unawaited(_hub.setWatchedJobs(this, liveJobIds(next.jobs))),
+      fireImmediately: true,
+    );
     _initSignalR();
   }
 
   Future<void> _initSignalR() async {
-    final hub = ref.read(jobHubClientProvider);
+    final hub = _hub;
     await hub.connect(baseUrl: resolveBaseUrl());
     if (!mounted) return;
     _statusSubscription = hub.onJobStatusChanged.listen((e) {
@@ -85,6 +95,7 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
   @override
   void dispose() {
     _statusSubscription?.cancel();
+    unawaited(_hub.clearWatchedJobs(this));
     super.dispose();
   }
 

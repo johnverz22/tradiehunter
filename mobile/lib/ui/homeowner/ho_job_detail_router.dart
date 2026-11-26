@@ -1,14 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../repositories/job_hub_client.dart';
-import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../feedback/th_state_view.dart';
+import '../shared/job_live_updates.dart';
 import 'ho_booked_screen.dart';
 import 'ho_extra_cost_screen.dart';
 import 'ho_job_detail_fallback_screen.dart';
@@ -29,31 +26,20 @@ class ThJobDetailRouter extends ConsumerStatefulWidget {
   ConsumerState<ThJobDetailRouter> createState() => _ThJobDetailRouterState();
 }
 
-class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter> {
-  StreamSubscription<JobStatusEvent>? _statusSubscription;
-  StreamSubscription<JobAdjustmentEvent>? _adjustmentSubscription;
+class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter>
+    with JobLiveUpdates<ThJobDetailRouter> {
+  @override
+  String get liveJobId => widget.jobId;
 
   @override
   void initState() {
     super.initState();
-    final hub = ref.read(jobHubClientProvider);
-    _statusSubscription = hub.onJobStatusChanged.listen((event) {
-      if (event.jobId == widget.jobId) {
-        ref.invalidate(hoJobDetailProvider(widget.jobId));
-      }
-    });
-    _adjustmentSubscription = hub.onAdjustmentChanged.listen((event) {
-      if (event.jobId == widget.jobId) {
-        ref.invalidate(hoJobDetailProvider(widget.jobId));
-      }
-    });
+    startJobLiveUpdates();
   }
 
   @override
-  void dispose() {
-    _statusSubscription?.cancel();
-    _adjustmentSubscription?.cancel();
-    super.dispose();
+  void onJobLiveUpdate() {
+    ref.invalidate(hoJobDetailProvider(widget.jobId));
   }
 
   @override
