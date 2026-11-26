@@ -11,7 +11,6 @@
 
 - [ ] `app_router.dart` changes are limited to screen builders / `_pick(...)` unless the owner has explicitly approved a route, payload, or notification destination change.
 - [ ] Existing route paths, `extra` payload types, and push-notification destinations remain covered by route-contract tests.
-- [ ] This PR does not add a screen id to `v2Screens` before the flow tests and device QA pass.
 
 ## Design follow-up
 

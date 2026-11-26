@@ -3,43 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../ui/gallery/screen_gallery.dart' show ScreenGalleryPage;
-import '../views/main_layout.dart';
-import '../views/splash_screen.dart';
-import '../views/onboarding/onboarding_view.dart';
-import '../views/login_screen.dart';
-import '../views/signup_screen.dart';
-import '../views/profile_screen.dart';
-import '../views/settings_screen.dart';
-import '../views/auth/role_select_screen.dart';
-import '../views/auth/otp_verification_screen.dart';
-import '../views/homeowner/homeowner_dashboard_view.dart';
-import '../views/homeowner/homeowner_job_detail_screen.dart';
-import '../views/tradie/tradie_dashboard_view.dart';
 import '../ui/tradie/tr_earnings_screen.dart';
 import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
-import '../views/tradie/tradie_onboarding_wizard.dart';
-import '../views/tradie/request_detail_screen.dart';
-import '../views/tradie/tradie_job_detail_screen.dart';
-import '../views/jobs/jobs_list_screen.dart';
-import '../views/jobs/post_job_screen.dart';
-import '../views/jobs/matching_screen.dart';
-import '../views/jobs/tradie_list_screen.dart';
-import '../views/jobs/quotes_screen.dart';
-import '../views/chat/chat_screen.dart';
-import '../views/chat/messages_list_screen.dart';
-import '../views/profile/public_profile_screen.dart';
-import '../views/payment/payment_screen.dart';
-import '../views/payment/payment_status_screen.dart';
+import '../ui/homeowner/ho_matching_screen.dart';
 import '../ui/homeowner/ho_payment_screen.dart';
-import '../views/jobs/dispute_screen.dart';
-import '../views/homeowner/categories_screen.dart';
-import '../views/homeowner/browse_tradies_screen.dart';
-import '../views/notifications/notifications_screen.dart';
-import '../views/states/designed_empty_state.dart';
-import '../widgets/fixo_buttons.dart';
-import '../feedback/notice_gallery.dart';
-import '../ui/ui_flags.dart';
 import '../ui/auth/splash_screen.dart';
 import '../ui/auth/onboarding_screen.dart';
 import '../ui/auth/sign_in_screen.dart';
@@ -79,12 +47,6 @@ final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'shell',
 );
 
-/// Per-screen v1↔v2 switch (migration plan §4.0): the route builds the v2
-/// screen only when its id is in [v2Screens] (or --dart-define=UI_V2=all);
-/// otherwise it builds the old screen. Rollback of any screen is a one-line
-/// flag change.
-Widget _pick(String id, Widget v1, Widget v2) => isV2Screen(id) ? v2 : v1;
-
 /// Optional route payloads are treated as absent when deep links or stale
 /// callers provide a different shape.
 String? routeCategorySeed(Object? extra) => extra is String ? extra : null;
@@ -104,20 +66,12 @@ final GoRouter appRouter = GoRouter(
   // E-job-not-found (v1.6.2 frames-states.html) — unknown deep links render
   // the designed error screen instead of a blank page.
   errorBuilder: (context, state) => Scaffold(
-    appBar: FixoAppBar(title: 'Job not found'),
-    body: DesignedEmptyState(
-      variant: DesignedStateVariant.jobNotFound,
+    body: ThStateView.preset(
+      ThStatePreset.jobNotFound,
       onAction: () => appRouter.go('/home'),
     ),
   ),
   routes: [
-    // Debug-only notice gallery — stripped from release builds.
-    if (kDebugMode)
-      GoRoute(
-        path: '/debug/notice-gallery',
-        builder: (context, state) =>
-            maybeNoticeGallery() ?? const SizedBox.shrink(),
-      ),
     // v2 design gallery (migration plan 2.6) — debug only.
     if (kDebugMode)
       GoRoute(
@@ -128,31 +82,18 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     // 01-splash
-    GoRoute(
-      path: '/',
-      builder: (context, state) =>
-          _pick('splash', const SplashScreen(), const ThSplashScreen()),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const ThSplashScreen()),
     // 02-onboarding
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => _pick(
-        'onboarding',
-        const OnboardingScreen(),
-        const ThOnboardingScreen(),
-      ),
+      builder: (context, state) => const ThOnboardingScreen(),
     ),
     // 03-login
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) =>
-          _pick('sign_in', const LoginScreen(), const ThSignInScreen()),
-    ),
+    GoRoute(path: '/auth', builder: (context, state) => const ThSignInScreen()),
     // 04-signup
     GoRoute(
       path: '/signup',
-      builder: (context, state) =>
-          _pick('signup', const SignupScreen(), const ThSignUpScreen()),
+      builder: (context, state) => const ThSignUpScreen(),
     ),
 
     // Shown after a new Google user authenticates — they pick Homeowner/Tradie.
@@ -174,16 +115,9 @@ final GoRouter appRouter = GoRouter(
           );
         }
         final (:userId, :registrationToken) = extra;
-        return _pick(
-          'role_select',
-          RoleSelectScreen(
-            userId: userId,
-            registrationToken: registrationToken,
-          ),
-          ThRoleSelectScreen(
-            userId: userId,
-            registrationToken: registrationToken,
-          ),
+        return ThRoleSelectScreen(
+          userId: userId,
+          registrationToken: registrationToken,
         );
       },
     ),
@@ -203,46 +137,31 @@ final GoRouter appRouter = GoRouter(
             ),
           );
         }
-        return _pick(
-          'verify_otp',
-          OtpVerificationScreen(email: email),
-          ThVerifyOtpScreen(email: email),
-        );
+        return ThVerifyOtpScreen(email: email);
       },
     ),
 
     // H08 categories — browse the live service catalog
     GoRoute(
       path: '/categories',
-      builder: (context, state) => _pick(
-        'categories',
-        const CategoriesScreen(),
-        const HoCategoriesScreen(),
-      ),
+      builder: (context, state) => const HoCategoriesScreen(),
     ),
     // H19 find-a-tradie — live tradie search (extra = category seed)
     GoRoute(
       path: '/find-tradie',
-      builder: (context, state) => _pick(
-        'browse_tradies',
-        BrowseTradiesScreen(initialCategory: routeCategorySeed(state.extra)),
-        HoBrowseTradiesScreen(initialCategory: routeCategorySeed(state.extra)),
+      builder: (context, state) => HoBrowseTradiesScreen(
+        initialCategory: routeCategorySeed(state.extra),
       ),
     ),
     // H20 notifications — FCM-fed inbox
     GoRoute(
       path: '/notifications',
-      builder: (context, state) => _pick(
-        'notifications',
-        const NotificationsScreen(),
-        const ThNotificationsScreen(),
-      ),
+      builder: (context, state) => const ThNotificationsScreen(),
     ),
     // 06-post-job
     GoRoute(
       path: '/jobs/new',
-      builder: (context, state) =>
-          _pick('ho_post_job', const PostJobScreen(), const ThPostJobScreen()),
+      builder: (context, state) => const ThPostJobScreen(),
     ),
     // 07-matching — dual-mode waiting screen (v1.7 P12-08/P12-09):
     //   /jobs/:id/matching = quick-match radar (POST /match + SignalR)
@@ -251,13 +170,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/jobs/:jobId/matching',
       builder: (context, state) =>
-          MatchingScreen(jobId: state.pathParameters['jobId']!),
+          ThMatchingScreen(jobId: state.pathParameters['jobId']!),
     ),
     GoRoute(
       path: '/jobs/:jobId/request',
-      builder: (context, state) => MatchingScreen(
+      builder: (context, state) => ThMatchingScreen(
         jobId: state.pathParameters['jobId']!,
-        mode: MatchingScreenMode.requestSent,
+        mode: ThMatchingMode.requestSent,
         gstLabel: routeGstLabel(state.extra),
       ),
     ),
@@ -265,20 +184,14 @@ final GoRouter appRouter = GoRouter(
     // (extra: gstLabel is not needed; the list rows carry their own).
     GoRoute(
       path: '/jobs/:jobId/tradies',
-      builder: (context, state) => _pick(
-        'ho_choose_tradie',
-        TradieListScreen(jobId: state.pathParameters['jobId']!),
-        ThChooseTradieScreen(jobId: state.pathParameters['jobId']!),
-      ),
+      builder: (context, state) =>
+          ThChooseTradieScreen(jobId: state.pathParameters['jobId']!),
     ),
     // v1.7 P12-24: homeowner quote comparison for Project jobs.
     GoRoute(
       path: '/jobs/:jobId/quotes',
-      builder: (context, state) => _pick(
-        'ho_quotes',
-        QuotesScreen(jobId: state.pathParameters['jobId']!),
-        HoQuotesScreen(jobId: state.pathParameters['jobId']!),
-      ),
+      builder: (context, state) =>
+          HoQuotesScreen(jobId: state.pathParameters['jobId']!),
     ),
     // 10-request-detail (tradie)
     GoRoute(
@@ -286,26 +199,15 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final requestId = state.pathParameters['requestId']!;
         final key = ValueKey('request_$requestId');
-        return _pick(
-          'tr_lead',
-          RequestDetailScreen(key: key, requestId: requestId),
-          TradieLeadScreen(key: key, requestId: requestId),
-        );
+        return TradieLeadScreen(key: key, requestId: requestId);
       },
     ),
     // 11-chat
     GoRoute(
       path: '/chat/:jobId',
-      builder: (context, state) => _pick(
-        'chat',
-        ChatScreen(
-          key: ValueKey('chat_${state.pathParameters['jobId']}'),
-          jobId: state.pathParameters['jobId']!,
-        ),
-        ThChatScreen(
-          key: ValueKey('chat_${state.pathParameters['jobId']}'),
-          jobId: state.pathParameters['jobId']!,
-        ),
+      builder: (context, state) => ThChatScreen(
+        key: ValueKey('chat_${state.pathParameters['jobId']}'),
+        jobId: state.pathParameters['jobId']!,
       ),
     ),
     // P4-07 homeowner payment. Both are root-level flow screens: paying is a
@@ -316,27 +218,16 @@ final GoRouter appRouter = GoRouter(
       path: '/jobs/:jobId/payment',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        return _pick(
-          'ho_payment',
-          PaymentScreen(key: ValueKey('payment_$jobId'), jobId: jobId),
-          HoPaymentScreen(key: ValueKey('payment_$jobId'), jobId: jobId),
-        );
+        return HoPaymentScreen(key: ValueKey('payment_$jobId'), jobId: jobId);
       },
     ),
     GoRoute(
       path: '/jobs/:jobId/payment/status',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        return _pick(
-          'ho_payment_status',
-          PaymentStatusScreen(
-            key: ValueKey('payment_status_$jobId'),
-            jobId: jobId,
-          ),
-          HoPaymentStatusScreen(
-            key: ValueKey('payment_status_$jobId'),
-            jobId: jobId,
-          ),
+        return HoPaymentStatusScreen(
+          key: ValueKey('payment_status_$jobId'),
+          jobId: jobId,
         );
       },
     ),
@@ -346,20 +237,9 @@ final GoRouter appRouter = GoRouter(
       path: '/jobs/:jobId/detail',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        return _pick(
-          'ho_job_detail',
-          HomeownerJobDetailScreen(
-            key: ValueKey('job_detail_$jobId'),
-            jobId: jobId,
-          ),
-          ThJobDetailRouter(
-            key: ValueKey('job_detail_$jobId'),
-            jobId: jobId,
-            v1Fallback: () => HomeownerJobDetailScreen(
-              key: ValueKey('job_detail_$jobId'),
-              jobId: jobId,
-            ),
-          ),
+        return ThJobDetailRouter(
+          key: ValueKey('job_detail_$jobId'),
+          jobId: jobId,
         );
       },
     ),
@@ -368,11 +248,7 @@ final GoRouter appRouter = GoRouter(
       path: '/jobs/:jobId/dispute',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        return _pick(
-          'ho_dispute',
-          DisputeScreen(key: ValueKey('dispute_$jobId'), jobId: jobId),
-          HoDisputeScreen(key: ValueKey('dispute_$jobId'), jobId: jobId),
-        );
+        return HoDisputeScreen(key: ValueKey('dispute_$jobId'), jobId: jobId);
       },
     ),
     // P5-06: Tradie active job detail — check-in / check-out actions.
@@ -381,18 +257,7 @@ final GoRouter appRouter = GoRouter(
       path: '/tradie/jobs/:jobId',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        TradieJobDetailScreen v1() => TradieJobDetailScreen(
-          key: ValueKey('tradie_job_$jobId'),
-          jobId: jobId,
-        );
-        // Plan 5.3 PR A: the v2 router still injects the v1 screen for every
-        // state; v2 state widgets arrive in PR B / C.
-        return _pick(
-          'tr_job',
-          v1(),
-          // The Key('tradie_job_<id>') lives on the injected v1 screen.
-          TrJobRouter(jobId: jobId, v1Fallback: v1),
-        );
+        return TrJobRouter(key: ValueKey('tradie_job_$jobId'), jobId: jobId);
       },
     ),
     // P1-09 tradie onboarding wizard. Declared before `/tradie/:id` so the
@@ -401,18 +266,13 @@ final GoRouter appRouter = GoRouter(
     //   context.push('/tradie/onboarding')
     GoRoute(
       path: '/tradie/onboarding',
-      builder: (context, state) => isV2Screen('tr_onboarding')
-          ? const TrOnboardingScreen()
-          : const TradieOnboardingWizard(),
+      builder: (context, state) => const TrOnboardingScreen(),
     ),
-    // D-P5-1 tradie earnings (v2 only). Declared before `/tradie/:id` so the
-    // static segment wins over the public-profile parameter. With the flag
-    // off, v1 shows earnings in the dashboard hero, so this redirects there.
+    // D-P5-1 tradie earnings. Declared before `/tradie/:id` so the static
+    // segment wins over the public-profile parameter.
     //   context.push('/tradie/earnings')
     GoRoute(
       path: '/tradie/earnings',
-      redirect: (context, state) =>
-          isV2Screen('tr_earnings') ? null : '/tradie',
       builder: (context, state) => const TrEarningsScreen(),
     ),
     // 12-profile (tradie public/self). v1.7 P12-07: an optional `jobId`
@@ -424,20 +284,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final profileId = state.pathParameters['id']!;
         final jobId = state.uri.queryParameters['jobId'];
-        final v1 = PublicProfileScreen(
-          profileId: profileId,
-          isTradie: true,
-          jobId: jobId,
-        );
-        return _pick(
-          'ho_tradie_profile',
-          v1,
-          ThTradieProfileRoute(
-            profileId: profileId,
-            jobId: jobId,
-            fallback: v1,
-          ),
-        );
+        return ThTradieProfileRoute(profileId: profileId, jobId: jobId);
       },
     ),
     // 15-homeowner-profile (public)
@@ -445,74 +292,42 @@ final GoRouter appRouter = GoRouter(
       path: '/users/:id',
       builder: (context, state) {
         final profileId = state.pathParameters['id']!;
-        return _pick(
-          'ho_user_profile',
-          PublicProfileScreen(profileId: profileId, isTradie: false),
-          HoPublicProfileScreen(profileId: profileId),
-        );
+        return HoPublicProfileScreen(profileId: profileId);
       },
     ),
 
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) =>
-          _pick('shell', MainLayout(child: child), ThShell(child: child)),
+      builder: (context, state, child) => ThShell(child: child),
       routes: [
         // 05-homeowner-home
         GoRoute(
           path: '/home',
-          builder: (context, state) => _pick(
-            'ho_home',
-            const HomeownerDashboardView(),
-            const ThHomeScreen(),
-          ),
+          builder: (context, state) => const ThHomeScreen(),
         ),
         // 09-tradie-home
         GoRoute(
           path: '/tradie',
-          builder: (context, state) => _pick(
-            'tr_home',
-            const TradieDashboardView(),
-            const TradieHomeScreen(),
-          ),
+          builder: (context, state) => const TradieHomeScreen(),
         ),
         GoRoute(
           path: '/jobs',
-          // Shared with tradies: v2 `ho_jobs` is homeowner-only, tradies keep
-          // the v1 list until Phase 5 (ThJobsRoute does the role split).
-          builder: (context, state) => _pick(
-            'ho_jobs',
-            const JobsListScreen(),
-            ThJobsRoute(
-              tradieFallback: _pick(
-                'tr_jobs',
-                const JobsListScreen(),
-                const TrJobsScreen(),
-              ),
-            ),
-          ),
+          // Shared by both roles (ThJobsRoute does the role split).
+          builder: (context, state) =>
+              const ThJobsRoute(tradieFallback: TrJobsScreen()),
         ),
         GoRoute(
           path: '/messages',
-          builder: (context, state) => _pick(
-            'messages_list',
-            const MessagesListScreen(),
-            const ThMessagesListScreen(),
-          ),
+          builder: (context, state) => const ThMessagesListScreen(),
         ),
         GoRoute(
           path: '/profile',
-          builder: (context, state) =>
-              _pick('profile', const ProfileScreen(), const ThProfileScreen()),
+          builder: (context, state) => const ThProfileScreen(),
         ),
         // 14-settings — inside shell so Profile tab stays active
         GoRoute(
           path: '/settings',
-          builder: (context, state) => _pick(
-            'settings',
-            const SettingsScreen(),
-            const ThSettingsScreen(),
-          ),
+          builder: (context, state) => const ThSettingsScreen(),
         ),
       ],
     ),

@@ -10,7 +10,7 @@ How AI coding agents work in this repo: rules, skills, MCP servers and the desig
 | `AGENTS.md`, `mobile/AGENTS.md` | Tool-neutral rules; keep the docs-map block from `docs/ai/AGENTS-docs-block.md` |
 | `agent/skills/` | Skills (below). Claude Code users can symlink `.claude/skills` → `agent/skills` |
 | `agent/Makefile`, `agent/setup.sh`, `package.json` | Toolchain entry points |
-| `tools/design2flutter/` | HTML mockup → Flutter AST transpiler (Node + parse5), `th_components.dart` widget contract |
+| `tools/design2flutter/` | Reference only: HTML mockup → Flutter AST stubs and the `th_components.dart` widget contract. Its transpile/smoke targets were retired in Phase 6; the live gate is `node docs/design/mobile/tools/build.mjs --check` |
 | `docs/design/mobile/`, `docs/design/web/` | Design systems (web extends the mobile tokens). Mobile v2: tokens (`tokens.json` master source), AST screens, Flutter widgets, generated mockups. Build with `node docs/design/mobile/tools/build.mjs` |
 | `scripts/` | Verification scripts ([TESTING.md](../TESTING.md)) |
 
@@ -66,6 +66,7 @@ Config files by tool: `.cursor/mcp.json` (Cursor), `.kiro/mcp.json` (Kiro), `mcp
 
 ## 6. Recommended workflows
 
+- **Design system (colour / screen / component change):** see `docs/design/README.md` → "Common changes (mobile)"; always finish with `node docs/design/mobile/tools/build.mjs --check`.
 - **Backend / EF Core:** inspect schema with the postgres MCP → check `backend/Migrations/` → `dotnet ef migrations list` in the container. Re-verify the PostGIS spatial index after migrations.
 - **Flutter:** pub.dev search for the package → `analyze_files` before changes → `run_tests` after.
 - **React admin:** start the web service → screenshot via Puppeteer → check console for TanStack Query, router and SignalR errors.

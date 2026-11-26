@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 
-import '../feedback/fixo_notice.dart';
+import '../ui/feedback/th_notice.dart';
 
 class AuthInterceptor extends Interceptor {
   final Dio dio;
@@ -147,7 +147,7 @@ class AuthInterceptor extends Interceptor {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final context = router.routerDelegate.navigatorKey.currentContext;
         if (context != null && context.mounted) {
-          FixoNotice.error(context, message);
+          THNotice.error(context, message);
         }
       });
     }

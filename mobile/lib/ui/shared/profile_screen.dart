@@ -18,7 +18,6 @@ import 'th_tab_app_bar.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
 import '../tradie/tr_profile_summary.dart';
-import '../ui_flags.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 
 class ThProfileScreen extends ConsumerStatefulWidget {
@@ -324,7 +323,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                         title: 'Personal details',
                         onTap: () => setState(() => _showDetails = true),
                       ),
-                      if (isTradie && isV2Screen('tr_earnings'))
+                      if (isTradie)
                         KeyedSubtree(
                           key: const Key('profile_earnings_row'),
                           child: row(
@@ -333,7 +332,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                             onTap: () => context.push('/tradie/earnings'),
                           ),
                         ),
-                      if (isTradie && isV2Screen('tr_profile')) ...[
+                      if (isTradie) ...[
                         KeyedSubtree(
                           key: const Key('profile_rating_row'),
                           child: row(

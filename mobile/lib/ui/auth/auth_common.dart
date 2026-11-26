@@ -37,8 +37,8 @@ class ThAuthScroll extends StatelessWidget {
   );
 }
 
-/// Inline error banner for auth state errors. v1 used FixoInfoBanner.error
-/// wrapped in a liveRegion — the liveRegion is part of the a11y contract.
+/// Inline error banner for auth state errors, wrapped in a liveRegion — the
+/// liveRegion is part of the a11y contract.
 class ThAuthErrorBanner extends StatelessWidget {
   final String message;
 

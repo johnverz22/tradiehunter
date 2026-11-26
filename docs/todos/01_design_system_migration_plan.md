@@ -470,17 +470,28 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 
 **Goal:** Make v2 the only UI, delete v1, and finish the toolchain work.
 
-- [ ] **6.1** Flip `UI_V2` default to on and remove `ui_flags.dart` and the per-route conditionals in `app_router.dart`. Point `MaterialApp(theme: THTheme.light, darkTheme: THTheme.dark, themeMode: ...)` at v2, and remove `ThScope` wrappers.
-- [ ] **6.2** Delete v1: `lib/views/**` (all screens now live in `lib/ui/`), `lib/widgets/fixo_*.dart`, `th_components.dart`, `tradie_widgets.dart`, `lib/theme/design_tokens.dart`, `lib/theme/fixo_theme.dart`, and the old v1 view-only widgets. Then move `lib/ui/design/*` to `lib/theme/` (or keep as `lib/ui/design/`; decide once, update `.agent/rules/mobile.md`).
-- [ ] **6.3** Rename `FixoNotice*` → `THNotice*` (D-3) and update the ~90 usages.
-- [ ] **6.4** Confirm no `outdoor` code path, `AvailabilityColors`/`SocialColors` leftovers or v1 token names remain (D-5): `grep -rn "outdoor\|DesignTokens\|Fixo[A-Z]" mobile/lib` must be empty.
-- [ ] **6.5** Remove v1 fonts from `assets/fonts/` and `pubspec.yaml` (Space Grotesk, IBM Plex), drop `google_fonts` if unused, and remove the import-boundary guard from §2.4.
-- [ ] **6.6** Update or delete the 32 test files referencing v1 names; regenerate goldens and the store-screenshot tests (`screenshots_*`).
-- [ ] **6.7** Update `mobile/HARDCODED_AUDIT.md` for v2 tokens.
-- [ ] **6.8** Retire old audit targets from `agent/Makefile` (`audit`, `transpile`, `sheet`) or redirect them to `build.mjs`; update `agent/setup.sh` and root `package.json` scripts (`audit`, `verify`).
-- [ ] **6.9** Document the "change a colour / screen / component" workflow in `docs/ai/AI-TOOLING.md` §4 and `docs/design/README.md`, including that ported screens are now hand-owned code and the AST stubs remain the design reference.
-- [ ] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/mobile/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mobile/mockups/index.html`.
-- [ ] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
+- [x] **6.1** Flip `UI_V2` default to on and remove `ui_flags.dart` and the per-route conditionals in `app_router.dart`. Point `MaterialApp(theme: THTheme.light, darkTheme: THTheme.dark, themeMode: ...)` at v2, and remove `ThScope` wrappers.
+  *6.1 done (2026-11-26, `phase6-v1-cutover` → `main`):* router, job-detail/tradie routers and profile route are v2-only; `ThMatchingScreen` replaces v1 `MatchingScreen`; `ui_flags.dart` and all `UI_V2` plumbing removed; `MaterialApp` on `THTheme`. `ThScope` is intentionally kept (gallery, theme-toggle modal routes, test hosts); per-screen wrappers can be removed in a follow-up.
+- [x] **6.2** Delete v1: `lib/views/**` (all screens now live in `lib/ui/`), `lib/widgets/fixo_*.dart`, `th_components.dart`, `tradie_widgets.dart`, `lib/theme/design_tokens.dart`, `lib/theme/fixo_theme.dart`, and the old v1 view-only widgets. Then move `lib/ui/design/*` to `lib/theme/` (or keep as `lib/ui/design/`; decide once, update `.agent/rules/mobile.md`).
+  *6.2 done (2026-11-26):* `lib/views`, `lib/widgets`, `lib/theme` deleted; `ThRatingSheet`/`ThScheduleSheet`/`ui/shared/notification_center.dart` replace the v1 pieces. Verified with `flutter analyze --fatal-infos` (0 issues).
+- [x] **6.3** Rename `FixoNotice*` → `THNotice*` (D-3) and update the ~90 usages.
+  *6.3 done (2026-11-26):* `FixoNotice*` → `THNotice*`; controller in `ui/feedback/th_notice_controller.dart`; `FixoNotification` → `ThNotification`, `FixoApp` → `ThApp`. Verified with `th_notice_test.dart` + `th_notice_host_test.dart`.
+- [x] **6.4** Confirm no `outdoor` code path, `AvailabilityColors`/`SocialColors` leftovers or v1 token names remain (D-5): `grep -rn "outdoor\|DesignTokens\|Fixo[A-Z]" mobile/lib` must be empty.
+  *6.4 done (2026-11-26):* grep for `Fixo[A-Z]|DesignTokens|outdoor|UI_V2|isV2Screen` in `lib`/`test`/`integration_test` is clean (only gallery comments).
+- [x] **6.5** Remove v1 fonts from `assets/fonts/` and `pubspec.yaml` (Space Grotesk, IBM Plex), drop `google_fonts` if unused, and remove the import-boundary guard from §2.4.
+  *6.5 done (2026-11-26):* v1 woff2 + `fonts.css` deleted; `google_fonts` removed from pubspec/lock/tests (`flutter pub get` clean); `check_ui_boundary.py` removed.
+- [x] **6.6** Update or delete the 32 test files referencing v1 names; regenerate goldens and the store-screenshot tests (`screenshots_*`).
+  *6.6 done (2026-11-26):* 31 v1-only tests + shell goldens deleted; matching/address/profile/post-job/parity/notice/shell tests ported and fixed (including `th_rating_sheet.dart` 320px overflow fix). `flutter analyze --fatal-infos` clean; 559/559 unit/widget tests pass (12 gallery golden diffs ≤ 0.86% on local Flutter 3.47.5 vs CI 3.47.9 baseline).
+- [x] **6.7** Update `mobile/HARDCODED_AUDIT.md` for v2 tokens.
+  *6.7 done (2026-11-26):* new `mobile/HARDCODED_AUDIT.md`; `mobile/AGENTS.md` rewritten for v2.
+- [x] **6.8** Retire old audit targets from `agent/Makefile` (`audit`, `transpile`, `sheet`) or redirect them to `build.mjs`; update `agent/setup.sh` and root `package.json` scripts (`audit`, `verify`).
+  *6.8 done (2026-11-26):* audit/transpile/smoke targets redirected to `build.mjs`; CI adds format + `analyze --fatal-infos`.
+- [x] **6.9** Document the "change a colour / screen / component" workflow in `docs/ai/AI-TOOLING.md` §4 and `docs/design/README.md`, including that ported screens are now hand-owned code and the AST stubs remain the design reference.
+  *6.9 done (2026-11-26):* workflow table in `docs/design/README.md`, pointer in `AI-TOOLING.md`.
+- [x] **6.10** Establish the v2 regression gate in `docs/TESTING.md`: (1) `node docs/design/mobile/tools/build.mjs --check`, (2) `flutter analyze`, (3) `flutter test`, (4) visual QA against `docs/design/mobile/mockups/index.html`.
+  *6.10 done (2026-11-26):* regression gate section added to `docs/TESTING.md`; `run-e2e.sh` configs simplified (C0/C1/C2).
+- [x] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
+  *6.11 done (2026-11-26):* `MILESTONES.md` and `DESIGN.md` updated with merge date (2026-11-26).
 
 ✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, no capture run raises a missing-asset exception (and the `il-05` v1 workaround is deleted), and a release build passes on iOS and Android.
 

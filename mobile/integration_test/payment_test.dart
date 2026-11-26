@@ -1,9 +1,7 @@
 // P4 — Manual Payment & Receipt Upload
 //
-// Run with: UI_V2=all exercises ho_payment / payment-status v2 screens;
-// default flags exercise the v1 payment views. Both must pass — fixtures
-// follow the job's flowVersion (v2 pays at completion, v1 pays before
-// booking).
+// Fixtures follow the job's flowVersion (v2 pays at completion, v1 pays
+// before booking, for in-flight jobs only).
 //
 // Self-seeding: fixtures drive a fresh job to AwaitingPayment / PaymentReview
 // via the API, so no matching run or pre-seeded state is needed.

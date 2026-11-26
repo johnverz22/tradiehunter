@@ -9,7 +9,7 @@ import '../../models/marketplace.dart';
 import '../../network/api_error.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
-import '../../widgets/rating_sheet.dart';
+import '../shared/th_rating_sheet.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
@@ -359,7 +359,7 @@ Future<void> thLeaveReview(
     THNotice.info(context, NoticeCopy.reviewsLocked);
     return;
   }
-  await RatingSheet.show(
+  await ThRatingSheet.show(
     context,
     jobId: job.id,
     jobTitle: job.title,

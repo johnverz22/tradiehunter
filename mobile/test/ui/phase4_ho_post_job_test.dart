@@ -9,7 +9,6 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/address_repository.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
-import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/ui/homeowner/ho_post_job_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_post_job_screen.dart';
 import 'package:fixo/ui/homeowner/ho_choose_tradie_screen.dart';
@@ -17,7 +16,7 @@ import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/viewmodels/address_viewmodel.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/views/jobs/post_job_screen.dart';
+import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -163,7 +162,7 @@ Widget _harness({
     profileRepositoryProvider.overrideWithValue(profile),
   ],
   child: MaterialApp.router(
-    theme: dark ? FixoTheme.dark() : FixoTheme.light(),
+    theme: dark ? THTheme.dark : THTheme.light,
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context)
           .copyWith(textScaler: TextScaler.linear(scale)),
@@ -741,69 +740,6 @@ void main() {
         find.textContaining('Jobs over \$30,000 need a written contract'),
         findsOneWidget,
       );
-    });
-  });
-
-  group('post-job payload equivalence', () {
-    Future<Map<String, dynamic>> submit(
-      WidgetTester tester, {
-      required Widget screen,
-      required Type screenType,
-      required bool project,
-    }) async {
-      final jobs = _JobsFake();
-      await _pumpScreen(
-        tester,
-        jobs: jobs,
-        addresses: _AddressFake(),
-        screen: screen,
-      );
-      final notifier = _notifier(tester, screenType);
-      if (project) {
-        await _fillProject(notifier);
-      } else {
-        await _fillQuick(notifier);
-      }
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('post_job_button')));
-      await tester.pumpAndSettle();
-      return jobs.posted!;
-    }
-
-    testWidgets('quick payload is identical in v1 and v2', (tester) async {
-      final v1 = await submit(
-        tester,
-        screen: const PostJobScreen(),
-        screenType: PostJobScreen,
-        project: false,
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pumpAndSettle();
-      final v2 = await submit(
-        tester,
-        screen: const ThPostJobScreen(),
-        screenType: ThPostJobScreen,
-        project: false,
-      );
-      expect(v2, v1);
-    });
-
-    testWidgets('project payload is identical in v1 and v2', (tester) async {
-      final v1 = await submit(
-        tester,
-        screen: const PostJobScreen(),
-        screenType: PostJobScreen,
-        project: true,
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pumpAndSettle();
-      final v2 = await submit(
-        tester,
-        screen: const ThPostJobScreen(),
-        screenType: ThPostJobScreen,
-        project: true,
-      );
-      expect(v2, v1);
     });
   });
 

@@ -41,7 +41,6 @@ dependencies:
   signalr_netcore: ^1.3.5
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
-  google_fonts: ^8.2.1
   shared_preferences: ^2.5.5
   google_sign_in: ^7.2.0
   image_picker: ^1.1.2
@@ -85,32 +84,9 @@ flutter:
     - assets/brand/
     - assets/brand/png/
     - assets/design/
-    - assets/fonts/
 
   fonts:
-    - family: Space Grotesk
-      fonts:
-        - asset: assets/fonts/space-grotesk-latin-500-normal.woff2
-          weight: 500
-        - asset: assets/fonts/space-grotesk-latin-600-normal.woff2
-          weight: 600
-        - asset: assets/fonts/space-grotesk-latin-700-normal.woff2
-          weight: 700
-    - family: IBM Plex Sans
-      fonts:
-        - asset: assets/fonts/ibm-plex-sans-latin-400-normal.woff2
-          weight: 400
-        - asset: assets/fonts/ibm-plex-sans-latin-500-normal.woff2
-          weight: 500
-        - asset: assets/fonts/ibm-plex-sans-latin-600-normal.woff2
-          weight: 600
-        - asset: assets/fonts/ibm-plex-sans-latin-700-normal.woff2
-          weight: 700
-    - family: IBM Plex Mono
-      fonts:
-        - asset: assets/fonts/ibm-plex-mono-latin-500-normal.woff2
-          weight: 500
-    # v2 (Trust Navy + Gold) — D-2: bundled; v1 families stay until Phase 6.
+    # Trust Navy + Gold — D-2: bundled, no google_fonts.
     - family: Lexend
       fonts:
         - asset: assets/fonts/v2/Lexend-Regular.ttf

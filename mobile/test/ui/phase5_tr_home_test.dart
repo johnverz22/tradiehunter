@@ -5,7 +5,7 @@
 // light and dark, keeping the preserved v1 Keys.
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
-import 'package:fixo/feedback/fixo_notice_controller.dart';
+import 'package:fixo/ui/feedback/th_notice_controller.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
@@ -332,7 +332,7 @@ void main() {
       // THNotice publishes to the notice provider; the host is mounted by
       // the app root, so assert on the provider state here.
       expect(
-        ref(tester).read(fixoNoticeProvider)?.message,
+        ref(tester).read(thNoticeProvider)?.message,
         'Could not accept this offer — it may have expired.',
       );
     });

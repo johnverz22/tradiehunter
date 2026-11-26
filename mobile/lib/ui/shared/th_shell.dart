@@ -1,6 +1,6 @@
 // ThShell: the v2 navigation shell (migration plan 3.1).
 //
-// Mirrors views/main_layout.dart exactly at the behavioural level:
+// Behaviour:
 //   • role from profileViewModelProvider (`profile['role'] == 1` → tradie)
 //   • prefix-based active-tab detection (/jobs*, /messages*|/chat*, /profile*|/settings*)
 //   • role-dependent landing route (tab 0 → /tradie or /home)
@@ -9,13 +9,8 @@
 //   • narrow layout: Column(Expanded(child), THDock): full-bleed bar flush
 //     with the bottom edge; routed content ends where the bar begins
 //
-// Visual layer is the v2 THDock / TH tokens instead of CustomBottomNavBar.
-// The rail is a needs-design stand-in (D-4): TH tokens, same structure as the
-// v1 _FixoNavRail.
-//
-// The routed child is NOT wrapped in ThScope: v1 children (dashboards, jobs
-// list) keep FixoTheme until their phases land, and v2 children wrap
-// themselves in ThScope per the §4.0 recipe. Only the shell chrome is themed.
+// Visual layer is THDock / TH tokens. The rail is a needs-design stand-in
+// (D-4).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,8 +37,8 @@ const double kThRailWidth = 72.0;
 /// One-off: matches the v1 chat max content width (kMaxContentWidth = 640).
 const double kThMaxContentWidth = 640.0;
 
-/// The v2 shell. Swap point: the ShellRoute builder branches on
-/// `isV2Screen('shell')` and either builds this or v1 [MainLayout].
+/// The app shell: role-aware dock (narrow) or rail (wide) around the routed
+/// tab content.
 class ThShell extends ConsumerStatefulWidget {
   const ThShell({super.key, required this.child});
 
@@ -114,9 +109,6 @@ class _ThShellState extends ConsumerState<ThShell> {
             ),
     );
 
-    // Keep the routed subtree under the app's FixoTheme. Several Phase 3
-    // routes still render v1 screens, which require the Fixo THColors
-    // extension; ThScope installs only the v2 extension.
     return useRail
         ? Scaffold(
             body: Row(
@@ -160,7 +152,7 @@ class _ThShellState extends ConsumerState<ThShell> {
 }
 
 /// TH-token left rail for ≥[kThBreakpointLeftRail] widths. needs-design (D-4):
-/// same structure as the v1 _FixoNavRail, v2 palette, no mockup exists yet.
+/// v2 palette, no mockup exists yet.
 class _ThNavRail extends StatelessWidget {
   final THDockTab activeTab;
   final bool isTradie;

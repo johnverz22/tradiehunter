@@ -14,7 +14,7 @@
 //   Task 3 — Match result screen (H11) clean Flex layout
 //   Task 6 — Tradie request detail: OfferCountdown, photo gallery, sticky bar
 //   Task 7 — Tradie active job: StatusStrip timeline, job-code long-press
-//   Task 8 — FixoNotice appearances during check-in, check-out, confirm
+//   Task 8 — THNotice appearances during check-in, check-out, confirm
 //
 // Every UI step that cannot be driven natively (photo picker, LINZ address
 // lookup when no key is configured) falls back to the API and is reported with
@@ -173,7 +173,7 @@ Future<void> _homeownerTour(WidgetTester tester) async {
   await Demo.scrollScreen(tester, pixels: 450);
   await Demo.waitSignal(tester, 'checked_out');
 
-  // 6. Work done: chat reply, confirm completion (triggers FixoNotice.success), review.
+  // 6. Work done: chat reply, confirm completion (triggers THNotice.success), review.
   await Demo.step(_ho, 'Homeowner: tradie checked out — reviews chat');
   appRouter.go('/chat/$jobId');
   await Demo.beat(tester, 2);
@@ -188,7 +188,7 @@ Future<void> _homeownerTour(WidgetTester tester) async {
     await Demo.note(_ho, 'approve button not found; approved via API');
     await ApiHelper.approveJob(jobId, homeowner);
   }
-  // Let a FixoNotice.success animate in and be visible on camera.
+  // Let a THNotice.success animate in and be visible on camera.
   await Demo.beat(tester, 0.75);
   await Demo.until(
     tester,
@@ -376,7 +376,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
           await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingPayment',
     );
   }
-  // FixoNotice.success briefly appears after acceptance — hold for visibility.
+  // THNotice.success briefly appears after acceptance — hold for visibility.
   await Demo.beat(tester, 0.75);
   await Demo.signal('offer_accepted');
   await Demo.waitSignal(tester, 'payment_verified');
@@ -398,7 +398,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
     await Demo.tapKey(tester, 'status_strip_toggle');
     await Demo.beat(tester);
   }
-  // Check in — FixoNotice.info appears confirming the check-in.
+  // Check in — THNotice.info appears confirming the check-in.
   await Demo.step(_tr, 'Tradie: checks in — job moves to In Progress');
   if (!await Demo.tapKey(tester, 'check_in_button')) {
     await Demo.note(_tr, 'checked in via API (button not found)');
@@ -408,7 +408,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
     tester,
     () async => await ApiHelper.getJobStatus(jobId, tradie) == 'InProgress',
   );
-  // Allow FixoNotice to animate in and be visible.
+  // Allow THNotice to animate in and be visible.
   await Demo.beat(tester, 1.5);
 
   // Chat — tradie replies with tokenised send button (paper-plane icon).
@@ -436,7 +436,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
   }
 
   // Check out — job code monospace label visible in StatusStrip;
-  // FixoNotice.success briefly appears.
+  // THNotice.success briefly appears.
   await Demo.step(
     _tr,
     'Tradie: checks out — work complete, awaiting homeowner confirmation',
@@ -454,7 +454,7 @@ Future<void> _tradieTour(WidgetTester tester) async {
     () async =>
         await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingConfirmation',
   );
-  // FixoNotice visible.
+  // THNotice visible.
   await Demo.beat(tester, 1.5);
   await Demo.signal('checked_out');
   await Demo.waitSignal(tester, 'completed');

@@ -25,7 +25,7 @@ const int _kMaxOfferDots = 5;
 /// N-03, `needs-design`); it is composed from `TH*` widgets and tokens, and
 /// the frames are due in the Fix-4 design pass.
 ///
-/// Stateless on purpose: `MatchingScreen` in `views/jobs/` owns the SignalR
+/// Stateless on purpose: `ThMatchingScreen` owns the SignalR
 /// subscriptions, dispatch, stall watchdog and cancel, and hands this widget
 /// the state to draw. `ThScope` is provided here so it can be mounted alone.
 class ThRadarScreen extends StatelessWidget {

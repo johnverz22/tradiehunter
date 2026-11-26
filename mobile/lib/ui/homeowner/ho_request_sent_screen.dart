@@ -8,7 +8,7 @@ import '../design/th_widgets.dart';
 
 /// v2 presentation of the request-sent waiting screen (ho_request_sent).
 ///
-/// This widget is stateless — the [MatchingScreen] in `views/jobs/` owns all
+/// This widget is stateless — the `ThMatchingScreen` controller owns all
 /// of the SignalR / polling / action state and passes the minimum surface it
 /// needs through callbacks and value parameters.  `ThScope` is provided internally
 /// so this widget can be mounted directly.

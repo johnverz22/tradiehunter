@@ -13,7 +13,6 @@ import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
-import '../ui_flags.dart';
 import 'tr_complete_page.dart';
 import 'tr_extra_cost_page.dart';
 import 'tr_job_parts.dart';
@@ -42,20 +41,11 @@ class _TrJobInProgressScreenState extends ConsumerState<TrJobInProgressScreen> {
 
   Future<void> _checkOut() async {
     final approvedTotal = trApprovedAdjustmentsTotal(widget.adjustments);
-    final hours = isV2Screen('tr_complete')
-        ? await pushTrComplete(
-            context,
-            job: widget.job,
-            approvedAdjustmentsTotal: approvedTotal,
-          )
-        : await showModalBottomSheet<double>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => TrCheckOutSheet(
-              job: widget.job,
-              approvedAdjustmentsTotal: approvedTotal,
-            ),
-          );
+    final hours = await pushTrComplete(
+      context,
+      job: widget.job,
+      approvedAdjustmentsTotal: approvedTotal,
+    );
     if (hours == null || !mounted) return;
 
     setState(() => _busy = true);
@@ -136,16 +126,10 @@ class _TrJobInProgressScreenState extends ConsumerState<TrJobInProgressScreen> {
   }
 
   Future<void> _requestExtraCost() async {
-    final proposal = isV2Screen('tr_extra_cost')
-        ? await pushTrExtraCost(
-            context,
-            homeownerFirstName: widget.contact?.firstName,
-          )
-        : await showModalBottomSheet<(String, Decimal, String)?>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => const TrRequestExtraCostSheet(),
-          );
+    final proposal = await pushTrExtraCost(
+      context,
+      homeownerFirstName: widget.contact?.firstName,
+    );
     if (proposal == null || !mounted) return;
     final (kind, amount, description) = proposal;
 

@@ -5,7 +5,7 @@
 // repositories + SignalR, keeping the preserved v1 Keys and copy.
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
-import 'package:fixo/feedback/fixo_notice_controller.dart';
+import 'package:fixo/ui/feedback/th_notice_controller.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/repositories/jobs_repository.dart';
@@ -406,7 +406,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(
-        container(tester).read(fixoNoticeProvider)?.message,
+        container(tester).read(thNoticeProvider)?.message,
         'Could not respond to this offer — it may have expired.',
       );
       expect(find.text('Accept Job'), findsOneWidget);

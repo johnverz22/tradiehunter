@@ -300,10 +300,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/tradie/jobs/:jobId',
-            builder: (_, s) => TrJobRouter(
-              jobId: s.pathParameters['jobId']!,
-              v1Fallback: () => const Scaffold(body: Text('v1 job detail')),
-            ),
+            builder: (_, s) => TrJobRouter(jobId: s.pathParameters['jobId']!),
           ),
           GoRoute(
             path: '/tradie',

@@ -8,8 +8,7 @@
 // prints `__SHOT_SKIPPED__ <name> | <reason>` instead of failing or vanishing.
 // States that need special fixtures live in `screenshots_variants_test.dart`.
 //
-// Run through `scripts/run-shots.sh` (it passes SHOT_THEME, SHOT_TEXT_SCALE and
-// UI_V2). By hand (homeowner):
+// Run through `scripts/run-shots.sh` (it passes SHOT_THEME and SHOT_TEXT_SCALE). By hand (homeowner):
 //   flutter test integration_test/screenshots_test.dart \
 //     --device-id <udid> --dart-define FIXO_PERSONA=homeowner \
 //     --dart-define SHOT_MATCH_JOB=<requestedJobId>
@@ -26,7 +25,7 @@
 
 import 'package:fixo/main.dart' as app;
 import 'package:fixo/router/app_router.dart';
-import 'package:fixo/widgets/notification_center.dart';
+import 'package:fixo/ui/shared/notification_center.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -167,7 +166,7 @@ Future<void> _captureNotifications(WidgetTester tester) async {
     for (var i = samples.length - 1; i >= 0; i--) {
       final (category, title, body) = samples[i];
       await center.add(
-        FixoNotification(
+        ThNotification(
           id: 'shot-$i',
           title: title,
           body: body,
@@ -340,10 +339,7 @@ Future<void> _captureJobsFilters(WidgetTester tester) async {
   for (final (label, name) in filters) {
     final segment = find.descendant(of: filter, matching: find.text(label));
     if (segment.evaluate().isEmpty) {
-      shotSkipped(
-        name,
-        'no "$label" segment under jobs_filter (v1 list? run with UI_V2=all)',
-      );
+      shotSkipped(name, 'no "$label" segment under jobs_filter');
       continue;
     }
     await tester.tap(segment);
@@ -371,7 +367,7 @@ Future<void> _capturePostJob(WidgetTester tester) async {
   if (project.evaluate().isEmpty) {
     shotSkipped(
       'homeowner/06c_post_project',
-      'no "Project" segment (v1 post-job screen? run with UI_V2=all)',
+      'no "Project" segment on the post-job screen',
     );
     return;
   }

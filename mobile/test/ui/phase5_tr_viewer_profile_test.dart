@@ -5,6 +5,7 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_screen.dart';
+import 'package:fixo/viewmodels/jobs_viewmodel.dart' show reviewsRepositoryProvider;
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:fixo/viewmodels/theme_mode_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -62,41 +63,12 @@ void main() {
               (ref) => _FakeProfileNotifier({'id': 'viewer-1', 'role': role}),
             ),
           ],
-          child: const MaterialApp(
-            home: ThTradieProfileRoute(
-              profileId: 't2',
-              fallback: Text('v1 fallback'),
-            ),
-          ),
+          child: const MaterialApp(home: ThTradieProfileRoute(profileId: 't2')),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('ho_tradie_profile')), findsOneWidget);
-      expect(find.text('v1 fallback'), findsNothing);
     });
   }
-
-  testWidgets('other roles keep the v1 fallback', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          reviewsRepositoryProvider.overrideWithValue(_Reviews()),
-          themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
-          profileViewModelProvider.overrideWith(
-            (ref) => _FakeProfileNotifier({'id': 'staff-1', 'role': 2}),
-          ),
-        ],
-        child: const MaterialApp(
-          home: ThTradieProfileRoute(
-            profileId: 't2',
-            fallback: Text('v1 fallback'),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('v1 fallback'), findsOneWidget);
-  });
 }

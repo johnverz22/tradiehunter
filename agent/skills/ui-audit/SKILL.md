@@ -5,10 +5,12 @@ description: Run the automated TradieHunter mockup/design audit (overflow, trunc
 # UI audit
 
 ## Procedure
-1. Run the probe (needs python3 + playwright + chromium):
-   `python3 docs/design/mobile/tools/audit_full.py docs/design /tmp/audit.json`
-2. Read the JSON. Every finding names the frame and selector; the probe finds
-   candidates, it cannot judge intent.
+1. Run the gate: `node docs/design/mobile/tools/build.mjs --check`
+   (or `make -C agent audit`). It checks tokens, generated screens and WCAG
+   contrast; the visual checks below are manual against
+   `docs/design/mobile/mockups/index.html`.
+2. Every finding names the screen and token pair; the gate finds candidates,
+   it cannot judge intent.
 3. Apply the gates (docs/DESIGN.md §8). All must hold:
    - screen-frame contrast ≥ 4.5:1 (3:1 for ≥24px or ≥18.66px bold)
    - no text under 12px anywhere

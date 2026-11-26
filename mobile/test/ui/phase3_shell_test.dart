@@ -8,15 +8,10 @@ import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
-import 'package:fixo/repositories/jobs_repository.dart';
-import 'package:fixo/repositories/job_hub_client.dart';
-import 'package:fixo/views/homeowner/homeowner_dashboard_view.dart';
-import 'package:fixo/views/jobs/jobs_list_screen.dart';
-import 'package:fixo/theme/fixo_theme.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/shared/chat_unread_provider.dart';
 import 'package:fixo/ui/shared/th_shell.dart';
-import 'package:fixo/viewmodels/jobs_viewmodel.dart';
+import 'package:fixo/viewmodels/jobs_viewmodel.dart' show chatRepositoryProvider;
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,19 +45,6 @@ class _ChatRepo extends ChatRepository {
   }
 }
 
-class _JobsRepo extends JobsRepository {
-  _JobsRepo() : super(Dio(), const FlutterSecureStorage());
-  @override
-  Future<List<Job>> getMyJobs({String? status}) async => const [];
-  @override
-  Future<List<Job>> getTradieJobs() async => const [];
-}
-
-class _JobHub extends JobHubClient {
-  _JobHub() : super(const FlutterSecureStorage());
-  @override
-  Future<void> connect({required String baseUrl}) async {}
-}
 
 ConversationSummary _conv(String jobId, int unread) => ConversationSummary(
   jobId: jobId,
@@ -174,163 +156,6 @@ void main() {
     await tester.tap(find.text('Chat'));
     await tester.pumpAndSettle();
     expect(find.text('MESSAGES SCREEN'), findsOneWidget);
-  });
-
-  testWidgets('v1 homeowner dashboard keeps its app theme under the shell', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 1400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final router = GoRouter(
-      initialLocation: '/home',
-      routes: [
-        ShellRoute(
-          builder: (context, state, child) => ThShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (_, _) => const HomeownerDashboardView(),
-            ),
-          ],
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    final container = ProviderContainer(
-      overrides: [
-        profileRepositoryProvider.overrideWithValue(
-          _ProfileRepo(const {'role': 0, 'firstName': 'Sarah'}),
-        ),
-        chatRepositoryProvider.overrideWithValue(_ChatRepo(const [])),
-        jobsRepositoryProvider.overrideWithValue(_JobsRepo()),
-        jobHubClientProvider.overrideWithValue(_JobHub()),
-      ],
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp.router(
-          routerConfig: router,
-          theme: FixoTheme.light(),
-          darkTheme: FixoTheme.dark(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('homeowner_dashboard')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-    'v1 homeowner Home tab under the shell matches light and dark goldens',
-    (tester) async {
-      for (final dark in [false, true]) {
-        tester.view.physicalSize = const Size(390, 844);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        final router = GoRouter(
-          initialLocation: '/home',
-          routes: [
-            ShellRoute(
-              builder: (context, state, child) => ThShell(child: child),
-              routes: [
-                GoRoute(
-                  path: '/home',
-                  builder: (_, _) => const HomeownerDashboardView(),
-                ),
-              ],
-            ),
-          ],
-        );
-        addTearDown(router.dispose);
-        final container = ProviderContainer(
-          overrides: [
-            profileRepositoryProvider.overrideWithValue(
-              _ProfileRepo(const {'role': 0, 'firstName': 'Sarah'}),
-            ),
-            chatRepositoryProvider.overrideWithValue(_ChatRepo(const [])),
-            jobsRepositoryProvider.overrideWithValue(_JobsRepo()),
-            jobHubClientProvider.overrideWithValue(_JobHub()),
-          ],
-        );
-        addTearDown(container.dispose);
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp.router(
-              routerConfig: router,
-              theme: FixoTheme.light(),
-              darkTheme: FixoTheme.dark(),
-              builder: (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  platformBrightness: dark ? Brightness.dark : Brightness.light,
-                ),
-                child: child!,
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('homeowner_dashboard')), findsOneWidget);
-        expect(tester.takeException(), isNull, reason: dark ? 'dark' : 'light');
-        await expectLater(
-          find.byType(ThShell),
-          matchesGoldenFile(
-            'goldens/phase3_shell_home_${dark ? 'dark' : 'light'}.png',
-          ),
-        );
-        await tester.pumpWidget(const SizedBox());
-        await tester.pump();
-      }
-    },
-  );
-
-  testWidgets('v1 tradie Jobs list keeps its app theme under the shell', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final router = GoRouter(
-      initialLocation: '/jobs',
-      routes: [
-        ShellRoute(
-          builder: (context, state, child) => ThShell(child: child),
-          routes: [
-            GoRoute(path: '/jobs', builder: (_, _) => const JobsListScreen()),
-          ],
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    final container = ProviderContainer(
-      overrides: [
-        profileRepositoryProvider.overrideWithValue(
-          _ProfileRepo(const {'role': 1}),
-        ),
-        chatRepositoryProvider.overrideWithValue(_ChatRepo(const [])),
-        jobsRepositoryProvider.overrideWithValue(_JobsRepo()),
-      ],
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp.router(
-          routerConfig: router,
-          theme: FixoTheme.light(),
-          darkTheme: FixoTheme.dark(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('My Jobs'), findsOneWidget);
-    expect(tester.takeException(), isNull);
   });
 
   testWidgets('tradie shell has no FAB and lands tab 0 on /tradie', (

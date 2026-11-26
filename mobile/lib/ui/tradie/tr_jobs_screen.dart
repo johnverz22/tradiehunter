@@ -11,7 +11,6 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_state_view.dart';
 import '../shared/th_shell.dart' show kThBreakpointMasterDetail;
-import '../ui_flags.dart';
 import 'tr_home_mapper.dart';
 import 'tr_job_card.dart';
 import 'tr_job_router.dart';
@@ -98,8 +97,8 @@ List<TrDayGroup> groupTradieJobsByDay(
 class TrJobsScreen extends ConsumerStatefulWidget {
   const TrJobsScreen({super.key, @visibleForTesting this.wideLayoutOverride});
 
-  /// Test seam: forces the `wide_layout` flag on/off without `--dart-define`.
-  /// Null (production) defers to `isV2Screen('wide_layout')`.
+  /// Test seam: forces the wide master-detail layout on/off. Null (production)
+  /// enables it whenever the window is at least [kThBreakpointMasterDetail].
   final bool? wideLayoutOverride;
 
   @override
@@ -161,7 +160,7 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
           // Window width, not the pane's constraints: THScaffold's gutter
           // would otherwise make an exactly-744 window fall short.
           final isWide =
-              (widget.wideLayoutOverride ?? isV2Screen('wide_layout')) &&
+              (widget.wideLayoutOverride ?? true) &&
               MediaQuery.sizeOf(context).width >= kThBreakpointMasterDetail;
 
           // On resize from wide→narrow, clear selection so it isn't stale.
@@ -208,7 +207,6 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
                   child: TrJobRouter(
                     key: ValueKey('tr_job_detail_$_selectedJobId'),
                     jobId: _selectedJobId!,
-                    v1Fallback: () => const SizedBox.shrink(),
                   ),
                 )
               : const _TrJobsEmptyDetail();

@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
@@ -21,7 +20,6 @@ Future<void> _loadFont(String family, List<String> paths) async {
 /// Call from `setUpAll` in each Phase 3 suite.
 Future<void> loadPhase3Fixtures() async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
   const base = 'assets/fonts/v2';
   await _loadFont('Lexend', [
     '$base/Lexend-Regular.ttf',

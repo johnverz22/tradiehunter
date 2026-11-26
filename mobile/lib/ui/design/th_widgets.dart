@@ -154,7 +154,7 @@ class THButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   /// While true the button renders a spinner instead of its icon and ignores
-  /// taps, regardless of [onPressed]. Mirrors the v1 FixoPrimaryButton.
+  /// taps, regardless of [onPressed].
   final bool loading;
 
   @override

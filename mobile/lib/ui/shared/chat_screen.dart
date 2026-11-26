@@ -6,7 +6,7 @@
 // (every action routes to the same viewmodels/repositories as v1):
 //   • participant-first header (contact endpoint → message sender → job title)
 //   • Call only when the server authorized a number (Booked+)
-//   • Schedule action at Booked/InProgress → v1 ScheduleSheet (transitional
+//   • Schedule action at Booked/InProgress → ThScheduleSheet (transitional
 //     coexistence, like THNotice → v1 host; the sheet moves to v2 with the
 //     job-detail screens in a later phase)
 //   • safety menu (report abuse / block user) via profileRepository
@@ -31,7 +31,7 @@ import '../../utils/money.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
-import '../../widgets/schedule_sheet.dart';
+import 'th_schedule_sheet.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
@@ -349,7 +349,7 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
                     icon: Icons.calendar_month_outlined,
                     semanticLabel: 'Schedule',
                     onPressed: () =>
-                        ScheduleSheet.show(context, jobId: widget.jobId),
+                        ThScheduleSheet.show(context, jobId: widget.jobId),
                   ),
                 // Call is shown only when the server authorized a real number.
                 if (hasPhone)

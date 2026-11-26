@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/ui/homeowner/ho_job_detail_state.dart';
 import 'package:fixo/ui/homeowner/ho_job_status.dart';
-import 'package:fixo/views/widgets/job_status_presentation.dart';
 
 Job _job(String status, {String? disputeStatus}) => Job(
   id: 'job-1',
@@ -16,33 +15,7 @@ Job _job(String status, {String? disputeStatus}) => Job(
 );
 
 void main() {
-  group('ThJobStatus parity', () {
-    test('known status labels and stages match the v1 table', () {
-      for (final status in <String>[
-        'Requested',
-        'AwaitingPayment',
-        'PaymentReview',
-        'Booked',
-        'InProgress',
-        'AwaitingConfirmation',
-        'Completed',
-        'Cancelled',
-        'Expired',
-        'Disputed',
-      ]) {
-        expect(
-          HoJobStatus.forStatus(status).label,
-          JobStatusPresentation.forStatus(status).label,
-          reason: status,
-        );
-        expect(
-          HoJobStatus.forStatus(status).stage,
-          JobStatusPresentation.forStatus(status).progressStage,
-          reason: status,
-        );
-      }
-    });
-
+  group('HoJobStatus', () {
     test('unknown values have a safe presentation', () {
       expect(HoJobStatus.forStatus(null).label, 'Status unavailable');
       expect(HoJobStatus.forStatus('FutureStatus').stage, isNull);

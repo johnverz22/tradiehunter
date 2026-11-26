@@ -1,9 +1,5 @@
 // P5 — Booked → Completed Lifecycle
 //
-// Run with: UI_V2=all exercises the v2 homeowner review/payment screens;
-// default flags keep the v1 detail views. Tradie side is v1 until Phase 5
-// (tradie screens are not flagged).
-//
 // Self-seeding: fixtures drive a fresh job to the required state via the API
 // (FixtureHelper), so no pre-seeded Booked job is needed and either persona
 // can run on a single simulator.

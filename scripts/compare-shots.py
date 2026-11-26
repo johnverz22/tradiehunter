@@ -54,13 +54,13 @@ def fit_height(img, height):
 
 
 def run_info(shots, theme, capture):
-    """ui_v2 / commit from the run.json written next to the capture, if any."""
+    """commit / text scale from the run.json written next to the capture, if any."""
     persona_dir = (shots / theme / capture).parent
     for candidate in (persona_dir / "run.json",):
         if candidate.exists():
             try:
                 d = json.loads(candidate.read_text())
-                return f"UI_V2={d.get('ui_v2') or '<default>'}  {d.get('commit', '?')}  x{d.get('text_scale', '1.0')}"
+                return f"{d.get('commit', '?')}  x{d.get('text_scale', '1.0')}"
             except (ValueError, OSError):
                 pass
     return "no run.json"

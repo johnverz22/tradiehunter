@@ -23,7 +23,7 @@ import 'package:fixo/viewmodels/auth_viewmodel.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/locale_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/widgets/notification_center.dart';
+import 'package:fixo/ui/shared/notification_center.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -707,7 +707,7 @@ void main() {
     final container = await mountNotifications(tester);
     final center = container.read(notificationCenterProvider.notifier);
     center.add(
-      FixoNotification(
+      ThNotification(
         id: 'n1',
         title: 'Quote received',
         body: 'Bay Builders',
@@ -716,7 +716,7 @@ void main() {
       ),
     );
     center.add(
-      FixoNotification(
+      ThNotification(
         id: 'n2',
         title: 'Payout sent',
         body: 'Weekly payout',
@@ -752,7 +752,7 @@ void main() {
     container
         .read(notificationCenterProvider.notifier)
         .add(
-          FixoNotification(
+          ThNotification(
             id: 'n1',
             title: 'Quote received',
             category: 'jobs',
@@ -782,7 +782,7 @@ void main() {
       container
           .read(notificationCenterProvider.notifier)
           .add(
-            FixoNotification(
+            ThNotification(
               id: 'n$dark',
               title: 'Approve final amount',
               body: r'Aroha Plumbing finished · $261.00',
@@ -822,7 +822,7 @@ void main() {
     container
         .read(notificationCenterProvider.notifier)
         .add(
-          FixoNotification(
+          ThNotification(
             id: 'large-text',
             title: 'An unusually long notification title that needs truncation',
             body: 'A detailed notification preview that should wrap or ellipsize cleanly on a narrow screen.',

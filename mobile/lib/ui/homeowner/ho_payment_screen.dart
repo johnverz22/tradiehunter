@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../feedback/fixo_notice.dart';
+import '../feedback/th_notice.dart';
 import '../../models/marketplace.dart';
 import '../../models/payment.dart';
 import '../../utils/money.dart';
@@ -54,7 +54,7 @@ class _HoPaymentScreenState extends ConsumerState<HoPaymentScreen> {
   Future<void> _copy(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (mounted) {
-      FixoNotice.info(context, '$label copied.');
+      THNotice.info(context, '$label copied.');
     }
   }
 

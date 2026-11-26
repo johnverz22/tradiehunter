@@ -1,9 +1,5 @@
 // P6 — Cancellations
 //
-// Run with: UI_V2=all exercises the v2 booked-screen cancel sheet
-// (ho_booked_*); default flags exercise the v1 detail views. Tradie side is
-// v1 until Phase 5.
-//
 // Self-seeding: each test gets a fresh Booked job from FixtureHelper.
 // Either persona runs on a single simulator.
 //

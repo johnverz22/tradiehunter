@@ -14,7 +14,6 @@ import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
-import '../ui_flags.dart';
 import 'tr_extra_cost_page.dart';
 import 'tr_job_parts.dart';
 import 'tr_job_providers.dart';
@@ -135,16 +134,10 @@ class _TrJobBookedScreenState extends ConsumerState<TrJobBookedScreen> {
   }
 
   Future<void> _requestExtraCost() async {
-    final proposal = isV2Screen('tr_extra_cost')
-        ? await pushTrExtraCost(
-            context,
-            homeownerFirstName: widget.contact?.firstName,
-          )
-        : await showModalBottomSheet<(String, Decimal, String)?>(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => const TrRequestExtraCostSheet(),
-          );
+    final proposal = await pushTrExtraCost(
+      context,
+      homeownerFirstName: widget.contact?.firstName,
+    );
     if (proposal == null || !mounted) return;
     final (kind, amount, description) = proposal;
 
