@@ -78,8 +78,8 @@ scripts/run-e2e.sh C0 --seed
 
 ## 5. Known gaps to decide on
 
-- **Draft jobs** show a read-only fallback (v1 had "Edit job"). Open: add a ThPostJob edit mode if drafts are user-visible (6.12-b).
-- **`ThScope`** still wraps ~49 files and many test hosts. Redundant now that `MaterialApp` uses `THTheme`. Open (6.12-a).
+- ~~**Draft jobs**~~ Closed (6.12-b): the backend has no `Draft` status, so nothing to edit.
+- **`ThScope`** still wraps ~49 files and many test hosts. Redundant now that `MaterialApp` uses `THTheme`; deferred (6.12-a) because 66 bare test `MaterialApp`s rely on it.
 - ~~**Dead code:** `TrRequestExtraCostSheet` and `TrCheckOutSheet`~~ **Removed** (6.12-c, 236 lines from `ui/tradie/tr_job_parts.dart`).
 - **Tests deleted** with v1 (e.g. v1 dashboards, tradie job detail, onboarding wizard, payment/dispute screens). v2 equivalents live in `test/ui/phase*_test.dart`; add coverage where a deleted test had no v2 twin.
 - **Hardcode one-offs** listed in `mobile/HARDCODED_AUDIT.md`.
