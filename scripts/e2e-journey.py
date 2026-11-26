@@ -82,6 +82,7 @@ class Unreachable(Exception):
 # ── Persona manifest (scripts/e2e-personas.py) ───────────────────────────────
 
 MANIFEST_PATH = None
+TRADIES = []  # every tradie persona of the manifest (first one is TRADIE)
 MATCH_MODE = "auto"  # auto | quick | direct (see --match-mode)
 
 
@@ -98,7 +99,7 @@ def _read_manifest(path):
 
 def apply_manifest(path):
     """Rebind HOMEOWNER/TRADIE/STAFF to the first persona of each role."""
-    global HOMEOWNER, TRADIE, STAFF, MANIFEST_PATH
+    global HOMEOWNER, TRADIE, STAFF, MANIFEST_PATH, TRADIES
     try:
         m = _read_manifest(path)
     except (OSError, ValueError) as e:
@@ -112,6 +113,7 @@ def apply_manifest(path):
     if missing:
         raise Unreachable("manifest %s has no %s persona (re-run e2e-personas.py with --staff 1)" % (path, "/".join(missing)))
     HOMEOWNER, TRADIE, STAFF = first["homeowner"], first["tradie"], first["staff"]
+    TRADIES = [(p["email"], p["password"]) for p in m.get("personas", []) if p.get("role") == "tradie"]
     MANIFEST_PATH = path
 
 
@@ -133,6 +135,14 @@ def record_job(job_id, scenario):
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
 
+def _json_default(o):
+    """Request bodies may carry Decimal amounts: integral values go out as ints
+    (exact), others as floats (fine for the 2dp test amounts used here)."""
+    if isinstance(o, Decimal):
+        return int(o) if o == o.to_integral_value() else float(o)
+    raise TypeError("cannot serialise %r" % (o,))
+
+
 def _request(method, path, token=None, body=None, raw=None, content_type=None):
     headers = {}
     data = None
@@ -141,7 +151,7 @@ def _request(method, path, token=None, body=None, raw=None, content_type=None):
     if raw is not None:
         data, headers["Content-Type"] = raw, content_type
     elif body is not None:
-        data, headers["Content-Type"] = json.dumps(body).encode(), "application/json"
+        data, headers["Content-Type"] = json.dumps(body, default=_json_default).encode(), "application/json"
     req = urllib.request.Request(API + path, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
@@ -337,6 +347,7 @@ def assert_payment_open(job, ho, flow):
         j = get("/jobs/%d" % job, ho) or {}
         final = dec(j.get("finalAmount"))
         need(amount == final, "payment.amount %s != job.finalAmount %s" % (amount, final))
+    need(pay.get("status") == "Pending", "payment.status %r before upload, expected Pending (seen live, job 402)" % pay.get("status"))
     need(str(job) in str(pay.get("reference") or ""), "payment.reference %r does not carry job id %d" % (pay.get("reference"), job))
     print("    (payment %s %s, status %r, canUploadReceipt=%r)" % (amount, pay.get("currency"), pay.get("status"), pay.get("canUploadReceipt")))
     return pay
@@ -517,6 +528,125 @@ def run_journey(rec):
     return job
 
 
+
+def expect_http_error(desc, fn):
+    """The call must be rejected (HTTP >= 400). Unreachable still propagates."""
+    try:
+        fn()
+    except StepFailed:
+        return
+    raise StepFailed("%s: expected an HTTP error but the call succeeded" % desc)
+
+
+def submit_quote(job, token, amount):
+    """Fixed-price quote. GST must match the tradie's registration (D8), which
+    the persona fabric does not set, so retry once with the opposite flag."""
+    body = {"pricingModel": "Fixed", "amount": amount, "materialsIncluded": False, "gstIncluded": False}
+    try:
+        return post("/jobs/%d/quotes" % job, token, body)
+    except StepFailed as e:
+        if "GST" not in str(e):
+            raise
+        body["gstIncluded"] = True
+        return post("/jobs/%d/quotes" % job, token, body)
+
+
+def run_competing_quotes(rec):
+    """Plan 08 P2.4: a Project job, three tradies quote, the homeowner accepts
+    one. Accepting must book the job at that quote's pricing and decline the
+    rest atomically (QuoteService.AcceptQuoteAsync). Project jobs are the only
+    place real competition exists (SPECS.md s3); hourly jobs take one pending
+    request at a time."""
+    if not MANIFEST_PATH or len(TRADIES) < 3:
+        raise Unreachable(
+            "competing-quotes needs --manifest with >= 3 tradies (e2e-personas.py --tradies 3); have %d"
+            % len(TRADIES)
+        )
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tokens = [rec.step("login tradie %d" % (i + 1), lambda c=c: login(c)) for i, c in enumerate(TRADIES[:3])]
+    ids = [(get("/profile", t) or {}).get("id") for t in tokens]
+    need(all(ids) and len(set(ids)) == 3, "could not read 3 distinct tradie ids: %r" % ids)
+    amounts = [Decimal("1500"), Decimal("1700"), Decimal("1900")]  # below the s362F threshold used by v2_flows_test
+    winner = 1  # the middle quote wins, so first/last both have to be declined
+
+    def create():
+        body = post("/jobs", ho, {
+            "title": "Quotes — %d" % int(time.time() * 1000),
+            "description": "Competing quotes journey job.",
+            "urgency": "Medium", "latitude": -36.8485, "longitude": 174.7633,
+            "address": "1 Test St, Auckland", "serviceId": 1, "timingPreference": "Flexible",
+            "jobType": "Project", "budgetMin": 1200, "budgetMax": 2400,
+            "scopeNotes": "Competing quotes journey scope.",
+        })
+        need(body and "id" in body, "no job id in response: %r" % body)
+        return int(body["id"])
+
+    job = rec.step("homeowner posts Project job", create)
+    record_job(job, "competing-quotes")
+    flow = int((get("/jobs/%d" % job, ho) or {}).get("flowVersion") or 1)
+    need(flow >= 2, "quotes need a v2 job, got flow %d" % flow)
+
+    for i, tid in enumerate(ids):
+        rec.step("homeowner requests a quote from tradie %d" % (i + 1),
+                 lambda tid=tid: post("/jobs/%d/request" % job, ho, {"tradieId": tid}))
+    quote_ids = []
+    for i, (tok, amt) in enumerate(zip(tokens, amounts)):
+        def q(tok=tok, amt=amt):
+            quote_ids.append(int(submit_quote(job, tok, amt)["id"]))
+        rec.step("tradie %d submits Fixed quote %s" % (i + 1, amt), q)
+    # Order of GET results is not guaranteed; key everything by quote id.
+
+    def before_accept():
+        quotes = get("/jobs/%d/quotes" % job, ho)
+        need(isinstance(quotes, list) and len(quotes) == 3, "expected 3 quotes, got %r" % quotes)
+        by_id = {q["id"]: q for q in quotes}
+        for qid, tid, amt in zip(quote_ids, ids, amounts):
+            q = by_id.get(qid)
+            need(q is not None, "quote %d missing from the homeowner list" % qid)
+            need(q.get("status") == "Submitted", "quote %d status %r, expected Submitted" % (qid, q.get("status")))
+            need(q.get("tradieId") == tid, "quote %d belongs to %r, expected %r" % (qid, q.get("tradieId"), tid))
+            need(q.get("pricingModel") == "Fixed" and dec(q.get("amount")) == amt,
+                 "quote %d is %r %r, expected Fixed %s" % (qid, q.get("pricingModel"), q.get("amount"), amt))
+        need(status_of(job, ho) == "Requested", "job should stay Requested until a quote is accepted")
+
+    rec.step("homeowner sees 3 Submitted quotes at the right prices", before_accept)
+
+    win_id, win_tradie, win_amt = quote_ids[winner], ids[winner], amounts[winner]
+    rec.step("homeowner accepts the middle quote",
+             lambda: post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False}))
+    rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
+
+    def after_accept():
+        j = get("/jobs/%d" % job, ho) or {}
+        need(j.get("matchedTradieId") == win_tradie, "matchedTradieId %r is not the accepted tradie" % j.get("matchedTradieId"))
+        need(j.get("agreedPricingModel") == "Fixed", "agreedPricingModel %r, expected Fixed" % j.get("agreedPricingModel"))
+        need(dec(j.get("estimatedTotal")) == win_amt, "estimatedTotal %r != accepted quote %s" % (j.get("estimatedTotal"), win_amt))
+        by_id = {q["id"]: q for q in get("/jobs/%d/quotes" % job, ho)}
+        for qid in quote_ids:
+            want = "Accepted" if qid == win_id else "Declined"
+            need(by_id[qid].get("status") == want, "quote %d is %r, expected %s" % (qid, by_id[qid].get("status"), want))
+
+    rec.step("accepted quote books the job; the others are Declined", after_accept)
+
+    def no_pending_offers():
+        for i, tok in enumerate(tokens):
+            need(_request("GET", "/jobs/%d/offers/pending" % job, tok) is None,
+                 "tradie %d still has a pending offer after the job booked" % (i + 1))
+
+    rec.step("no tradie has a pending offer left", no_pending_offers)
+
+    for i in (0, 2):
+        rec.step("declined tradie %d cannot check in" % (i + 1),
+                 lambda i=i: expect_http_error("check-in by a declined tradie",
+                                               lambda: post("/jobs/%d/check-in" % job, tokens[i])))
+    rec.step("accepted tradie checks in", lambda: post("/jobs/%d/check-in" % job, tokens[winner]))
+    rec.step("job InProgress", lambda: wait_status(job, ho, "InProgress"))
+    return job
+
+
+SCENARIOS = {"happy-path": run_journey, "competing-quotes": run_competing_quotes}
+
+
 def write_junit(path, rows, total):
     fails = sum(1 for _, _, e in rows if e)
     lines = [
@@ -545,6 +675,12 @@ def main():
         help="how the tradie gets the offer: quick-match, or a direct request to the persona tradie "
         "(auto = direct for --manifest runs on v2, quick-match otherwise)",
     )
+    ap.add_argument(
+        "--scenario",
+        choices=tuple(SCENARIOS) + ("all",),
+        default="happy-path",
+        help="happy-path (default; the run-e2e.sh gate) | competing-quotes (needs --manifest, >= 3 tradies) | all",
+    )
     ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
     args = ap.parse_args()
     global MATCH_MODE
@@ -568,8 +704,13 @@ def main():
     t0 = time.time()
     code = 0
     job = None
+    names = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
     try:
-        job = run_journey(rec)
+        jobs = []
+        for name in names:
+            print("-- scenario: %s --" % name)
+            jobs.append(SCENARIOS[name](rec))
+        job = ", ".join(str(j) for j in jobs)
     except Unreachable as e:
         print("\nUNREACHABLE: %s" % e)
         code = 2
@@ -583,7 +724,7 @@ def main():
     if args.junit:
         write_junit(args.junit, rec.rows, total)
     if code == 0:
-        print("\nJOURNEY PASS: job %s completed and reviewed in %.0fs" % (job, total))
+        print("\nJOURNEY PASS: %s (job %s) in %.0fs" % (", ".join(names), job, total))
     return code
 
 
