@@ -420,8 +420,7 @@ Future<void> _tradieTour(WidgetTester tester, ManifestData manifest) async {
   await Demo.tapText(tester, 'Accept Job');
   var accepted = await Demo.until(
     tester,
-    () async =>
-        await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
+    () async => await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
     timeout: const Duration(seconds: 25),
   );
   if (!accepted && offer != null) {
@@ -434,8 +433,7 @@ Future<void> _tradieTour(WidgetTester tester, ManifestData manifest) async {
     );
     await Demo.until(
       tester,
-      () async =>
-          await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
+      () async => await ApiHelper.getJobStatus(jobId, tradie) == 'Booked',
     );
   }
   // THNotice.success briefly appears after acceptance — hold for visibility.
@@ -443,10 +441,7 @@ Future<void> _tradieTour(WidgetTester tester, ManifestData manifest) async {
   await Demo.signal('offer_accepted');
 
   // Active job screen (tradie_job_detail_screen): StatusStrip, timeline, notices.
-  await Demo.step(
-    _tr,
-    'Tradie: booked — active job and status timeline',
-  );
+  await Demo.step(_tr, 'Tradie: booked — active job and status timeline');
   appRouter.go('/tradie/jobs/$jobId');
   await Demo.beat(tester, 2);
   // Scroll to reveal the job description and check-in button below the fold.
@@ -509,12 +504,34 @@ Future<void> _tradieTour(WidgetTester tester, ManifestData manifest) async {
   if (!await Demo.tapKey(tester, 'check_out_button')) {
     await Demo.note(_tr, 'checked out via API (button not found)');
     await ApiHelper.checkOut(jobId, tradie);
+  } else {
+    // v1.7: Check out opens the complete-job page (TrCompletePage) — the
+    // tradie confirms the final hours via 'Send for approval'.
+    await Demo.beat(tester);
+    if (!await Demo.tapKey(tester, 'check_out_submit_button')) {
+      await Demo.note(_tr, 'checked out via API (complete page not shown)');
+      await ApiHelper.checkOut(jobId, tradie);
+    }
   }
-  await Demo.until(
+  final checkedOut = await Demo.until(
     tester,
     () async =>
         await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingConfirmation',
   );
+  if (!checkedOut) {
+    await Demo.note(
+      _tr,
+      'checked out via API (job never reached AwaitingConfirmation)',
+    );
+    await ApiHelper.checkOut(jobId, tradie);
+    await Demo.until(
+      tester,
+      () async =>
+          await ApiHelper.getJobStatus(jobId, tradie) == 'AwaitingConfirmation',
+    );
+  }
+  // Dismiss the 'Check-out submitted' summary dialog if it is up.
+  await Demo.tapText(tester, 'OK');
   // THNotice visible.
   await Demo.beat(tester, 1.5);
   await Demo.signal('checked_out');

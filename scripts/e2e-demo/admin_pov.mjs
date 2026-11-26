@@ -129,7 +129,7 @@ const browser = await chromium.launch({
   headless: false,
   args: [`--window-size=${W},${H}`, `--window-position=${X},${Y}`],
 });
-const context = await browser.newContext({ viewport: { width: W, height: H - 90 } });
+const context = await browser.newContext({ viewport: null });
 await context.addInitScript(OVERLAY);
 const page = await context.newPage();
 
