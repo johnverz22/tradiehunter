@@ -53,7 +53,9 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(message.bottom, lessThan(cancel.top));
+    // Side by side (one Row in the sticky bar), not stacked.
+    expect(message.right, lessThanOrEqualTo(cancel.left));
+    expect((message.center.dy - cancel.center.dy).abs(), lessThan(1));
     expect(cancel.bottom, lessThanOrEqualTo(view.bottom));
   });
 

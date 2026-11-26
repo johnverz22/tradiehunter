@@ -207,7 +207,6 @@ class _TrJobInProgressScreenState extends ConsumerState<TrJobInProgressScreen> {
         onReportNoShow: () {},
         onDispute: _openDispute,
       ),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       stickyBar: THStickyBar(
         children: [

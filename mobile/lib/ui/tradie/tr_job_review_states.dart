@@ -44,7 +44,6 @@ class TrJobAwaitingConfirmationScreen extends ConsumerWidget {
     return THScaffold(
       key: ValueKey('tradie_job_${job.id}'),
       appBar: THAppBar(title: job.title, subtitle: job.category),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -197,7 +196,6 @@ class _TrJobCompletedScreenState extends ConsumerState<TrJobCompletedScreen> {
     return THScaffold(
       key: ValueKey('tradie_job_${job.id}'),
       appBar: THAppBar(title: job.title, subtitle: job.category),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       stickyBar: homeownerId.isNotEmpty && !_hasReview
           ? THStickyBar(
@@ -304,7 +302,6 @@ class TrJobCancelledScreen extends ConsumerWidget {
     return THScaffold(
       key: ValueKey('tradie_job_${job.id}'),
       appBar: THAppBar(title: job.title, subtitle: job.category),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -356,7 +353,6 @@ class TrJobDisputedScreen extends ConsumerWidget {
     return THScaffold(
       key: ValueKey('tradie_job_${job.id}'),
       appBar: THAppBar(title: job.title, subtitle: job.category),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,7 +410,6 @@ class TrJobFallbackScreen extends ConsumerWidget {
     return THScaffold(
       key: ValueKey('tradie_job_${job.id}'),
       appBar: THAppBar(title: job.title, subtitle: job.category),
-      dock: const THDock(role: THDockRole.tradie, active: THDockTab.jobs),
       scrollable: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

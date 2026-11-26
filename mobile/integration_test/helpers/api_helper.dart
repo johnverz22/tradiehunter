@@ -3,6 +3,10 @@ import 'dart:io';
 
 import 'test_config.dart';
 
+/// Real-looking street address for fixture jobs. The API path bypasses the
+/// LINZ lookup, so any well-formed string works.
+const _demoAddress = '1 Queen Street, Auckland CBD, Auckland 1010';
+
 /// Thin HTTP helper for making direct API calls from within integration tests.
 ///
 /// Used for two purposes:
@@ -64,7 +68,7 @@ class ApiHelper {
       'urgency': urgency,
       'latitude': latitude,
       'longitude': longitude,
-      'address': '1 Test St, Auckland',
+      'address': _demoAddress,
       'serviceId': serviceId,
       'timingPreference': 'Flexible',
       'estimatedHours': ?hours,

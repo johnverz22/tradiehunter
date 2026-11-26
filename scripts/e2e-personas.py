@@ -73,7 +73,8 @@ SAFE_HOSTS = {"localhost", "127.0.0.1", "::1"}
 EMAIL_DOMAIN = "fixo.test"
 
 # Same location the seeded tradie uses, so matching radius checks line up.
-AKL = {"address": "1 Test St, Auckland", "latitude": -36.8485, "longitude": 174.7633}
+DEMO_ADDRESS = "1 Queen Street, Auckland CBD, Auckland 1010"  # real-looking street address; the API fixtures bypass LINZ lookup
+AKL = {"address": DEMO_ADDRESS, "latitude": -36.8485, "longitude": 174.7633}
 NAMES = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"]
 
 # Smallest valid PNG; a unique suffix keeps each upload distinct.

@@ -143,33 +143,24 @@ class _HoBookedScreenState extends ConsumerState<HoBookedScreen> {
     return ThScope(
       themeMode: ref.watch(themeModeProvider),
       child: THScaffold(
-        // Two stacked buttons: room for the taller sticky bar.
-        bottomClearance: Sizes.stickyClearance + Sizes.button + Space.s3,
         // The action always lives in the sticky bottom bar (never inline at
-        // the end of the scroll): primary Message, ghost Cancel job.
+        // the end of the scroll): primary Message beside ghost Cancel job.
+        // THStickyBar lays its children out side by side (and only stacks
+        // them at large text scales), so each button is its own child.
         stickyBar: THStickyBar(
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: Space.s1,
-              children: [
-                THButton(
-                  key: const Key('open_chat_button'),
-                  label: firstName.isEmpty ? 'Message' : 'Message $firstName',
-                  icon: Icons.chat_bubble_rounded,
-                  kind: THButtonKind.primary,
-                  onPressed: canChat
-                      ? () => context.push('/chat/${job.id}')
-                      : null,
-                ),
-                THButton(
-                  key: const Key('cancel_job_button'),
-                  label: 'Cancel job',
-                  kind: THButtonKind.ghost,
-                  onPressed: _busy ? null : _cancel,
-                ),
-              ],
+            THButton(
+              key: const Key('open_chat_button'),
+              label: firstName.isEmpty ? 'Message' : 'Message $firstName',
+              icon: Icons.chat_bubble_rounded,
+              kind: THButtonKind.primary,
+              onPressed: canChat ? () => context.push('/chat/${job.id}') : null,
+            ),
+            THButton(
+              key: const Key('cancel_job_button'),
+              label: 'Cancel job',
+              kind: THButtonKind.ghost,
+              onPressed: _busy ? null : _cancel,
             ),
           ],
         ),
