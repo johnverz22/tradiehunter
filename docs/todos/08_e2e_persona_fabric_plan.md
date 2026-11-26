@@ -62,13 +62,14 @@ e2e-personas.py ──► manifest.json ──┬─► e2e-journey.py   (API ti
 - [x] **P1.5** Namespacing is enough to leave data in the DB; add optional `--cleanup` that only touches `qa+<runid>-*` accounts via supported API routes (S)
 - [x] **P1.6** Refuse non-localhost `FIXO_API_URL`; support `--timeout`, `--retry` (S)
 - [x] **P1.7** `python3 -m py_compile scripts/e2e-personas.py` (S)
-- [ ] **P1.8** Run `scripts/e2e-personas.py` on the real local stack (`make docker`), fix whatever drifts from the mock (see §F risks), paste the output in the Results log (M)
+- [x] **P1.8** Run `scripts/e2e-personas.py` on the real local stack (`make docker`), fix whatever drifts from the mock (see §F risks), paste the output in the Results log (M)
 
 ## Phase P2 — API tier (extend `scripts/e2e-journey.py`)
 
 - [x] **P2.1** Load personas from the manifest (`--manifest PATH`); keep the seeded-accounts path so the existing single-journey gate still works (M)
   - Done: first homeowner/tradie/staff of the manifest; job id appended on creation (`record_job`); a non-localhost `FIXO_API_URL` is now refused by the journey too; `run-e2e.sh` does not pass `--manifest` yet (P5.1).
-- [ ] **P2.2** Every step asserts the response **and** the resulting job via GET: status, history, decimal-string amounts (M)
+- [~] **P2.2** (partly done: direct-request step only) Every step asserts the response **and** the resulting job via GET: status, history, decimal-string amounts (M)
+  - Done so far: `--match-mode auto|quick|direct` in `e2e-journey.py`. `auto` asks the persona tradie directly (`POST /jobs/{id}/request {tradieId}`, tradie id from `GET /profile`) for `--manifest` runs on v2, and quick-matches otherwise, so the seeded gate is unchanged. The tradie's `offers/pending` offer id must equal the direct request's id, else the step fails with both ids. `direct` on a v1 job fails fast with a clear message. Verified against a local mock only (5 scenarios); **not yet run on the real stack**. Still open: per-step GET assertions on status, history and decimal-string amounts (job payload shape not yet inspected).
 - [ ] **P2.3** Scenario: happy path v2. post -> match -> offer -> accept -> book -> chat -> check-in -> check-out -> approve -> receipt -> staff verify -> complete -> review (M)
 - [ ] **P2.4** Scenario: competing offers, **project jobs only** (hourly jobs allow one pending request, 409 otherwise; see §G). Homeowner posts a `Project` job and requests quotes from up to 3 tradies; each quotes (`POST /jobs/{id}/quotes`); homeowner accepts one (`.../quotes/{quoteId}/accept`); assert the others end declined atomically and the job books at the accepted pricing model. Also an hourly sequential case: decline by tradie 1, then the next offer goes to tradie 2 (M)
 - [ ] **P2.5** Scenarios: decline and withdraw paths; job with no matches; re-post (M)
@@ -131,6 +132,8 @@ All three tiers run from one manifest against the local stack, per-tier results 
 - `e2e-personas.py` failed at `POST /admin/staff/set-password` ("Invalid token"). Cause: the staff-invite token only appears in the HTML token box when no `FrontendBaseUrl` activation URL is configured; the script read only the `text/plain` part and its longest-word fallback grabbed `support@tradiehunter.nz`. Fixed: `wait_for_mail(..., include_html=True)` + a base64url-charset filter in `invite_token_from`.
 - Second run provisioned all 6 accounts but `e2e-journey.py --manifest` timed out at "tradie receives offer". Cause: `pick_service_id` took `services[0]` (id 4, Electrician) for rates and `tradeType` was hardcoded `"Plumbing"`; matching requires `TradeType == TradeCategory` enum name (`"Plumber"`) and a rate on `job.ServiceId`. Manifest tradies were invisible to matching. Fixed: default service id 1 and `tradeType` taken from the service's `category`.
 - Third run: personas provision all 6 accounts cleanly (`test-logs/e2e-personas-1126054310/manifest.json`, serviceId 1 / tradeType Plumber); manifest tradies now appear in `/jobs/{id}/matches`. Journey still fails at "tradie receives offer" (45 s poll): sequential dispatch offers the top-ranked candidate first, and seeded `tradie-verified@fixo.test` (rating 5.0, 10 reviews) outscores the unrated QA tradies, so the pending offer sits with the seeded tradie for its 10-minute window. This is the §F predicted outcome — P2.2 should switch manifest runs to direct requests (`POST /jobs/{id}/request {tradieId}`, `CreateDirectRequestAsync`).
+
+**Verification of the P1.8 fixes (2026-11-26, offline):** `invite_token_from` returns the base64url token from a body that also contains `support@tradiehunter.nz` and a URL, still handles `?token=` (URL-decoded), and raises `StepFailed` when no token-shaped word exists. Direct-request journey tested on a mock (see P2.2); the real-stack re-run of `e2e-journey.py --manifest` after this change is the next thing to do.
 
 _(paste the P6.6 run output here)_
 

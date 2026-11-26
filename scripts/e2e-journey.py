@@ -25,6 +25,7 @@ Usage
   python3 scripts/e2e-journey.py --junit out.xml    # also write JUnit XML
   python3 scripts/e2e-journey.py --restore-tradies  # un-park demo tradie only
   python3 scripts/e2e-journey.py --manifest m.json  # use personas from e2e-personas.py
+                                                    # (tradie is asked directly; see --match-mode)
                                                     # (first homeowner/tradie/staff) and
                                                     # append the job id to the manifest
 
@@ -80,6 +81,7 @@ class Unreachable(Exception):
 # ── Persona manifest (scripts/e2e-personas.py) ───────────────────────────────
 
 MANIFEST_PATH = None
+MATCH_MODE = "auto"  # auto | quick | direct (see --match-mode)
 
 
 def require_local():
@@ -302,13 +304,40 @@ def run_journey(rec):
     )
     print("    (flow version %d)" % flow)
 
-    rec.step("homeowner dispatches matching", lambda: post("/jobs/%d/match" % job, ho))
+    # Quick-match offers the top-ranked candidate first. Against the seeded
+    # stack that is the test tradie (the demo tradie is parked), but with
+    # persona-manifest runs the seeded tradie-verified account (rating 5.0)
+    # outranks the unrated QA tradies and holds the offer for its whole window.
+    # Manifest runs therefore ask the persona tradie directly (v2 only:
+    # POST /jobs/{id}/request, OfferService.CreateDirectRequestAsync).
+    direct = MATCH_MODE == "direct" or (MATCH_MODE == "auto" and MANIFEST_PATH and flow >= 2)
+    if direct and flow < 2:
+        raise StepFailed("direct requests need a v2 job (this job is flow %d); use --match-mode quick" % flow)
+    direct_offer = {}
+
+    if direct:
+        def request_tradie():
+            tradie_id = (get("/profile", tr) or {}).get("id")
+            if not tradie_id:
+                raise StepFailed("tradie /profile has no id")
+            direct_offer.update(post("/jobs/%d/request" % job, ho, {"tradieId": tradie_id}) or {})
+            if "id" not in direct_offer:
+                raise StepFailed("no offer id in direct-request response: %r" % direct_offer)
+
+        rec.step("homeowner requests the tradie directly", request_tradie)
+    else:
+        rec.step("homeowner dispatches matching", lambda: post("/jobs/%d/match" % job, ho))
 
     def offer():
         def pending():
             return _request("GET", "/jobs/%d/offers/pending" % job, tr)
 
-        return poll("pending offer for the test tradie", pending, 45)
+        body = poll("pending offer for the test tradie", pending, 45)
+        if direct and body.get("id") != direct_offer.get("id"):
+            raise StepFailed(
+                "tradie's pending offer %r is not the direct request %r" % (body.get("id"), direct_offer.get("id"))
+            )
+        return body
 
     offer_body = rec.step("tradie receives offer", offer)
     rec.step(
@@ -399,8 +428,17 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--junit", help="write JUnit XML to this path")
     ap.add_argument("--restore-tradies", action="store_true", help="un-park the demo tradie and exit")
+    ap.add_argument(
+        "--match-mode",
+        choices=("auto", "quick", "direct"),
+        default="auto",
+        help="how the tradie gets the offer: quick-match, or a direct request to the persona tradie "
+        "(auto = direct for --manifest runs on v2, quick-match otherwise)",
+    )
     ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
     args = ap.parse_args()
+    global MATCH_MODE
+    MATCH_MODE = args.match_mode
 
     try:
         require_local()
