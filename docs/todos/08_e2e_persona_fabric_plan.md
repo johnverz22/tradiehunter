@@ -139,6 +139,8 @@ All three tiers run from one manifest against the local stack, per-tier results 
 
 **P2.2 direct-request live run (2026-11-26, local docker stack + MailHog):** `e2e-personas.py` run `1126055601` provisioned all 6 accounts (`test-logs/e2e-personas-1126055601/manifest.json`, credentials 70-72, serviceId 1 / Plumber); `e2e-journey.py --manifest` with the default `auto` match mode took the direct-request path (`POST /jobs/{id}/request`, tradie id from `GET /profile`) and the full journey passed on job 400 in ~1s — offer received, accepted, checked in/out, itemised approval, receipt, staff verify, completed and reviewed. The §F seeded-tradie offer conflict is bypassed for manifest runs. Remaining P2.2 work: per-step assertions on job status, history and decimal-string amounts.
 
+**P2.2 assertions live run (2026-11-26, local docker stack):** `e2e-journey.py --manifest test-logs/e2e-personas-1126055601/manifest.json` (run `ac1d6e5`, job 401) passed with all new assertions green: post-booking `flowVersion`/`matchedTradieId`/`matchedTradieName`/`hourlyRate`, post-checkout `finalHours`/`finalAmount`/`totalAmount` exact-decimal checks, and staff admin `statusHistory` ordering + `chatTranscript`. DTO field names match the live payloads. Sample `GET /jobs/{id}/payment` captured for the remaining payment-amount assertions: `{paymentId, jobId, jobTitle, jobStatus, amount (JSON number), currency, method, provider, reference, status, bankDetails, dueAtUtc, submittedAtUtc, verifiedAtUtc, rejectReason, reUploadCount, createdAtUtc, canUploadReceipt}` — e.g. job 401: amount 170.0, status Verified, reference TH-401.
+
 _(paste the P6.6 run output here)_
 
 ## Decisions and parked items
