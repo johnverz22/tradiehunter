@@ -138,4 +138,4 @@ cd mobile && dart format --set-exit-if-changed lib test integration_test
 cd mobile && flutter analyze --fatal-infos && flutter test
 ```
 
-Goldens live in `mobile/test/ui/goldens/`; regenerate with `flutter test --update-goldens test/ui` and review the diff by eye.
+Goldens live in `mobile/test/ui/goldens/`; regenerate with `flutter test --update-goldens test/ui` and review the diff by eye. **Regenerate only on the Flutter version pinned in `.github/workflows/ci.yml` (3.47.9).** `gallery_goldens_test.dart` tolerates up to 1% differing pixels so local runs on another patch version (text anti-aliasing) don't fail; bump the CI pin and the baselines together.

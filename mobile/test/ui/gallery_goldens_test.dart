@@ -4,7 +4,14 @@
 // them with:  flutter test --update-goldens test/ui/gallery_goldens_test.dart
 // Until a baseline PNG is committed the golden comparison for that screen is
 // skipped (the render smoke check still runs); once committed it is enforced.
+//
+// Baselines are generated on the Flutter version pinned in
+// .github/workflows/ci.yml. Text anti-aliasing shifts slightly between Flutter
+// patch releases, so local runs on another patch version tolerate up to
+// [_kPixelTolerance] of differing pixels; real layout/colour regressions are
+// far above that. Refresh baselines only on the CI version.
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fixo/ui/design/th_scope.dart';
 import 'package:fixo/ui/design/th_tokens.dart';
@@ -14,6 +21,35 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _size = Size(393, 852);
+
+/// Max fraction of differing pixels still treated as a match (1%).
+const double _kPixelTolerance = 0.01;
+
+class _TolerantGoldenComparator extends LocalFileComparator {
+  _TolerantGoldenComparator(super.testFile);
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    if (result.passed) return true;
+    if (result.diffPercent <= _kPixelTolerance) {
+      debugPrint(
+        'golden $golden differs by '
+        '${(result.diffPercent * 100).toStringAsFixed(2)}% (within tolerance)',
+      );
+      return true;
+    }
+    throw FlutterError(
+      'Golden "$golden" differs by '
+      '${(result.diffPercent * 100).toStringAsFixed(2)}% '
+      '(tolerance ${(_kPixelTolerance * 100).toStringAsFixed(0)}%). '
+      'Refresh only on the CI Flutter version.',
+    );
+  }
+}
 
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
@@ -29,6 +65,12 @@ Future<void> _loadFont(String family, List<String> paths) async {
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    final current = goldenFileComparator;
+    if (current is LocalFileComparator) {
+      goldenFileComparator = _TolerantGoldenComparator(
+        current.basedir.resolve('gallery_goldens_test.dart'),
+      );
+    }
     const base = 'assets/fonts/v2';
     await _loadFont('Lexend', [
       '$base/Lexend-Regular.ttf',
