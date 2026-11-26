@@ -324,6 +324,35 @@ def assert_completion_money(job, ho, rate, hours):
         print("    note: labourAmount %s != hourlyRate %s x %sh (rounding/min-charge rule?)" % (labour, rate, hours))
 
 
+def assert_payment_open(job, ho, flow):
+    """GET /jobs/{id}/payment right after approval (fields: backend PaymentDTOs;
+    shape captured live from job 401 in plan 08's results log)."""
+    pay = get("/jobs/%d/payment" % job, ho) or {}
+    need(pay.get("jobId") == job, "payment.jobId %r != %d" % (pay.get("jobId"), job))
+    need(pay.get("paymentId") is not None, "payment has no paymentId")
+    amount = dec(pay.get("amount"))
+    need(amount is not None and amount > 0, "payment.amount missing/zero: %r" % pay.get("amount"))
+    if flow >= 2:
+        # v2 pay-at-completion: the homeowner pays exactly the approved FinalAmount.
+        j = get("/jobs/%d" % job, ho) or {}
+        final = dec(j.get("finalAmount"))
+        need(amount == final, "payment.amount %s != job.finalAmount %s" % (amount, final))
+    need(str(job) in str(pay.get("reference") or ""), "payment.reference %r does not carry job id %d" % (pay.get("reference"), job))
+    print("    (payment %s %s, status %r, canUploadReceipt=%r)" % (amount, pay.get("currency"), pay.get("status"), pay.get("canUploadReceipt")))
+    return pay
+
+
+def assert_payment_verified(job, ho, opened):
+    pay = get("/jobs/%d/payment" % job, ho) or {}
+    need(pay.get("paymentId") == opened.get("paymentId"), "paymentId changed during verification")
+    need(dec(pay.get("amount")) == dec(opened.get("amount")), "payment.amount changed: %r -> %r" % (opened.get("amount"), pay.get("amount")))
+    need(pay.get("status") == "Verified", "payment.status %r, expected Verified" % pay.get("status"))
+    need(pay.get("canUploadReceipt") is False, "canUploadReceipt should be false once verified, got %r" % pay.get("canUploadReceipt"))
+    need(pay.get("submittedAtUtc"), "submittedAtUtc not set after receipt upload")
+    need(pay.get("verifiedAtUtc"), "verifiedAtUtc not set after verification")
+    need(pay.get("reference") == opened.get("reference"), "payment.reference changed")
+
+
 def assert_audit_trail(job, st, flow, markers):
     a = get("/admin/jobs/%d" % job, st) or {}
     seen = [h.get("toStatus") for h in sorted(a.get("statusHistory") or [], key=lambda h: h.get("changedAtUtc") or "")]
@@ -453,16 +482,21 @@ def run_journey(rec):
         rec.step("homeowner approves itemised amount", lambda: post("/jobs/%d/approve" % job, ho))
         rec.step("job AwaitingPayment", lambda: wait_status(job, ho, "AwaitingPayment"))
 
+        opened = {}
+
         def pay_v2():
-            get("/jobs/%d/payment" % job, ho)  # opens the payment
+            opened.update(assert_payment_open(job, ho, flow))  # also opens the payment
+            need(opened.get("canUploadReceipt") is not False, "canUploadReceipt is false before any upload")
             upload_receipt(job, ho)
 
-        rec.step("homeowner uploads receipt", pay_v2)
+        rec.step("payment open: amount == finalAmount, reference", pay_v2)
         rec.step("job PaymentReview", lambda: wait_status(job, ho, "PaymentReview"))
         rec.step(
             "staff verifies payment",
-            lambda: post("/admin/payments/%s/verify" % get("/jobs/%d/payment" % job, ho)["paymentId"], st),
+            lambda: post("/admin/payments/%s/verify" % opened["paymentId"], st),
         )
+        rec.step("job Completed (payment verified)", lambda: wait_status(job, ho, "Completed"))
+        rec.step("payment Verified, amount unchanged", lambda: assert_payment_verified(job, ho, opened))
     else:
         rec.step("homeowner confirms completion (v1)", lambda: post("/jobs/%d/confirm" % job, ho))
 
