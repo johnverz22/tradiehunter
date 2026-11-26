@@ -11,7 +11,6 @@
 // [_kPixelTolerance] of differing pixels; real layout/colour regressions are
 // far above that. Refresh baselines only on the CI version.
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:fixo/ui/design/th_scope.dart';
 import 'package:fixo/ui/design/th_tokens.dart';
