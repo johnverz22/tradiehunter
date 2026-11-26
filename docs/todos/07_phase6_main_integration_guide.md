@@ -1,7 +1,10 @@
 # Phase 6 → `main` integration guide
 
-Branch: `phase6-v1-cutover`. This branch makes v2 the only UI and deletes v1.
-**It has never been compiled** (the authoring sandbox had no Flutter SDK), so step 2 is mandatory.
+**Status (2026-11-26): merged into `main` (`bed8942`).** `flutter analyze --fatal-infos` clean, 559/559 non-golden tests pass,
+design gate passes. Remaining work is tracked in plan item **6.12** (`01_design_system_migration_plan.md`). The steps below are kept
+as the record of how the merge was done and as the owner-QA checklist (§4).
+
+Branch: `phase6-v1-cutover` (merged). It made v2 the only UI and deleted v1.
 
 ## 0. What changed (one paragraph)
 
@@ -75,9 +78,9 @@ scripts/run-e2e.sh C0 --seed
 
 ## 5. Known gaps to decide on
 
-- **Draft jobs** show a read-only fallback (v1 had "Edit job"). Add a ThPostJob edit mode if drafts are user-visible.
-- **`ThScope`** still wraps ~60 screens and many test hosts. Redundant now that `MaterialApp` uses `THTheme`; remove in a follow-up PR with the compiler.
-- **Dead code:** `TrRequestExtraCostSheet` and `TrCheckOutSheet` in `ui/tradie/tr_job_parts.dart` (pages replaced them).
+- **Draft jobs** show a read-only fallback (v1 had "Edit job"). Open: add a ThPostJob edit mode if drafts are user-visible (6.12-b).
+- **`ThScope`** still wraps ~49 files and many test hosts. Redundant now that `MaterialApp` uses `THTheme`. Open (6.12-a).
+- ~~**Dead code:** `TrRequestExtraCostSheet` and `TrCheckOutSheet`~~ **Removed** (6.12-c, 236 lines from `ui/tradie/tr_job_parts.dart`).
 - **Tests deleted** with v1 (e.g. v1 dashboards, tradie job detail, onboarding wizard, payment/dispute screens). v2 equivalents live in `test/ui/phase*_test.dart`; add coverage where a deleted test had no v2 twin.
 - **Hardcode one-offs** listed in `mobile/HARDCODED_AUDIT.md`.
 

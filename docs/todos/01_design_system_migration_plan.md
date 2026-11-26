@@ -493,6 +493,17 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [x] **6.11** Update `docs/MILESTONES.md` and `docs/DESIGN.md` with the completion date.
   *6.11 done (2026-11-26):* `MILESTONES.md` and `DESIGN.md` updated with merge date (2026-11-26).
 
+#### 6.12 Post-merge follow-ups (tracked after `main` merge `bed8942`, 2026-11-26)
+
+- [ ] **6.12-a** Remove redundant `ThScope` wrappers (~49 files in `lib/ui`, plus test hosts). The app root is already on `THTheme`; keep `ThScope` only for `screen_gallery`, theme-toggle modal routes and test hosts that pump a bare `MaterialApp` (give those hosts `theme: THTheme.light` instead). Needs `flutter analyze` + `flutter test` per batch.
+- [ ] **6.12-b** Draft jobs: `HoJobDetailFallbackScreen` is read-only; decide whether drafts are user-visible and, if so, add an edit mode to `ThPostJobScreen`.
+- [x] **6.12-c** Delete dead `TrRequestExtraCostSheet` / `TrCheckOutSheet` from `ui/tradie/tr_job_parts.dart` (done 2026-11-26; pages `tr_extra_cost_page` / `tr_complete_page` replaced them). Re-run `flutter analyze --fatal-infos` to confirm no newly unused imports.
+- [ ] **6.12-d** Gallery goldens: 12 pixel diffs (≤ 0.86%) locally because Flutter `3.47.5` ≠ CI `3.47.9`; regenerate on the CI Flutter version, do not update from the local one.
+- [ ] **6.12-e** Cover the cross-screen sweeps lost with `accessibility_audit_test` / `responsive_layout_test` (currently covered per-screen, `th_dock_layout_test`, `phase5_tr_jobs_test`) with one consolidated v2 audit if desired.
+- [ ] **6.12-f** Owner QA on device (checklist in `07_phase6_main_integration_guide.md` §4): live-backend E2E (`scripts/run-e2e.sh C0 --seed`), light/dark, text scale 1.0/2.0, 320 px width, push deep links, 404 route.
+- [ ] **6.12-g** Release build passes on iOS and Android, and a capture run (`scripts/run-shots.sh`) raises no missing-asset exception; then delete the `il-05` v1 workaround (see the Phase 6 "done when" line below).
+- [ ] **6.12-h** Move hardcode one-offs listed in `mobile/HARDCODED_AUDIT.md` into tokens.
+
 ✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, no capture run raises a missing-asset exception (and the `il-05` v1 workaround is deleted), and a release build passes on iOS and Android.
 
 ---

@@ -22,3 +22,5 @@ grep -rnE "Color\(0x|Colors\.(white|black|red|grey)|BorderRadius\.circular\([0-9
 
 Known one-offs still in code: `THButton` secondary border width (1.5), `THButtonKind.inverse` colours, selected slot-chip
 border width in `th_schedule_sheet.dart`. Move them into tokens when next touched.
+
+Tracked as plan item 6.12-h.
