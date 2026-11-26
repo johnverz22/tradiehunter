@@ -1,0 +1,378 @@
+#!/usr/bin/env python3
+"""scripts/e2e-journey.py — integrated homeowner + tradie journey, API only.
+
+Drives one job through the whole marketplace lifecycle with both personas
+acting on the same job, exactly as the mobile fixtures do
+(mobile/integration_test/helpers/fixture_helper.dart), but in one run and
+with a named step on every call:
+
+  post job (homeowner) -> match -> offer arrives (tradie) -> accept
+  -> [v2] Booked -> chat both ways -> check in -> check out
+  -> homeowner approves -> AwaitingPayment -> receipt -> PaymentReview
+  -> staff verifies -> Completed -> homeowner reviews tradie
+  [v1: accept -> AwaitingPayment -> receipt -> verify -> Booked -> ... -> confirm]
+
+Why it exists
+  * It is the cheap gate in front of the device suites. The E1 baseline
+    (docs/runs/v2/e2e-baseline-2026-11.md) found that payment, dispute,
+    cancellation and job_lifecycle all died in fixture setup on a backend
+    POST. Run this first and that drift shows up as one clear failing step
+    instead of four unrelated red suites.
+  * It needs no device, so it also runs in CI before the emulator boots.
+
+Usage
+  python3 scripts/e2e-journey.py                    # run the journey
+  python3 scripts/e2e-journey.py --junit out.xml    # also write JUnit XML
+  python3 scripts/e2e-journey.py --restore-tradies  # un-park demo tradie only
+
+Environment
+  FIXO_API_URL   API base, default http://localhost:5000
+
+Exit codes
+  0 pass   1 a journey step failed   2 stack unreachable / accounts missing
+
+Only ever point this at the local docker stack and the seeded *@fixo.test
+accounts (docs/todos/03_e2e_realignment_plan.md §3, rule 1).
+"""
+
+import argparse
+import base64
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+from xml.sax.saxutils import quoteattr
+
+API_BASE = os.environ.get("FIXO_API_URL", "http://localhost:5000").rstrip("/")
+API = API_BASE + "/api"
+
+# Mirrors mobile/integration_test/helpers/test_config.dart.
+HOMEOWNER = ("homeowner-a@fixo.test", "Test1234!")
+TRADIE = ("tradie-verified@fixo.test", "Test1234!")
+STAFF = ("staff@fixo.test", "Test1234!")
+DEMO_TRADIE = ("tradie@fixo.nz", "Demo1!Fixo")  # competes for offers; parked
+
+HTTP_TIMEOUT = 15
+POLL_TIMEOUT = 45
+POLL_INTERVAL = 2
+
+# Smallest valid PNG; a unique suffix defeats the server's receipt dedupe.
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+
+
+class StepFailed(Exception):
+    pass
+
+
+class Unreachable(Exception):
+    pass
+
+
+# ── HTTP ─────────────────────────────────────────────────────────────────────
+
+
+def _request(method, path, token=None, body=None, raw=None, content_type=None):
+    headers = {}
+    data = None
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    if raw is not None:
+        data, headers["Content-Type"] = raw, content_type
+    elif body is not None:
+        data, headers["Content-Type"] = json.dumps(body).encode(), "application/json"
+    req = urllib.request.Request(API + path, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
+            status, text = r.status, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        status, text = e.code, e.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, OSError) as e:
+        raise Unreachable("%s %s: %s" % (method, path, e))
+    if status >= 400:
+        raise StepFailed("%s %s -> HTTP %d: %s" % (method, path, status, text[:300]))
+    if status == 204 or not text.strip():
+        return None
+    try:
+        return json.loads(text)
+    except ValueError:
+        return {"_raw": text}
+
+
+def get(path, token=None):
+    return _request("GET", path, token)
+
+
+def post(path, token=None, body=None):
+    return _request("POST", path, token, body if body is not None else {})
+
+
+def upload_receipt(job_id, token):
+    boundary = "fixojourney%d" % int(time.time() * 1000)
+    payload = _PNG + ("|fixo-journey-%d" % time.time_ns()).encode()
+    head = (
+        '--%s\r\nContent-Disposition: form-data; name="receipt"; '
+        'filename="receipt.png"\r\nContent-Type: image/png\r\n\r\n' % boundary
+    ).encode()
+    tail = ("\r\n--%s--\r\n" % boundary).encode()
+    return _request(
+        "POST",
+        "/jobs/%d/payment/upload-receipt" % job_id,
+        token,
+        raw=head + payload + tail,
+        content_type="multipart/form-data; boundary=" + boundary,
+    )
+
+
+def login(creds):
+    try:
+        body = post("/auth/login", body={"email": creds[0], "password": creds[1]})
+    except StepFailed as e:
+        raise Unreachable(
+            "cannot log in as %s (%s) — run: bash scripts/seed-test-accounts.sh"
+            % (creds[0], str(e)[:160].replace("\n", " "))
+        )
+    token = (body or {}).get("token")
+    if not token:
+        raise Unreachable("login for %s returned no token: %r" % (creds[0], body))
+    return token
+
+
+def poll(desc, fn, timeout=POLL_TIMEOUT):
+    end = time.time() + timeout
+    last = None
+    while time.time() < end:
+        last = fn()
+        if last:
+            return last
+        time.sleep(POLL_INTERVAL)
+    raise StepFailed("timed out after %ds waiting for: %s" % (timeout, desc))
+
+
+def status_of(job_id, token):
+    return (get("/jobs/%d" % job_id, token) or {}).get("status")
+
+
+def wait_status(job_id, token, expected):
+    def check():
+        s = status_of(job_id, token)
+        return s == expected
+
+    try:
+        poll("job %d status == %s" % (job_id, expected), check)
+    except StepFailed:
+        raise StepFailed(
+            "job %d never reached %s (now %s)" % (job_id, expected, status_of(job_id, token))
+        )
+
+
+# ── Competing tradie ─────────────────────────────────────────────────────────
+
+
+def set_demo_tradie(available):
+    """Park/unpark the demo tradie so the test tradie wins matching. No-op if
+    the demo seed is absent (same behaviour as FixtureHelper)."""
+    try:
+        t = post("/auth/login", body={"email": DEMO_TRADIE[0], "password": DEMO_TRADIE[1]})
+        post("/profile/availability", (t or {}).get("token"), {"available": available})
+        return True
+    except (StepFailed, Unreachable, AttributeError):
+        return False
+
+
+# ── Journey ──────────────────────────────────────────────────────────────────
+
+
+class Recorder:
+    def __init__(self):
+        self.rows = []  # (name, seconds, error|None)
+
+    def step(self, name, fn):
+        t0 = time.time()
+        print("  %-52s" % name, end="", flush=True)
+        try:
+            out = fn()
+        except Unreachable:
+            print("UNREACHABLE")
+            raise
+        except Exception as e:  # noqa: BLE001 — report any failure as a step failure
+            dt = time.time() - t0
+            self.rows.append((name, dt, str(e)))
+            print("FAIL (%.1fs)\n    -> %s" % (dt, e))
+            raise StepFailed("%s: %s" % (name, e))
+        dt = time.time() - t0
+        self.rows.append((name, dt, None))
+        print("ok   (%.1fs)" % dt)
+        return out
+
+
+def run_journey(rec):
+    ctx = {}
+
+    ctx["homeowner"] = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    ctx["tradie"] = rec.step("login tradie", lambda: login(TRADIE))
+    ctx["staff"] = rec.step("login staff", lambda: login(STAFF))
+    ho, tr, st = ctx["homeowner"], ctx["tradie"], ctx["staff"]
+
+    rec.step("park competing demo tradie", lambda: set_demo_tradie(False))
+
+    def create():
+        body = post(
+            "/jobs",
+            ho,
+            {
+                "title": "Journey — %d" % int(time.time() * 1000),
+                "description": "Integrated journey job.",
+                "urgency": "Medium",
+                "latitude": -36.8485,
+                "longitude": 174.7633,
+                "address": "1 Test St, Auckland",
+                "serviceId": 1,
+                "timingPreference": "Flexible",
+                "estimatedHours": 2,
+            },
+        )
+        if not body or "id" not in body:
+            raise StepFailed("no job id in response: %r" % body)
+        return int(body["id"])
+
+    job = rec.step("homeowner posts job", create)
+    flow = rec.step(
+        "read job flowVersion",
+        lambda: int((get("/jobs/%d" % job, ho) or {}).get("flowVersion") or 1),
+    )
+    print("    (flow version %d)" % flow)
+
+    rec.step("homeowner dispatches matching", lambda: post("/jobs/%d/match" % job, ho))
+
+    def offer():
+        def pending():
+            return _request("GET", "/jobs/%d/offers/pending" % job, tr)
+
+        return poll("pending offer for the test tradie", pending, 45)
+
+    offer_body = rec.step("tradie receives offer", offer)
+    rec.step(
+        "tradie accepts offer",
+        lambda: post(
+            "/jobs/%d/offers/%s/respond" % (job, offer_body["id"]), tr, {"response": "Accepted"}
+        ),
+    )
+
+    if flow >= 2:
+        rec.step("job Booked (no payment gate)", lambda: wait_status(job, ho, "Booked"))
+    else:
+        rec.step("job AwaitingPayment (v1)", lambda: wait_status(job, ho, "AwaitingPayment"))
+
+        def pay_v1():
+            pay = get("/jobs/%d/payment" % job, ho)
+            upload_receipt(job, ho)
+            wait_status(job, ho, "PaymentReview")
+            post("/admin/payments/%s/verify" % pay["paymentId"], st)
+            wait_status(job, ho, "Booked")
+
+        rec.step("v1 receipt -> staff verify -> Booked", pay_v1)
+
+    # Chat both ways once the job is Booked (chat opens at Booked/InProgress).
+    rec.step(
+        "homeowner -> tradie chat",
+        lambda: post("/jobs/%d/messages" % job, ho, {"content": "journey: homeowner hello"}),
+    )
+    rec.step(
+        "tradie -> homeowner chat",
+        lambda: post("/jobs/%d/messages" % job, tr, {"content": "journey: tradie on my way"}),
+    )
+
+    rec.step("tradie checks in", lambda: post("/jobs/%d/check-in" % job, tr))
+    rec.step("job InProgress (both personas agree)", lambda: (
+        wait_status(job, tr, "InProgress"), wait_status(job, ho, "InProgress")))
+    rec.step("tradie checks out (2h)", lambda: post("/jobs/%d/check-out" % job, tr, {"finalHours": 2}))
+    rec.step("job AwaitingConfirmation", lambda: wait_status(job, ho, "AwaitingConfirmation"))
+
+    if flow >= 2:
+        rec.step("homeowner approves itemised amount", lambda: post("/jobs/%d/approve" % job, ho))
+        rec.step("job AwaitingPayment", lambda: wait_status(job, ho, "AwaitingPayment"))
+
+        def pay_v2():
+            get("/jobs/%d/payment" % job, ho)  # opens the payment
+            upload_receipt(job, ho)
+
+        rec.step("homeowner uploads receipt", pay_v2)
+        rec.step("job PaymentReview", lambda: wait_status(job, ho, "PaymentReview"))
+        rec.step(
+            "staff verifies payment",
+            lambda: post("/admin/payments/%s/verify" % get("/jobs/%d/payment" % job, ho)["paymentId"], st),
+        )
+    else:
+        rec.step("homeowner confirms completion (v1)", lambda: post("/jobs/%d/confirm" % job, ho))
+
+    rec.step("job Completed", lambda: wait_status(job, ho, "Completed"))
+    rec.step("tradie sees Completed too", lambda: wait_status(job, tr, "Completed"))
+
+    def review():
+        tradie_id = (get("/profile", tr) or {}).get("id")
+        if not tradie_id:
+            raise StepFailed("tradie /profile has no id")
+        post("/jobs/%d/reviews" % job, ho, {"revieweeId": tradie_id, "rating": 5, "comment": "journey"})
+
+    rec.step("homeowner reviews tradie", review)
+    return job
+
+
+def write_junit(path, rows, total):
+    fails = sum(1 for _, _, e in rows if e)
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<testsuite name="e2e-journey" tests="%d" failures="%d" time="%.2f">' % (len(rows), fails, total),
+    ]
+    for name, dt, err in rows:
+        lines.append('  <testcase classname="journey" name=%s time="%.2f"%s' % (
+            quoteattr(name), dt, ">" if err else "/>"))
+        if err:
+            lines.append("    <failure message=%s/>" % quoteattr(err))
+            lines.append("  </testcase>")
+    lines.append("</testsuite>")
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--junit", help="write JUnit XML to this path")
+    ap.add_argument("--restore-tradies", action="store_true", help="un-park the demo tradie and exit")
+    args = ap.parse_args()
+
+    if args.restore_tradies:
+        set_demo_tradie(True)
+        print("demo tradie restored (or not present)")
+        return 0
+
+    print("e2e journey against %s" % API_BASE)
+    rec = Recorder()
+    t0 = time.time()
+    code = 0
+    job = None
+    try:
+        job = run_journey(rec)
+    except Unreachable as e:
+        print("\nUNREACHABLE: %s" % e)
+        code = 2
+    except StepFailed as e:
+        print("\nJOURNEY FAILED at: %s" % e)
+        code = 1
+    finally:
+        set_demo_tradie(True)  # always un-park, even on failure
+
+    total = time.time() - t0
+    if args.junit:
+        write_junit(args.junit, rec.rows, total)
+    if code == 0:
+        print("\nJOURNEY PASS: job %s completed and reviewed in %.0fs" % (job, total))
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

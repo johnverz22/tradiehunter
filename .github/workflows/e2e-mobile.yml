@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       config:
-        description: "Config from scripts/run-e2e.sh (C0, C1, C2)"
+        description: "Config from scripts/run-e2e.sh (C0, C1, C2, or J for the API journey only)"
         default: "C1"
       suites:
         description: "Optional space-separated suite names (default: all for the config)"

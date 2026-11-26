@@ -49,12 +49,16 @@ flutter test integration_test/ --device-id "iPhone 17 Pro"        # single-devic
 
 **Running the suites (recommended):** `scripts/run-e2e.sh` runs suites sequentially and prints a pass/fail summary. The app is v2-only; a config just picks the persona(s). See `docs/todos/03_e2e_realignment_plan.md` §5.
 
+**Integrated journey gate.** Before any device suite, `run-e2e.sh` runs `scripts/e2e-journey.py` (stdlib Python, no device): one job goes post → match → tradie accepts → chat both ways → check-in → check-out → homeowner approves → receipt → staff verify → Completed → review, with both personas reading the same job. It follows the v2 or v1 path from the job's `flowVersion`, like `FixtureHelper`. If it fails, the run stops (exit 1, or 2 when the stack/accounts are missing), because fixture-based suites would all fail in setUp for the same reason (the E1 baseline finding). Use `--no-journey` to skip it. It writes `journey.xml` (JUnit) next to the logs. `run-e2e.sh` also un-parks the demo tradie on exit/Ctrl-C, since an aborted suite skips `tearDownAll`.
+
 ```sh
 export E2E_DEVICE="<id from: scripts/run-e2e.sh --list-devices>"
 export E2E_TRADIE_DEVICE="<second simulator id>"   # optional
 scripts/run-e2e.sh C0 --seed        # homeowner + tradie personas
 scripts/run-e2e.sh C1               # homeowner persona (the §4.4 gate)
 scripts/run-e2e.sh C2               # tradie persona
+scripts/run-e2e.sh J                # integrated homeowner+tradie API journey only (no device)
+scripts/run-e2e.sh C1 --fail-fast --retry 1   # stop on first red; retry once (FLAKY if it then passes)
 ```
 
 The v2 Booked cancel sheet has no "Keep job" button; `cancellation_test` dismisses it by tapping outside the sheet.

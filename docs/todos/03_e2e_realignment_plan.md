@@ -199,6 +199,8 @@ Scope is deliberately narrow: only what `integration_test` cannot do.
 - [ ] **E6.4** iOS job on `macos-latest` only after Android is green for a week.
 - [ ] **E6.5** Keep the existing PR job unchanged (analyze, `flutter test`, boundary guard, design gate).
 
+- [x] **E6.6** Integrated homeowner+tradie API journey (`scripts/e2e-journey.py`) runs as a pre-gate in `run-e2e.sh` (config `J` runs it alone); `--fail-fast`, `--retry N` (FLAKY status), per-suite timeout and demo-tradie restore on abort added. Verified against a mock API only (v1 and v2 paths); **not yet run against the real stack or on a device.**
+
 **Done when:** a nightly run produces a green/red C1 result with artifacts and no manual setup.
 
 ---
