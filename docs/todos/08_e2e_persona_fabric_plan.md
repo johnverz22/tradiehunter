@@ -126,6 +126,12 @@ All three tiers run from one manifest against the local stack, per-tier results 
 
 ## Results log
 
+**P1.8 first live run (2026-11-26, local docker stack + MailHog):**
+
+- `e2e-personas.py` failed at `POST /admin/staff/set-password` ("Invalid token"). Cause: the staff-invite token only appears in the HTML token box when no `FrontendBaseUrl` activation URL is configured; the script read only the `text/plain` part and its longest-word fallback grabbed `support@tradiehunter.nz`. Fixed: `wait_for_mail(..., include_html=True)` + a base64url-charset filter in `invite_token_from`.
+- Second run provisioned all 6 accounts but `e2e-journey.py --manifest` timed out at "tradie receives offer". Cause: `pick_service_id` took `services[0]` (id 4, Electrician) for rates and `tradeType` was hardcoded `"Plumbing"`; matching requires `TradeType == TradeCategory` enum name (`"Plumber"`) and a rate on `job.ServiceId`. Manifest tradies were invisible to matching. Fixed: default service id 1 and `tradeType` taken from the service's `category`.
+- Third run: personas provision all 6 accounts cleanly (`test-logs/e2e-personas-1126054310/manifest.json`, serviceId 1 / tradeType Plumber); manifest tradies now appear in `/jobs/{id}/matches`. Journey still fails at "tradie receives offer" (45 s poll): sequential dispatch offers the top-ranked candidate first, and seeded `tradie-verified@fixo.test` (rating 5.0, 10 reviews) outscores the unrated QA tradies, so the pending offer sits with the seeded tradie for its 10-minute window. This is the §F predicted outcome — P2.2 should switch manifest runs to direct requests (`POST /jobs/{id}/request {tradieId}`, `CreateDirectRequestAsync`).
+
 _(paste the P6.6 run output here)_
 
 ## Decisions and parked items

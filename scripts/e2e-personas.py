@@ -24,7 +24,7 @@ How verification works (no DB writes, ever)
     POST /admin/credentials/{id}/review, then GET /profile must say isVerified.
 
 Manifest (JSON, schemaVersion 1)
-  {schemaVersion, runId, createdAtUtc, apiUrl, serviceId,
+  {schemaVersion, runId, createdAtUtc, apiUrl, serviceId, tradeType,
    personas: [{role, index, email, password, firstName, lastName, userId,
                verified, credentialId, hourlyRate}],
    jobs: []}            <- later tiers append {id, scenario, homeownerEmail, ...}
@@ -189,8 +189,8 @@ def _decode_header(value: str) -> str:
         return value or ""
 
 
-def _message_text(raw: str):
-    """(subject, text) — prefers text/plain, falls back to tag-stripped HTML."""
+def _message_parts(raw: str):
+    """(subject, plain_text, html_text) — html_text is tag-stripped, "" when absent."""
     msg = emaillib.message_from_string(raw)
     plain, html = [], []
     for part in msg.walk():
@@ -202,17 +202,22 @@ def _message_text(raw: str):
             continue
         text = payload.decode(part.get_content_charset() or "utf-8", "replace")
         (plain if ctype == "text/plain" else html).append(text)
-    if plain:
-        body = "\n".join(plain)
-    else:
-        body = "\n".join(html)
-        body = re.sub(r"(?is)<(style|script).*?</\1>", " ", body)
-        body = re.sub(r"(?s)<[^>]+>", " ", body)
-    return _decode_header(msg.get("Subject", "")), body
+    plain_body = "\n".join(plain)
+    html_body = ""
+    if html:
+        html_body = "\n".join(html)
+        html_body = re.sub(r"(?is)<(style|script).*?</\1>", " ", html_body)
+        html_body = re.sub(r"(?s)<[^>]+>", " ", html_body)
+    return _decode_header(msg.get("Subject", "")), plain_body, html_body
 
 
-def wait_for_mail(to_addr: str, subject_has: str, timeout: float = 45.0):
-    """Newest MailHog message to `to_addr` whose subject contains `subject_has`."""
+def wait_for_mail(to_addr: str, subject_has: str, timeout: float = 45.0, include_html: bool = False):
+    """Newest MailHog message to `to_addr` whose subject contains `subject_has`.
+
+    include_html appends the tag-stripped HTML part to the returned body —
+    needed for the staff invite, whose token only appears in the HTML
+    token box when no activation URL is configured.
+    """
     url = "%s/api/v2/search?kind=to&query=%s&limit=50" % (mailhog_base(), urllib.parse.quote(to_addr))
     end = time.time() + timeout
     while True:
@@ -222,9 +227,11 @@ def wait_for_mail(to_addr: str, subject_has: str, timeout: float = 45.0):
                 raw = (item.get("Raw") or {}).get("Data")
                 if not raw:
                     continue
-                subject, body = _message_text(raw)
+                subject, plain, html = _message_parts(raw)
                 if subject_has.lower() in subject.lower():
-                    return body
+                    if include_html and html:
+                        return (plain + "\n" + html).strip() if plain else html
+                    return plain or html
         if time.time() >= end:
             raise StepFailed(
                 "no MailHog message to %s with subject containing %r after %ds "
@@ -245,10 +252,12 @@ def invite_token_from(body: str) -> str:
     m = re.search(r"token=([^\s\"'&<>]+)", body)
     if m:
         return urllib.parse.unquote(m.group(1))
-    longest = max((w for w in body.split() if len(w) > 20), key=len, default="")  # legacy plain body
-    if not longest:
-        raise StepFailed("could not find an invite token in the staff-invite email")
-    return longest
+    # Bare-token fallback: the invite token is base64url (WebEncoders), so a
+    # charset filter keeps out emails, URLs and markup fragments.
+    candidates = [w for w in body.split() if re.fullmatch(r"[A-Za-z0-9_-]{20,}", w)]
+    if candidates:
+        return max(candidates, key=len)
+    raise StepFailed("could not find an invite token in the staff-invite email")
 
 
 # ── Provisioning steps ───────────────────────────────────────────────────────
@@ -313,23 +322,33 @@ def provision_staff(p: dict, admin_token: str):
         admin_token,
         {"email": p["email"], "firstName": p["firstName"], "lastName": p["lastName"]},
     )
-    token = invite_token_from(wait_for_mail(p["email"], "invited"))
+    token = invite_token_from(wait_for_mail(p["email"], "invited", include_html=True))
     call("POST", "/admin/staff/set-password", body={"email": p["email"], "token": token, "newPassword": p["password"]})
     jwt = login(p["email"], p["password"])  # prove the credentials we are about to hand out work
     p["userId"] = str((call("GET", "/profile", jwt) or {}).get("id") or "")
     p["verified"] = True
 
 
-def pick_service_id(token: str, forced) -> int:
-    if forced:
-        return int(forced)
+def pick_service(token: str, forced):
+    """Return (service_id, trade_type) for the tradies' rate + profile.
+
+    Defaults to service 1 — the id scripts/e2e-journey.py posts jobs with.
+    trade_type must be the service's category ("Plumber", "Electrician", ...):
+    MatchingService compares TradeType.ToLower() to job.Category.ToString(),
+    the TradeCategory enum name — "Plumbing" never matches a Plumber job.
+    """
     services = call("GET", "/tradie/services", token)
-    if isinstance(services, list) and services and isinstance(services[0], dict) and "id" in services[0]:
-        return int(services[0]["id"])
-    return 1  # the id the seeded accounts and e2e-journey.py use
+    rows = services if isinstance(services, list) else []
+    want = int(forced) if forced else 1
+    for s in rows:
+        if isinstance(s, dict) and int(s.get("id", -1)) == want:
+            return want, s.get("category") or "Plumber"
+    if rows and isinstance(rows[0], dict) and "id" in rows[0]:
+        return int(rows[0]["id"]), rows[0].get("category") or "Plumber"
+    return want, "Plumber"  # service list unavailable; 1 is the seeded/journey id
 
 
-def onboard_tradie(p: dict, jwt: str, service_id: int, reviewer: str, run_id: str):
+def onboard_tradie(p: dict, jwt: str, service_id: int, trade_type: str, reviewer: str, run_id: str):
     n = p["index"]
     call(
         "PUT",
@@ -339,7 +358,7 @@ def onboard_tradie(p: dict, jwt: str, service_id: int, reviewer: str, run_id: st
             "firstName": p["firstName"],
             "lastName": p["lastName"],
             "phoneNumber": "+6421%06d" % (900000 + n),
-            "tradeType": "Plumbing",
+            "tradeType": trade_type,
             "address": AKL["address"],
             "latitude": AKL["latitude"],
             "longitude": AKL["longitude"],
@@ -426,6 +445,7 @@ def provision(args) -> int:
         "createdAtUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "apiUrl": api_base()[:-4],
         "serviceId": None,
+        "tradeType": None,
         "personas": personas,
         "jobs": [],
     }
@@ -458,8 +478,8 @@ def provision(args) -> int:
             personas.append(p)
             jwt = register_verified(p)
             if manifest["serviceId"] is None:
-                manifest["serviceId"] = pick_service_id(jwt, args.service_id)
-            onboard_tradie(p, jwt, manifest["serviceId"], reviewer, run_id)
+                manifest["serviceId"], manifest["tradeType"] = pick_service(jwt, args.service_id)
+            onboard_tradie(p, jwt, manifest["serviceId"], manifest["tradeType"], reviewer, run_id)
             say("tradie    %s  (credential %s approved, $%s/h)" % (p["email"], p["credentialId"], p["hourlyRate"]))
             save()
     except Unreachable:
@@ -507,7 +527,7 @@ def main() -> int:
     ap.add_argument("--tradies", type=int, default=3)
     ap.add_argument("--staff", type=int, default=1, choices=[0, 1, 2],
                     help="staff accounts via superadmin invite (0 = superadmin reviews the tradie credentials)")
-    ap.add_argument("--service-id", help="service every tradie bids on (default: first from /tradie/services)")
+    ap.add_argument("--service-id", help="service every tradie bids on (default: 1, the id e2e-journey.py uses)")
     ap.add_argument("--out", help="manifest path (default: test-logs/e2e-personas-<runid>/manifest.json)")
     ap.add_argument("--cleanup", metavar="MANIFEST", help="deactivate every account in MANIFEST and exit")
     ap.add_argument("--retry", type=int, default=0, help="retry transient HTTP errors N times (default 0)")
