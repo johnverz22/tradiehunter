@@ -144,6 +144,8 @@ All three tiers run from one manifest against the local stack, per-tier results 
 
 **P2.2 assertions live run (2026-11-26, local docker stack):** `e2e-journey.py --manifest test-logs/e2e-personas-1126055601/manifest.json` (run `ac1d6e5`, job 401) passed with all new assertions green: post-booking `flowVersion`/`matchedTradieId`/`matchedTradieName`/`hourlyRate`, post-checkout `finalHours`/`finalAmount`/`totalAmount` exact-decimal checks, and staff admin `statusHistory` ordering + `chatTranscript`. DTO field names match the live payloads. Sample `GET /jobs/{id}/payment` captured for the remaining payment-amount assertions: `{paymentId, jobId, jobTitle, jobStatus, amount (JSON number), currency, method, provider, reference, status, bankDetails, dueAtUtc, submittedAtUtc, verifiedAtUtc, rejectReason, reUploadCount, createdAtUtc, canUploadReceipt}` — e.g. job 401: amount 170.0, status Verified, reference TH-401.
 
+**P2.2 payment-assertions live run (2026-11-26, local docker stack):** `e2e-journey.py --manifest test-logs/e2e-personas-1126055601/manifest.json` (run `4bd1c7e`, job 402) passed end-to-end including the new payment checks. Printed line: `payment open: amount == finalAmount, reference (payment 170.00 NZD, status 'Pending', canUploadReceipt=True)` — pre-verification status is `Pending`; after staff verify the payment is `Verified` with `canUploadReceipt=False`. P2.2 journey coverage is now fully live-verified.
+
 _(paste the P6.6 run output here)_
 
 ## Decisions and parked items
