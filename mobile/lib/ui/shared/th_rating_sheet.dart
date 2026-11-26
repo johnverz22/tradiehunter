@@ -125,19 +125,23 @@ class _ThRatingSheetState extends State<ThRatingSheet> {
                         style: THTextStyle.label,
                         align: TextAlign.center,
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(5, (i) {
-                          return IconButton(
-                            tooltip: 'Rate ${i + 1} star${i == 0 ? '' : 's'}',
-                            onPressed: () => setState(() => _rating = i + 1),
-                            icon: Icon(
-                              Icons.star_rounded,
-                              size: Sizes.fab,
-                              color: i < _rating ? c.accent : c.track,
-                            ),
-                          );
-                        }),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(5, (i) {
+                            return IconButton(
+                              tooltip: 'Rate ${i + 1} star${i == 0 ? '' : 's'}',
+                              onPressed: () => setState(() => _rating = i + 1),
+                              icon: Icon(
+                                Icons.star_rounded,
+                                size: Sizes.fab,
+                                color: i < _rating ? c.accent : c.track,
+                              ),
+                            );
+                          }),
+                        ),
                       ),
                       THTextField(
                         controller: _commentCtrl,

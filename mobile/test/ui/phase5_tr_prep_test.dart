@@ -91,18 +91,8 @@ void main() {
         true,
         'Open chat',
       ),
-      'Completed': (
-        'Completed',
-        'View job details',
-        false,
-        'View job details',
-      ),
-      'Cancelled': (
-        'Cancelled',
-        'View job details',
-        false,
-        'View job details',
-      ),
+      'Completed': ('Completed', 'View job details', false, 'View job details'),
+      'Cancelled': ('Cancelled', 'View job details', false, 'View job details'),
       'Expired': ('Expired', 'View request', false, 'Open chat'),
       'Disputed': ('Disputed', 'View request', false, 'Open chat'),
     };

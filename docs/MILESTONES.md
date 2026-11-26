@@ -13,7 +13,7 @@
 | **v1.5** | 27–29 Oct | Mobile UI trust, clarity, field usability (26 screen groups, 21 tasks) | ✅ Implemented · device-level acceptance partly open |
 | **v1.6** | 29 Oct – 10 Nov | Hierarchy, status clarity, touch targets, iPad; hard-coded value remediation; design system v1.7 | ✅ 26/26 tasks done |
 | **v1.7** (P12) | 16 Nov | Job-flow revision: flexible timing, pay-at-completion, price adjustments, tradie browse, projects | 🟡 Code-complete on `dev`; CI verification pending; flag default off |
-| **Design v2** | 16 Nov | Mobile design system rebrand: Trust Navy + Gold (Lexend + Source Sans 3). v1.7 archived; v2 AST, tokens, 30 screen stubs and widget library installed at `docs/design/`. Phases 1–5 complete; Phase 6 (v1 cutover: `lib/views`, `lib/widgets`, `lib/theme`, `UI_V2` flags, v1 fonts deleted; CI gate) code-complete on `phase6-v1-cutover`, pending owner QA and merge. | 🟡 Phase 6 pending QA + merge |
+| **Design v2** | 26 Nov | Mobile design system rebrand: Trust Navy + Gold (Lexend + Source Sans 3). v1.7 archived; v2 AST, tokens, 30 screen stubs and widget library installed at `docs/design/`. Phases 1–6 complete and merged to `main` (2026-11-26): `lib/views`, `lib/widgets`, `lib/theme`, `UI_V2` flags, and v1 fonts deleted; `flutter analyze --fatal-infos` clean, 559/559 unit/widget tests pass, `build.mjs --check` passes. | 🟢 Complete (merged 2026-11-26) |
 
 ### v1.1 — original milestones (history)
 M0 Docker + scaffolds · M1 auth + profiles · M2 job posting + matching · M3 chat + job status · M4 reviews + scheduling · M5 admin + closed beta. The beta plan and E2E happy path were superseded by the QA guide ([QA.md](QA.md)).

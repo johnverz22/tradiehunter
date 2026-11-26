@@ -8,14 +8,11 @@ import 'package:dio/dio.dart';
 import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
-import 'package:fixo/repositories/jobs_repository.dart';
-import 'package:fixo/repositories/job_hub_client.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/shared/chat_unread_provider.dart';
 import 'package:fixo/ui/shared/th_shell.dart';
-import 'package:fixo/viewmodels/jobs_viewmodel.dart';
+import 'package:fixo/viewmodels/jobs_viewmodel.dart' show chatRepositoryProvider;
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
-import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -48,19 +45,6 @@ class _ChatRepo extends ChatRepository {
   }
 }
 
-class _JobsRepo extends JobsRepository {
-  _JobsRepo() : super(Dio(), const FlutterSecureStorage());
-  @override
-  Future<List<Job>> getMyJobs({String? status}) async => const [];
-  @override
-  Future<List<Job>> getTradieJobs() async => const [];
-}
-
-class _JobHub extends JobHubClient {
-  _JobHub() : super(const FlutterSecureStorage());
-  @override
-  Future<void> connect({required String baseUrl}) async {}
-}
 
 ConversationSummary _conv(String jobId, int unread) => ConversationSummary(
   jobId: jobId,

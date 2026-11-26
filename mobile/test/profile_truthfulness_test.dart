@@ -5,6 +5,7 @@ import 'package:fixo/repositories/jobs_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
+import 'package:fixo/ui/feedback/th_notice.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_screen.dart';
 import 'package:fixo/ui/shared/th_rating_sheet.dart';
 import 'package:fixo/ui/design/th_tokens.dart';
@@ -65,7 +66,6 @@ Job job(String id, String status, String homeowner, String tradie) => Job(
 );
 
 void main() {
-
   Future<void> mount(
     WidgetTester tester, {
     String viewer = 'viewer',
@@ -93,7 +93,7 @@ void main() {
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: const TextScaler.linear(2)),
-            child: child!,
+            child: THNoticeHost(child: child ?? const SizedBox()),
           ),
           home: const ThTradieProfileScreen(profileId: 'target'),
         ),
@@ -121,13 +121,12 @@ void main() {
       expect(find.text('Block user'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
-    testWidgets('owner can edit but not review themselves dark=$dark', (
+    testWidgets('owner cannot review or report themselves dark=$dark', (
       tester,
     ) async {
       await mount(tester, viewer: 'target', dark: dark);
-      await tester.scrollUntilVisible(find.text('Edit Profile'), 250);
-      expect(find.text('Edit Profile'), findsOneWidget);
       expect(find.text('Leave a review'), findsNothing);
+      expect(find.text('Message'), findsNothing);
       expect(find.byIcon(Icons.more_vert), findsNothing);
       expect(tester.takeException(), isNull);
     });

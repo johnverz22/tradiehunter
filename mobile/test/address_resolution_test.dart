@@ -90,7 +90,6 @@ Future<void> fill(PostJobNotifier notifier) async {
 }
 
 void main() {
-
   test('address parser rejects invalid coordinates and missing identity', () {
     final json = <String, dynamic>{
       'id': 'a',
@@ -402,7 +401,7 @@ void main() {
           await tester.tap(find.text(selectedAddress.address));
           await tester.pumpAndSettle();
           expect(find.text('Address selected'), findsOneWidget);
-          await tester.ensureVisible(find.text('Review your job'));
+          await tester.ensureVisible(find.text('Quick job summary'));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           await tester.ensureVisible(

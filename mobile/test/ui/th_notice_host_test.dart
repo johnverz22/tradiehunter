@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:fixo/ui/feedback/th_notice.dart';
+import 'package:fixo/ui/feedback/th_notice_controller.dart'
+    show THNoticeController, THNoticeState, THNoticeTone;
 import 'package:fixo/ui/design/th_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,14 +63,8 @@ void main() {
 
     test('showing a new notice replaces previous state', () {
       final controller = THNoticeController();
-      const first = THNoticeState(
-        message: 'First',
-        tone: THNoticeTone.info,
-      );
-      const second = THNoticeState(
-        message: 'Second',
-        tone: THNoticeTone.error,
-      );
+      const first = THNoticeState(message: 'First', tone: THNoticeTone.info);
+      const second = THNoticeState(message: 'Second', tone: THNoticeTone.error);
 
       controller.show(first);
       expect(controller.state?.message, 'First');

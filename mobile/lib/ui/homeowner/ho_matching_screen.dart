@@ -139,7 +139,9 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
           _goToBookedDetail();
         case OfferEventType.declined:
         case OfferEventType.expired:
-          _returnToList('Your request wasn\u2019t taken up — pick another tradie.');
+          _returnToList(
+            'Your request wasn\u2019t taken up — pick another tradie.',
+          );
         case OfferEventType.created:
         case OfferEventType.unknown:
           break;

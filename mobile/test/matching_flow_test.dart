@@ -106,7 +106,6 @@ class MatchHub extends JobHubClient {
 }
 
 void main() {
-
   // The v2 radar reads themeModeProvider, whose notifier loads
   // SharedPreferences on construction.
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));

@@ -51,7 +51,8 @@ class HoJobDetailFallbackScreen extends StatelessWidget {
       'PaymentReview' =>
         'Your payment receipt is being reviewed. Open its status for updates.',
       'Expired' => 'This request is no longer active.',
-      'Draft' => 'It has not been sent to a tradie yet. Post a new request to continue.',
+      'Draft' =>
+        'It has not been sent to a tradie yet. Post a new request to continue.',
       _ => 'Return to your jobs list to see the latest status.',
     };
     return THScaffold(

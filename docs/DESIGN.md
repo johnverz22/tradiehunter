@@ -134,4 +134,4 @@ The React admin has its own system in `docs/design/web/` (v1.0.0, Trust Navy + G
 
 Gate: `node docs/design/web/tools/build.mjs --check` (47 text pairs at 5.0:1 and 16 non-text pairs at 3:1 per theme, kit lint, stale outputs). Status: the React admin runs it. `web/src/theme/` is synced from this folder (`npm run design:sync`, checked in CI by `npm run design:check`) and `npm run design:legacy` rejects the retired v1.7 names. See [MILESTONES](MILESTONES.md) for what is still manual.
 
-> **Mobile v2 cutover:** v1 views, widgets, theme, fonts and `UI_V2` flags were removed in Phase 6 (branch `phase6-v1-cutover`, 2026-11-26); merge date to be recorded when it lands on `main`.
+> **Mobile v2 cutover:** v1 views, widgets, theme, fonts and `UI_V2` flags were removed in Phase 6 (`phase6-v1-cutover`, merged to `main` on 2026-11-26).

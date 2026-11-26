@@ -339,10 +339,7 @@ Future<void> _captureJobsFilters(WidgetTester tester) async {
   for (final (label, name) in filters) {
     final segment = find.descendant(of: filter, matching: find.text(label));
     if (segment.evaluate().isEmpty) {
-      shotSkipped(
-        name,
-        'no "$label" segment under jobs_filter',
-      );
+      shotSkipped(name, 'no "$label" segment under jobs_filter');
       continue;
     }
     await tester.tap(segment);

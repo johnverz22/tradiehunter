@@ -45,9 +45,7 @@ class NotificationCenter extends ChangeNotifier {
           ..clear()
           ..addAll(
             decoded
-                .map(
-                  (e) => ThNotification.fromJson(e as Map<String, dynamic>),
-                )
+                .map((e) => ThNotification.fromJson(e as Map<String, dynamic>))
                 .toList(),
           );
       }
@@ -154,16 +152,15 @@ class ThNotification {
     return 'jobs';
   }
 
-  factory ThNotification.fromJson(Map<String, dynamic> json) =>
-      ThNotification(
-        id: json['id'] as String,
-        title: json['title'] as String? ?? 'TradieHunter',
-        body: json['body'] as String?,
-        category: json['category'] as String? ?? 'jobs',
-        receivedAt:
-            DateTime.tryParse(json['receivedAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+  factory ThNotification.fromJson(Map<String, dynamic> json) => ThNotification(
+    id: json['id'] as String,
+    title: json['title'] as String? ?? 'TradieHunter',
+    body: json['body'] as String?,
+    category: json['category'] as String? ?? 'jobs',
+    receivedAt:
+        DateTime.tryParse(json['receivedAt'] as String? ?? '') ??
+        DateTime.now(),
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,

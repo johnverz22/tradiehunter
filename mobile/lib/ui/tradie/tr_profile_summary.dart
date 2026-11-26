@@ -63,11 +63,9 @@ String trCredentialsSummary(List<TradieCredential> credentials) {
 }
 
 /// Label for an async summary while it loads or fails.
-String trSummaryOr<T>(
-  AsyncValue<T> value,
-  String Function(T data) label,
-) => value.when(
-  data: label,
-  loading: () => 'Loading…',
-  error: (_, _) => 'Unavailable',
-);
+String trSummaryOr<T>(AsyncValue<T> value, String Function(T data) label) =>
+    value.when(
+      data: label,
+      loading: () => 'Loading…',
+      error: (_, _) => 'Unavailable',
+    );

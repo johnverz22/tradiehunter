@@ -82,27 +82,18 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     // 01-splash
-    GoRoute(
-      path: '/',
-      builder: (context, state) =>
-          const ThSplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const ThSplashScreen()),
     // 02-onboarding
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const ThOnboardingScreen(),
     ),
     // 03-login
-    GoRoute(
-      path: '/auth',
-      builder: (context, state) =>
-          const ThSignInScreen(),
-    ),
+    GoRoute(path: '/auth', builder: (context, state) => const ThSignInScreen()),
     // 04-signup
     GoRoute(
       path: '/signup',
-      builder: (context, state) =>
-          const ThSignUpScreen(),
+      builder: (context, state) => const ThSignUpScreen(),
     ),
 
     // Shown after a new Google user authenticates — they pick Homeowner/Tradie.
@@ -158,7 +149,9 @@ final GoRouter appRouter = GoRouter(
     // H19 find-a-tradie — live tradie search (extra = category seed)
     GoRoute(
       path: '/find-tradie',
-      builder: (context, state) => HoBrowseTradiesScreen(initialCategory: routeCategorySeed(state.extra)),
+      builder: (context, state) => HoBrowseTradiesScreen(
+        initialCategory: routeCategorySeed(state.extra),
+      ),
     ),
     // H20 notifications — FCM-fed inbox
     GoRoute(
@@ -168,8 +161,7 @@ final GoRouter appRouter = GoRouter(
     // 06-post-job
     GoRoute(
       path: '/jobs/new',
-      builder: (context, state) =>
-          const ThPostJobScreen(),
+      builder: (context, state) => const ThPostJobScreen(),
     ),
     // 07-matching — dual-mode waiting screen (v1.7 P12-08/P12-09):
     //   /jobs/:id/matching = quick-match radar (POST /match + SignalR)
@@ -192,12 +184,14 @@ final GoRouter appRouter = GoRouter(
     // (extra: gstLabel is not needed; the list rows carry their own).
     GoRoute(
       path: '/jobs/:jobId/tradies',
-      builder: (context, state) => ThChooseTradieScreen(jobId: state.pathParameters['jobId']!),
+      builder: (context, state) =>
+          ThChooseTradieScreen(jobId: state.pathParameters['jobId']!),
     ),
     // v1.7 P12-24: homeowner quote comparison for Project jobs.
     GoRoute(
       path: '/jobs/:jobId/quotes',
-      builder: (context, state) => HoQuotesScreen(jobId: state.pathParameters['jobId']!),
+      builder: (context, state) =>
+          HoQuotesScreen(jobId: state.pathParameters['jobId']!),
     ),
     // 10-request-detail (tradie)
     GoRoute(
@@ -304,8 +298,7 @@ final GoRouter appRouter = GoRouter(
 
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) =>
-          ThShell(child: child),
+      builder: (context, state, child) => ThShell(child: child),
       routes: [
         // 05-homeowner-home
         GoRoute(
@@ -329,8 +322,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/profile',
-          builder: (context, state) =>
-              const ThProfileScreen(),
+          builder: (context, state) => const ThProfileScreen(),
         ),
         // 14-settings — inside shell so Profile tab stays active
         GoRoute(
