@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Turn the current single-journey E2E/QA coverage into a realistic, automated functional test across the API, mobile (Flutter) and web admin (React) tiers. All three tiers exercise the **same users and jobs**, provisioned once per run.
-> **Status:** P0, P1 and P2.1 done. **Verified only against a local mock of the API + MailHog (no docker in the authoring sandbox); the first run on the real stack is P1.8 and is still open.** · **Prepared:** 2026-11-26 · **Updated:** 2026-11-26
+> **Status:** P0, P1, P1.8 and P2.1 done; P2.2 direct-request step verified live on the real stack. **P2 scenarios next.** · **Prepared:** 2026-11-26 · **Updated:** 2026-11-26
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** extends `03_e2e_realignment_plan.md` (E6.6 integrated API journey gate is already merged). Update that file's status when this lands.
@@ -134,6 +134,8 @@ All three tiers run from one manifest against the local stack, per-tier results 
 - Third run: personas provision all 6 accounts cleanly (`test-logs/e2e-personas-1126054310/manifest.json`, serviceId 1 / tradeType Plumber); manifest tradies now appear in `/jobs/{id}/matches`. Journey still fails at "tradie receives offer" (45 s poll): sequential dispatch offers the top-ranked candidate first, and seeded `tradie-verified@fixo.test` (rating 5.0, 10 reviews) outscores the unrated QA tradies, so the pending offer sits with the seeded tradie for its 10-minute window. This is the §F predicted outcome — P2.2 should switch manifest runs to direct requests (`POST /jobs/{id}/request {tradieId}`, `CreateDirectRequestAsync`).
 
 **Verification of the P1.8 fixes (2026-11-26, offline):** `invite_token_from` returns the base64url token from a body that also contains `support@tradiehunter.nz` and a URL, still handles `?token=` (URL-decoded), and raises `StepFailed` when no token-shaped word exists. Direct-request journey tested on a mock (see P2.2); the real-stack re-run of `e2e-journey.py --manifest` after this change is the next thing to do.
+
+**P2.2 direct-request live run (2026-11-26, local docker stack + MailHog):** `e2e-personas.py` run `1126055601` provisioned all 6 accounts (`test-logs/e2e-personas-1126055601/manifest.json`, credentials 70-72, serviceId 1 / Plumber); `e2e-journey.py --manifest` with the default `auto` match mode took the direct-request path (`POST /jobs/{id}/request`, tradie id from `GET /profile`) and the full journey passed on job 400 in ~1s — offer received, accepted, checked in/out, itemised approval, receipt, staff verify, completed and reviewed. The §F seeded-tradie offer conflict is bypassed for manifest runs. Remaining P2.2 work: per-step assertions on job status, history and decimal-string amounts.
 
 _(paste the P6.6 run output here)_
 
