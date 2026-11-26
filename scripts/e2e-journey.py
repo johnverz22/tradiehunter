@@ -612,8 +612,21 @@ def run_competing_quotes(rec):
     rec.step("homeowner sees 3 Submitted quotes at the right prices", before_accept)
 
     win_id, win_tradie, win_amt = quote_ids[winner], ids[winner], amounts[winner]
-    rec.step("homeowner accepts the middle quote",
-             lambda: post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False}))
+    def accept():
+        try:
+            post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False})
+        except StepFailed as e:
+            if "Invalid transition from Requested to Booked by Homeowner" in str(e):
+                # Found live 2026-11-26 (plan 08 section H): QuoteService books as UserRole.Homeowner but the
+                # v2 table only allows Requested->Booked for Tradie. Not a script bug; also leaves the job
+                # half-applied (quotes decided, status still Requested).
+                raise StepFailed(
+                    "KNOWN BACKEND DEFECT BE-1/BE-2 (docs/todos/08_e2e_persona_fabric_plan.md section H): "
+                    "quote accept is rejected by the v2 transition table and leaves job %d half-applied. %s" % (job, e)
+                )
+            raise
+
+    rec.step("homeowner accepts the middle quote", accept)
     rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
 
     def after_accept():
