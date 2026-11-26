@@ -159,7 +159,7 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
                     Text(
                       'Create your account',
                       style: THType.h1.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FW.bold,
                         color: context.th.text,
                       ),
                     ),
@@ -286,7 +286,7 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
                             'Log in',
                             style: THType.button.copyWith(
                               color: context.th.textBrand,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FW.semibold,
                             ),
                           ),
                         ),

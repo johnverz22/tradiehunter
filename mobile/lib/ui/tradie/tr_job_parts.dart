@@ -110,7 +110,7 @@ class TrJobCodeBadge extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 12.0,
-            fontWeight: FontWeight.w500,
+            fontWeight: FW.medium,
             color: context.th.textSoft,
           ),
         ),

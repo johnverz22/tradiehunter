@@ -711,7 +711,7 @@ extension on THAvatar {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: c.success,
-                border: Border.all(color: c.paper, width: 1.5),
+                border: Border.all(color: c.paper, width: Sizes.borderStrong),
               ),
               child: Icon(Icons.check, size: Sizes.iconSm, color: c.onBrand),
             ),
@@ -760,7 +760,7 @@ class _ThChatBubble extends StatelessWidget {
               Text(
                 m.senderName,
                 style: THType.meta.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FW.semibold,
                   color: c.textBrand,
                 ),
               ),
@@ -814,7 +814,7 @@ class _ThChatBubble extends StatelessWidget {
                         child: Text(
                           'Not sent — tap to retry',
                           style: THType.meta.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FW.semibold,
                             color: c.danger,
                           ),
                         ),
@@ -882,7 +882,7 @@ class _ThChatDateSeparator extends StatelessWidget {
               _label(),
               textAlign: TextAlign.center,
               style: THType.meta.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FW.medium,
                 color: c.textSoft,
               ),
             ),
@@ -1006,7 +1006,7 @@ class _ThChatComposer extends StatelessWidget {
                             softWrap: false,
                             style: THType.button.copyWith(
                               fontSize: THType.meta.fontSize,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FW.medium,
                               color: c.text,
                             ),
                           ),

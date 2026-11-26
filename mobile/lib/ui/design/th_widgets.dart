@@ -113,7 +113,7 @@ class THText extends StatelessWidget {
       style: _type(style).copyWith(
         color: _tone(context.th, tone),
         fontSize: size,
-        fontWeight: bold ? FontWeight.w700 : null,
+        fontWeight: bold ? FW.bold : null,
       ),
     );
   }
@@ -166,7 +166,7 @@ class THButton extends StatelessWidget {
       THButtonKind.secondary => (
         c.surface,
         c.text,
-        BorderSide(color: c.line, width: 1.5),
+        BorderSide(color: c.line, width: Sizes.borderStrong),
       ),
       THButtonKind.inverse => (
         Colors.white,
@@ -351,7 +351,7 @@ class THBadge extends StatelessWidget {
               style: THType.meta.copyWith(
                 color: fg,
                 fontSize: 11.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FW.semibold,
               ),
             ),
           ),
@@ -415,8 +415,8 @@ class THCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.th;
     final border = switch (tone) {
-      THCardTone.accent => Border.all(color: c.accent, width: 1.5),
-      THCardTone.danger => Border.all(color: c.danger, width: 1.5),
+      THCardTone.accent => Border.all(color: c.accent, width: Sizes.borderStrong),
+      THCardTone.danger => Border.all(color: c.danger, width: Sizes.borderStrong),
       THCardTone.defaultTone => Border.all(color: c.line),
     };
     return thTestIdWrap(
@@ -567,7 +567,7 @@ class THTile extends StatelessWidget {
           style: THType.meta.copyWith(
             fontFamily: THFonts.display,
             fontSize: 11,
-            fontWeight: FontWeight.w500,
+            fontWeight: FW.medium,
             color: c.text,
           ),
         ),
@@ -890,7 +890,7 @@ class THPills extends StatelessWidget {
                     p.label,
                     style: THType.button.copyWith(
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FW.medium,
                       color: p.selected ? c.onBrand : c.text,
                     ),
                   ),
@@ -946,7 +946,7 @@ class THSegmented extends StatelessWidget {
                       items[i],
                       style: THType.button.copyWith(
                         fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FW.medium,
                         color: i == selected ? c.text : c.textSoft,
                       ),
                     ),
@@ -1024,7 +1024,7 @@ class THOtp extends StatelessWidget {
                 color: i == value.length
                     ? c.brand
                     : (i < value.length ? c.textBrand : c.line),
-                width: 1.5,
+                width: Sizes.borderStrong,
               ),
             ),
             child: Text(i < value.length ? value[i] : '', style: THType.h1),
@@ -1247,7 +1247,7 @@ class THKeyValue extends StatelessWidget {
                       value,
                       style: (strong ? THType.title : THType.body).copyWith(
                         fontSize: strong ? 16 : 14.5,
-                        fontWeight: bold || strong ? FontWeight.w700 : null,
+                        fontWeight: bold || strong ? FW.bold : null,
                         color: _tone(c, tone),
                       ),
                     ),
@@ -1631,7 +1631,7 @@ class THBars extends StatelessWidget {
                     style: THType.label.copyWith(
                       fontSize: 11,
                       letterSpacing: 0,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FW.medium,
                       color: c.textSoft,
                     ),
                   ),
@@ -1851,7 +1851,7 @@ class THDashBox extends StatelessWidget {
                   Text(
                     title,
                     style: THType.body.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FW.semibold,
                       fontSize: 14.5,
                       color: c.textBrand,
                     ),
@@ -2038,7 +2038,7 @@ class THWordmark extends StatelessWidget {
       textAlign: large ? TextAlign.center : TextAlign.start,
       style: TextStyle(
         fontFamily: THFonts.display,
-        fontWeight: FontWeight.w800,
+        fontWeight: FW.extrabold,
         fontSize: large ? 40 : 22,
         letterSpacing: large ? -1 : -0.3,
       ),
@@ -2245,7 +2245,7 @@ class THDock extends StatelessWidget {
         style: THType.label.copyWith(
           fontSize: 10.5,
           letterSpacing: 0,
-          fontWeight: FontWeight.w500,
+          fontWeight: FW.medium,
           color: color,
         ),
       ),
@@ -2306,7 +2306,7 @@ class THDock extends StatelessWidget {
                           color: c.accent,
                           borderRadius: BorderRadius.circular(Radii.pill),
                           // Same colour as the bar so the badge reads as cut out.
-                          border: Border.all(color: barColor, width: 1.5),
+                          border: Border.all(color: barColor, width: Sizes.borderStrong),
                         ),
                         child: Text(
                           badge,

@@ -286,7 +286,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
               ),
               child: Text(
                 'Theme',
-                style: THType.title.copyWith(fontWeight: FontWeight.w600),
+                style: THType.title.copyWith(fontWeight: FW.semibold),
               ),
             ),
             for (final mode in ThemeMode.values)
@@ -324,7 +324,7 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
               children: [
                 Text(
                   'Region',
-                  style: THType.title.copyWith(fontWeight: FontWeight.w600),
+                  style: THType.title.copyWith(fontWeight: FW.semibold),
                 ),
                 const SizedBox(height: Space.s3),
                 THKeyValue('Region', regionLabel(locale), divider: true),

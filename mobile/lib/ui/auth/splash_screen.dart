@@ -157,7 +157,7 @@ class _ThSplashScreenState extends ConsumerState<ThSplashScreen>
                         Text(
                           'Trusted tradies, sorted fast.',
                           style: THType.body.copyWith(
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FW.medium,
                             color: c.onHero,
                           ),
                         ),

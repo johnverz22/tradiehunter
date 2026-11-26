@@ -217,7 +217,7 @@ class _ThMessagesEmptyDetail extends StatelessWidget {
             Text(
               'Select a conversation',
               style: THType.title.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: FW.semibold,
                 color: c.text,
               ),
             ),
@@ -303,7 +303,7 @@ class _ThConversationTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: THType.title.copyWith(
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FW.semibold,
                               color: c.textBrand,
                             ),
                           ),
@@ -337,8 +337,8 @@ class _ThConversationTile extends StatelessWidget {
                             style: THType.body.copyWith(
                               fontSize: THType.meta.fontSize,
                               fontWeight: hasUnread
-                                  ? FontWeight.w500
-                                  : FontWeight.w400,
+                                  ? FW.medium
+                                  : FW.regular,
                               color: conversation.lastMessage == null
                                   ? c.textSoft
                                   : c.text,

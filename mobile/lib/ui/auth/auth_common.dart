@@ -54,7 +54,7 @@ class ThAuthErrorBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: c.dangerTint,
           borderRadius: BorderRadius.circular(Radii.control),
-          border: Border.all(color: c.danger, width: 1.5),
+          border: Border.all(color: c.danger, width: Sizes.borderStrong),
         ),
         child: Row(
           spacing: Space.s2_5,
@@ -200,7 +200,7 @@ class ThRoleToggle extends StatelessWidget {
                   Text(
                     label,
                     style: THType.button.copyWith(
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FW.bold : FW.medium,
                       color: selected ? c.text : c.textSoft,
                     ),
                   ),
@@ -271,7 +271,7 @@ class ThTermsLine extends ConsumerWidget {
               foregroundColor: c.textBrand,
               textStyle: style.copyWith(
                 decoration: TextDecoration.underline,
-                fontWeight: FontWeight.w600,
+                fontWeight: FW.semibold,
               ),
             ),
             onPressed: () =>

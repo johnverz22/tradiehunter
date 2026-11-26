@@ -502,7 +502,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 - [ ] **6.12-e** Cover the cross-screen sweeps lost with `accessibility_audit_test` / `responsive_layout_test` (currently covered per-screen, `th_dock_layout_test`, `phase5_tr_jobs_test`) with one consolidated v2 audit if desired.
 - [ ] **6.12-f** Owner QA on device (checklist in `07_phase6_main_integration_guide.md` §4): live-backend E2E (`scripts/run-e2e.sh C0 --seed`), light/dark, text scale 1.0/2.0, 320 px width, push deep links, 404 route.
 - [ ] **6.12-g** Release build passes on iOS and Android, and a capture run (`scripts/run-shots.sh`) raises no missing-asset exception; then delete the `il-05` v1 workaround (see the Phase 6 "done when" line below).
-- [ ] **6.12-h** Move hardcode one-offs listed in `mobile/HARDCODED_AUDIT.md` into tokens.
+- [ ] **6.12-h** Hardcoded values: partly done 2026-11-26 (`FW.*` font weights and `Sizes.borderStrong` now replace inline `FontWeight.wNNN` / `width: 1.5` in `lib/ui`; **uncompiled, run `flutter analyze --fatal-infos` + `flutter test`**). Remaining: font sizes, inverse/shadow/glass colours, photo-viewer colours, a few radii; itemised in `mobile/HARDCODED_AUDIT.md`. These need `tokens.json` entries + `build.mjs` first.
 
 ✅ **Phase 6 done when:** v1 code, tokens, fonts and audit tools are gone, `grep` in 6.4 is clean, CI runs the full gate on every PR, no capture run raises a missing-asset exception (and the `il-05` v1 workaround is deleted), and a release build passes on iOS and Android.
 

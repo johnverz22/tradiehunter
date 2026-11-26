@@ -118,7 +118,7 @@ class _ThRoleSelectScreenState extends ConsumerState<ThRoleSelectScreen> {
                             'How will you use\nTradieHunter?',
                             style: THType.h1.copyWith(
                               color: c.text,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FW.bold,
                               height: 1.2,
                             ),
                           ),
@@ -230,7 +230,7 @@ class _ThRoleChoice extends StatelessWidget {
                       title,
                       style: THType.title.copyWith(
                         color: c.text,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FW.semibold,
                       ),
                     ),
                     Text(
@@ -263,7 +263,7 @@ class _ThRoleChoice extends StatelessWidget {
                         height: Space.s6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: c.line, width: 1.5),
+                          border: Border.all(color: c.line, width: Sizes.borderStrong),
                         ),
                       ),
               ),

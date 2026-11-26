@@ -44,10 +44,21 @@ abstract class Radii {
   static const double chatBubbleTail = 6.0;
 }
 
+/// Font weights (use instead of inline `FontWeight.wNNN`).
+abstract class FW {
+  FW._();
+  static const FontWeight regular = FontWeight.w400;
+  static const FontWeight medium = FontWeight.w500;
+  static const FontWeight semibold = FontWeight.w600;
+  static const FontWeight bold = FontWeight.w700;
+  static const FontWeight extrabold = FontWeight.w800;
+}
+
 /// Component sizes.
 abstract class Sizes {
   Sizes._();
   static const double tapMin = 48.0;
+  static const double borderStrong = 1.5;
   static const double button = 54.0;
   static const double buttonSm = 44.0;
   static const double input = 56.0;

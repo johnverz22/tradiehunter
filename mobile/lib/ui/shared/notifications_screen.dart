@@ -76,7 +76,7 @@ class _ThNotificationsScreenState extends ConsumerState<ThNotificationsScreen> {
                     child: Text(
                       'Mark read',
                       style: THType.button.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FW.semibold,
                         color: c.textBrand,
                       ),
                     ),

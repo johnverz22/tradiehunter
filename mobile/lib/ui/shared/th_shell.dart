@@ -278,7 +278,7 @@ class _RailItem extends StatelessWidget {
                   style: THType.label.copyWith(
                     fontSize: THType.railLabel.fontSize,
                     letterSpacing: 0,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selected ? FW.bold : FW.medium,
                     color: color,
                   ),
                 ),
@@ -336,7 +336,7 @@ class _RailPostJobButton extends StatelessWidget {
                   style: THType.label.copyWith(
                     fontSize: THType.railLabel.fontSize,
                     letterSpacing: 0,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FW.medium,
                     color: c.accentText,
                   ),
                 ),

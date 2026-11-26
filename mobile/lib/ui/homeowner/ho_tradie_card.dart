@@ -89,7 +89,7 @@ class HoTradieCard extends StatelessWidget {
                           score,
                           style: THType.meta.copyWith(
                             color: c.text,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FW.bold,
                           ),
                         ),
                         const SizedBox(width: Space.s1),
@@ -155,8 +155,8 @@ class HoTradieCard extends StatelessWidget {
                                 style: THType.meta.copyWith(
                                   color: c.text,
                                   fontWeight: score != null
-                                      ? FontWeight.w700
-                                      : FontWeight.w400,
+                                      ? FW.bold
+                                      : FW.regular,
                                 ),
                               ),
                             ),

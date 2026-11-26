@@ -105,7 +105,7 @@ class _Pill extends StatelessWidget {
                           item.label,
                           maxLines: 1,
                           style: THType.meta.copyWith(
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FW.medium,
                             color: foreground,
                           ),
                         ),
@@ -124,7 +124,7 @@ class _Pill extends StatelessWidget {
                         Text(
                           item.label,
                           style: THType.meta.copyWith(
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FW.medium,
                             color: foreground,
                           ),
                         ),

@@ -130,7 +130,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                       child: Text(
                         'Welcome back',
                         style: THType.h1.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FW.bold,
                           color: context.th.text,
                         ),
                       ),
@@ -210,7 +210,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                           'Forgot password?',
                           style: THType.button.copyWith(
                             color: context.th.textBrand,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FW.semibold,
                           ),
                         ),
                       ),
@@ -249,7 +249,7 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                             'Create account',
                             style: THType.button.copyWith(
                               color: context.th.textBrand,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FW.semibold,
                             ),
                           ),
                         ),

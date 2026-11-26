@@ -162,7 +162,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                           Text(
                             'Enter the 6-digit code',
                             style: THType.h1.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FW.bold,
                               color: th.text,
                             ),
                           ),
@@ -187,7 +187,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                                 'Use a different email',
                                 style: THType.button.copyWith(
                                   color: th.textBrand,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FW.semibold,
                                 ),
                               ),
                             ),
@@ -207,7 +207,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                                     ),
                                     border: Border.all(
                                       color: c.danger,
-                                      width: 1.5,
+                                      width: Sizes.borderStrong,
                                     ),
                                   ),
                                   child: Row(
@@ -292,7 +292,7 @@ class _ThVerifyOtpScreenState extends ConsumerState<ThVerifyOtpScreen> {
                                         ? 'Resend code'
                                         : 'Resend code in ${_resendSecondsLeft}s',
                                     style: THType.button.copyWith(
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FW.semibold,
                                     ),
                                   ),
                                 ),
