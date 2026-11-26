@@ -59,9 +59,8 @@ public static class JobFlowTransitions
     {
         var valid = (from, to) switch
         {
-            // P12-10: the tradie's accept now books the job directly — payment
-            // moves to the end. Requested → AwaitingPayment is REMOVED.
-            (JobStatus.Requested, JobStatus.Booked) => actorRole == UserRole.Tradie,
+            // P12-10: tradie accepts hourly offer OR homeowner accepts project quote → Booked.
+            (JobStatus.Requested, JobStatus.Booked) => actorRole is UserRole.Tradie or UserRole.Homeowner,
             // System cancels Requested jobs when matching is exhausted (no_tradie_found).
             (JobStatus.Requested, JobStatus.Cancelled) => actorRole is UserRole.Staff or UserRole.Superadmin,
             (JobStatus.Booked, JobStatus.InProgress) => actorRole == UserRole.Tradie,

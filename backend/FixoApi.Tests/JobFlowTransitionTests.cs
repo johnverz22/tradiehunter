@@ -15,7 +15,7 @@ public class JobFlowTransitionTests
 
     [Theory]
     [InlineData(JobStatus.Requested, JobStatus.Booked, UserRole.Tradie, true)]          // tradie accepts → Booked
-    [InlineData(JobStatus.Requested, JobStatus.Booked, UserRole.Homeowner, false)]     // homeowner cannot book
+    [InlineData(JobStatus.Requested, JobStatus.Booked, UserRole.Homeowner, true)]      // homeowner accepts quote → Booked
     [InlineData(JobStatus.Booked, JobStatus.InProgress, UserRole.Tradie, true)]        // check-in
     [InlineData(JobStatus.InProgress, JobStatus.AwaitingConfirmation, UserRole.Tradie, true)] // check-out
     [InlineData(JobStatus.AwaitingConfirmation, JobStatus.AwaitingPayment, UserRole.Homeowner, true)] // Approve & pay

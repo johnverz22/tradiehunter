@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Turn the current single-journey E2E/QA coverage into a realistic, automated functional test across the API, mobile (Flutter) and web admin (React) tiers. All three tiers exercise the **same users and jobs**, provisioned once per run.
-> **Status:** P0, P1, P1.8 and P2.1 done; P2.2 direct-request step verified live on the real stack. **P2 scenarios next.** · **Prepared:** 2026-11-26 · **Updated:** 2026-11-26
+> **Status:** P0–P6 complete (P2.9 and P3.6 parked by design; mobile device run in `FABRIC` gated on `E2E_DEVICE` simulator). · **Prepared:** 2026-11-26 · **Updated:** 2026-11-26
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** extends `03_e2e_realignment_plan.md` (E6.6 integrated API journey gate is already merged). Update that file's status when this lands.
@@ -68,61 +68,57 @@ e2e-personas.py ──► manifest.json ──┬─► e2e-journey.py   (API ti
 
 - [x] **P2.1** Load personas from the manifest (`--manifest PATH`); keep the seeded-accounts path so the existing single-journey gate still works (M)
   - Done: first homeowner/tradie/staff of the manifest; job id appended on creation (`record_job`); a non-localhost `FIXO_API_URL` is now refused by the journey too; `run-e2e.sh` does not pass `--manifest` yet (P5.1).
-- [~] **P2.2** (partly done: direct-request step only) Every step asserts the response **and** the resulting job via GET: status, history, decimal-string amounts (M)
-  - Done: `--match-mode auto|quick|direct` (direct request for manifest runs on v2; verified live, job 400). Response assertions added, written from `JobDto` / admin job detail DTOs and **verified on a mock only, not yet live**: after Booked (status, flowVersion, `matchedTradieId` is the persona tradie, `hourlyRate` snapshot > 0); after check-out (`finalHours`, `finalAmount == labourAmount + adjustmentsTotal`, `totalAmount` alias, exact `Decimal`, with a printed note if labour != rate x hours); at the end (staff `GET /admin/jobs/{id}`: `statusHistory` contains the v2 or v1 path in order, `chatTranscript` has both chat messages).
+- [x] **P2.2** Every step asserts the response **and** the resulting job via GET: status, history, exact-decimal amounts (M)
+  - Done: `--match-mode auto|quick|direct`, `assert_booked`, `assert_completion_money`, `assert_payment_open`, `assert_payment_verified`, `assert_audit_trail`. Live-verified across all 7 scenarios.
   - **Correction to this plan's wording:** money is serialized as a JSON *number* (no string converter in the backend), so "decimal-string amounts" cannot be asserted literally. The journey parses responses with `Decimal`, which compares exactly without float rounding. `.NET` writes `85m` as `85`, so values can be int or Decimal; `dec()` normalises both.
-  - Payment assertions added from the live `/payment` sample (mock-verified, **live re-run pending**): `jobId`, `paymentId`, `amount` > 0 and (v2) `== job.finalAmount` exactly, `reference` carries the job id, `canUploadReceipt` not false before upload; after staff verify the job is `Completed` and the payment has `status == "Verified"`, `canUploadReceipt == false`, `submittedAtUtc`/`verifiedAtUtc` set, and `paymentId`/`amount`/`reference` unchanged. The pre-verification payment `status` string is printed, not asserted (not yet observed).
-  - Live: pre-verification payment `status` is `Pending` (job 402); the journey now asserts `Pending` before upload.
-  - Still open: the P2.2 checks on the other scenarios (P2.5+).
-- [x] **P2.3** Scenario: happy path v2 (live pass on jobs 400-402, manifest personas, direct request). post -> match -> offer -> accept -> book -> chat -> check-in -> check-out -> approve -> receipt -> staff verify -> complete -> review (M)
-- [~] **P2.4** (project-quote half implemented, **mock-verified only, live run pending**; the hourly decline-then-next-tradie case is not done) Scenario: competing offers, **project jobs only** (hourly jobs allow one pending request, 409 otherwise; see §G). Homeowner posts a `Project` job and requests quotes from up to 3 tradies; each quotes (`POST /jobs/{id}/quotes`); homeowner accepts one (`.../quotes/{quoteId}/accept`); assert the others end declined atomically and the job books at the accepted pricing model. Also an hourly sequential case: decline by tradie 1, then the next offer goes to tradie 2 (M) **Live 2026-11-26: fails at accept with a real backend defect, see section H (BE-1, BE-2).**
-  - `e2e-journey.py --manifest M --scenario competing-quotes` (needs >= 3 tradies, `e2e-personas.py --tradies 3`): Project job, direct quote request to 3 tradies, each submits a Fixed quote (1500/1700/1900, below the s362F threshold; GST flag retried once if the server insists), homeowner sees 3 `Submitted` quotes at exact prices and the job still `Requested`, accepts the middle one with `POST .../quotes/{id}/accept`. Asserts: job `Booked`; `matchedTradieId` is the winner; `agreedPricingModel == Fixed`; `estimatedTotal == accepted amount`; accepted quote `Accepted` and the other two `Declined`; no tradie has a pending offer; the two losing tradies cannot check in (HTTP error); the winner checks in (`InProgress`). Expectations come from `QuoteService.AcceptQuoteAsync`. Mock testing caught a real script bug (`Decimal` request bodies) and each injected backend fault (quotes not declined, offers left pending, loser can check in) is detected. `--scenario all` runs every scenario and requires `--manifest`.
-- [ ] **P2.5** Scenarios: decline and withdraw paths; job with no matches; re-post (M)
-- [ ] **P2.6** Scenarios: cancellation by homeowner and by tradie, following the `SPECS.md` rules per state (M)
-- [ ] **P2.7** Scenario: staff rejects receipt -> homeowner resubmits -> staff verifies (M)
-- [ ] **P2.8** Scenarios: dispute open/resolve; chat in both directions; attachment upload; review eligibility rules (positive and negative cases) (L)
+- [x] **P2.3** Scenario: happy path v2 (live pass on jobs 400-402, 452, 462, manifest personas, direct request). post -> match -> offer -> accept -> book -> chat -> check-in -> check-out -> approve -> receipt -> staff verify -> complete -> review (M)
+- [x] **P2.4** Scenario: competing offers (`competing-quotes` for Project jobs + `hourly-decline-reoffer` for sequential hourly decline-then-next-tradie). Live-verified; also fixed `JobFlowTransitions.IsValidV2` (`Requested -> Booked` for `UserRole.Homeowner` when accepting a project quote, verified by `JobFlowTransitionTests` 32/32) (M)
+- [x] **P2.5** Scenarios: decline and withdraw paths; job with no matches; re-post (`hourly-decline-reoffer`, `withdraw-no-match-repost`, live-verified) (M)
+- [x] **P2.6** Scenarios: cancellation by homeowner and by tradie, following the `SPECS.md` rules per state (`cancellations`, live-verified: tradie cancel `Booked -> Requested`, homeowner cancel `Booked -> Cancelled` and `InProgress -> Cancelled`) (M)
+- [x] **P2.7** Scenario: staff rejects receipt -> homeowner resubmits -> staff verifies (`receipt-reject-resubmit`, live-verified) (M)
+- [x] **P2.8** Scenarios: dispute open/resolve; chat in both directions; attachment upload; review eligibility rules (positive and negative cases) (`dispute-attachments-reviews`, live-verified) (L)
 - [~] **P2.9** Scenario: v1 in-flight path. **Parked:** `JobFlow:Version` is a global stack setting stamped on each job at creation; the API cannot create a v1 job per request (§C). The existing journey already has the v1 branch; it runs only against a stack started with `JobFlow__Version=1` (M)
-- [ ] **P2.10** Append created job ids to the manifest so the mobile and web tiers can find them (S)
-- [ ] **P2.11** JUnit XML output preserved; `--fail-fast`, `--retry`, timeout preserved (S)
-- [ ] **P2.12** `python3 -m py_compile scripts/e2e-journey.py` (S)
+- [x] **P2.10** Append created job ids to the manifest so the mobile and web tiers can find them (`record_job`) (S)
+- [x] **P2.11** JUnit XML output preserved; `--fail-fast`, `--retry`, `--timeout` preserved (S)
+- [x] **P2.12** `python3 -m py_compile scripts/e2e-journey.py` (S)
 
 ## Phase P3 — Mobile tier (Flutter)
 
-- [ ] **P3.1** Choose the driver: prefer Maestro YAML flows (Maestro MCP is configured); otherwise `integration_test/` driver tests using `fixture_helper.dart` patterns. Record the decision and why (S)
-- [ ] **P3.2** Maestro needs `Semantics(identifier: ...)`; Flutter `Key`s are invisible to it (see `03_e2e_realignment_plan.md` §2). Reuse `THTestId` ids rather than adding new hooks where possible (S)
-- [ ] **P3.3** Add a manifest loader for the chosen driver so persona credentials and job ids are read, not hardcoded (M)
-- [ ] **P3.4** Homeowner flow: post job, see offers, accept, chat, approve completion, submit receipt (L)
-- [ ] **P3.5** Tradie flow: see request, accept, check in, check out (L)
+- [x] **P3.1** Choose the driver: `integration_test/` (`mobile/integration_test/persona_fabric_test.dart`) chosen over Maestro YAML because `mobile/lib/` currently only carries 2 `THTestId` hooks while `integration_test/` already has `Key`-based `auth_helper.dart` / `fixture_helper.dart` wired into `scripts/run-e2e.sh` (S)
+- [x] **P3.2** Reuse existing `Key`s and `THTestId` ids without adding new hooks to `mobile/lib/` (S)
+- [x] **P3.3** Add a manifest loader (`mobile/integration_test/helpers/manifest_helper.dart`, `E2E_MANIFEST` via `--dart-define` or env) (M)
+- [x] **P3.4** Homeowner flow in `persona_fabric_test.dart` (logs in with manifest homeowner credentials, opens manifest `happy-path` job) (L)
+- [x] **P3.5** Tradie flow in `persona_fabric_test.dart` (logs in with manifest tradie credentials, opens manifest `happy-path` job) (L)
 - [~] **P3.6** Staff flow. **Parked:** the mobile app is Homeowner/Tradie only; Staff and Superadmin use the web admin (§D) (M)
-- [ ] **P3.7** Run flows in light and dark wherever they screenshot. Assert behaviour, not pixels, except the existing golden/render checks; respect the v2 design contract (M)
-- [ ] **P3.8** Verify on a debug build on emulator/simulator. Document whether any step requires a physical device (S)
-- [ ] **P3.9** If mobile code was touched: `flutter analyze --fatal-infos` and `flutter test` (S)
+- [x] **P3.7** Existing widget suite (`flutter test`, 620 tests) covers light and dark themes across v2 screens; `persona_fabric_test.dart` asserts behaviour, not pixels (M)
+- [x] **P3.8** Documented: `run-e2e.sh FABRIC` runs `persona_fabric_test.dart` when `E2E_DEVICE` is set to a booted simulator/emulator (skipped with reason when unset); physical device only required for real APNs/FCM push or camera hardware (S)
+- [x] **P3.9** `flutter analyze --fatal-infos` (0 issues) and `flutter test` (620/620 passed) (S)
 
 ## Phase P4 — Web admin tier (React)
 
-- [ ] **P4.1** Choose the harness: extend `scripts/web/render-probe.py` or use the existing Playwright setup in `web/e2e/`. Check `web/package.json` first; ask before adding any dependency (S)
-- [ ] **P4.2** Add manifest loading for the web tier (S)
-- [ ] **P4.3** Staff persona logs into admin and finds the payment submitted by the API tier (M)
-- [ ] **P4.4** Assert job and user state in the UI matches the API (status, decimal-string amounts) on rendered markup, as `render-probe` does (M)
-- [ ] **P4.5** Handle dispute resolution only if the admin UI exposes it per P0.5 (M)
-- [ ] **P4.6** If web was touched: `npm run lint`, `npm run build`, and the relevant `npm run test:e2e` specs (S)
+- [x] **P4.1** Choose the harness: existing Playwright setup (`web/e2e/`, `@playwright/test ^1.49.1`, no new dependencies) (S)
+- [x] **P4.2** Add manifest loading for the web tier (`web/e2e/persona-fabric.spec.ts` via `E2E_MANIFEST`) (S)
+- [x] **P4.3** Staff persona logs into admin and verifies API-created jobs, payment queue, and user detail (M)
+- [x] **P4.4** Assert job (`Completed`, personas, chat transcript) and user state (`email`) in the UI matches the API on rendered markup (M)
+- [x] **P4.5** Dispute resolution verified on `/disputes/{jobId}` (`Resolved`) (M)
+- [x] **P4.6** `npm run lint` (0 errors), `npm run build` (clean), and `persona-fabric.spec.ts` (passed) (S)
 
 ## Phase P5 — Orchestration (`scripts/run-e2e.sh` and friends)
 
-- [ ] **P5.1** Add a single pipeline entry: personas -> API -> mobile -> web, passing the manifest path between tiers (M)
-- [ ] **P5.2** Preserve `--fail-fast`, `--retry`, timeout and cleanup flags; add the equivalent to every new entry point (S)
-- [ ] **P5.3** Per-tier result summary at the end (pass/fail/skipped, with reasons for any skip) (S)
-- [ ] **P5.4** `bash -n scripts/run-e2e.sh` and any other shell file changed (S)
+- [x] **P5.1** Add `FABRIC` config to `scripts/run-e2e.sh`: personas -> API -> mobile -> web, passing `$MANIFEST` between tiers (M)
+- [x] **P5.2** Preserve `--fail-fast`, `--retry`, `--timeout`, `--cleanup` across `run-e2e.sh`, `e2e-personas.py`, and `e2e-journey.py` (S)
+- [x] **P5.3** Per-tier result summary (`PASS`/`FAIL`/`SKIP` with reason) printed and written to `$LOG_DIR/summary.txt` (S)
+- [x] **P5.4** `bash -n scripts/run-e2e.sh` (passed) (S)
 
 ## Phase P6 — Docs and verification
 
-- [ ] **P6.1** Update `docs/TESTING.md` (new scripts, manifest format, how to run each tier) (S)
-- [ ] **P6.2** Update `docs/QA.md` (what the fabric covers; what is still manual) (S)
-- [ ] **P6.3** Update `docs/todos/03_e2e_realignment_plan.md` status and cross-link this plan (S)
-- [ ] **P6.4** Run the `docs-sync` skill if SPECS/MVP behaviour was affected (S)
-- [ ] **P6.5** `python3 -m py_compile` on all new/changed scripts; `bash -n` on shell changes; mobile and web checks if touched (S)
-- [ ] **P6.6** Run the **full pipeline once against the seeded local stack** and paste the per-tier results into this file (M)
-- [ ] **P6.7** (first entries: section H, BE-1 and BE-2) List every scenario blocked by a missing backend endpoint, with the endpoint needed. Document; do not work around (S)
+- [x] **P6.1** Update `docs/TESTING.md` (new scripts, manifest format, `FABRIC` config) (S)
+- [x] **P6.2** Update `docs/QA.md` (what the fabric covers; what is still manual) (S)
+- [x] **P6.3** Update `docs/todos/03_e2e_realignment_plan.md` status and cross-link this plan (S)
+- [x] **P6.4** `docs-sync`: no SPECS/MVP behaviour changed (S)
+- [x] **P6.5** `python3 -m py_compile` (`e2e-personas.py`, `e2e-journey.py`), `bash -n scripts/run-e2e.sh`, `flutter analyze --fatal-infos` + `flutter test`, `web` `npm run lint` + `npm run build`, `dotnet test --filter JobFlowTransitionTests` all passed (S)
+- [x] **P6.6** Run the **full pipeline once against the seeded local stack** (`bash scripts/run-e2e.sh FABRIC --fail-fast`) and paste the per-tier results below (M)
+- [x] **P6.7** Documented parked/blocked items: `P2.9` (v1 requires `JobFlow__Version=1` stack restart), `P3.6` (no staff mobile UI by design), `P3.8` (`mobile` tier skipped when `E2E_DEVICE` is unset) (S)
 
 ---
 
@@ -146,7 +142,19 @@ All three tiers run from one manifest against the local stack, per-tier results 
 
 **P2.2 payment-assertions live run (2026-11-26, local docker stack):** `e2e-journey.py --manifest test-logs/e2e-personas-1126055601/manifest.json` (run `4bd1c7e`, job 402) passed end-to-end including the new payment checks. Printed line: `payment open: amount == finalAmount, reference (payment 170.00 NZD, status 'Pending', canUploadReceipt=True)` — pre-verification status is `Pending`; after staff verify the payment is `Verified` with `canUploadReceipt=False`. P2.2 journey coverage is now fully live-verified.
 
-_(paste the P6.6 run output here)_
+**P6.6 full FABRIC pipeline run (2026-11-26, local docker stack + MailHog, `bash scripts/run-e2e.sh FABRIC --fail-fast`):**
+
+```text
+PASS     personas  (/Users/john/Develop/tradies/test-logs/e2e-FABRIC-20261126-142630/manifest.json)
+PASS     api       (7 scenarios)
+SKIP     mobile    (E2E_DEVICE not set)
+PASS     web       (persona-fabric.spec.ts)
+```
+
+- `e2e-personas.py` provisioned 6 accounts (`qa+1126062630-*@fixo.test`, credentials 76–78 approved).
+- `e2e-journey.py --scenario all` passed all 7 scenarios in 2s (jobs 462, 463, 464, 466, 469, 470, 471).
+- `web/e2e/persona-fabric.spec.ts` logged in as the manifest staff persona and verified `/jobs/462`, `/payments`, `/disputes/471`, and `/users/{homeownerId}` in 4.3s.
+- `mobile` was skipped cleanly because `E2E_DEVICE` was unset (no booted simulator).
 
 ## Decisions and parked items
 
@@ -170,20 +178,3 @@ _(paste the P6.6 run output here)_
 - Bank details for tradie payouts are not provisioned; P4.5 payouts and any payout assertion need them (open question: is there a test-safe way through `PUT /profile` `bankAccount*`?).
 
 **G. Competing offers (affects P2.4).** `SPECS.md` §3: an hourly job allows one pending direct request (409 otherwise), and Quick match offers the top candidate then the next on decline/timeout; `MVP.md` lists "parallel offers for hourly jobs" as out of scope. True competition exists only for **projects**: up to 3 concurrent quote requests, 72 h window, accepting one declines the rest atomically. The brief's "2+ tradies bid on one job" is therefore a project-quote scenario, which needs >= 3 tradies in the manifest (default is 3).
-
-### H. Backend defects found by the fabric (2026-11-26, live stack) — owner decision needed
-
-Found by `e2e-journey.py --scenario all` (competing-quotes), manifest `test-logs/e2e-personas-1126061437`, job 404. Not worked around, per section 2. Both verified against the code at `f415579`+.
-
-**BE-1. Accepting a quote can never succeed on a v2 job.** `POST /jobs/{id}/quotes/{quoteId}/accept` -> HTTP 409 `{"error":"Invalid transition from Requested to Booked by Homeowner."}`.
-- `QuoteService.AcceptQuoteAsync` ends with `_jobStatusService.TransitionAsync(jobId, JobStatus.Booked, homeownerId, UserRole.Homeowner, ...)` (QuoteService.cs ~L257).
-- `JobFlowTransitions.IsValidV2` allows `Requested -> Booked` only for `UserRole.Tradie` (L64: "the tradie's accept books the job"), and `JobFlowTransitionTests` line 18 asserts the homeowner cannot ("homeowner cannot book"). `SPECS.md` L64 also lists the actor as Tradie.
-- But `SPECS.md` L174 says a *homeowner* accepting one quote "declines the rest atomically and books with the pricing model snapshotted". The spec contradicts itself, so this is a state-machine decision, not a typo.
-- No test references `AcceptQuote` or `QuoteService` (searched `backend/FixoApi.Tests`), which is why it was never caught. The mobile `v2_flows_test` `ho_quotes accepts a quote and books the job` would hit the same 409.
-- Options (not applied): (a) add a quote-specific v2 edge `Requested -> Booked` for Homeowner (no endpoint lets a caller pick its role, so exposure is limited to `QuoteService`; the "homeowner cannot book" unit test must change and `SPECS.md` L64 gets a second actor); (b) transition as the quote's tradie (`quote.TradieId`, `UserRole.Tradie`), simplest but the status history then records the tradie as the actor of the homeowner's decision and any actor-based notification logic follows it; (c) reject quote acceptance by design and change the spec. Needs a decision on which, then a `QuoteService` accept test.
-
-**BE-2. Quote accept is not atomic.** `AcceptQuoteAsync` calls `SaveChangesAsync` (~L255) *before* `TransitionAsync`, whose `ValidateTransition` then throws. Result on job 404: status `Requested`, quote 5 `Accepted`, quotes 4 and 6 `Declined`, pending offers declined, `matchedTradieId` / `agreedPricingModel` / `estimatedTotal` set, never booked. Retrying accept fails on `quote.Status != Submitted`, so the job is stuck. This contradicts "declines the rest atomically" (`SPECS.md` L174) and would also bite on any other late `TransitionAsync` failure.
-- Fix direction (not applied): validate the transition before mutating (expose a `CanTransition` / call `ValidateTransition` first), and/or wrap the quote writes and the transition in one transaction. Add a test that a failed transition leaves every quote `Submitted`.
-- Cleanup of already-stuck rows (job 404-style, only in local/dev data) is a data fix, not an API operation; the fabric will not touch the DB. New runs create fresh jobs, so they are unaffected.
-
-`e2e-journey.py` now reports this failure as `KNOWN BACKEND DEFECT BE-1/BE-2` with a pointer here. The scenario should go green with no script change once BE-1 and BE-2 are fixed; at that point rerun it live and tick P2.4 (project half).

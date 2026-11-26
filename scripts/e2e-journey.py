@@ -180,21 +180,33 @@ def post(path, token=None, body=None):
     return _request("POST", path, token, body if body is not None else {})
 
 
-def upload_receipt(job_id, token):
+def delete(path, token=None):
+    return _request("DELETE", path, token)
+
+
+def _upload_png(path, field_name, filename, token):
     boundary = "fixojourney%d" % int(time.time() * 1000)
     payload = _PNG + ("|fixo-journey-%d" % time.time_ns()).encode()
     head = (
-        '--%s\r\nContent-Disposition: form-data; name="receipt"; '
-        'filename="receipt.png"\r\nContent-Type: image/png\r\n\r\n' % boundary
+        '--%s\r\nContent-Disposition: form-data; name="%s"; '
+        'filename="%s"\r\nContent-Type: image/png\r\n\r\n' % (boundary, field_name, filename)
     ).encode()
     tail = ("\r\n--%s--\r\n" % boundary).encode()
     return _request(
         "POST",
-        "/jobs/%d/payment/upload-receipt" % job_id,
+        path,
         token,
         raw=head + payload + tail,
         content_type="multipart/form-data; boundary=" + boundary,
     )
+
+
+def upload_receipt(job_id, token):
+    return _upload_png("/jobs/%d/payment/upload-receipt" % job_id, "receipt", "receipt.png", token)
+
+
+def upload_photo(job_id, token):
+    return _upload_png("/jobs/%d/photos" % job_id, "files", "issue.png", token)
 
 
 def login(creds):
@@ -612,21 +624,8 @@ def run_competing_quotes(rec):
     rec.step("homeowner sees 3 Submitted quotes at the right prices", before_accept)
 
     win_id, win_tradie, win_amt = quote_ids[winner], ids[winner], amounts[winner]
-    def accept():
-        try:
-            post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False})
-        except StepFailed as e:
-            if "Invalid transition from Requested to Booked by Homeowner" in str(e):
-                # Found live 2026-11-26 (plan 08 section H): QuoteService books as UserRole.Homeowner but the
-                # v2 table only allows Requested->Booked for Tradie. Not a script bug; also leaves the job
-                # half-applied (quotes decided, status still Requested).
-                raise StepFailed(
-                    "KNOWN BACKEND DEFECT BE-1/BE-2 (docs/todos/08_e2e_persona_fabric_plan.md section H): "
-                    "quote accept is rejected by the v2 transition table and leaves job %d half-applied. %s" % (job, e)
-                )
-            raise
-
-    rec.step("homeowner accepts the middle quote", accept)
+    rec.step("homeowner accepts the middle quote",
+             lambda: post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False}))
     rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
 
     def after_accept():
@@ -657,7 +656,296 @@ def run_competing_quotes(rec):
     return job
 
 
-SCENARIOS = {"happy-path": run_journey, "competing-quotes": run_competing_quotes}
+def _create_hourly_job(ho, prefix="Hourly", lat=-36.8485, lng=174.7633, address="1 Test St, Auckland"):
+    body = post("/jobs", ho, {
+        "title": "%s — %d" % (prefix, int(time.time() * 1000)),
+        "description": "%s journey job." % prefix,
+        "urgency": "Medium", "latitude": lat, "longitude": lng,
+        "address": address, "serviceId": 1, "timingPreference": "Flexible",
+        "jobType": "Hourly", "estimatedHours": 2,
+    })
+    need(body and "id" in body, "no job id in response: %r" % body)
+    return int(body["id"])
+
+
+def _book_direct(rec, job, ho, tr, tr_id, label="tradie"):
+    rec.step("request %s directly" % label, lambda: post("/jobs/%d/request" % job, ho, {"tradieId": tr_id}))
+    offer_id = rec.step(
+        "%s receives offer" % label,
+        lambda: poll("offer for %s on job %d" % (label, job),
+                     lambda: (get("/jobs/%d/offers/pending" % job, tr) or {}).get("id")),
+    )
+    rec.step("%s accepts offer" % label,
+             lambda: post("/jobs/%d/offers/%d/respond" % (job, offer_id), tr, {"response": "Accepted"}))
+    rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
+    return offer_id
+
+
+def run_hourly_decline_reoffer(rec):
+    """Plan 08 P2.4 (hourly sequential) & P2.5 (decline): tradie 1 declines
+    the offer, job stays Requested, then tradie 2 receives and accepts."""
+    if not MANIFEST_PATH or len(TRADIES) < 2:
+        raise Unreachable("hourly-decline-reoffer needs --manifest with >= 2 tradies")
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr1 = rec.step("login tradie 1", lambda: login(TRADIES[0]))
+    tr2 = rec.step("login tradie 2", lambda: login(TRADIES[1]))
+    id1 = (get("/profile", tr1) or {}).get("id")
+    id2 = (get("/profile", tr2) or {}).get("id")
+    need(id1 and id2 and id1 != id2, "need 2 distinct tradie ids: %r, %r" % (id1, id2))
+
+    job = rec.step("homeowner posts hourly job", lambda: _create_hourly_job(ho, "Decline"))
+    record_job(job, "hourly-decline-reoffer")
+
+    rec.step("request tradie 1", lambda: post("/jobs/%d/request" % job, ho, {"tradieId": id1}))
+    offer1 = rec.step(
+        "tradie 1 receives offer",
+        lambda: poll("offer 1 on job %d" % job,
+                     lambda: (get("/jobs/%d/offers/pending" % job, tr1) or {}).get("id")),
+    )
+    rec.step("tradie 1 declines offer",
+             lambda: post("/jobs/%d/offers/%d/respond" % (job, offer1), tr1, {"response": "Declined"}))
+
+    def still_requested():
+        j = get("/jobs/%d" % job, ho) or {}
+        need(j.get("status") == "Requested", "expected Requested after decline, got %r" % j.get("status"))
+        need(j.get("matchedTradieId") is None, "matchedTradieId should be None after decline")
+
+    rec.step("job stays Requested with no matched tradie", still_requested)
+    _book_direct(rec, job, ho, tr2, id2, "tradie 2")
+    return job
+
+
+def run_withdraw_no_match_repost(rec):
+    """Plan 08 P2.5: job with no matches -> homeowner withdraws -> re-posts
+    in Auckland -> cancels via POST /cancel."""
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    # Invercargill coordinates: outside Auckland tradies' 25 km service radius.
+    no_match_job = rec.step(
+        "post remote job (no matches)",
+        lambda: _create_hourly_job(ho, "NoMatch", lat=-46.4132, lng=168.3538, address="1 Tay St, Invercargill"),
+    )
+    record_job(no_match_job, "withdraw-no-match")
+
+    def check_no_matches():
+        res = get("/jobs/%d/matches" % no_match_job, ho) or {}
+        matches = res.get("matches", res) if isinstance(res, dict) else res
+        need(isinstance(matches, list) and len(matches) == 0, "expected 0 matches, got %r" % res)
+
+    rec.step("confirm 0 matches in remote area", check_no_matches)
+    rec.step("homeowner withdraws remote job (DELETE)", lambda: delete("/jobs/%d" % no_match_job, ho))
+    rec.step("remote job Cancelled", lambda: wait_status(no_match_job, ho, "Cancelled"))
+
+    repost_job = rec.step("homeowner re-posts job in Auckland", lambda: _create_hourly_job(ho, "Repost"))
+    record_job(repost_job, "repost")
+    rec.step(
+        "homeowner cancels re-posted job (POST /cancel)",
+        lambda: post("/jobs/%d/cancel" % repost_job, ho,
+                     {"reasonCode": "homeowner_changed_mind", "notes": "repost withdraw"}),
+    )
+    rec.step("re-posted job Cancelled", lambda: wait_status(repost_job, ho, "Cancelled"))
+    return repost_job
+
+
+def run_cancellations(rec):
+    """Plan 08 P2.6: tradie cancels Booked -> reverts to Requested; homeowner
+    cancels Booked -> Cancelled; homeowner cancels InProgress -> Cancelled."""
+    if not MANIFEST_PATH or len(TRADIES) < 2:
+        raise Unreachable("cancellations needs --manifest with >= 2 tradies")
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr1 = rec.step("login tradie 1", lambda: login(TRADIES[0]))
+    tr2 = rec.step("login tradie 2", lambda: login(TRADIES[1]))
+    id1 = (get("/profile", tr1) or {}).get("id")
+    id2 = (get("/profile", tr2) or {}).get("id")
+
+    job1 = rec.step("post job for tradie+ho Booked cancel", lambda: _create_hourly_job(ho, "CancelBooked"))
+    record_job(job1, "cancellations-booked")
+    _book_direct(rec, job1, ho, tr1, id1, "tradie 1")
+
+    rec.step(
+        "tradie 1 cancels Booked job",
+        lambda: post("/jobs/%d/cancel" % job1, tr1,
+                     {"reasonCode": "tradie_unavailable", "notes": "cannot make it"}),
+    )
+
+    def reverted_to_requested():
+        j = get("/jobs/%d" % job1, ho) or {}
+        need(j.get("status") == "Requested", "expected Requested after tradie cancel, got %r" % j.get("status"))
+        need(j.get("matchedTradieId") is None, "matchedTradieId not cleared on tradie cancel")
+
+    rec.step("job reverts to Requested with no matched tradie", reverted_to_requested)
+
+    job1b = rec.step("post job for homeowner Booked cancel", lambda: _create_hourly_job(ho, "CancelHoBooked"))
+    record_job(job1b, "cancellations-ho-booked")
+    _book_direct(rec, job1b, ho, tr2, id2, "tradie 2")
+    rec.step(
+        "homeowner cancels Booked job",
+        lambda: post("/jobs/%d/cancel" % job1b, ho,
+                     {"reasonCode": "homeowner_changed_mind", "notes": "no longer needed"}),
+    )
+    rec.step("job 1b Cancelled", lambda: wait_status(job1b, ho, "Cancelled"))
+    rec.step(
+        "cannot review Cancelled job",
+        lambda: expect_http_error(
+            "review on Cancelled job",
+            lambda: post("/jobs/%d/reviews" % job1b, ho, {"revieweeId": id2, "rating": 5, "comment": "nope"}),
+        ),
+    )
+
+    job2 = rec.step("post job for InProgress cancel", lambda: _create_hourly_job(ho, "CancelInProg"))
+    record_job(job2, "cancellations-inprogress")
+    _book_direct(rec, job2, ho, tr1, id1, "tradie 1")
+    rec.step("tradie 1 checks in", lambda: post("/jobs/%d/check-in" % job2, tr1))
+    rec.step("job 2 InProgress", lambda: wait_status(job2, ho, "InProgress"))
+    rec.step(
+        "homeowner cancels InProgress job",
+        lambda: post("/jobs/%d/cancel" % job2, ho,
+                     {"reasonCode": "homeowner_issue", "notes": "work stopped"}),
+    )
+    rec.step("job 2 Cancelled", lambda: wait_status(job2, ho, "Cancelled"))
+    return job2
+
+
+def run_receipt_reject_resubmit(rec):
+    """Plan 08 P2.7: staff rejects receipt -> AwaitingPayment -> homeowner
+    resubmits -> staff verifies -> Completed."""
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr = rec.step("login tradie", lambda: login(TRADIE))
+    st = rec.step("login staff", lambda: login(STAFF))
+    tid = (get("/profile", tr) or {}).get("id")
+
+    job = rec.step("post job for receipt reject", lambda: _create_hourly_job(ho, "ReceiptReject"))
+    record_job(job, "receipt-reject-resubmit")
+    _book_direct(rec, job, ho, tr, tid, "tradie")
+    rec.step("tradie checks in", lambda: post("/jobs/%d/check-in" % job, tr))
+    rec.step("job InProgress", lambda: wait_status(job, ho, "InProgress"))
+    rec.step("tradie checks out", lambda: post("/jobs/%d/check-out" % job, tr, {"finalHours": 2}))
+    rec.step("job AwaitingConfirmation", lambda: wait_status(job, ho, "AwaitingConfirmation"))
+    rec.step("homeowner approves", lambda: post("/jobs/%d/approve" % job, ho))
+    rec.step("job AwaitingPayment", lambda: wait_status(job, ho, "AwaitingPayment"))
+
+    pay_id = rec.step("read payment id", lambda: (get("/jobs/%d/payment" % job, ho) or {}).get("paymentId"))
+    need(pay_id, "missing paymentId")
+
+    rec.step("homeowner uploads first receipt", lambda: upload_receipt(job, ho))
+    rec.step("job PaymentReview", lambda: wait_status(job, ho, "PaymentReview"))
+    rec.step(
+        "staff rejects receipt",
+        lambda: post("/admin/payments/%d/reject" % pay_id, st, {"reason": "Blurry image, please re-upload"}),
+    )
+    rec.step("job returns to AwaitingPayment", lambda: wait_status(job, ho, "AwaitingPayment"))
+
+    def check_rejected():
+        p = get("/jobs/%d/payment" % job, ho) or {}
+        need(p.get("canUploadReceipt") is True, "canUploadReceipt should be True after reject: %r" % p)
+        need(int(p.get("reUploadCount") or 0) >= 1, "reUploadCount not incremented: %r" % p)
+
+    rec.step("payment allows re-upload with reUploadCount >= 1", check_rejected)
+    rec.step("homeowner resubmits receipt", lambda: upload_receipt(job, ho))
+    rec.step("job PaymentReview again", lambda: wait_status(job, ho, "PaymentReview"))
+    rec.step("staff verifies resubmitted receipt", lambda: post("/admin/payments/%d/verify" % pay_id, st))
+    rec.step("job Completed", lambda: wait_status(job, ho, "Completed"))
+    return job
+
+
+def run_dispute_attachments_reviews(rec):
+    """Plan 08 P2.8: attachment upload, negative review eligibility, chat both
+    ways, dispute open + text evidence + staff resolve, then blind + positive
+    reviews after completion."""
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr = rec.step("login tradie", lambda: login(TRADIE))
+    st = rec.step("login staff", lambda: login(STAFF))
+    ho_id = (get("/profile", ho) or {}).get("id")
+    tr_id = (get("/profile", tr) or {}).get("id")
+
+    job = rec.step("post job for dispute+attachments+reviews", lambda: _create_hourly_job(ho, "DisputeReview"))
+    record_job(job, "dispute-attachments-reviews")
+
+    def upload_and_check():
+        res = upload_photo(job, ho)
+        need(isinstance(res, list) and len(res) == 1, "expected 1 uploaded photo, got %r" % res)
+
+    rec.step("homeowner uploads photo attachment", upload_and_check)
+    _book_direct(rec, job, ho, tr, tr_id, "tradie")
+
+    rec.step(
+        "cannot review before Completed",
+        lambda: expect_http_error(
+            "review while Booked",
+            lambda: post("/jobs/%d/reviews" % job, ho, {"revieweeId": tr_id, "rating": 5, "comment": "too early"}),
+        ),
+    )
+
+    rec.step("chat homeowner -> tradie", lambda: post("/jobs/%d/messages" % job, ho, {"content": "Hi tradie"}))
+    rec.step("chat tradie -> homeowner", lambda: post("/jobs/%d/messages" % job, tr, {"content": "On my way"}))
+
+    def check_chat():
+        res = get("/jobs/%d/messages" % job, ho) or []
+        msgs = (res.get("items") if "items" in res else res.get("messages", [])) if isinstance(res, dict) else res
+        bodies = [m.get("content") for m in msgs]
+        need("Hi tradie" in bodies and "On my way" in bodies, "missing chat messages: %r" % res)
+
+    rec.step("GET messages has both directions", check_chat)
+
+    rec.step("tradie checks in", lambda: post("/jobs/%d/check-in" % job, tr))
+    rec.step("job InProgress", lambda: wait_status(job, ho, "InProgress"))
+
+    dispute_id = rec.step(
+        "homeowner opens dispute",
+        lambda: (post("/disputes", ho, {"jobId": job, "reason": "Scope disagreement"}) or {}).get("id"),
+    )
+    need(dispute_id, "missing dispute id")
+    rec.step(
+        "homeowner adds dispute text evidence",
+        lambda: post("/disputes/%d/evidence/text" % dispute_id, ho, {"textContent": "Photo attached earlier"}),
+    )
+
+    def staff_sees_dispute():
+        d = get("/admin/disputes/%d" % job, st) or {}
+        need(d.get("disputeStatus") == "Open" or d.get("isFlagged") is True, "dispute not visible to admin: %r" % d)
+
+    rec.step("staff sees open dispute", staff_sees_dispute)
+    rec.step(
+        "staff resolves dispute",
+        lambda: post("/admin/disputes/%d/resolve" % job, st, {"action": "Resolved", "note": "Agreed to continue"}),
+    )
+
+    rec.step("tradie checks out", lambda: post("/jobs/%d/check-out" % job, tr, {"finalHours": 2}))
+    rec.step("job AwaitingConfirmation", lambda: wait_status(job, ho, "AwaitingConfirmation"))
+    rec.step("homeowner approves", lambda: post("/jobs/%d/approve" % job, ho))
+    rec.step("job AwaitingPayment", lambda: wait_status(job, ho, "AwaitingPayment"))
+    pay_id = (get("/jobs/%d/payment" % job, ho) or {}).get("paymentId")
+    rec.step("homeowner uploads receipt", lambda: upload_receipt(job, ho))
+    rec.step("job PaymentReview", lambda: wait_status(job, ho, "PaymentReview"))
+    rec.step("staff verifies payment", lambda: post("/admin/payments/%d/verify" % pay_id, st))
+    rec.step("job Completed", lambda: wait_status(job, ho, "Completed"))
+
+    rec.step(
+        "homeowner submits review",
+        lambda: post("/jobs/%d/reviews" % job, ho, {"revieweeId": tr_id, "rating": 5, "comment": "Great work"}),
+    )
+    rec.step(
+        "tradie submits review",
+        lambda: post("/jobs/%d/reviews" % job, tr, {"revieweeId": ho_id, "rating": 5, "comment": "Great homeowner"}),
+    )
+
+    def check_reviews():
+        res = get("/jobs/%d/reviews" % job, ho) or {}
+        items = res.get("items", res) if isinstance(res, dict) else res
+        need(isinstance(items, list) and len(items) == 2, "expected 2 revealed reviews, got %r" % res)
+
+    rec.step("both reviews revealed after both submit", check_reviews)
+    return job
+
+
+SCENARIOS = {
+    "happy-path": run_journey,
+    "competing-quotes": run_competing_quotes,
+    "hourly-decline-reoffer": run_hourly_decline_reoffer,
+    "withdraw-no-match-repost": run_withdraw_no_match_repost,
+    "cancellations": run_cancellations,
+    "receipt-reject-resubmit": run_receipt_reject_resubmit,
+    "dispute-attachments-reviews": run_dispute_attachments_reviews,
+}
 
 
 def write_junit(path, rows, total):
@@ -678,6 +966,7 @@ def write_junit(path, rows, total):
 
 
 def main():
+    global MATCH_MODE, POLL_TIMEOUT
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--junit", help="write JUnit XML to this path")
     ap.add_argument("--restore-tradies", action="store_true", help="un-park the demo tradie and exit")
@@ -695,9 +984,13 @@ def main():
         help="happy-path (default; the run-e2e.sh gate) | competing-quotes (needs --manifest, >= 3 tradies) | all",
     )
     ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
+    ap.add_argument("--fail-fast", action="store_true", help="stop on first failed scenario (default)")
+    ap.add_argument("--retry", type=int, default=0, help="retry a failed scenario up to N times")
+    ap.add_argument("--timeout", type=int, help="poll timeout in seconds (default: %d)" % POLL_TIMEOUT)
     args = ap.parse_args()
-    global MATCH_MODE
     MATCH_MODE = args.match_mode
+    if args.timeout:
+        POLL_TIMEOUT = args.timeout
 
     try:
         require_local()
@@ -721,8 +1014,16 @@ def main():
     try:
         jobs = []
         for name in names:
-            print("-- scenario: %s --" % name)
-            jobs.append(SCENARIOS[name](rec))
+            for attempt in range(args.retry + 1):
+                try:
+                    print("-- scenario: %s --" % name)
+                    jobs.append(SCENARIOS[name](rec))
+                    break
+                except StepFailed:
+                    if attempt < args.retry:
+                        print("retrying %s (%d/%d)..." % (name, attempt + 1, args.retry))
+                        continue
+                    raise
         job = ", ".join(str(j) for j in jobs)
     except Unreachable as e:
         print("\nUNREACHABLE: %s" % e)

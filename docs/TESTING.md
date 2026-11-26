@@ -58,8 +58,11 @@ scripts/run-e2e.sh C0 --seed        # homeowner + tradie personas
 scripts/run-e2e.sh C1               # homeowner persona (the §4.4 gate)
 scripts/run-e2e.sh C2               # tradie persona
 scripts/run-e2e.sh J                # integrated homeowner+tradie API journey only (no device)
+scripts/run-e2e.sh FABRIC           # persona fabric: personas -> API (7 scenarios) -> mobile -> web
 scripts/run-e2e.sh C1 --fail-fast --retry 1   # stop on first red; retry once (FLAKY if it then passes)
 ```
+
+**Persona fabric (`FABRIC`):** `scripts/e2e-personas.py` provisions fresh `qa+<runid>-<role>-<n>@fixo.test` accounts via real signup + MailHog OTP + staff-approved credentials and writes `manifest.json` (`personas[]`, `jobs[]`). `scripts/run-e2e.sh FABRIC` passes that manifest to `e2e-journey.py --scenario all` (7 scenarios: `happy-path`, `competing-quotes`, `hourly-decline-reoffer`, `withdraw-no-match-repost`, `cancellations`, `receipt-reject-resubmit`, `dispute-attachments-reviews`), `mobile/integration_test/persona_fabric_test.dart` (skipped if `E2E_DEVICE` is unset), and `web/e2e/persona-fabric.spec.ts` (`E2E_MANIFEST`). Supports `--fail-fast`, `--retry N`, `--timeout S`, `--cleanup`.
 
 The v2 Booked cancel sheet has no "Keep job" button; `cancellation_test` dismisses it by tapping outside the sheet.
 

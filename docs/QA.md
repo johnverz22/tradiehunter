@@ -1,6 +1,6 @@
 # TradieHunter — Functional QA Guide
 
-Manual release pass, organised by actor. Automated harnesses ([TESTING.md](TESTING.md)) cover happy paths only and do not replace this. Run flow-v1 jobs against the legacy rules and flow-v2 jobs against §6; both must pass until `JobFlow:Version` flips.
+Manual release pass, organised by actor. Automated harnesses ([TESTING.md](TESTING.md)) cover the API persona fabric (`scripts/run-e2e.sh FABRIC`: signup/onboarding, v2 happy path, competing project quotes, hourly decline/re-offer, no-match/withdraw/repost, homeowner & tradie cancellations, receipt reject/resubmit, dispute open/resolve, chat, attachments, review eligibility) plus web admin verification; manual QA still covers device-specific UX, SignalR real-time updates, physical-device push/camera, and v1 legacy in-flight jobs. Run flow-v1 jobs against the legacy rules and flow-v2 jobs against §6; both must pass until `JobFlow:Version` flips.
 
 ## 0. Conventions
 

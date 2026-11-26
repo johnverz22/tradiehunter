@@ -12,6 +12,8 @@
 #   C1            homeowner persona (the §4.4 gate)
 #   C2            tradie persona
 #   J             integrated homeowner+tradie API journey only (no device)
+#   FABRIC        full persona fabric: personas -> API -> mobile -> web
+#                 (mobile runs if E2E_DEVICE is set; otherwise skipped with reason)
 #
 # Before any device suite the integrated journey (scripts/e2e-journey.py)
 # runs once: post -> match -> accept -> check-in/out -> approve -> pay ->
@@ -21,9 +23,11 @@
 # Flags
 #   --seed          run scripts/seed-test-accounts.sh first (or E2E_SEED=1)
 #   --no-journey    skip the API journey pre-gate
-#   --fail-fast     stop after the first failing suite
-#   --retry N       re-run a failing suite up to N more times (default 0;
+#   --fail-fast     stop after the first failing suite / tier
+#   --retry N       re-run a failing suite / tier up to N more times (default 0;
 #                   a pass-after-retry is reported as FLAKY, not PASS)
+#   --timeout S     per-suite/tier timeout in seconds (default 1500)
+#   --cleanup       (FABRIC) deactivate qa+<runid>-* accounts after the run
 #
 # Environment (all optional except E2E_DEVICE)
 #   E2E_DEVICE          device id for the homeowner persona (flutter devices)
@@ -61,14 +65,17 @@ case "$1" in -h|--help) usage 0;; esac
 CONFIG="$1"; shift
 SEED="${E2E_SEED:-0}"
 SUITES=()
-JOURNEY=1; FAIL_FAST=0; RETRIES=0
+JOURNEY=1; FAIL_FAST=0; RETRIES=0; CLEANUP=0; CLI_TIMEOUT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --seed) SEED=1 ;;
     --no-journey) JOURNEY=0 ;;
     --fail-fast) FAIL_FAST=1 ;;
+    --cleanup) CLEANUP=1 ;;
     --retry) shift; RETRIES="${1:-}"
              case "$RETRIES" in ''|*[!0-9]*) echo "--retry needs a number"; exit 1;; esac ;;
+    --timeout) shift; CLI_TIMEOUT="${1:-}"
+               case "$CLI_TIMEOUT" in ''|*[!0-9]*) echo "--timeout needs a number"; exit 1;; esac ;;
     -*) echo "Unknown flag '$1'"; usage 1 ;;
     *) SUITES+=("${1%_test.dart}") ;;
   esac
@@ -80,9 +87,10 @@ case "$CONFIG" in
   C1) PERSONAS="homeowner" ;;
   C2) PERSONAS="tradie" ;;
   J)  PERSONAS="" ;;
+  FABRIC) PERSONAS="" ;;
   *) echo "Unknown config '$CONFIG'"; usage 1 ;;
 esac
-if [ "$CONFIG" != "J" ]; then
+if [ "$CONFIG" != "J" ] && [ "$CONFIG" != "FABRIC" ]; then
   [ -n "${E2E_DEVICE:-}" ] || { echo "Set E2E_DEVICE (see: $0 --list-devices)"; exit 2; }
 fi
 TRADIE_DEVICE="${E2E_TRADIE_DEVICE:-${E2E_DEVICE:-}}"
@@ -112,7 +120,7 @@ trap 'echo; echo "interrupted"; exit 130' INT TERM
 # Per-suite timeout wrapper, if the platform has one.
 TIMEOUT_CMD=""
 for c in timeout gtimeout; do command -v "$c" >/dev/null 2>&1 && { TIMEOUT_CMD="$c"; break; }; done
-SUITE_TIMEOUT="${E2E_SUITE_TIMEOUT:-1500}"
+SUITE_TIMEOUT="${CLI_TIMEOUT:-${E2E_SUITE_TIMEOUT:-1500}}"
 
 is_persona_suite() { case " $PERSONA_SUITES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -120,6 +128,81 @@ RESULTS=()
 FAILED=0
 STOP=0
 JUNIT_CASES=()
+
+if [ "$CONFIG" = "FABRIC" ]; then
+  MANIFEST="$LOG_DIR/manifest.json"
+  echo "=== [1/4] personas (e2e-personas.py) ==="
+  FIXO_API_URL="$API_URL" python3 "$ROOT/scripts/e2e-personas.py" \
+    --retry "$RETRIES" --timeout "$SUITE_TIMEOUT" --out "$MANIFEST" 2>&1 | tee "$LOG_DIR/personas.log"
+  prc=${PIPESTATUS[0]}
+  if [ "$prc" -eq 0 ]; then
+    RESULTS+=("PASS     personas  ($MANIFEST)")
+  else
+    RESULTS+=("FAIL     personas  (log: $LOG_DIR/personas.log)")
+    printf '%s\n' "${RESULTS[@]}" | tee "$LOG_DIR/summary.txt"
+    exit $([ "$prc" -eq 2 ] && echo 2 || echo 1)
+  fi
+
+  echo "=== [2/4] api (e2e-journey.py --scenario all) ==="
+  FIXO_API_URL="$API_URL" python3 "$ROOT/scripts/e2e-journey.py" \
+    --manifest "$MANIFEST" --scenario all --retry "$RETRIES" --timeout "$SUITE_TIMEOUT" \
+    --junit "$LOG_DIR/journey.xml" 2>&1 | tee "$LOG_DIR/journey.log"
+  arc=${PIPESTATUS[0]}
+  if [ "$arc" -eq 0 ]; then
+    RESULTS+=("PASS     api       (7 scenarios)")
+  else
+    RESULTS+=("FAIL     api       (log: $LOG_DIR/journey.log)")
+    FAILED=1
+    if [ "$FAIL_FAST" = "1" ]; then
+      printf '%s\n' "${RESULTS[@]}" | tee "$LOG_DIR/summary.txt"
+      exit $([ "$arc" -eq 2 ] && echo 2 || echo 1)
+    fi
+  fi
+
+  echo "=== [3/4] mobile (integration_test/persona_fabric_test.dart) ==="
+  if [ -n "${E2E_DEVICE:-}" ]; then
+    (cd "$MOBILE" && "$FLUTTER" test integration_test/persona_fabric_test.dart \
+      --device-id "$E2E_DEVICE" \
+      --dart-define FIXO_DISABLE_PUSH=true \
+      --dart-define "FIXO_API_URL=$API_URL" \
+      --dart-define "E2E_MANIFEST=$MANIFEST") 2>&1 | tee "$LOG_DIR/mobile.log"
+    mrc=${PIPESTATUS[0]}
+    if [ "$mrc" -eq 0 ]; then
+      RESULTS+=("PASS     mobile    (device=$E2E_DEVICE)")
+    else
+      RESULTS+=("FAIL     mobile    (log: $LOG_DIR/mobile.log)")
+      FAILED=1
+      if [ "$FAIL_FAST" = "1" ]; then
+        printf '%s\n' "${RESULTS[@]}" | tee "$LOG_DIR/summary.txt"
+        exit 1
+      fi
+    fi
+  else
+    RESULTS+=("SKIP     mobile    (E2E_DEVICE not set)")
+  fi
+
+  echo "=== [4/4] web (playwright e2e/persona-fabric.spec.ts) ==="
+  (cd "$ROOT/web" && E2E_MANIFEST="$MANIFEST" npx playwright test e2e/persona-fabric.spec.ts \
+    --project=chromium --no-deps --retries="$RETRIES" --reporter=line) 2>&1 | tee "$LOG_DIR/web.log"
+  wrc=${PIPESTATUS[0]}
+  if [ "$wrc" -eq 0 ]; then
+    RESULTS+=("PASS     web       (persona-fabric.spec.ts)")
+  else
+    RESULTS+=("FAIL     web       (log: $LOG_DIR/web.log)")
+    FAILED=1
+  fi
+
+  if [ "$CLEANUP" = "1" ]; then
+    echo "=== cleanup qa+<runid>-* accounts ==="
+    FIXO_API_URL="$API_URL" python3 "$ROOT/scripts/e2e-personas.py" \
+      --cleanup "$MANIFEST" >/dev/null 2>&1 || true
+  fi
+
+  echo; echo "──── summary [FABRIC] ────"
+  printf '%s\n' "${RESULTS[@]}" | tee "$LOG_DIR/summary.txt"
+  echo "logs: $LOG_DIR"
+  exit $FAILED
+fi
 
 if [ "$JOURNEY" = "1" ] || [ "$CONFIG" = "J" ]; then
   echo "=== integrated journey (homeowner + tradie, API) ==="

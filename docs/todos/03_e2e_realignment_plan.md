@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `dev`
 > **Purpose:** Realign the end-to-end scripts with the v2 (Trust Navy + Gold) presentation layer **before** completing the open QA tasks in `docs/todos/01_design_system_migration_plan.md` §4 (4.6 and the three unchecked boxes in the "4.4 activation checklist").
-> **Status of this document:** E0, E3 and E5 complete (verified); E1–E2 pending baseline run.
+> **Status of this document:** E0, E3, E5, and E6.6 complete (verified); extended by [`08_e2e_persona_fabric_plan.md`](08_e2e_persona_fabric_plan.md) (multi-tier persona fabric). E1–E2 pending baseline run.
 > **Prepared:** 2026-11-17 · **Updated:** 2026-11-17
 
 ---
