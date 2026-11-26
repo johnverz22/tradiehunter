@@ -76,6 +76,10 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
   bool _animationsEnabled = false;
   bool _busy = false;
 
+  /// This screen holds one ref-counted watch on the job's hub group.
+  bool _watching = false;
+  late final JobHubClient _hub = ref.read(jobHubClientProvider);
+
   /// The pending direct request (requestSent mode only).
   JobOffer? _request;
 
@@ -120,6 +124,9 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
     _reconnectedSub ??= hub.onReconnected.listen((_) => _onReconnected());
 
     if (_isRequestSent) {
+      // Status events (booked / cancelled) for this job only arrive through
+      // its hub group; the poll below stays as the fallback.
+      unawaited(_watch());
       await _loadRequest();
       if (!mounted) return;
       _pollTimer = Timer.periodic(ThMatchingScreen.pollInterval, (_) {
@@ -193,7 +200,7 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
       _busy = false;
       return;
     }
-    await hub.joinJobGroup(widget.jobId);
+    await _watch();
 
     final started = await repo.triggerMatch(widget.jobId);
     if (!mounted) {
@@ -297,9 +304,8 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
   Future<void> _onReconnected() async {
     if (!mounted) return;
     setState(() => _reconnecting = false);
-    final hub = ref.read(jobHubClientProvider);
-    await hub.joinJobGroup(widget.jobId);
-    if (!mounted) return;
+    // The hub client re-joins watched job groups itself before emitting
+    // onReconnected, so only the state re-read is left to do here.
     if (_isRequestSent) {
       await _loadRequest();
       return;
@@ -345,8 +351,17 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
     }
   }
 
+  /// Ref-counted join of this job's hub group (once per screen).
+  Future<void> _watch() async {
+    if (_watching) return;
+    _watching = true;
+    await _hub.watchJob(widget.jobId);
+  }
+
   Future<void> _leave() async {
-    await ref.read(jobHubClientProvider).leaveJobGroup(widget.jobId);
+    if (!_watching) return;
+    _watching = false;
+    await _hub.unwatchJob(widget.jobId);
   }
 
   @override
@@ -357,6 +372,8 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
     _reconnectedSub?.cancel();
     _stallTimer?.cancel();
     _pollTimer?.cancel();
+    // Backing out (not just the accept/decline paths) must release the group.
+    unawaited(_leave());
     _ctrl.dispose();
     super.dispose();
   }

@@ -2,20 +2,18 @@
 //
 // Loads the job once, picks the state with `trSelectJobView`, and renders it.
 //
-// SignalR (status / adjustment events for this job) refreshes the loader; the
-// subscriptions are cancelled in `dispose`. While a refresh is in flight the
+// SignalR (status / adjustment events for this job) refreshes the loader. The
+// `JobLiveUpdates` mixin joins the job's hub group (without which no status
+// events arrive) and tears it down in `dispose`. While a refresh is in flight the
 // previous data stays on screen so the view is not rebuilt.
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../repositories/job_hub_client.dart';
-import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../feedback/th_state_view.dart';
+import '../shared/job_live_updates.dart';
 import 'tr_job_booked_screen.dart';
 import 'tr_job_inprogress_screen.dart';
 import 'tr_job_providers.dart';
@@ -31,32 +29,20 @@ class TrJobRouter extends ConsumerStatefulWidget {
   ConsumerState<TrJobRouter> createState() => _TrJobRouterState();
 }
 
-class _TrJobRouterState extends ConsumerState<TrJobRouter> {
-  StreamSubscription<JobStatusEvent>? _statusSubscription;
-  StreamSubscription<JobAdjustmentEvent>? _adjustmentSubscription;
+class _TrJobRouterState extends ConsumerState<TrJobRouter>
+    with JobLiveUpdates<TrJobRouter> {
+  @override
+  String get liveJobId => widget.jobId;
 
   @override
   void initState() {
     super.initState();
-    final hub = ref.read(jobHubClientProvider);
-    _statusSubscription = hub.onJobStatusChanged.listen((event) {
-      if (event.jobId == widget.jobId) _refresh();
-    });
-    _adjustmentSubscription = hub.onAdjustmentChanged.listen((event) {
-      if (event.jobId == widget.jobId) _refresh();
-    });
-  }
-
-  void _refresh() {
-    if (!mounted) return;
-    ref.invalidate(trJobDetailProvider(widget.jobId));
+    startJobLiveUpdates();
   }
 
   @override
-  void dispose() {
-    _statusSubscription?.cancel();
-    _adjustmentSubscription?.cancel();
-    super.dispose();
+  void onJobLiveUpdate() {
+    ref.invalidate(trJobDetailProvider(widget.jobId));
   }
 
   @override

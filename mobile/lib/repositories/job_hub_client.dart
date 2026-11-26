@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
@@ -15,12 +16,22 @@ import 'package:signalr_netcore/signalr_client.dart';
 /// await hub.connect(baseUrl: 'http://localhost:5000');
 /// hub.onJobStatusChanged.listen((e) { ... });
 /// hub.onOfferLifecycle.listen((e) { ... });
-/// await hub.joinJobGroup('42');
+/// await hub.watchJob('42'); // ref-counted; re-joined automatically on reconnect
 /// ```
 class JobHubClient {
   final FlutterSecureStorage _storage;
 
   HubConnection? _connection;
+
+  /// In-flight [connect], so concurrent callers (home screen + job screen on a
+  /// deep link) share one connection attempt instead of building two.
+  Future<void>? _connecting;
+
+  /// Job groups screens currently want live updates for, with a reference
+  /// count so two screens watching the same job don't undo each other.
+  /// Server-side group membership is per connection, so this is the source of
+  /// truth used to re-join after a reconnect.
+  final Map<String, int> _watched = {};
 
   final _statusController = StreamController<JobStatusEvent>.broadcast();
   final _matchController = StreamController<NewJobMatchEvent>.broadcast();
@@ -49,37 +60,52 @@ class JobHubClient {
       _adjustmentController.stream;
 
   /// Fires when the automatic-reconnect policy drops the live connection.
-  /// Events stop arriving until [onReconnected] fires; server-side job-group
-  /// membership is lost at that point, so listeners must re-join and re-read
+  /// Events stop arriving until [onReconnected] fires; listeners should re-read
   /// state once reconnected.
   Stream<void> get onReconnecting => _reconnectingController.stream;
 
-  /// Fires once per successful reconnect. Group membership does not survive
-  /// reconnect — re-invoke [joinJobGroup] and re-read any cached state.
+  /// Fires once per successful reconnect, after watched job groups have been
+  /// re-joined (see [watchJob]). Events may have been missed while down, so
+  /// listeners should re-read any cached state.
   Stream<void> get onReconnected => _reconnectedController.stream;
 
   JobHubClient(this._storage);
 
-  /// Connects to the SignalR hub. Call once per session.
-  Future<void> connect({required String baseUrl}) async {
-    if (_connection != null &&
-        _connection!.state == HubConnectionState.Connected) {
-      return;
+  /// Connects to the SignalR hub. Safe to call from several screens: returns
+  /// immediately when already connected, and concurrent calls share one
+  /// attempt. Any jobs registered through [watchJob] beforehand are joined once
+  /// the connection is up.
+  Future<void> connect({required String baseUrl}) {
+    final state = _connection?.state;
+    if (state == HubConnectionState.Connected ||
+        state == HubConnectionState.Reconnecting) {
+      return Future.value();
+    }
+    return _connecting ??= _connect(baseUrl).whenComplete(() {
+      _connecting = null;
+    });
+  }
+
+  Future<void> _connect(String baseUrl) async {
+    final stale = _connection;
+    if (stale != null) {
+      unawaited(stale.stop().catchError((Object _) {}));
     }
 
-    final token = await _storage.read(key: 'jwt_token');
-
-    _connection = HubConnectionBuilder()
+    final conn = HubConnectionBuilder()
         .withUrl(
           '$baseUrl/hubs/jobs',
           options: HttpConnectionOptions(
-            accessTokenFactory: () async => token ?? '',
+            // Read per (re)connect so a refreshed JWT is picked up.
+            accessTokenFactory: () async =>
+                await _storage.read(key: 'jwt_token') ?? '',
           ),
         )
         .withAutomaticReconnect()
         .build();
+    _connection = conn;
 
-    _connection!.on('JobStatusChanged', (args) {
+    conn.on('JobStatusChanged', (args) {
       if (args == null || args.isEmpty) return;
       final data = args.first as Map<String, dynamic>?;
       if (data != null) {
@@ -87,13 +113,13 @@ class JobHubClient {
       }
     });
 
-    _connection!.on('NewJobMatch', (args) {
+    conn.on('NewJobMatch', (args) {
       if (args == null || args.isEmpty) return;
       final data = args[0] as Map<String, dynamic>?;
       if (data != null) _matchController.add(NewJobMatchEvent.fromJson(data));
     });
 
-    _connection!.on('OfferLifecycleEvent', (args) {
+    conn.on('OfferLifecycleEvent', (args) {
       if (args == null || args.isEmpty) return;
       final data = args.first as Map<String, dynamic>?;
       if (data != null) {
@@ -101,7 +127,7 @@ class JobHubClient {
       }
     });
 
-    _connection!.on('JobAdjustmentChanged', (args) {
+    conn.on('JobAdjustmentChanged', (args) {
       if (args == null || args.isEmpty) return;
       final first = args.first;
       // Payload is server-owned — surface the jobId only; the payload may be
@@ -121,20 +147,98 @@ class JobHubClient {
       }
     });
 
-    _connection!.onreconnecting(({error}) => _reconnectingController.add(null));
-    _connection!.onreconnected(
-      ({connectionId}) => _reconnectedController.add(null),
-    );
+    conn.onreconnecting(({error}) {
+      if (!_reconnectingController.isClosed) _reconnectingController.add(null);
+    });
+    conn.onreconnected(({connectionId}) {
+      unawaited(_afterReconnect());
+    });
 
-    await _connection!.start();
+    await conn.start();
+    await _syncWatched();
   }
 
-  /// Subscribe to updates for a specific job.
+  /// Re-joins every watched job group (membership is lost on reconnect) and
+  /// only then tells listeners, so their state re-read can't race the join.
+  Future<void> _afterReconnect() async {
+    await _syncWatched();
+    if (!_reconnectedController.isClosed) _reconnectedController.add(null);
+  }
+
+  /// Starts receiving `JobStatusChanged` for [jobId]. Ref-counted: every call
+  /// must be balanced by one [unwatchJob]. Safe before the hub is connected or
+  /// while it is reconnecting — the join is retried on connect/reconnect.
+  Future<void> watchJob(String jobId) async {
+    final count = _watched[jobId] ?? 0;
+    _watched[jobId] = count + 1;
+    if (count == 0) await _tryJoin(jobId);
+  }
+
+  /// Releases one [watchJob]; leaves the group when the last watcher is gone.
+  Future<void> unwatchJob(String jobId) async {
+    final count = _watched[jobId];
+    if (count == null) return;
+    if (count > 1) {
+      _watched[jobId] = count - 1;
+      return;
+    }
+    _watched.remove(jobId);
+    try {
+      await leaveJobGroup(jobId);
+    } catch (e) {
+      debugPrint('JobHub leave $jobId failed (ignored): $e');
+    }
+  }
+
+  /// Job ids each owner (e.g. a home screen listing many jobs) wants watched.
+  final Map<Object, Set<String>> _ownedWatches = {};
+
+  /// Makes [owner] watch exactly [jobIds]: joins the new ones and releases the
+  /// ones it no longer lists. For screens whose set of jobs changes over time;
+  /// pair with [clearWatchedJobs] in `dispose`.
+  Future<void> setWatchedJobs(Object owner, Set<String> jobIds) async {
+    final previous = _ownedWatches[owner] ?? const <String>{};
+    final next = Set<String>.of(jobIds);
+    // Record before awaiting so overlapping calls diff against the latest set.
+    _ownedWatches[owner] = next;
+    for (final id in next.difference(previous)) {
+      await watchJob(id);
+    }
+    for (final id in previous.difference(next)) {
+      await unwatchJob(id);
+    }
+  }
+
+  /// Releases everything [owner] holds via [setWatchedJobs].
+  Future<void> clearWatchedJobs(Object owner) async {
+    final previous = _ownedWatches.remove(owner) ?? const <String>{};
+    for (final id in previous) {
+      await unwatchJob(id);
+    }
+  }
+
+  Future<void> _tryJoin(String jobId) async {
+    try {
+      await joinJobGroup(jobId);
+    } catch (e) {
+      // Not connected yet / mid-reconnect: _syncWatched re-joins later.
+      debugPrint('JobHub join $jobId deferred: $e');
+    }
+  }
+
+  Future<void> _syncWatched() async {
+    for (final jobId in _watched.keys.toList()) {
+      await _tryJoin(jobId);
+    }
+  }
+
+  /// Raw group join for one connection. Screens should use [watchJob], which
+  /// ref-counts and survives reconnects.
   Future<void> joinJobGroup(String jobId) async {
     await _connection?.invoke('JoinJobGroup', args: [jobId]);
   }
 
-  /// Unsubscribe from a job's updates.
+  /// Raw group leave; see [unwatchJob].
   Future<void> leaveJobGroup(String jobId) async {
     await _connection?.invoke('LeaveJobGroup', args: [jobId]);
   }

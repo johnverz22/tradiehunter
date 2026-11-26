@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
 abstract class THFonts {
   THFonts._();
@@ -456,6 +457,16 @@ abstract class THTheme {
   THTheme._();
   static ThemeData get light => _build(Brightness.light, THColors.light);
   static ThemeData get dark => _build(Brightness.dark, THColors.dark);
+
+  /// Status-bar style for a theme: dark icons on the light theme's pale
+  /// surface, light icons on the dark theme's. Applied once at the app root
+  /// (main.dart) so every screen follows the theme; a screen only overrides it
+  /// when it draws edge-to-edge behind the status bar with a fixed-colour hero.
+  static SystemUiOverlayStyle systemOverlayStyle(Brightness brightness) =>
+      (brightness == Brightness.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent);
 
   static ThemeData _build(Brightness b, THColors c) {
     final scheme = ColorScheme(

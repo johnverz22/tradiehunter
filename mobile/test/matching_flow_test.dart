@@ -294,7 +294,7 @@ void main() {
     });
 
     testWidgets(
-      'offer event advances headline; reconnect re-joins and re-reads',
+      'offer event advances headline; reconnect re-reads (hub client re-joins)',
       (tester) async {
         final repo = MatchRepo();
         final hub = MatchHub();
@@ -334,10 +334,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Contacting Tradie 2…'), findsOneWidget);
 
-        // Reconnect: group membership is re-established and state re-read.
+        // Reconnect: the real JobHubClient re-joins watched groups itself
+        // before emitting onReconnected, so the screen only re-reads state.
         hub.reconnectedEvents.add(null);
         await tester.pumpAndSettle();
-        expect(hub.joinCalls, 2);
+        expect(hub.joinCalls, 1);
         expect(repo.jobReads, 2);
         expect(repo.offerReads, 2);
       },

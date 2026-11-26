@@ -14,7 +14,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -30,6 +29,7 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
+import '../shared/job_live_updates.dart' show liveJobIds;
 import 'tr_home_mapper.dart';
 import 'tr_home_parts.dart';
 
@@ -59,11 +59,20 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
   final Set<String> _responding = {};
 
   bool _availabilityLoading = false;
+  late final JobHubClient _hub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _hub = ref.read(jobHubClientProvider);
+    // JobStatusChanged only reaches clients that joined the job's group, so
+    // keep the group joined for every job on this dashboard while it shows.
+    ref.listenManual<JobsState>(
+      jobsViewModelProvider,
+      (_, next) => unawaited(_hub.setWatchedJobs(this, liveJobIds(next.jobs))),
+      fireImmediately: true,
+    );
     Future.microtask(() {
       if (!mounted) return;
       unawaited(_refreshAll());
@@ -83,6 +92,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
     _offerSub?.cancel();
     _statusSub?.cancel();
     _reconnectSub?.cancel();
+    unawaited(_hub.clearWatchedJobs(this));
     super.dispose();
   }
 
@@ -285,15 +295,12 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
                     ),
                   ),
                 );
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.light.copyWith(
-              statusBarColor: Colors.transparent,
-            ),
-            child: Scaffold(
-              key: const Key('tradie_dashboard'),
-              backgroundColor: context.th.paper,
-              body: SafeArea(bottom: false, child: body),
-            ),
+          // Status-bar icon colour comes from the app-wide, theme-aware
+          // default (see THTheme.systemOverlayStyle); no per-screen override.
+          return Scaffold(
+            key: const Key('tradie_dashboard'),
+            backgroundColor: context.th.paper,
+            body: SafeArea(bottom: false, child: body),
           );
         },
       ),
