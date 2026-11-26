@@ -24,6 +24,9 @@ Usage
   python3 scripts/e2e-journey.py                    # run the journey
   python3 scripts/e2e-journey.py --junit out.xml    # also write JUnit XML
   python3 scripts/e2e-journey.py --restore-tradies  # un-park demo tradie only
+  python3 scripts/e2e-journey.py --manifest m.json  # use personas from e2e-personas.py
+                                                    # (first homeowner/tradie/staff) and
+                                                    # append the job id to the manifest
 
 Environment
   FIXO_API_URL   API base, default http://localhost:5000
@@ -31,8 +34,9 @@ Environment
 Exit codes
   0 pass   1 a journey step failed   2 stack unreachable / accounts missing
 
-Only ever point this at the local docker stack and the seeded *@fixo.test
-accounts (docs/todos/03_e2e_realignment_plan.md §3, rule 1).
+Only ever point this at the local docker stack (a non-localhost FIXO_API_URL is
+refused) with either the seeded *@fixo.test accounts or a persona manifest
+(docs/todos/03_e2e_realignment_plan.md §3 rule 1; 08_e2e_persona_fabric_plan.md).
 """
 
 import argparse
@@ -42,6 +46,7 @@ import os
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from xml.sax.saxutils import quoteattr
 
@@ -70,6 +75,56 @@ class StepFailed(Exception):
 
 class Unreachable(Exception):
     pass
+
+
+# ── Persona manifest (scripts/e2e-personas.py) ───────────────────────────────
+
+MANIFEST_PATH = None
+
+
+def require_local():
+    host = (urllib.parse.urlparse(API_BASE).hostname or "").lower()
+    if host not in ("localhost", "127.0.0.1", "::1"):
+        raise Unreachable("refusing FIXO_API_URL %r: not localhost (local docker stack only)" % API_BASE)
+
+
+def _read_manifest(path):
+    with open(path) as f:
+        return json.load(f)
+
+
+def apply_manifest(path):
+    """Rebind HOMEOWNER/TRADIE/STAFF to the first persona of each role."""
+    global HOMEOWNER, TRADIE, STAFF, MANIFEST_PATH
+    try:
+        m = _read_manifest(path)
+    except (OSError, ValueError) as e:
+        raise Unreachable("cannot read manifest %s: %s" % (path, e))
+    if m.get("schemaVersion") != 1:
+        raise Unreachable("manifest %s has schemaVersion %r, expected 1" % (path, m.get("schemaVersion")))
+    first = {}
+    for p in m.get("personas", []):
+        first.setdefault(p.get("role"), (p["email"], p["password"]))
+    missing = [r for r in ("homeowner", "tradie", "staff") if r not in first]
+    if missing:
+        raise Unreachable("manifest %s has no %s persona (re-run e2e-personas.py with --staff 1)" % (path, "/".join(missing)))
+    HOMEOWNER, TRADIE, STAFF = first["homeowner"], first["tradie"], first["staff"]
+    MANIFEST_PATH = path
+
+
+def record_job(job_id, scenario):
+    """Append the created job to the manifest so the mobile/web tiers can find it."""
+    if not MANIFEST_PATH:
+        return
+    m = _read_manifest(MANIFEST_PATH)
+    m.setdefault("jobs", []).append(
+        {"id": job_id, "scenario": scenario, "homeownerEmail": HOMEOWNER[0], "tradieEmail": TRADIE[0]}
+    )
+    tmp = MANIFEST_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(m, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, MANIFEST_PATH)  # atomic
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -240,6 +295,7 @@ def run_journey(rec):
         return int(body["id"])
 
     job = rec.step("homeowner posts job", create)
+    record_job(job, "happy-path")
     flow = rec.step(
         "read job flowVersion",
         lambda: int((get("/jobs/%d" % job, ho) or {}).get("flowVersion") or 1),
@@ -343,7 +399,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--junit", help="write JUnit XML to this path")
     ap.add_argument("--restore-tradies", action="store_true", help="un-park the demo tradie and exit")
+    ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
     args = ap.parse_args()
+
+    try:
+        require_local()
+        if args.manifest:
+            apply_manifest(args.manifest)
+    except Unreachable as e:
+        print("UNREACHABLE: %s" % e)
+        return 2
 
     if args.restore_tradies:
         set_demo_tradie(True)

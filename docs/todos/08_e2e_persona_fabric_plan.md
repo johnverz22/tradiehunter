@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Turn the current single-journey E2E/QA coverage into a realistic, automated functional test across the API, mobile (Flutter) and web admin (React) tiers. All three tiers exercise the **same users and jobs**, provisioned once per run.
-> **Status:** Not started · **Prepared:** 2026-11-26
+> **Status:** P0, P1 and P2.1 done. **Verified only against a local mock of the API + MailHog (no docker in the authoring sandbox); the first run on the real stack is P1.8 and is still open.** · **Prepared:** 2026-11-26 · **Updated:** 2026-11-26
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** extends `03_e2e_realignment_plan.md` (E6.6 integrated API journey gate is already merged). Update that file's status when this lands.
@@ -40,34 +40,42 @@ e2e-personas.py ──► manifest.json ──┬─► e2e-journey.py   (API ti
 
 ## Phase P0 — Recon (no code)
 
-- [ ] **P0.1** Read the docs listed in §0; note the cancellation rules, review-eligibility rules and dispute rules from `SPECS.md` that the scenarios below must encode (S)
-- [ ] **P0.2** Determine how the API exposes signup and verification (email code, token, auto-verify in dev?) so `e2e-personas.py` can drive it for real (S)
-- [ ] **P0.3** Determine whether the API can still create **v1** jobs. If not, drop the v1 scenario and record why (S)
-- [ ] **P0.4** Check which staff flows the mobile app exposes. If none, staff is API + web only (S)
-- [ ] **P0.5** Confirm from `docs/MVP.md` what the web admin covers in MVP scope: payments, disputes, users, jobs. Record the list; it bounds P4 (S)
-- [ ] **P0.6** Inventory what `e2e-journey.py` hardcodes (`*@fixo.test` creds, seeded accounts) so P2 can switch it to manifest loading without breaking the single-journey gate (S)
+- [x] **P0.1** Read the docs listed in §0; note the cancellation rules, review-eligibility rules and dispute rules from `SPECS.md` that the scenarios below must encode (S)
+  - Done: findings in *Decisions and parked items* §A-§G. Rules P2.6/P2.8 encode (`SPECS.md` §4, §8): any pre-Completed state -> `Cancelled` by homeowner/tradie/admin/system with a reason code, no refund in v2, non-monetary consequences only (flags); any active state -> `Disputed` by either party, admin resolves to `Completed` or `Cancelled`; reviews are blind (hidden until both submit or 7 days) and only after `Completed`; receipt reject = `PaymentReview -> AwaitingPayment`.
+- [x] **P0.2** Determine how the API exposes signup and verification (email code, token, auto-verify in dev?) so `e2e-personas.py` can drive it for real (S)
+  - Done: OTP via MailHog (§A), staff invite and tradie onboarding (§B).
+- [x] **P0.3** Determine whether the API can still create **v1** jobs. If not, drop the v1 scenario and record why (S)
+  - Done: v1 only via stack config, see §C. P2.9 parked.
+- [x] **P0.4** Check which staff flows the mobile app exposes. If none, staff is API + web only (S)
+  - Done: no staff UI in the mobile app, see §D. P3.6 parked.
+- [x] **P0.5** Confirm from `docs/MVP.md` what the web admin covers in MVP scope: payments, disputes, users, jobs. Record the list; it bounds P4 (S)
+  - Done: admin scope, see §E.
+- [x] **P0.6** Inventory what `e2e-journey.py` hardcodes (`*@fixo.test` creds, seeded accounts) so P2 can switch it to manifest loading without breaking the single-journey gate (S)
+  - Done: only `HOMEOWNER`/`TRADIE`/`STAFF` module constants, used by `run_journey`; `DEMO_TRADIE` parking is separate and stays.
 
 ## Phase P1 — Persona provisioning (`scripts/e2e-personas.py`, new)
 
-- [ ] **P1.1** CLI: `--homeowners N --tradies N --staff 1|2 --run-id ID --out PATH`; default run id is a timestamp slug (S)
-- [ ] **P1.2** Create accounts as `qa+<runid>-<role>-<n>@fixo.test` through real signup and verification as the API exposes it (M)
-- [ ] **P1.3** Complete any role onboarding the tradie needs to receive matches (profile, trade, service area, payout details if required by the API) (M)
-- [ ] **P1.4** Write the manifest JSON: role, email, password, user id, created job ids (job ids appended by later tiers) (S)
-- [ ] **P1.5** Namespacing is enough to leave data in the DB; add optional `--cleanup` that only touches `qa+<runid>-*` accounts via supported API routes (S)
-- [ ] **P1.6** Refuse non-localhost `FIXO_API_URL`; support `--timeout`, `--retry` (S)
-- [ ] **P1.7** `python3 -m py_compile scripts/e2e-personas.py` (S)
+- [x] **P1.1** CLI: `--homeowners N --tradies N --staff 1|2 --run-id ID --out PATH`; default run id is a timestamp slug (S)
+- [x] **P1.2** Create accounts as `qa+<runid>-<role>-<n>@fixo.test` through real signup and verification as the API exposes it (M)
+- [x] **P1.3** Complete any role onboarding the tradie needs to receive matches (profile, trade, service area, payout details if required by the API) (M)
+- [x] **P1.4** Write the manifest JSON: role, email, password, user id, created job ids (job ids appended by later tiers) (S)
+- [x] **P1.5** Namespacing is enough to leave data in the DB; add optional `--cleanup` that only touches `qa+<runid>-*` accounts via supported API routes (S)
+- [x] **P1.6** Refuse non-localhost `FIXO_API_URL`; support `--timeout`, `--retry` (S)
+- [x] **P1.7** `python3 -m py_compile scripts/e2e-personas.py` (S)
+- [ ] **P1.8** Run `scripts/e2e-personas.py` on the real local stack (`make docker`), fix whatever drifts from the mock (see §F risks), paste the output in the Results log (M)
 
 ## Phase P2 — API tier (extend `scripts/e2e-journey.py`)
 
-- [ ] **P2.1** Load personas from the manifest (`--manifest PATH`); keep the seeded-accounts path so the existing single-journey gate still works (M)
+- [x] **P2.1** Load personas from the manifest (`--manifest PATH`); keep the seeded-accounts path so the existing single-journey gate still works (M)
+  - Done: first homeowner/tradie/staff of the manifest; job id appended on creation (`record_job`); a non-localhost `FIXO_API_URL` is now refused by the journey too; `run-e2e.sh` does not pass `--manifest` yet (P5.1).
 - [ ] **P2.2** Every step asserts the response **and** the resulting job via GET: status, history, decimal-string amounts (M)
 - [ ] **P2.3** Scenario: happy path v2. post -> match -> offer -> accept -> book -> chat -> check-in -> check-out -> approve -> receipt -> staff verify -> complete -> review (M)
-- [ ] **P2.4** Scenario: competing offers. 2+ tradies bid on one job; homeowner picks one; the others end declined/withdrawn per spec (M)
+- [ ] **P2.4** Scenario: competing offers, **project jobs only** (hourly jobs allow one pending request, 409 otherwise; see §G). Homeowner posts a `Project` job and requests quotes from up to 3 tradies; each quotes (`POST /jobs/{id}/quotes`); homeowner accepts one (`.../quotes/{quoteId}/accept`); assert the others end declined atomically and the job books at the accepted pricing model. Also an hourly sequential case: decline by tradie 1, then the next offer goes to tradie 2 (M)
 - [ ] **P2.5** Scenarios: decline and withdraw paths; job with no matches; re-post (M)
 - [ ] **P2.6** Scenarios: cancellation by homeowner and by tradie, following the `SPECS.md` rules per state (M)
 - [ ] **P2.7** Scenario: staff rejects receipt -> homeowner resubmits -> staff verifies (M)
 - [ ] **P2.8** Scenarios: dispute open/resolve; chat in both directions; attachment upload; review eligibility rules (positive and negative cases) (L)
-- [ ] **P2.9** Scenario: v1 in-flight path, only if P0.3 says the API can still create v1 jobs (M)
+- [~] **P2.9** Scenario: v1 in-flight path. **Parked:** `JobFlow:Version` is a global stack setting stamped on each job at creation; the API cannot create a v1 job per request (§C). The existing journey already has the v1 branch; it runs only against a stack started with `JobFlow__Version=1` (M)
 - [ ] **P2.10** Append created job ids to the manifest so the mobile and web tiers can find them (S)
 - [ ] **P2.11** JUnit XML output preserved; `--fail-fast`, `--retry`, timeout preserved (S)
 - [ ] **P2.12** `python3 -m py_compile scripts/e2e-journey.py` (S)
@@ -79,7 +87,7 @@ e2e-personas.py ──► manifest.json ──┬─► e2e-journey.py   (API ti
 - [ ] **P3.3** Add a manifest loader for the chosen driver so persona credentials and job ids are read, not hardcoded (M)
 - [ ] **P3.4** Homeowner flow: post job, see offers, accept, chat, approve completion, submit receipt (L)
 - [ ] **P3.5** Tradie flow: see request, accept, check in, check out (L)
-- [ ] **P3.6** Staff flow only if P0.4 found one in the app (M)
+- [~] **P3.6** Staff flow. **Parked:** the mobile app is Homeowner/Tradie only; Staff and Superadmin use the web admin (§D) (M)
 - [ ] **P3.7** Run flows in light and dark wherever they screenshot. Assert behaviour, not pixels, except the existing golden/render checks; respect the v2 design contract (M)
 - [ ] **P3.8** Verify on a debug build on emulator/simulator. Document whether any step requires a physical device (S)
 - [ ] **P3.9** If mobile code was touched: `flutter analyze --fatal-infos` and `flutter test` (S)
@@ -122,4 +130,23 @@ _(paste the P6.6 run output here)_
 
 ## Decisions and parked items
 
-_(record P0 findings, P3.1/P4.1 driver choices, and anything `[~]` here)_
+### P0 findings (2026-11-26, from reading code and docs)
+
+**A. Signup and verification.** `POST /auth/register` returns `{RequiresVerification, Email}` and emails a 6-digit OTP (10 min lifetime, stored hashed, so it cannot be read from the DB or API). `POST /auth/verify-email {email, code}` returns the JWT. The dev stack sends mail to MailHog (`docker-compose.yml`, `EmailSender__Host: mailhog`); its HTTP API (`:8025`, `/api/v2/search?kind=to&query=`) is how the script reads the code. Subject is `Your TradieHunter verification code` (`EmailSubjects.Otp`). Registering a tradie creates a `TradieProfile` stub with `TradeType = "General"`.
+
+**B. Staff and tradie onboarding without DB writes.** Staff: superadmin `POST /admin/staff/invite` -> token in the invite email (`?token=` link in the templated mail, bare token in the legacy mail) -> `POST /admin/staff/set-password`. Tradie: `PUT /profile` (fields `phoneNumber`, `tradeType`, address, lat/lng, `serviceRadiusKm`, `isAvailable`), `POST /tradie/rates {rates:[{serviceId, hourlyRate}]}`, `POST /tradie/credentials` (multipart `file` + `type`; JPEG/PNG/PDF), then `POST /admin/credentials/{id}/review {status:"Approved"}` by staff. MVP rule: verified while holding >= 1 approved credential, so `/profile.isVerified` must turn true; the script fails if it does not. `scripts/seed-test-accounts.sh` instead flips `EmailVerified`/`IsVerified` in the DB, which the fabric must not do.
+
+**C. v1 vs v2.** `JobFlow:Version` (both `appsettings.json` and `appsettings.Development.json` = 2) is stamped on each job at creation by `JobService`. There is no per-request override, so v1 jobs exist only when the stack runs with `JobFlow__Version=1`. P2.9 parked; `docs/QA.md` ENV-07 already assumes v2.
+
+**D. Staff in the mobile app.** None. `auth_viewmodel.dart`: "Mobile users are always Homeowner or Tradie; Staff/Superadmin log into the web admin." Staff steps (receipt verify, credential review, dispute resolution) happen through the API tier and the web tier only. Mobile tests must not try to log in as staff.
+
+**E. Web admin scope (`docs/MVP.md` line 32, `SPECS.md` admin section).** Dashboard, users + flags, credential queue, payment queue (v2 rows show itemised amount and completion date), refund queue (legacy flow only), payout queue + batches, disputes, audit/settings, job detail with progress stepper; superadmin-only: staff invites, Hangfire. P4 may assert on payments, disputes, credentials, users and job detail; refunds only for post-payment dispute outcomes. Existing Playwright specs in `web/e2e/` (auth, credentials, disputes, job-progress, payments, payouts, refunds, responsive) are the starting point.
+
+**F. Risks to check on the first live run (P1.8).**
+- `phoneNumber` validator and the `tradeType` vs service-category matching were not visible from the code read; the first live run shows if `PUT /profile` rejects `+6421900001` or if matching ignores a tradie whose `tradeType` (`Plumbing`) does not fit the chosen service. Script picks the first id from `GET /tradie/services` and falls back to 1.
+- OTP and invite subjects are matched by substring (`verification code`, `invited`); a copy change in `EmailSubjects` breaks provisioning with a clear "no MailHog message" error.
+- `seed-test-accounts.sh` sends `phone` and `tradeCategory`, but `ProfileUpdateDto` names are `phoneNumber` and `tradeType`; unknown JSON fields are ignored, so the seeded tradie may keep `TradeType = "General"`. Not changed here (out of scope), worth fixing separately.
+- Seeded `tradie-verified@fixo.test` and the demo tradie share the Auckland location; `e2e-journey.py` still parks the demo tradie. Quick match offers one top candidate at a time, so with manifest tradies the offer may go to a seeded tradie instead of `personas[tradie 1]`; if so, the journey's `offers/pending` poll will time out and P2.2 should switch to direct requests (`POST /jobs/{id}/request {tradieId}`).
+- Bank details for tradie payouts are not provisioned; P4.5 payouts and any payout assertion need them (open question: is there a test-safe way through `PUT /profile` `bankAccount*`?).
+
+**G. Competing offers (affects P2.4).** `SPECS.md` §3: an hourly job allows one pending direct request (409 otherwise), and Quick match offers the top candidate then the next on decline/timeout; `MVP.md` lists "parallel offers for hourly jobs" as out of scope. True competition exists only for **projects**: up to 3 concurrent quote requests, 72 h window, accepting one declines the rest atomically. The brief's "2+ tradies bid on one job" is therefore a project-quote scenario, which needs >= 3 tradies in the manifest (default is 3).
