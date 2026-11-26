@@ -49,6 +49,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from decimal import Decimal
 from xml.sax.saxutils import quoteattr
 
 API_BASE = os.environ.get("FIXO_API_URL", "http://localhost:5000").rstrip("/")
@@ -154,7 +155,9 @@ def _request(method, path, token=None, body=None, raw=None, content_type=None):
     if status == 204 or not text.strip():
         return None
     try:
-        return json.loads(text)
+        # Money is a JSON number server-side; parse it as Decimal so amounts
+        # are compared exactly (never through binary floats).
+        return json.loads(text, parse_float=Decimal)
     except ValueError:
         return {"_raw": text}
 
@@ -266,6 +269,71 @@ class Recorder:
         return out
 
 
+# ── Response assertions (plan 08 P2.2) ───────────────────────────────────────
+# Field names come from backend/DTOs/JobDTOs.cs (JobDto) and AdminDTOs.cs
+# (admin job detail: statusHistory, chatTranscript).
+
+# Order the v2 and v1 happy paths must pass through (subsequence check, so
+# extra intermediate states do not fail the run).
+PATH_V2 = ["Booked", "InProgress", "AwaitingConfirmation", "AwaitingPayment", "PaymentReview", "Completed"]
+PATH_V1 = ["AwaitingPayment", "PaymentReview", "Booked", "InProgress", "AwaitingConfirmation", "Completed"]
+
+
+def dec(v):
+    """JSON number -> Decimal. .NET writes 85m as `85` and 85.5m as `85.5`, so a
+    money field may arrive as int or Decimal; None/other stays None."""
+    if isinstance(v, bool) or not isinstance(v, (int, Decimal)):
+        return None
+    return Decimal(v)
+
+
+def need(cond, msg):
+    if not cond:
+        raise StepFailed(msg)
+
+
+def is_subsequence(wanted, actual):
+    it = iter(actual)
+    return all(w in it for w in wanted)
+
+
+def assert_booked(job, ho, tradie_id, flow):
+    j = get("/jobs/%d" % job, ho) or {}
+    need(j.get("status") == "Booked", "status is %r, expected Booked" % j.get("status"))
+    need(int(j.get("flowVersion") or 1) == flow, "flowVersion changed to %r" % j.get("flowVersion"))
+    need(j.get("matchedTradieId") == tradie_id,
+         "matchedTradieId %r is not the persona tradie %r" % (j.get("matchedTradieId"), tradie_id))
+    need(j.get("matchedTradieName"), "matchedTradieName missing on a Booked job")
+    rate = dec(j.get("hourlyRate"))
+    need(rate is not None and rate > 0, "hourlyRate snapshot missing/zero: %r" % j.get("hourlyRate"))
+    return rate
+
+
+def assert_completion_money(job, ho, rate, hours):
+    j = get("/jobs/%d" % job, ho) or {}
+    need(dec(j.get("finalHours")) == Decimal(hours), "finalHours %r != %s" % (j.get("finalHours"), hours))
+    labour, final = dec(j.get("labourAmount")), dec(j.get("finalAmount"))
+    adj = dec(j.get("adjustmentsTotal")) or Decimal(0)
+    need(labour is not None and labour > 0, "labourAmount missing/zero: %r" % j.get("labourAmount"))
+    # JobDto: FinalAmount = LabourAmount + AdjustmentsTotal (exact decimal maths).
+    need(final == labour + adj, "finalAmount %r != labour %r + adjustments %r" % (final, labour, adj))
+    need(dec(j.get("totalAmount")) == final, "totalAmount alias %r != finalAmount %r" % (j.get("totalAmount"), final))
+    # Labour should be the rate snapshot x hours; reported rather than assumed
+    # because rounding rules are the backend's call (SPECS.md).
+    if labour != rate * Decimal(hours):
+        print("    note: labourAmount %s != hourlyRate %s x %sh (rounding/min-charge rule?)" % (labour, rate, hours))
+
+
+def assert_audit_trail(job, st, flow, markers):
+    a = get("/admin/jobs/%d" % job, st) or {}
+    seen = [h.get("toStatus") for h in sorted(a.get("statusHistory") or [], key=lambda h: h.get("changedAtUtc") or "")]
+    wanted = PATH_V2 if flow >= 2 else PATH_V1
+    need(is_subsequence(wanted, seen), "statusHistory %r does not contain %r in order" % (seen, wanted))
+    texts = [m.get("content") for m in (a.get("chatTranscript") or [])]
+    for marker in markers:
+        need(marker in texts, "chat message %r missing from the admin transcript (%d messages)" % (marker, len(texts)))
+
+
 def run_journey(rec):
     ctx = {}
 
@@ -361,6 +429,9 @@ def run_journey(rec):
 
         rec.step("v1 receipt -> staff verify -> Booked", pay_v1)
 
+    tradie_id = (get("/profile", tr) or {}).get("id")
+    rate = rec.step("assert Booked job: tradie, flow, rate", lambda: assert_booked(job, ho, tradie_id, flow))
+
     # Chat both ways once the job is Booked (chat opens at Booked/InProgress).
     rec.step(
         "homeowner -> tradie chat",
@@ -376,6 +447,7 @@ def run_journey(rec):
         wait_status(job, tr, "InProgress"), wait_status(job, ho, "InProgress")))
     rec.step("tradie checks out (2h)", lambda: post("/jobs/%d/check-out" % job, tr, {"finalHours": 2}))
     rec.step("job AwaitingConfirmation", lambda: wait_status(job, ho, "AwaitingConfirmation"))
+    rec.step("assert completion money (exact decimals)", lambda: assert_completion_money(job, ho, rate, "2"))
 
     if flow >= 2:
         rec.step("homeowner approves itemised amount", lambda: post("/jobs/%d/approve" % job, ho))
@@ -396,6 +468,10 @@ def run_journey(rec):
 
     rec.step("job Completed", lambda: wait_status(job, ho, "Completed"))
     rec.step("tradie sees Completed too", lambda: wait_status(job, tr, "Completed"))
+    rec.step(
+        "staff audit: status history + chat transcript",
+        lambda: assert_audit_trail(job, st, flow, ["journey: homeowner hello", "journey: tradie on my way"]),
+    )
 
     def review():
         tradie_id = (get("/profile", tr) or {}).get("id")
