@@ -59,6 +59,12 @@ public class JobFlowOptions
     /// <summary>Concurrent quote requests allowed per project job (Builderscrack-style cap).</summary>
     public int MaxConcurrentQuoteRequests { get; set; } = 3;
 
+    /// <summary>
+    /// Plan 10 (Q7): fallback for <c>Quotes.BoardWindowHours</c> — hours an open
+    /// project accepts new quotes. The admin setting (platform_settings) wins when set.
+    /// </summary>
+    public int QuoteBoardWindowHours { get; set; } = 72;
+
     /// <summary>Hours a quote request / submitted quote stays valid (default 72h).</summary>
     public int QuoteWindowHours { get; set; } = 72;
 

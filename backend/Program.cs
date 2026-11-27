@@ -266,6 +266,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<ScheduleReminderService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IPlatformSettings, PlatformSettings>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
 builder.Services.AddScoped<IAccountFlagService, AccountFlagService>();
 

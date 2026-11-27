@@ -56,6 +56,12 @@ public class CreateJobRequest
 
     /// <summary>v1.7 (P12-21): project scope notes beyond the shared description.</summary>
     public string? ScopeNotes { get; set; }
+
+    /// <summary>
+    /// Plan 10 (Q7.3): project-only. true = open to nearby tradies (board); absent or false =
+    /// invite-only, today's behaviour, so older clients are unaffected.
+    /// </summary>
+    public bool? OpenToBoard { get; set; }
 }
 
 public class UpdateJobRequest
@@ -193,6 +199,12 @@ public class JobDto
     /// plus the Accepted one. Null under the same conditions as <see cref="QuotesRequested"/>.
     /// </summary>
     public int? QuotesReceived { get; set; }
+
+    /// <summary>Plan 10 (Q7.3): project is open to the tradie board (not invite-only).</summary>
+    public bool OpenToBoard { get; set; }
+
+    /// <summary>Plan 10 (Q7.3): when an open project stops accepting new quotes (UTC); null for invite-only jobs.</summary>
+    public DateTime? QuotesCloseAtUtc { get; set; }
 }
 
 public class JobPhotoDto

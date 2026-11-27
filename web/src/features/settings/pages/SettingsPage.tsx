@@ -8,6 +8,7 @@ import { Button } from '../../../components/Button';
 import { Field } from '../../../components/Field';
 import { useSettings, useUpdateSettings } from '../hooks/useSettings';
 import type { AdminSettings } from '../../../services/adminApi';
+import { QuoteSettingsCard } from '../components/QuoteSettingsCard';
 
 const schema = z.object({
   currency: z.string().min(1, 'Currency is required').max(10),
@@ -180,6 +181,11 @@ export const SettingsPage: React.FC = () => {
           </div>
         </section>
       </form>
+
+      {/* Quotes (own form and endpoint, plan 10 Q7.2) */}
+      <div style={{ marginTop: 'var(--sp-4)' }}>
+        <QuoteSettingsCard />
+      </div>
     </>
   );
 };

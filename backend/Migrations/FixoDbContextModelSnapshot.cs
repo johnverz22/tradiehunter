@@ -524,7 +524,13 @@ namespace FixoApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("OpenToBoard")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("PaymentDueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("QuotesCloseAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ReferenceCode")
@@ -926,6 +932,29 @@ namespace FixoApi.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("PayoutBatches");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.PlatformSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("PlatformSettings");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Quote", b =>

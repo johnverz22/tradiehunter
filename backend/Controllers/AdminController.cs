@@ -21,6 +21,7 @@ namespace FixoApi.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _admin;
+    private readonly IPlatformSettings _platformSettings;
     private readonly IPaymentService _payments;
     private readonly FixoApi.Services.Payout.IPayoutService _payouts;
     private readonly ILogger<AdminController> _logger;
@@ -31,6 +32,7 @@ public class AdminController : ControllerBase
 
     public AdminController(
         IAdminService admin,
+        IPlatformSettings platformSettings,
         IPaymentService payments,
         FixoApi.Services.Payout.IPayoutService payouts,
         ILogger<AdminController> logger,
@@ -40,6 +42,7 @@ public class AdminController : ControllerBase
         IValidator<RejectPaymentRequest> rejectPaymentValidator)
     {
         _admin = admin;
+        _platformSettings = platformSettings;
         _payments = payments;
         _payouts = payouts;
         _logger = logger;
@@ -375,6 +378,34 @@ public class AdminController : ControllerBase
     {
         var updated = await _admin.UpdateSettingsAsync(dto, CurrentUserId);
         return Ok(updated);
+    }
+
+    /// <summary>Quote time windows (plan 10 Q7.2): effective values, DB setting or config fallback.</summary>
+    [HttpGet("settings/quotes")]
+    [ProducesResponseType<QuoteSettingsDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetQuoteSettings(CancellationToken ct)
+    {
+        var w = await _platformSettings.GetQuoteWindowsAsync(ct);
+        return Ok(new QuoteSettingsDto { BoardWindowHours = w.BoardWindowHours, ValidityHours = w.ValidityHours });
+    }
+
+    /// <summary>Change quote time windows (Superadmin only). Applies to jobs and quotes created afterwards.</summary>
+    [HttpPut("settings/quotes")]
+    [Authorize(Policy = "RequireSuperadminRole")]
+    [ProducesResponseType<QuoteSettingsDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateQuoteSettings([FromBody] QuoteSettingsDto dto, CancellationToken ct)
+    {
+        try
+        {
+            var w = await _platformSettings.SetQuoteWindowsAsync(
+                dto.BoardWindowHours, dto.ValidityHours, CurrentUserId, ct);
+            return Ok(new QuoteSettingsDto { BoardWindowHours = w.BoardWindowHours, ValidityHours = w.ValidityHours });
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════

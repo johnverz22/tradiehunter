@@ -158,6 +158,16 @@ public class AdminSettingsDto
     public bool FeatureSchedulingEnabled { get; set; } = true;
 }
 
+/// <summary>Plan 10 (Q7.2): quote time windows in hours (1-720).</summary>
+public class QuoteSettingsDto
+{
+    /// <summary>How long a newly posted open project accepts quotes.</summary>
+    public int BoardWindowHours { get; set; }
+
+    /// <summary>How long a submitted quote stays valid.</summary>
+    public int ValidityHours { get; set; }
+}
+
 // ── Staff invites (P1-05) ─────────────────────────────────────────────────────
 
 public class StaffInviteRequest

@@ -33,6 +33,7 @@ public class QuoteService
     private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<JobFlowOptions> _flowOptions;
+    private readonly IPlatformSettings _settings;
     private readonly ILogger<QuoteService> _logger;
 
     public QuoteService(
@@ -42,6 +43,7 @@ public class QuoteService
         INotificationService notifications,
         IBackgroundJobClient hangfire,
         IOptions<JobFlowOptions> flowOptions,
+        IPlatformSettings settings,
         ILogger<QuoteService> logger)
     {
         _context = context;
@@ -50,6 +52,7 @@ public class QuoteService
         _notifications = notifications;
         _hangfire = hangfire;
         _flowOptions = flowOptions;
+        _settings = settings;
         _logger = logger;
     }
 
@@ -99,6 +102,9 @@ public class QuoteService
         if (!Enum.TryParse<QuotePricingModel>(request.PricingModel, ignoreCase: true, out var pricingModel))
             throw new InvalidOperationException("PricingModel must be Fixed, EstimateRange or HourlyWithCap.");
 
+        // Plan 10 (Q7.1): validity comes from the admin setting (fallback: JobFlow:QuoteWindowHours).
+        var windows = await _settings.GetQuoteWindowsAsync();
+
         var quote = new Quote
         {
             JobId = jobId,
@@ -114,7 +120,7 @@ public class QuoteService
             GstIncluded = request.GstIncluded,
             ProposedStartUtc = request.ProposedStartUtc,
             EstimatedDurationDays = request.EstimatedDurationDays,
-            ValidUntilUtc = DateTime.UtcNow.AddHours(Math.Max(1, _flowOptions.Value.QuoteWindowHours)),
+            ValidUntilUtc = DateTime.UtcNow.AddHours(windows.ValidityHours),
             Status = QuoteStatus.Submitted,
             OfferId = offer.Id,
             CreatedAtUtc = DateTime.UtcNow,

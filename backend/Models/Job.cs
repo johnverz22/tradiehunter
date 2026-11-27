@@ -137,6 +137,15 @@ public class Job
     [MaxLength(5000)]
     public string? ScopeNotes { get; set; }
 
+    /// <summary>Plan 10 (Q7.3): project is visible on the tradie "Available jobs" board and takes quotes without an invite.</summary>
+    public bool OpenToBoard { get; set; }
+
+    /// <summary>
+    /// Plan 10 (Q7.3): when an open project stops accepting new quotes. Stamped at posting
+    /// from <c>Quotes.BoardWindowHours</c>, so later setting changes never alter it.
+    /// </summary>
+    public DateTime? QuotesCloseAtUtc { get; set; }
+
     /// <summary>v1.7 (P12-23): pricing model agreed with the accepted quote (projects only).</summary>
     public QuotePricingModel? AgreedPricingModel { get; set; }
 

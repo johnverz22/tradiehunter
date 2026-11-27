@@ -38,6 +38,7 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<JobPriceAdjustment> JobPriceAdjustments { get; set; } = null!;
     public DbSet<Quote> Quotes { get; set; } = null!;
     public DbSet<StaffNotification> StaffNotifications { get; set; } = null!;
+    public DbSet<PlatformSetting> PlatformSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

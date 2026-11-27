@@ -30,6 +30,7 @@ public class JobService : IJobService
     private readonly PushNotificationService _push;
     private readonly FixoDbContext _context;
     private readonly IOptions<JobFlowOptions> _jobFlowOptions;
+    private readonly IPlatformSettings _settings;
     private readonly ILogger<JobService> _logger;
 
     public JobService(
@@ -40,6 +41,7 @@ public class JobService : IJobService
         PushNotificationService push,
         FixoDbContext context,
         IOptions<JobFlowOptions> jobFlowOptions,
+        IPlatformSettings settings,
         ILogger<JobService> logger)
     {
         _jobRepo          = jobRepo;
@@ -49,6 +51,7 @@ public class JobService : IJobService
         _push            = push;
         _context         = context;
         _jobFlowOptions  = jobFlowOptions;
+        _settings        = settings;
         _logger          = logger;
     }
 
@@ -86,6 +89,16 @@ public class JobService : IJobService
         if (request.Latitude.HasValue && request.Longitude.HasValue)
             location = new Point(request.Longitude.Value, request.Latitude.Value) { SRID = 4326 };
 
+        // Plan 10 (Q7.3): open projects take quotes from the board for a window
+        // that is stamped now, so a later settings change never alters this job.
+        var openToBoard = jobType == JobType.Project && request.OpenToBoard == true;
+        DateTime? quotesCloseAtUtc = null;
+        if (openToBoard)
+        {
+            var windows = await _settings.GetQuoteWindowsAsync();
+            quotesCloseAtUtc = DateTime.UtcNow.AddHours(windows.BoardWindowHours);
+        }
+
         // P12-01: the rate check is gone — the rate no longer exists at posting.
         // It is chosen on the Choose-a-Tradie screen and snapshotted onto the
         // offer at request time (P12-08). request.HourlyRate is ignored.
@@ -116,6 +129,8 @@ public class JobService : IJobService
             MaterialsBy     = jobType == JobType.Project ? materialsBy : MaterialsResponsibility.Undecided,
             SiteVisitWelcome = jobType == JobType.Project && request.SiteVisitWelcome,
             ScopeNotes      = jobType == JobType.Project ? request.ScopeNotes : null,
+            OpenToBoard     = openToBoard,
+            QuotesCloseAtUtc = quotesCloseAtUtc,
             FlowVersion     = Math.Max(1, _jobFlowOptions.Value.Version),
             CreatedAtUtc    = DateTime.UtcNow,
             UpdatedAtUtc    = DateTime.UtcNow,
@@ -511,6 +526,8 @@ public class JobService : IJobService
             Stage            = stage,
             QuotesRequested  = quoteCounts?.Requested,
             QuotesReceived   = quoteCounts?.Received,
+            OpenToBoard      = job.OpenToBoard,
+            QuotesCloseAtUtc = job.QuotesCloseAtUtc,
             Photos           = job.Photos.Select(p => new JobPhotoDto
             {
                 Id               = p.Id,

@@ -267,6 +267,18 @@ export const fetchSettings = (): Promise<AdminSettings> =>
 export const updateSettings = (body: AdminSettings): Promise<AdminSettings> =>
   api.put('/admin/settings', body).then((r) => r.data);
 
+/** Plan 10 (Q7.2): quote time windows, in hours (Superadmin to change). */
+export interface QuoteSettings {
+  boardWindowHours: number;
+  validityHours: number;
+}
+
+export const fetchQuoteSettings = (): Promise<QuoteSettings> =>
+  api.get('/admin/settings/quotes').then((r) => r.data);
+
+export const updateQuoteSettings = (body: QuoteSettings): Promise<QuoteSettings> =>
+  api.put('/admin/settings/quotes', body).then((r) => r.data);
+
 // ── Credential verification (P1-10) ───────────────────────────────────────────
 
 /** `License` | `Insurance` | `Certification` | `Other` — server serializes the enum name. */
