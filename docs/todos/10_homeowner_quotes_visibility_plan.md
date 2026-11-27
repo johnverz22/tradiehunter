@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Close the gaps found when tracing the v2 mockups (`docs/design/mobile/ast/screens.mjs` -> `mockups/png/`) against the Flutter implementation (`mobile/lib/ui/`). The quote flow works end to end, but a homeowner who requested quotes has almost no way to find them. This plan makes quotes discoverable, adds the missing "View quote" detail, and records a decision on the tradie quote builder.
-> **Status:** In progress: Q0, Q1, Q2.1-Q2.7, Q3.2-Q3.4, Q4 landed (Q2.8, Q3.1/Q3.5 mockup+goldens, Q5, Q6 open) · **Prepared:** 2026-11-27
+> **Status:** In progress: Q0, Q1, Q2, Q3.2-Q3.4, Q4, Q5 landed (Q0.3 owner decisions, Q3.1/Q3.5 mockup+goldens, Q6 verification open) · **Prepared:** 2026-11-27
 > **Naming rule:** code identifiers stay `Fixo` (Dart package imports are `package:fixo/...`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** continues `01_design_system_migration_plan.md` (gap table G-n) and `05_phase4_homeowner_audit.md`. Overlaps `09_notification_coverage_plan.md` in two places, see section 5.
@@ -75,7 +75,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 - [x] **Q2.5** Home attention: a project job with `quotesReceived >= 1` should appear in the "needs your attention" group with headline `Review quotes` / action `Compare`. `HoHomeGroups.from` and `thNeedsHomeownerAttention` take only status today, so add a job-aware predicate and extend `thAttentionHero` (`_attentionPriority` placement: after payment due, before dispute is fine; confirm with owner if unsure) (M)
 - [x] **Q2.6** Push tap (F5): add `'quote_submitted'` handling. Because the route needs the id, add `String routeForMessage(Map<String, dynamic> data)` in `notification_route.dart` that returns `/jobs/${data['jobId']}/quotes` for `quote_submitted` when `jobId` is a non-empty string, and otherwise falls back to `routeForMessageType`. Change `_routeFromMessage` in `main.dart` to call it with `message.data`. Keep `routeForMessageType` and its tests working (S)
 - [x] **Q2.7** Freshness: when a foreground FCM message of type `quote_submitted` arrives, refresh the homeowner jobs list and `quotesProvider(jobId)` so the badge and screen update without a manual pull-to-refresh. Reuse the existing jobs list notifier reload used by `_reload` in `ho_jobs_screen.dart`; do not add a SignalR event in this plan (the list screen is not in any `job-{id}` group) (M)
-- [ ] **Q2.8** Tests: `phase4_ho_jobs_test.dart` (badge + subtitle + tap target for project with 2 of 3; project with 0 requests goes to `/tradies`; hourly unchanged), `phase4_ho_home_test.dart` (attention hero "Review quotes"), new pure test for `routeForMessage` (quote_submitted with/without `jobId`, unknown type -> `/messages`) (M)
+- [x] **Q2.8** Tests: `phase4_ho_jobs_test.dart` (badge + subtitle + tap target for project with 2 of 3; project with 0 requests goes to `/tradies`; hourly unchanged), `phase4_ho_home_test.dart` (attention hero "Review quotes"), new pure test for `routeForMessage` (quote_submitted with/without `jobId`, unknown type -> `/messages`) (M)
 
 ## Phase Q3: Mobile, "View quote" and quotes screen (fixes F2, F8)
 
@@ -95,10 +95,10 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 ## Phase Q5: Docs
 
-- [ ] **Q5.1** `docs/todos/01_design_system_migration_plan.md` gap table: add rows for F1 (resolved by this plan), F2, F3 (owner decision D3) and F4 (accepted deviation: "Pick someone else" kept, justified by expired/gone states) (S)
-- [ ] **Q5.2** `docs/design/mobile/README.md` / screen list: add `ho_quote_detail`; note that the tradie quote builder is a sheet by design (if D3 = sheet) (S)
-- [ ] **Q5.3** `docs/SPECS.md`: Q1.5 fields, quote entry points, push `quote_submitted` -> quotes screen (S)
-- [ ] **Q5.4** Fill the Results log and Decisions sections below (S)
+- [x] **Q5.1** `docs/todos/01_design_system_migration_plan.md` gap table: add rows for F1 (resolved by this plan), F2, F3 (owner decision D3) and F4 (accepted deviation: "Pick someone else" kept, justified by expired/gone states) (S)
+- [~] **Q5.2** (`ho_quote_detail` is not in the screen list because the frame is not drawn yet; the guide notes the sheets. Finish with Q3.1)  `docs/design/mobile/README.md` / screen list: add `ho_quote_detail`; note that the tradie quote builder is a sheet by design (if D3 = sheet) (S)
+- [x] **Q5.3** `docs/SPECS.md`: Q1.5 fields, quote entry points, push `quote_submitted` -> quotes screen (S)
+- [x] **Q5.4** Fill the Results log and Decisions sections below (S)
 
 ## Phase Q6: Verification
 
@@ -140,7 +140,12 @@ A homeowner who has requested quotes sees a `Quotes` badge and "N of M quotes in
 - 2026-11-27: Q4 audited and done with D3 = keep the sheet (recommended default, not yet confirmed): already present and left as is: GST prefilled from profile with helper copy, `canSubmit` rules for amount > 0 and `min <= max` with inline error, server message shown verbatim, screen left on success (no second submit). Added: GST switch locked when the profile value is known (server rejects a mismatch), hourly `cap >= rate` rule with inline error (`TrQuoteDraft.capBelowRate`), test in `phase5_tr_lead_test.dart`. Parked: Q4.2 validity copy (the lead/offer payload does not expose the quote window and it must not be hard-coded; add it with the next API change); proposed-start-in-the-past (date picker already blocks past dates; only an earlier time on the same day can slip through, low impact).
 - 2026-11-27: Q3.1/Q3.5 parked: the `ho_quote_detail` mockup frame is not added yet because the gallery (`mobile/lib/ui/gallery/*`) is generated from `screens.mjs` and a new frame needs new golden images, which must be produced with `flutter test --update-goldens` on a machine with Flutter. Do that together with D2 confirmation.
 - 2026-11-27: Q2.1/Q2.2 landed: `Job.quotesRequested/quotesReceived/hasQuoteActivity`, `Quote.statusPending` is now `'Submitted'` with `Quote.isOpen` (accepts legacy `'Pending'`), `ho_quotes_screen.dart` uses `!quote.isOpen`; tests in `mobile/test/job_quote_counts_test.dart`.
+- 2026-11-27: Q2.8 added without running Flutter (authoring environment has no toolchain): widget tests in `phase4_ho_jobs_test.dart` (Quotes badge, "2 of 3 quotes in", old copy without counts, D4 tap targets) and `phase4_ho_home_test.dart` ("Review quotes" hero opens quotes); pure tests were already in `quote_discoverability_test.dart`. Q5 docs: SPECS entry points + push, gap rows G-18..G-21 in plan 01, DESIGN_GUIDE note. **Run `flutter analyze --fatal-infos && flutter test` locally (Q6).**
 
 ## Decisions and parked items
 
-_Empty. Record D1-D4 outcomes here._
+- **D1** applied as recommended (see section 3).
+- **D2** bottom sheet: default applied, **not yet confirmed by the owner** (Q0.3 open).
+- **D3** keep the tradie quote sheet: default applied, **not yet confirmed by the owner** (gap G-20).
+- **D4** applied as recommended (Q2.4).
+- Parked: Q3.1/Q3.5 (`ho_quote_detail` frame + goldens, needs Flutter), Q4.2 (quote validity copy, needs API field), Q5.2 remainder.

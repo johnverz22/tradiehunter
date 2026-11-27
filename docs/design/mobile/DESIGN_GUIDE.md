@@ -123,6 +123,8 @@ Each screen has its Flutter class in `flutter/screens/<id>_screen.dart` and its 
 
 **Homeowner (15):** `ho_home`, `ho_post_quick`, `ho_post_project`, `ho_quotes`, `ho_choose_tradie`, `ho_tradie_profile`, `ho_request_sent`, `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_payment`, `ho_payment_status`, `ho_review`, `ho_dispute`, `ho_jobs`.
 
+> **Quote screens:** `ho_quotes` shows compact cards; "View quote" opens a bottom-sheet detail in the app that has no mockup frame yet (`ho_quote_detail` is to be added, plan 10 Q3.1). The tradie quote builder is a bottom sheet by design (plan 10 D3) and has no `tr_quote` frame.
+
 **Tradie (7):** `tr_home`, `tr_lead` (full-screen request with every detail), `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`.
 
 The **tradie lead** is a full screen, not a card. It shows the offer countdown, job title, service, timing, full description, photos, area and distance (exact address only after accepting), estimated hours, job type, homeowner name and rating, the locked rate with commission and what the tradie keeps, a what-happens-next timeline, and sticky Decline and Accept.

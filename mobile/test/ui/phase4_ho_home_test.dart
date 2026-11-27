@@ -239,6 +239,7 @@ void main() {
             '/jobs/:id/payment',
             '/jobs/:id/detail',
             '/jobs/:id/matching',
+            '/jobs/:id/quotes',
             '/chat/:id',
             '/jobs/new',
             '/jobs',
@@ -313,6 +314,34 @@ void main() {
       await tester.pumpAndSettle();
       // A job awaiting confirmation is not chat-bookable from the card.
       expect(find.byKey(const Key('home_chat_c')), findsNothing);
+    });
+
+    testWidgets('quote waiting shows "Review quotes" hero that opens quotes', (
+      tester,
+    ) async {
+      final (router, _) = await pump(tester, [
+        const Job(
+          id: 'q',
+          title: 'Kitchen',
+          category: 'Building',
+          suburb: 'Grey Lynn',
+          status: 'Requested',
+          stage: 0,
+          flowVersion: Job.flowVersionV2,
+          jobType: Job.jobTypeProject,
+          quotesRequested: 3,
+          quotesReceived: 1,
+        ),
+      ]);
+      expect(find.text('NEEDS YOUR ATTENTION'), findsOneWidget);
+      expect(find.text('Review quotes'), findsOneWidget);
+      expect(find.text('Compare'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home_hero_action')));
+      await tester.pumpAndSettle();
+      expect(find.text('At /jobs/q/quotes'), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('booked job card opens chat', (tester) async {

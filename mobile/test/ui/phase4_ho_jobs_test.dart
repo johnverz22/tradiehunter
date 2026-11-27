@@ -149,6 +149,8 @@ void main() {
             '/jobs/:id/payment',
             '/jobs/:id/detail',
             '/jobs/:id/matching',
+            '/jobs/:id/quotes',
+            '/jobs/:id/tradies',
             '/jobs/:id/payment/status',
             '/chat/:id',
             '/jobs/new',
@@ -266,6 +268,66 @@ void main() {
       await tester.tap(find.byKey(const Key('jobs_chat_b')));
       await tester.pumpAndSettle();
       expect(find.text('At /chat/b'), findsOneWidget);
+    });
+
+    // Plan 10 (Q2.8): quotes surfaced on the project job card.
+    Job project(String id, String title, {int? requested, int? received}) =>
+        Job(
+          id: id,
+          title: title,
+          category: 'Building',
+          suburb: 'Grey Lynn',
+          status: 'Requested',
+          stage: 0,
+          flowVersion: Job.flowVersionV2,
+          jobType: Job.jobTypeProject,
+          quotesRequested: requested,
+          quotesReceived: received,
+        );
+
+    testWidgets('project card shows Quotes badge and "2 of 3 quotes in"', (
+      tester,
+    ) async {
+      await pump(tester, [project('q', 'Kitchen', requested: 3, received: 2)]);
+      expect(find.text('Quotes'), findsOneWidget);
+      expect(find.text('2 of 3 quotes in'), findsOneWidget);
+      expect(find.text('Requested'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('project card without counts keeps the old copy', (
+      tester,
+    ) async {
+      await pump(tester, [project('q', 'Kitchen')]);
+      expect(find.text('Requested'), findsOneWidget);
+      expect(find.text('Finding a tradie'), findsOneWidget);
+      expect(find.text('Quotes'), findsNothing);
+    });
+
+    testWidgets('project cards open quotes or the tradie picker (D4)', (
+      tester,
+    ) async {
+      final (router, _) = await pump(tester, [
+        project('q', 'Kitchen', requested: 3, received: 2),
+        project('t', 'Deck', requested: 0, received: 0),
+        _job('h', 'Requested', title: 'Hourly tap'),
+      ]);
+
+      await tester.tap(find.text('Kitchen'));
+      await tester.pumpAndSettle();
+      expect(find.text('At /jobs/q/quotes'), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Deck'));
+      await tester.pumpAndSettle();
+      expect(find.text('At /jobs/t/tradies'), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Hourly tap'));
+      await tester.pumpAndSettle();
+      expect(find.text('At /jobs/h/matching'), findsOneWidget);
     });
 
     testWidgets('no jobs at all offers Post a job', (tester) async {
