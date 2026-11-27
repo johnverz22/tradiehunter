@@ -6,6 +6,7 @@
 // password-rule semantics, same terms-line truthfulness.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../design/th_tokens.dart';
@@ -84,7 +85,13 @@ class ThGoogleButton extends StatelessWidget {
   Widget build(BuildContext context) => THButton(
     label: 'Continue with Google',
     kind: THButtonKind.secondary,
-    icon: Icons.public_rounded,
+    // Official multicolour "G": brand guidelines forbid tinting it.
+    leading: SvgPicture.asset(
+      'assets/brand/google-g.svg',
+      width: 18,
+      height: 18,
+      excludeFromSemantics: true,
+    ),
     onPressed: onPressed,
   );
 }

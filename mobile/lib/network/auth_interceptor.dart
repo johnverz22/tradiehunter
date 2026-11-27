@@ -43,6 +43,14 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
+    // A 401 from an unauthenticated auth endpoint (wrong password, bad OTP,
+    // rejected Google token) is a credential error, not an expired session.
+    // Pass it to the caller, which shows its own inline message; do not try
+    // to refresh, toast "Session expired" or bounce back to /auth.
+    if (_isCredentialEndpoint(err.requestOptions.path)) {
+      return handler.next(err);
+    }
+
     final isRefreshEndpoint = err.requestOptions.path.contains('/auth/refresh');
 
     // P9-06: A 401 from the refresh endpoint means the token is invalid/
@@ -136,6 +144,17 @@ class AuthInterceptor extends Interceptor {
       _isRefreshing = false;
     }
   }
+
+  static const _credentialPaths = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/google',
+    '/auth/verify-email',
+    '/auth/resend-otp',
+  ];
+
+  static bool _isCredentialEndpoint(String path) =>
+      _credentialPaths.any(path.contains);
 
   /// Clears stored tokens and navigates to the login screen.
   /// Optionally shows a snackbar [message] via the root scaffold messenger.
