@@ -108,6 +108,39 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 - [ ] **Q6.4** Manual path on the local stack: homeowner posts a Project job -> requests 3 tradies -> two tradies submit quotes -> homeowner's jobs list shows `Quotes` badge and "2 of 3 quotes in" -> card opens quotes screen -> `View quote` -> `Accept` (and the >= $30k contract gate with a large quote). Tap the "New quote received" push and confirm it lands on the quotes screen (M)
 - [ ] **Q6.5** Optional: add this journey to the persona fabric (`docs/todos/08_e2e_persona_fabric_plan.md`, `scripts/e2e-journey.py` scenarios) so it stays covered (M)
 
+## Phase Q7: Open project board (PROPOSAL, owner decision D5 first; nothing here is started)
+
+**Idea (owner, 2026-11-27):** instead of the homeowner choosing up to 3 tradies before any quote exists, a Project job is posted once and appears on an "Available jobs" list for tradies who offer that service (and are in range and credentialled). Tradies submit quotes themselves. Hourly and project jobs then share the same progress-tracked screens, with the final amount settled at completion.
+
+**Assessment (2026-11-27, from code and SPECS):**
+
+- **It fixes the root of F1/F5/F6/F8.** The homeowner no longer needs a pre-selection step, the "2 of 3" denominator, `/tradies` routing, expiry of invited requests or "Pick someone else". Quotes just arrive and the list says "N quotes".
+- **Convergence mostly exists already.** Accepting a quote books the job as a normal v2 job with the pricing model snapshotted, then it uses the same detail, payment and review screens as hourly. Only stage 0 differs (radar for hourly, quotes for projects). Unifying stage 0 into one "Finding a tradie" screen that shows either state is cheap.
+- **Do not make the quote re-priceable at the end.** SPECS section 5 treats a quote as a commitment (a quote cannot rise without agreement; Fixed = agreed price + approved adjustments) and the s362F written-contract gate at NZD 30,000+ is decided at booking. "Price changes on demand" is already covered by the three models: EstimateRange and HourlyWithCap settle on final hours, and any model can change through an approved adjustment. Keep that; do not add a free re-quote at completion.
+- **Keep both entry paths, keep hourly off the board.** Hourly jobs need fast acceptance (Quick match / direct request); a board slows them. For projects keep "invite a specific tradie" (it already works) beside "open to all nearby".
+- **Cost is moderate, the data model is ready.** `Quote.OfferId` is already nullable and address masking before `Booked` already exists. New: an available-jobs query (EF Core spatial LINQ, rule 2), credential/licence gating, a way for a tradie to quote without an offer, and abuse controls.
+- **Risks that need decisions, not code:** unlimited quotes overwhelm the homeowner (cap, see D6); no pre-booking chat (MVP) means no scope Q&A, so rely on `ScopeNotes`/`SiteVisitWelcome` and photos; photos can leak the address (strip or hide for non-invited tradies); push fan-out to every matching tradie; this is a scope change to `docs/MVP.md`, so it needs an explicit decision, not just a plan edit.
+
+**Decisions to confirm:**
+
+1. **D5: open board for Project jobs?** Recommended: yes, as an addition to direct invites, Project jobs only.
+2. **D6: quote cap and window.** Recommended: close the job to new quotes at N received (suggest 5, config `MaxQuotesPerProject`) or after `QuoteWindowHours`, whichever first.
+3. **D7: visibility to tradies.** Recommended: suburb, service, scope, budget range and timing only; exact address and photos with location context stay hidden until `Booked`; tradies only see jobs for services they offer, in radius, with the right credential, not blocked.
+
+**Tasks (only after D5):**
+
+- [ ] **Q7.1** Backend: `GET /api/tradie/available-jobs` (paged; Project, `Requested`, matches service + radius + licence board + not blocked, no quote yet from me; masked DTO per D7). Include `QuotesReceived` count and time left (M)
+- [ ] **Q7.2** Backend: `POST /api/jobs/{id}/quotes` accepts a tradie with no pending offer when the job is open to the board; set `OfferId = null`. Enforce D6 cap and window, one quote per tradie per job, same GST rules (M)
+- [ ] **Q7.3** Backend: add `OpenToBoard` (bool) on Project jobs and the post-job request; notification fan-out to matching tradies in batches through `INotificationService`, not one push per candidate in a loop (M)
+- [ ] **Q7.4** Counts: `QuoteCounts` drops the denominator for open jobs (`QuotesRequested` null or equal to received); mobile copy "N quotes in" without "of M"; keep "N of M" for invite-only jobs (S)
+- [ ] **Q7.5** Mobile tradie: "Available jobs" list screen and a lead detail reusing `tr_lead` + `TrQuoteSheet`; needs mockup frames first (`tr_available_jobs`), then goldens (L)
+- [ ] **Q7.6** Mobile homeowner: post-project choice "Invite tradies" vs "Open to nearby tradies"; open jobs skip `/tradies` and go straight to quotes (D4 routing updated) (M)
+- [ ] **Q7.7** Unify stage 0: one "Finding a tradie" screen for hourly (radar) and project (quotes) so both converge visually before booking (M)
+- [ ] **Q7.8** Docs: `docs/MVP.md` scope (open board, project only), `docs/SPECS.md` section 3 and the DTO notes, plan 01 gap table, mockups (S)
+- [ ] **Q7.9** Tests: query filters (service, radius, licence, blocked, already quoted), cap and window, privacy of the DTO, notification batching (M)
+
+**What survives from Q1-Q6 if D5 = yes:** the quotes screen, View quote sheet, accept and contract gate, `quote_submitted` push routing, Q4 quote sheet polish, status-constant fix. **What changes:** the "N of M" subtitle and badge only apply to invite-only jobs, and D4 routing gains an open-board branch.
+
 ## 4. Suggested order and PR slicing
 
 1. **PR A (backend):** Q0, Q1. No visible change, safe to ship alone because the fields are nullable.
@@ -124,7 +157,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 ## 6. Out of scope
 
-New quote features (sorting, side-by-side comparison, counter-offers), a SignalR quote event, changing pricing models or the accept contract, redesigning `ho_request_sent`, and any admin web change.
+(Until D5 is confirmed, Phase Q7, the open project board, is out of scope.) New quote features (sorting, side-by-side comparison, counter-offers), a SignalR quote event, changing pricing models or the accept contract, redesigning `ho_request_sent`, and any admin web change.
 
 ## 7. Definition of done
 
@@ -146,6 +179,7 @@ A homeowner who has requested quotes sees a `Quotes` badge and "N of M quotes in
 
 ## Decisions and parked items
 
+- **D5-D7** (open project board, quote cap, tradie visibility): proposed 2026-11-27 in Phase Q7, awaiting the owner. Hourly jobs stay off the board; the quote stays binding, with changes only through approved adjustments.
 - **D1** applied as recommended (see section 3).
 - **D2** bottom sheet: confirmed by the owner 2026-11-27.
 - **D3** keep the tradie quote sheet: confirmed by the owner 2026-11-27 (gap G-20 closed).
