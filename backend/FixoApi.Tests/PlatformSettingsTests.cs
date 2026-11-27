@@ -4,7 +4,6 @@ using FixoApi.Models;
 using FixoApi.Options;
 using FixoApi.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace FixoApi.Tests;
@@ -36,7 +35,7 @@ public class PlatformSettingsTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
         var audit = new RecordingAudit();
-        var sut = new PlatformSettings(db, Options.Create(flow ?? new JobFlowOptions()), audit);
+        var sut = new PlatformSettings(db, Microsoft.Extensions.Options.Options.Create(flow ?? new JobFlowOptions()), audit);
         return (sut, db, audit);
     }
 
