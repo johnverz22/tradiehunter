@@ -985,7 +985,7 @@ class _ThChatComposer extends StatelessWidget {
                       excludeSemantics: true,
                       child: InkWell(
                         onTap: () => _applyQuickReply(reply),
-                        borderRadius: BorderRadius.circular(Radii.pill),
+                        borderRadius: BorderRadius.circular(Radii.control),
                         child: Container(
                           constraints: const BoxConstraints(
                             minHeight: Sizes.tapMin,
@@ -997,7 +997,7 @@ class _ThChatComposer extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: c.surface,
-                            borderRadius: BorderRadius.circular(Radii.pill),
+                            borderRadius: BorderRadius.circular(Radii.control),
                             border: Border.all(color: c.line),
                           ),
                           child: Text(
@@ -1030,16 +1030,16 @@ class _ThChatComposer extends StatelessWidget {
                 semanticLabel: 'Attach photo',
                 onPressed: onAttach,
               ),
-            // Text field — pill shaped
+            // Text field — rounded rectangle (mockup), not a pill
             Expanded(
               child: Container(
                 constraints: const BoxConstraints(minHeight: Sizes.input),
                 decoration: BoxDecoration(
                   color: c.surface,
-                  borderRadius: BorderRadius.circular(Radii.pill),
+                  borderRadius: BorderRadius.circular(Radii.control),
                   border: Border.all(color: c.line),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: Space.s5),
+                padding: const EdgeInsets.symmetric(horizontal: Space.s4),
                 alignment: Alignment.center,
                 child: TextField(
                   controller: controller,
@@ -1061,30 +1061,24 @@ class _ThChatComposer extends StatelessWidget {
               ),
             ),
 
-            // Send button — accent circle with arrow icon
+            // Send button — navy rounded square with the outlined send icon
+            // (mockup). Matches the input's height and corner radius.
             Tooltip(
               message: 'Send message',
               child: GestureDetector(
                 key: const Key('send_message_button'),
                 onTap: onSend,
                 child: Container(
-                  width: Sizes.fab,
-                  height: Sizes.fab,
+                  width: Sizes.input,
+                  height: Sizes.input,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: c.accent,
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.accent.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(Radii.control),
+                    color: c.brand,
                   ),
                   child: Icon(
-                    Icons.send_rounded,
-                    color: c.onAccent,
-                    size: Sizes.iconLg,
+                    Icons.near_me_outlined,
+                    color: c.onBrand,
+                    size: Sizes.icon,
                   ),
                 ),
               ),
