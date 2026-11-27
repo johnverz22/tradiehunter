@@ -324,6 +324,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
       children: [
         TrHomeHero(
           greeting: thTradieGreeting(firstName),
+          name: firstName,
           online: online,
           switchEnabled: !_availabilityLoading,
           onToggle: () => unawaited(_toggleAvailability(online)),

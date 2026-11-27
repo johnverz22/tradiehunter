@@ -217,12 +217,10 @@ String thFormatSchedule(DateTime local) {
   return '${DateFormat('EEE d MMM').format(local)} $time';
 }
 
-/// Tradie hero greeting (e.g. "KIA ORA, JAY").
-String thTradieGreeting(String? firstName) {
-  final name = (firstName ?? '').trim();
-  if (name.isEmpty) return 'KIA ORA';
-  return 'KIA ORA, ${name.toUpperCase()}';
-}
+/// Tradie hero greeting label. The name itself is the hero headline, so the
+/// label ends in a comma only when a name follows it ("KIA ORA," / "KIA ORA").
+String thTradieGreeting(String? firstName) =>
+    (firstName ?? '').trim().isEmpty ? 'KIA ORA' : 'KIA ORA,';
 
 /// What the hero "Net this week" figure should show (plan G-14). Keeps the
 /// four v1 states apart: loading, error, no figure from the server, loaded.

@@ -17,6 +17,7 @@ class TrHomeHero extends StatelessWidget {
   const TrHomeHero({
     super.key,
     required this.greeting,
+    this.name,
     required this.online,
     required this.switchEnabled,
     required this.onToggle,
@@ -27,6 +28,10 @@ class TrHomeHero extends StatelessWidget {
   });
 
   final String greeting;
+
+  /// Tradie first name, shown in the headline slot. Omitted when unknown
+  /// rather than replaced by a made-up name.
+  final String? name;
   final bool online;
   final bool switchEnabled;
   final VoidCallback onToggle;
@@ -58,11 +63,12 @@ class TrHomeHero extends StatelessWidget {
                 spacing: 2.0,
                 children: [
                   THText(greeting, style: THTextStyle.label, tone: THTone.gold),
-                  THText(
-                    online ? 'You’re online' : 'You’re paused',
-                    style: THTextStyle.h2,
-                    tone: THTone.onHero,
-                  ),
+                  if (name != null && name!.isNotEmpty)
+                    THText(
+                      name!,
+                      style: THTextStyle.h2,
+                      tone: THTone.onHero,
+                    ),
                 ],
               ),
             ),
@@ -70,10 +76,25 @@ class TrHomeHero extends StatelessWidget {
               label: online
                   ? 'Online, accepting new job offers'
                   : 'Offline, not accepting new job offers',
-              child: THSwitch(
-                key: const Key('availability_button'),
-                on: online,
-                onChanged: switchEnabled ? (_) => onToggle() : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: Space.s1,
+                children: [
+                  THSwitch(
+                    key: const Key('availability_button'),
+                    on: online,
+                    onChanged: switchEnabled ? (_) => onToggle() : null,
+                  ),
+                  ExcludeSemantics(
+                    child: THText(
+                      online ? 'Online' : 'Offline',
+                      key: const Key('availability_status'),
+                      style: THTextStyle.meta,
+                      tone: THTone.onHero,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

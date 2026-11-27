@@ -4,12 +4,14 @@
 // edit form as a separate view; writes still use the existing API and payload.
 // The tradie availability switch still saves immediately, and NZ bank-number
 // validation and loading/error/empty states are retained.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../viewmodels/auth_viewmodel.dart';
-import '../../repositories/profile_repository.dart';
+import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
@@ -17,6 +19,8 @@ import '../design/th_widgets.dart';
 import 'th_tab_app_bar.dart';
 import '../feedback/th_notice.dart';
 import '../feedback/th_state_view.dart';
+import '../tradie/tr_home_mapper.dart' show trNeedsOfflineConfirm;
+import '../tradie/tr_home_parts.dart' show showTrGoOfflineSheet;
 import '../tradie/tr_profile_summary.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 
@@ -40,7 +44,6 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
   late TextEditingController _bankNameCtrl;
   late TextEditingController _bankNumberCtrl;
 
-  bool _isAvailable = true;
   bool _formInitialized = false;
   bool _availabilitySaving = false;
   bool _bankVerified = false;
@@ -81,30 +84,45 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
     _businessNameCtrl.text = profile['businessName'] ?? '';
     _bankNameCtrl.text = profile['bankAccountName'] ?? '';
     _bankNumberCtrl.text = profile['bankAccountNumber'] ?? '';
-    _isAvailable = profile['isAvailable'] ?? true;
     _bankVerified = profile['bankAccountVerified'] == true;
     _formInitialized = true;
   }
 
-  // Availability is a standalone switch — it saves immediately through the
-  // dedicated endpoint rather than waiting for a full form save.
+  // Availability is a standalone switch. It goes through the same view model
+  // call as the home screen switch (POST /api/profile/availability), so both
+  // screens read and write one source of truth. Going offline with leads or
+  // booked work asks first, exactly like home.
   Future<void> _setAvailability(bool value) async {
     if (_availabilitySaving) return;
-    setState(() {
-      _isAvailable = value;
-      _availabilitySaving = true;
-    });
+    if (!value &&
+        trNeedsOfflineConfirm(ref.read(jobsViewModelProvider).jobs)) {
+      final confirmed = await showTrGoOfflineSheet(
+        context,
+        themeMode: ref.read(themeModeProvider),
+      );
+      if (!confirmed || !mounted) return;
+    }
+    setState(() => _availabilitySaving = true);
+    var failed = false;
     try {
-      await ref.read(profileRepositoryProvider).updateAvailability(value);
-    } catch (e) {
+      final notifier = ref.read(profileViewModelProvider.notifier);
+      final errorBefore = ref.read(profileViewModelProvider).error;
+      await notifier.updateAvailability(value);
       if (!mounted) return;
-      setState(() => _isAvailable = !value);
-      final msg = e is ProfileApiException
-          ? e.message
-          : 'Could not update availability.';
-      THNotice.error(context, msg);
-    } finally {
-      if (mounted) setState(() => _availabilitySaving = false);
+      // The view model swallows exceptions into state.error: compare.
+      final errorAfter = ref.read(profileViewModelProvider).error;
+      failed = errorAfter != null && errorAfter != errorBefore;
+    } catch (_) {
+      failed = true;
+    }
+    if (!mounted) return;
+    setState(() => _availabilitySaving = false);
+    if (failed) {
+      THNotice.error(
+        context,
+        NoticeCopy.statusUpdateFailed,
+        onRetry: () => unawaited(_setAvailability(value)),
+      );
     }
   }
 
@@ -135,7 +153,8 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
         'bankAccountNumber': _bankNumberCtrl.text.trim().isNotEmpty
             ? _bankNumberCtrl.text.trim()
             : null,
-        'isAvailable': _isAvailable,
+        'isAvailable':
+            ref.read(profileViewModelProvider).profile?['isAvailable'] ?? true,
       };
 
       final success = await ref
@@ -214,6 +233,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
           final isTradie =
               profile['role'] ==
               1; // UserRole: Homeowner=0, Tradie=1, Staff=2, Superadmin=3
+          final isAvailable = profile['isAvailable'] as bool? ?? true;
           Widget valueRow(String label, String value, {bool divider = false}) =>
               THKeyValue(label, value, divider: divider);
 
@@ -486,145 +506,191 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                               : Icons.home_outlined,
                         ),
                       ),
-                      if (_isEditing) ...[
-                        THTextField(
-                          label: 'First Name',
-                          controller: _firstNameCtrl,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Required'
-                              : null,
-                        ),
-                        THTextField(
-                          label: 'Last Name',
-                          controller: _lastNameCtrl,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Required'
-                              : null,
-                        ),
-                        THTextField(
-                          label: 'Phone Number',
-                          controller: _phoneCtrl,
-                        ),
-                      ] else ...[
-                        valueRow('First Name', _firstNameCtrl.text),
-                        valueRow(
-                          'Last Name',
-                          _lastNameCtrl.text,
-                          divider: true,
-                        ),
-                        valueRow('Email', _emailCtrl.text, divider: true),
-                        valueRow(
-                          'Phone Number',
-                          _phoneCtrl.text,
-                          divider: true,
-                        ),
-                      ],
-
-                      if (isTradie) ...[
-                        const SizedBox(height: Space.s3),
-                        Text(
-                          'Tradie Information',
-                          style: THType.h2.copyWith(color: c.text),
-                        ),
-                        if (_isEditing) ...[
-                          THTextField(
-                            label: 'Business Name',
-                            controller: _businessNameCtrl,
-                          ),
-                          THTextField(
-                            label: 'Trade Type',
-                            controller: _tradeTypeCtrl,
-                          ),
-                        ] else ...[
-                          valueRow('Business Name', _businessNameCtrl.text),
-                          valueRow(
-                            'Trade Type',
-                            _tradeTypeCtrl.text,
-                            divider: true,
-                          ),
-                        ],
-                        // Saves immediately via POST /api/profile/availability —
-                        // this switch never waits on form save.
-                        InkWell(
-                          onTap: _availabilitySaving
-                              ? null
-                              : () => _setAvailability(!_isAvailable),
-                          borderRadius: BorderRadius.circular(Radii.control),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: Space.s2,
-                              horizontal: Space.s1,
-                            ),
-                            child: Row(
+                      THCard(
+                        key: const Key('details_personal_card'),
+                        children: [
+                          const THText('Personal', style: THTextStyle.title),
+                          const SizedBox(height: Space.s2),
+                          if (_isEditing) ...[
+                            Column(
                               spacing: Space.s3,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    spacing: Space.s1,
-                                    children: [
-                                      Text(
-                                        'Available for jobs',
-                                        style: THType.button.copyWith(
-                                          color: c.text,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Controls whether new leads reach you',
-                                        style: THType.meta.copyWith(
-                                          color: c.textSoft,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                THTextField(
+                                  label: 'First Name',
+                                  controller: _firstNameCtrl,
+                                  validator: (value) =>
+                                      value == null || value.isEmpty
+                                      ? 'Required'
+                                      : null,
                                 ),
-                                THSwitch(
-                                  on: _isAvailable,
-                                  onChanged: _availabilitySaving
-                                      ? null
-                                      : _setAvailability,
+                                THTextField(
+                                  label: 'Last Name',
+                                  controller: _lastNameCtrl,
+                                  validator: (value) =>
+                                      value == null || value.isEmpty
+                                      ? 'Required'
+                                      : null,
+                                ),
+                                THTextField(
+                                  label: 'Phone Number',
+                                  controller: _phoneCtrl,
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: Space.s3),
-                        Text(
-                          'Payout Details',
-                          style: THType.h2.copyWith(color: c.text),
-                        ),
-                        Text(
-                          _bankVerified
-                              ? 'Verified — used for your weekly payout.'
-                              : 'Used for your weekly payout. Only you can see this.',
-                          style: THType.meta.copyWith(color: c.textSoft),
-                        ),
-                        if (_isEditing) ...[
-                          THTextField(
-                            label: 'Bank Account Name',
-                            controller: _bankNameCtrl,
-                          ),
-                          THTextField(
-                            label: 'Bank Account Number',
-                            hint: 'XX-XXXX-XXXXXXX-XX',
-                            controller: _bankNumberCtrl,
-                            keyboardType: TextInputType.number,
-                            validator: _bankNumberValidator,
-                          ),
-                        ] else ...[
-                          valueRow('Bank Account Name', _bankNameCtrl.text),
-                          valueRow(
-                            'Bank Account Number',
-                            _bankNumberCtrl.text,
-                            divider: true,
-                          ),
+                          ] else ...[
+                            valueRow('First Name', _firstNameCtrl.text),
+                            valueRow(
+                              'Last Name',
+                              _lastNameCtrl.text,
+                              divider: true,
+                            ),
+                            valueRow('Email', _emailCtrl.text, divider: true),
+                            valueRow(
+                              'Phone Number',
+                              _phoneCtrl.text,
+                              divider: true,
+                            ),
+                          ],
                         ],
-                        if (_isEditing && _bankVerified)
-                          Text(
-                            'If you change your bank account number, we will re-verify it before your next payout.',
-                            style: THType.meta.copyWith(color: c.textSoft),
-                          ),
+                      ),
+                      if (isTradie) ...[
+                        THCard(
+                          key: const Key('details_tradie_card'),
+                          children: [
+                            const THText(
+                              'Tradie Information',
+                              style: THTextStyle.title,
+                            ),
+                            const SizedBox(height: Space.s2),
+                            if (_isEditing) ...[
+                              Column(
+                                spacing: Space.s3,
+                                children: [
+                                  THTextField(
+                                    label: 'Business Name',
+                                    controller: _businessNameCtrl,
+                                  ),
+                                  THTextField(
+                                    label: 'Trade Type',
+                                    controller: _tradeTypeCtrl,
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              valueRow('Business Name', _businessNameCtrl.text),
+                              valueRow(
+                                'Trade Type',
+                                _tradeTypeCtrl.text,
+                                divider: true,
+                              ),
+                            ],
+                            const SizedBox(height: Space.s2),
+                            Divider(height: 1, color: c.line),
+                            // Same source of truth as the home switch: the
+                            // profile view model (saves immediately).
+                            InkWell(
+                              key: const Key('details_availability_row'),
+                              onTap: _availabilitySaving
+                                  ? null
+                                  : () => _setAvailability(!isAvailable),
+                              borderRadius: BorderRadius.circular(
+                                Radii.control,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: Space.s2,
+                                ),
+                                child: Row(
+                                  spacing: Space.s3,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        spacing: Space.s1,
+                                        children: [
+                                          Text(
+                                            'Available for jobs',
+                                            style: THType.button.copyWith(
+                                              color: c.text,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Controls whether new leads reach you',
+                                            style: THType.meta.copyWith(
+                                              color: c.textSoft,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    THSwitch(
+                                      key: const Key('details_availability'),
+                                      on: isAvailable,
+                                      onChanged: _availabilitySaving
+                                          ? null
+                                          : _setAvailability,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        THCard(
+                          key: const Key('details_payout_card'),
+                          children: [
+                            const THText(
+                              'Payout Details',
+                              style: THTextStyle.title,
+                            ),
+                            const SizedBox(height: Space.s1),
+                            THText(
+                              _bankVerified
+                                  ? 'Verified — used for your weekly payout.'
+                                  : 'Used for your weekly payout. Only you can see this.',
+                              style: THTextStyle.meta,
+                              tone: THTone.soft,
+                            ),
+                            const SizedBox(height: Space.s2),
+                            if (_isEditing) ...[
+                              Column(
+                                spacing: Space.s3,
+                                children: [
+                                  THTextField(
+                                    label: 'Bank Account Name',
+                                    controller: _bankNameCtrl,
+                                  ),
+                                  THTextField(
+                                    label: 'Bank Account Number',
+                                    hint: 'XX-XXXX-XXXXXXX-XX',
+                                    controller: _bankNumberCtrl,
+                                    keyboardType: TextInputType.number,
+                                    validator: _bankNumberValidator,
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              valueRow(
+                                'Bank Account Name',
+                                _bankNameCtrl.text,
+                              ),
+                              valueRow(
+                                'Bank Account Number',
+                                _bankNumberCtrl.text,
+                                divider: true,
+                              ),
+                            ],
+                            if (_isEditing && _bankVerified) ...[
+                              const SizedBox(height: Space.s2),
+                              THText(
+                                'If you change your bank account number, we will re-verify it before your next payout.',
+                                style: THTextStyle.meta,
+                                tone: THTone.soft,
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
 
                       if (_isEditing) ...[

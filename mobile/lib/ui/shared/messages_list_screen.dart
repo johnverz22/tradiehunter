@@ -140,17 +140,17 @@ class _ThMessagesListScreenState extends ConsumerState<ThMessagesListScreen> {
                   onRefresh: _load,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    // Flat inbox: rows run edge to edge (each tile pads itself
-                    // by the gutter) and are split by a hairline, not cards.
-                    padding: EdgeInsets.only(bottom: thDockClearance(context)),
-                    itemCount: _conversations.length,
-                    separatorBuilder: (_, _) => Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: c.line,
-                      // Start under the text, past the avatar.
-                      indent: Sizes.gutter + Sizes.avatarSm + Space.s3,
+                    // Card inbox: one card per conversation, spaced by the
+                    // gutter rhythm used on the other tab screens.
+                    padding: EdgeInsets.fromLTRB(
+                      Sizes.gutter,
+                      Space.s2,
+                      Sizes.gutter,
+                      thDockClearance(context),
                     ),
+                    itemCount: _conversations.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: Space.s2_5),
                     itemBuilder: (_, i) {
                       final conversation = _conversations[i];
                       return _ThConversationTile(
@@ -264,113 +264,140 @@ class _ThConversationTile extends StatelessWidget {
         : 'Conversation';
     final hasUnread = conversation.unreadCount > 0;
 
+    final noMessages = conversation.lastMessage == null;
+    final initial = conversation.otherFirstName.isNotEmpty
+        ? conversation.otherFirstName[0].toUpperCase()
+        : conversation.jobTitle.isNotEmpty
+        ? conversation.jobTitle[0].toUpperCase()
+        : '?';
+
     return Semantics(
       label: hasUnread
           ? '$name, ${conversation.jobTitle}, ${conversation.unreadCount} unread messages'
           : '$name, ${conversation.jobTitle}',
       button: true,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Sizes.gutter,
-            vertical: Space.s3,
-          ),
-          // No card: only the selected row (wide master/detail) is tinted.
-          color: selected ? c.tintBrand : Colors.transparent,
-          child: Row(
-            spacing: Space.s3,
-            children: [
-              THAvatar(
-                conversation.otherFirstName.isNotEmpty
-                    ? conversation.otherFirstName[0].toUpperCase()
-                    : conversation.jobTitle.isNotEmpty
-                    ? conversation.jobTitle[0].toUpperCase()
-                    : '?',
-                size: THAvatarSize.sm,
+      child: Material(
+        color: selected ? c.tintBrand : c.surface,
+        borderRadius: BorderRadius.circular(Radii.card),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(Radii.card),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(Space.s3),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Radii.card),
+              border: Border.all(
+                color: selected
+                    ? c.brand
+                    : hasUnread
+                    ? c.accent
+                    : c.line,
+                width: hasUnread || selected ? Sizes.borderStrong : 1,
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: Space.s1,
-                  children: [
-                    Row(
-                      spacing: Space.s2,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: THType.title.copyWith(
-                              fontWeight: FW.semibold,
-                              color: c.textBrand,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: Space.s3,
+              children: [
+                THAvatar(initial, size: THAvatarSize.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: Space.s1,
+                    children: [
+                      Row(
+                        spacing: Space.s2,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: THType.title.copyWith(
+                                fontWeight: FW.semibold,
+                                color: c.text,
+                              ),
                             ),
                           ),
-                        ),
-                        if (conversation.lastMessageAtUtc != null)
-                          Text(
-                            thConversationTimeLabel(
-                              conversation.lastMessageAtUtc!,
+                          if (conversation.lastMessageAtUtc != null)
+                            Text(
+                              thConversationTimeLabel(
+                                conversation.lastMessageAtUtc!,
+                              ),
+                              style: THType.meta.copyWith(
+                                fontSize: THType.compact.fontSize,
+                                color: hasUnread ? c.accentText : c.textSoft,
+                              ),
                             ),
-                            style: THType.meta.copyWith(
-                              fontSize: THType.compact.fontSize,
-                              color: c.textSoft,
-                            ),
-                          ),
-                      ],
-                    ),
-                    Text(
-                      conversation.jobTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: THType.meta.copyWith(color: c.textSoft),
-                    ),
-                    Row(
-                      spacing: Space.s2,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _preview(conversation),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: THType.body.copyWith(
-                              fontSize: THType.meta.fontSize,
-                              fontWeight: hasUnread
-                                  ? FW.medium
-                                  : FW.regular,
-                              color: conversation.lastMessage == null
-                                  ? c.textSoft
-                                  : c.text,
-                              fontStyle: conversation.lastMessage == null
-                                  ? FontStyle.italic
-                                  : FontStyle.normal,
-                            ),
-                          ),
-                        ),
-                        if (conversation.status == 'Disputed')
+                        ],
+                      ),
+                      // The job is what tells threads apart, so it gets its
+                      // own marked line rather than a faint subtitle.
+                      Row(
+                        spacing: Space.s1,
+                        children: [
                           Icon(
-                            Icons.warning_amber_rounded,
-                            size: Sizes.icon,
-                            color: c.danger,
+                            Icons.work_outline_rounded,
+                            size: THType.meta.fontSize,
+                            color: c.textBrand,
                           ),
-                        // The unread count is the server's, so it shows even
-                        // when the last message is mine (earlier replies can
-                        // still be unread). The 'You:' prefix already marks an
-                        // outgoing preview; no extra arrow glyph.
-                        if (hasUnread)
-                          THBadge(
-                            conversation.unreadCount > 99
-                                ? '99+'
-                                : '${conversation.unreadCount}',
-                            kind: THBadgeKind.accent,
+                          Expanded(
+                            child: Text(
+                              conversation.jobTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: THType.meta.copyWith(
+                                fontWeight: FW.medium,
+                                color: c.textBrand,
+                              ),
+                            ),
                           ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      Row(
+                        spacing: Space.s2,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _preview(conversation),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: THType.body.copyWith(
+                                fontSize: THType.meta.fontSize,
+                                fontWeight: hasUnread
+                                    ? FW.semibold
+                                    : FW.regular,
+                                color: noMessages ? c.textSoft : c.text,
+                                fontStyle: noMessages
+                                    ? FontStyle.italic
+                                    : FontStyle.normal,
+                              ),
+                            ),
+                          ),
+                          if (conversation.status == 'Disputed')
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: Sizes.icon,
+                              color: c.danger,
+                            ),
+                          // The unread count is the server's, so it shows
+                          // even when the last message is mine (earlier
+                          // replies can still be unread). The 'You:' prefix
+                          // already marks an outgoing preview.
+                          if (hasUnread)
+                            THBadge(
+                              conversation.unreadCount > 99
+                                  ? '99+'
+                                  : '${conversation.unreadCount}',
+                              kind: THBadgeKind.accent,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
