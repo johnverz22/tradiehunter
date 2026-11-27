@@ -89,12 +89,7 @@ class HoQuoteDetailScreen extends StatelessWidget {
                 bold: true,
                 divider: true,
               ),
-              THKeyValue(
-                'Valid until',
-                'Tue 1 Dec',
-                bold: true,
-                divider: true,
-              ),
+              THKeyValue('Valid until', 'Tue 1 Dec', bold: true, divider: true),
             ],
           ),
         ],

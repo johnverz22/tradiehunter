@@ -116,5 +116,13 @@ public static class EmailPreviewSamples
                 PostAgainUrl = Link(brand, "/jobs/new"),
                 Brand = brand,
             },
+            ["CredentialDecision"] = brand => new CredentialDecisionModel
+            {
+                CredentialType = "Insurance",
+                Approved = false,
+                RejectReason = "Policy expiry date is illegible. Please upload a clearer copy.",
+                CredentialsUrl = Link(brand, "/tradie/credentials"),
+                Brand = brand,
+            },
         };
 }

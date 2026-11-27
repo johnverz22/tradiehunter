@@ -259,6 +259,24 @@ public class AdminService : IAdminService
         await _db.SaveChangesAsync();
         await _audit.LogAsync(adminUserId, "user.verify", "TradieProfile", userId, before, new { tp.UserId, tp.IsVerified });
         _logger.LogInformation("User {UserId} verified by admin", userId);
+
+        try
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.UserVerified,
+                userId,
+                "Account verified",
+                "Your tradie account has been verified by our team.",
+                data: new Dictionary<string, string>
+                {
+                    ["type"] = NotificationEvents.UserVerified,
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "UserVerified notification for {UserId} failed.", userId);
+        }
+
         return true;
     }
 
@@ -728,6 +746,52 @@ public class AdminService : IAdminService
             before, new { cred.Id, Status = cred.Status.ToString(), cred.RejectReason, cred.ReviewedById });
 
         var dto = await MapToPendingCredentialDtoAsync(cred);
+
+        var approved = status == CredentialStatus.Approved;
+        var credTypeLabel = cred.Type.ToString();
+        var pushTitle = approved
+            ? $"{credTypeLabel} credential approved"
+            : $"{credTypeLabel} credential rejected";
+        var pushBody = approved
+            ? $"Our team reviewed and approved your {credTypeLabel} credential."
+            : string.IsNullOrWhiteSpace(cred.RejectReason)
+                ? $"Our team couldn't approve your {credTypeLabel} credential. Please upload an updated document."
+                : $"Our team couldn't approve your {credTypeLabel} credential: {cred.RejectReason}";
+
+        try
+        {
+            await _notifications.SendPushToUserAsync(
+                dto.TradieUserId,
+                pushTitle,
+                pushBody,
+                new Dictionary<string, string>
+                {
+                    ["type"] = NotificationEvents.CredentialDecision,
+                    ["credentialId"] = cred.Id.ToString(),
+                    ["status"] = cred.Status.ToString(),
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "CredentialDecision push for credential {CredentialId} failed.", cred.Id);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.TradieEmail))
+        {
+            try
+            {
+                await _emailSender.SendCredentialDecisionAsync(
+                    dto.TradieEmail,
+                    credTypeLabel,
+                    approved,
+                    cred.RejectReason,
+                    cred.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "CredentialDecision email for credential {CredentialId} failed.", cred.Id);
+            }
+        }
         return new ReviewCredentialResult
         {
             Succeeded = true,

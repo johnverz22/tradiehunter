@@ -104,10 +104,10 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N4 — Credential and verification flows (H3, H4, H5)
 
-- [ ] **N4.1** Email template(s) `CredentialDecision` (approved/rejected + reason) in `EmailTemplateRenderer`, plus `EmailPreviewSamples` entry (M)
-- [ ] **N4.2** `AdminService` credential review: push + email to the tradie with outcome and reject reason (M)
-- [ ] **N4.3** `AdminService` user verify: tradie notified (S)
-- [ ] **N4.4** `ProfileService` credential upload: confirmation to the tradie, `StaffNotification`/email to staff (M)
+- [x] **N4.1** Email template(s) `CredentialDecision` (approved/rejected + reason) in `EmailTemplateRenderer`, plus `EmailPreviewSamples` entry (M)
+- [x] **N4.2** `AdminService` credential review: push + email to the tradie with outcome and reject reason (M)
+- [x] **N4.3** `AdminService` user verify: tradie notified (S)
+- [x] **N4.4** `ProfileService` credential upload: confirmation to the tradie, `StaffNotification`/email to staff (M)
 
 ## Phase N5 — Staff alerts from jobs and flags (H6-H10)
 

@@ -1,7 +1,9 @@
 using FixoApi.Data;
 using FixoApi.DTOs;
+using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
+using FixoApi.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 
@@ -15,12 +17,21 @@ public class ProfileService : IProfileService
     private readonly FixoDbContext _context;
     private readonly IBlobStorageService _blob;
     private readonly string _credentialsContainer;
+    private readonly INotificationService? _notifications;
+    private readonly ILogger<ProfileService>? _logger;
 
-    public ProfileService(FixoDbContext context, IBlobStorageService blob, IConfiguration config)
+    public ProfileService(
+        FixoDbContext context,
+        IBlobStorageService blob,
+        IConfiguration config,
+        INotificationService? notifications = null,
+        ILogger<ProfileService>? logger = null)
     {
         _context = context;
         _blob = blob;
         _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
+        _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<ProfileDto?> GetProfileAsync(string userId, bool isPublicView)
@@ -279,6 +290,48 @@ public class ProfileService : IProfileService
         };
         _context.TradieCredentials.Add(cred);
         await _context.SaveChangesAsync();
+
+        if (_notifications is not null)
+        {
+            var credTypeLabel = cred.Type.ToString();
+            try
+            {
+                await _notifications.NotifyAsync(
+                    NotificationEvents.CredentialSubmitted,
+                    userId,
+                    $"{credTypeLabel} credential received",
+                    $"We received your {credTypeLabel} credential and our team will review it shortly.",
+                    data: new Dictionary<string, string>
+                    {
+                        ["type"] = NotificationEvents.CredentialSubmitted,
+                        ["credentialId"] = cred.Id.ToString(),
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "CredentialSubmitted notification for {UserId} failed.", userId);
+            }
+
+            try
+            {
+                await _notifications.SendToStaffAsync(new StaffAlert(
+                    EventKey: NotificationEvents.CredentialStaffAlert,
+                    EntityType: "Credential",
+                    EntityId: cred.Id.ToString(),
+                    Heading: "Credential awaiting review",
+                    Body: $"A tradie uploaded a {credTypeLabel} credential ({cred.OriginalFileName}) for review.",
+                    Rows:
+                    [
+                        new EmailSummaryRow("Credential", $"#{cred.Id} ({credTypeLabel})"),
+                        new EmailSummaryRow("File", cred.OriginalFileName),
+                    ],
+                    AdminPath: "/credentials"));
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "CredentialStaffAlert notification for credential {CredentialId} failed.", cred.Id);
+            }
+        }
 
         return new CredentialUploadResult
         {

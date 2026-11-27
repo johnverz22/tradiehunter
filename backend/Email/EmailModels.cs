@@ -328,3 +328,35 @@ public sealed class StaffAlertModel : IEmailTextModel
     private static string Trim(string text) =>
         text.Length <= PreheaderMax ? text : text[..(PreheaderMax - 1)].TrimEnd() + "…";
 }
+
+/// <summary>E10 — credential approved or rejected.</summary>
+public sealed class CredentialDecisionModel : IEmailTextModel
+{
+    public required string CredentialType { get; init; }
+    public required bool Approved { get; init; }
+    public string? RejectReason { get; init; }
+    /// <summary>Credentials screen deep link; empty → CTA omitted.</summary>
+    public string? CredentialsUrl { get; init; }
+    public required BrandOptions Brand { get; init; }
+
+    public string TextHeading => Approved
+        ? $"{CredentialType} credential approved"
+        : $"{CredentialType} credential rejected";
+
+    public string? TextPreheader => Approved
+        ? $"Your {CredentialType} credential has been approved."
+        : $"Your {CredentialType} credential was rejected — see details.";
+
+    public string? TextHeroLine => null;
+
+    public IReadOnlyList<string> TextBodyLines => Approved
+        ? [$"Great news — our team reviewed and approved your {CredentialType} credential."]
+        : string.IsNullOrWhiteSpace(RejectReason)
+            ? [$"Our team couldn't approve your {CredentialType} credential. Please upload an updated document."]
+            : [$"Our team couldn't approve your {CredentialType} credential.", $"Reason: {RejectReason}", "Please upload an updated document."];
+
+    public IReadOnlyList<EmailSummaryRow> TextSummaryRows => [];
+    public string? TextCtaLabel => string.IsNullOrWhiteSpace(CredentialsUrl) ? null : "View credentials";
+    public string? TextCtaUrl => CredentialsUrl;
+    public string? TextFooterNote => "You received this because you uploaded a credential on TradieHunter.";
+}

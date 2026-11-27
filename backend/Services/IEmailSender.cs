@@ -35,6 +35,13 @@ public interface IEmailSender
     /// Renders the StaffAlert template; <paramref name="entityRef"/> becomes X-Entity-Ref.</summary>
     Task SendStaffAlertAsync(string toEmail, StaffAlertModel alert, string? entityRef = null);
 
+    Task SendCredentialDecisionAsync(
+        string toEmail,
+        string credentialType,
+        bool approved,
+        string? rejectReason = null,
+        int? credentialId = null);
+
     /// <summary>P8-06: refund processed (money moved — always email if push missed).</summary>
     Task SendRefundProcessedAsync(
         string toEmail, string jobTitle, decimal amount, string currency,

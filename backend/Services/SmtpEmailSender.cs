@@ -170,6 +170,38 @@ public class SmtpEmailSender : IEmailSender
             HelloIdentity(), template: "StaffAlert", entityRef: entityRef);
     }
 
+    public async Task SendCredentialDecisionAsync(
+        string toEmail,
+        string credentialType,
+        bool approved,
+        string? rejectReason = null,
+        int? credentialId = null)
+    {
+        var subject = EmailSubjects.CredentialDecision(credentialType, approved);
+        var entityRef = credentialId.HasValue ? $"credential-{credentialId.Value}" : null;
+        if (!_options.UseTemplates)
+        {
+            var body = approved
+                ? $"Your {credentialType} credential has been approved."
+                : string.IsNullOrWhiteSpace(rejectReason)
+                    ? $"Your {credentialType} credential was rejected. Please upload an updated document."
+                    : $"Your {credentialType} credential was rejected.\n\nReason: {rejectReason}\n\nPlease upload an updated document.";
+            await SendLegacyAsync(toEmail, subject, body, HelloIdentity(), entityRef: entityRef);
+            return;
+        }
+
+        var rendered = await RenderAsync("CredentialDecision", "CredentialDecision", new CredentialDecisionModel
+        {
+            CredentialType = credentialType,
+            Approved = approved,
+            RejectReason = rejectReason,
+            CredentialsUrl = WithBaseUrl("/tradie/credentials"),
+            Brand = _brand,
+        });
+        await SendAsync(toEmail, subject, rendered,
+            HelloIdentity(), template: "CredentialDecision", entityRef: entityRef);
+    }
+
     public async Task SendRefundProcessedAsync(
         string toEmail, string jobTitle, decimal amount, string currency, string reference, int? jobId = null)
     {

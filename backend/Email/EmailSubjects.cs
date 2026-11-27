@@ -22,5 +22,9 @@ public static class EmailSubjects
 
     public static string StaffAlert(string heading) => $"Staff alert — {heading}";
 
+    public static string CredentialDecision(string credentialType, bool approved) => approved
+        ? $"{credentialType} credential approved"
+        : $"{credentialType} credential rejected";
+
     public static string JobCancelled(string jobTitle) => $"Your job \"{jobTitle}\" has been closed";
 }
