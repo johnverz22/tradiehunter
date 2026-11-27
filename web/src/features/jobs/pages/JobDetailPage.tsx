@@ -115,6 +115,32 @@ export const JobDetailPage: React.FC = () => {
               )}
             </div>
           </section>
+
+          <section className="card">
+            <div className="card-head">
+              <h2>Chat transcript ({job.chatTranscript.length})</h2>
+              <MessageSquare size={16} className="c-soft" aria-hidden="true" />
+            </div>
+            <div className="card-body">
+              {job.chatTranscript.length === 0 ? (
+                <p className="muted">No messages yet.</p>
+              ) : (
+                <ol className="timeline chat-scroll" tabIndex={0} aria-label="Chat transcript">
+                  {job.chatTranscript.map((msg) => (
+                    <li key={msg.id}>
+                      <span className="t-meta">{msg.senderName}</span>
+                      <div>
+                        <div className="ev">{msg.content}</div>
+                        <div className="meta">
+                          <time dateTime={msg.sentAtUtc}>{dateTimeFormat.format(new Date(msg.sentAtUtc))}</time>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </section>
         </div>
 
         <div className="stack">
@@ -153,66 +179,40 @@ export const JobDetailPage: React.FC = () => {
               </div>
             </section>
           )}
-        </div>
-      </div>
 
-      <section className="card">
-        <div className="card-head">
-          <h2>Activity timeline</h2>
-        </div>
-        <div className="card-body">
-          <ol className="timeline">
-            <li className="done">
-              <time dateTime={job.createdAtUtc}>{timeFormat.format(new Date(job.createdAtUtc))}</time>
-              <div>
-                <div className="ev">Job posted by {job.homeownerName}</div>
-                <div className="meta">{dateTimeFormat.format(new Date(job.createdAtUtc))}</div>
-              </div>
-            </li>
-            {history.map((h) => (
-              <li key={h.id} className="done">
-                <time dateTime={h.changedAtUtc}>{timeFormat.format(new Date(h.changedAtUtc))}</time>
-                <div>
-                  <div className="ev">
-                    Status changed to <strong>{h.toStatus}</strong>
-                  </div>
-                  <div className="meta">
-                    {h.changedByName ?? h.changedByUserId} · {dateTimeFormat.format(new Date(h.changedAtUtc))}
-                    {h.reason ? ` · ${h.reason}` : ''}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-          {history.length === 0 && <p className="muted">No status changes recorded yet.</p>}
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="card-head">
-          <h2>Chat transcript ({job.chatTranscript.length})</h2>
-          <MessageSquare size={16} className="c-soft" aria-hidden="true" />
-        </div>
-        <div className="card-body">
-          {job.chatTranscript.length === 0 ? (
-            <p className="muted">No messages yet.</p>
-          ) : (
-            <ol className="timeline chat-scroll" tabIndex={0} aria-label="Chat transcript">
-              {job.chatTranscript.map((msg) => (
-                <li key={msg.id}>
-                  <span className="t-meta">{msg.senderName}</span>
+          <section className="card">
+            <div className="card-head">
+              <h2>Activity timeline</h2>
+            </div>
+            <div className="card-body">
+              <ol className="timeline">
+                <li className="done">
+                  <time dateTime={job.createdAtUtc}>{timeFormat.format(new Date(job.createdAtUtc))}</time>
                   <div>
-                    <div className="ev">{msg.content}</div>
-                    <div className="meta">
-                      <time dateTime={msg.sentAtUtc}>{dateTimeFormat.format(new Date(msg.sentAtUtc))}</time>
-                    </div>
+                    <div className="ev">Job posted by {job.homeownerName}</div>
+                    <div className="meta">{dateTimeFormat.format(new Date(job.createdAtUtc))}</div>
                   </div>
                 </li>
-              ))}
-            </ol>
-          )}
+                {history.map((h) => (
+                  <li key={h.id} className="done">
+                    <time dateTime={h.changedAtUtc}>{timeFormat.format(new Date(h.changedAtUtc))}</time>
+                    <div>
+                      <div className="ev">
+                        Status changed to <strong>{h.toStatus}</strong>
+                      </div>
+                      <div className="meta">
+                        {h.changedByName ?? h.changedByUserId} · {dateTimeFormat.format(new Date(h.changedAtUtc))}
+                        {h.reason ? ` · ${h.reason}` : ''}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              {history.length === 0 && <p className="muted">No status changes recorded yet.</p>}
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 };
