@@ -36,47 +36,43 @@ export const JobProgressStepper: React.FC<Props> = ({
   const isHalted = state === 'cancelled' || state === 'expired' || state === 'disputed';
 
   return (
-    // The card keeps the surface the legacy shim used to give this component;
-    // the job_detail frame also places the stepper in a card.
-    <div className="card">
-      <div className="card-body">
-        {/* Screen-reader summary */}
-        <span className="sr-only">{summary}</span>
+    // No surface of its own: the page places the stepper in its card.
+    <>
+    {/* Screen-reader summary */}
+    <span className="sr-only">{summary}</span>
 
-        <ol role="list" className="stepper" aria-label="Job progress">
-          {steps.map((step, i) => {
-            const isActive = i === currentIndex;
-            const isPast = i < currentIndex;
+    <ol role="list" className="stepper" aria-label="Job progress">
+      {steps.map((step, i) => {
+        const isActive = i === currentIndex;
+        const isPast = i < currentIndex;
 
-            // Kit item state: done | current | halt | (none = not reached).
-            // A completed job marks its last step done, not current.
-            let itemState = '';
-            if (isPast || (isActive && state === 'done')) itemState = 'done';
-            else if (isActive && isHalted) itemState = 'halt';
-            else if (isActive) itemState = 'current';
+        // Kit item state: done | current | halt | (none = not reached).
+        // A completed job marks its last step done, not current.
+        let itemState = '';
+        if (isPast || (isActive && state === 'done')) itemState = 'done';
+        else if (isActive && isHalted) itemState = 'halt';
+        else if (isActive) itemState = 'current';
 
-            return (
-              <li
-                key={step.label}
-                className={itemState || undefined}
-                aria-current={isActive ? 'step' : undefined}
-              >
-                <span className="dot">
-                  {itemState === 'done' && <Check size={12} strokeWidth={2} aria-hidden="true" />}
-                  {itemState === 'halt' && <X size={12} strokeWidth={2} aria-hidden="true" />}
-                </span>
-                <span>
-                  {isActive && isHalted
-                    ? status // "Cancelled" / "Expired" / "Disputed"
-                    : step.label}
-                  {isActive && progress.sublabel && <small>{progress.sublabel}</small>}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-
-      </div>
-    </div>
+        return (
+          <li
+            key={step.label}
+            className={itemState || undefined}
+            aria-current={isActive ? 'step' : undefined}
+          >
+            <span className="dot">
+              {itemState === 'done' && <Check size={12} strokeWidth={2} aria-hidden="true" />}
+              {itemState === 'halt' && <X size={12} strokeWidth={2} aria-hidden="true" />}
+            </span>
+            <span>
+              {isActive && isHalted
+                ? status // "Cancelled" / "Expired" / "Disputed"
+                : step.label}
+              {isActive && progress.sublabel && <small>{progress.sublabel}</small>}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+    </>
   );
 };
