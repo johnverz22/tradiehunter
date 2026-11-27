@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Close the gaps found when tracing the v2 mockups (`docs/design/mobile/ast/screens.mjs` -> `mockups/png/`) against the Flutter implementation (`mobile/lib/ui/`). The quote flow works end to end, but a homeowner who requested quotes has almost no way to find them. This plan makes quotes discoverable, adds the missing "View quote" detail, and records a decision on the tradie quote builder.
-> **Status:** Landed except Q4.2 (parked: needs an API field) and Q6 (owner's final verification: Q6.4 manual path, Q6.5 optional) · **Prepared:** 2026-11-27
+> **Status:** Q0-Q5 landed. Q6 final verification with the owner. **Phase Q7 (open project board) approved 2026-11-27, not started.** Q4.2 folds into Q7 · **Prepared:** 2026-11-27
 > **Naming rule:** code identifiers stay `Fixo` (Dart package imports are `package:fixo/...`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** continues `01_design_system_migration_plan.md` (gap table G-n) and `05_phase4_homeowner_audit.md`. Overlaps `09_notification_coverage_plan.md` in two places, see section 5.
@@ -108,38 +108,44 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 - [ ] **Q6.4** Manual path on the local stack: homeowner posts a Project job -> requests 3 tradies -> two tradies submit quotes -> homeowner's jobs list shows `Quotes` badge and "2 of 3 quotes in" -> card opens quotes screen -> `View quote` -> `Accept` (and the >= $30k contract gate with a large quote). Tap the "New quote received" push and confirm it lands on the quotes screen (M)
 - [ ] **Q6.5** Optional: add this journey to the persona fabric (`docs/todos/08_e2e_persona_fabric_plan.md`, `scripts/e2e-journey.py` scenarios) so it stays covered (M)
 
-## Phase Q7: Open project board (PROPOSAL, owner decision D5 first; nothing here is started)
+## Phase Q7: Open project board (APPROVED 2026-11-27: D5 yes, D6 72 h DB-backed, D7 show all details; not started)
 
-**Idea (owner, 2026-11-27):** instead of the homeowner choosing up to 3 tradies before any quote exists, a Project job is posted once and appears on an "Available jobs" list for tradies who offer that service (and are in range and credentialled). Tradies submit quotes themselves. Hourly and project jobs then share the same progress-tracked screens, with the final amount settled at completion.
+**Idea (owner):** a Project job is posted once and appears on an "Available jobs" list for tradies who offer that service (in range, credentialled, not blocked). Tradies submit quotes themselves. Hourly and project jobs share the same progress-tracked screens after booking, with the final amount settled at completion.
 
-**Assessment (2026-11-27, from code and SPECS):**
+**Assessment (from code and SPECS):**
 
-- **It fixes the root of F1/F5/F6/F8.** The homeowner no longer needs a pre-selection step, the "2 of 3" denominator, `/tradies` routing, expiry of invited requests or "Pick someone else". Quotes just arrive and the list says "N quotes".
-- **Convergence mostly exists already.** Accepting a quote books the job as a normal v2 job with the pricing model snapshotted, then it uses the same detail, payment and review screens as hourly. Only stage 0 differs (radar for hourly, quotes for projects). Unifying stage 0 into one "Finding a tradie" screen that shows either state is cheap.
-- **Do not make the quote re-priceable at the end.** SPECS section 5 treats a quote as a commitment (a quote cannot rise without agreement; Fixed = agreed price + approved adjustments) and the s362F written-contract gate at NZD 30,000+ is decided at booking. "Price changes on demand" is already covered by the three models: EstimateRange and HourlyWithCap settle on final hours, and any model can change through an approved adjustment. Keep that; do not add a free re-quote at completion.
-- **Keep both entry paths, keep hourly off the board.** Hourly jobs need fast acceptance (Quick match / direct request); a board slows them. For projects keep "invite a specific tradie" (it already works) beside "open to all nearby".
-- **Cost is moderate, the data model is ready.** `Quote.OfferId` is already nullable and address masking before `Booked` already exists. New: an available-jobs query (EF Core spatial LINQ, rule 2), credential/licence gating, a way for a tradie to quote without an offer, and abuse controls.
-- **Risks that need decisions, not code:** unlimited quotes overwhelm the homeowner (cap, see D6); no pre-booking chat (MVP) means no scope Q&A, so rely on `ScopeNotes`/`SiteVisitWelcome` and photos; photos can leak the address (strip or hide for non-invited tradies); push fan-out to every matching tradie; this is a scope change to `docs/MVP.md`, so it needs an explicit decision, not just a plan edit.
+- **It fixes the root of F1/F5/F6/F8.** No pre-selection step, no "2 of 3" denominator, no `/tradies` routing for open jobs; quotes just arrive and the list says "N quotes".
+- **Convergence mostly exists.** Accepting a quote books a normal v2 job with the pricing model snapshotted, then it uses the same detail, payment and review screens as hourly. Only stage 0 differs (radar for hourly, quotes for projects); Q7.7 unifies it.
+- **The quote stays binding.** SPECS section 5: a quote cannot rise without agreement; Fixed = agreed price + approved adjustments; the s362F gate (NZD 30,000+) is decided at booking. "Price changes on demand" is already covered: EstimateRange and HourlyWithCap settle on final hours, and any model can change through an approved adjustment. No free re-quote at completion.
+- **Hourly stays off the board**; they need fast acceptance (Quick match / direct request). Projects keep "invite a specific tradie" beside "open to all nearby".
+- **Cost is moderate, the data model is ready:** `Quote.OfferId` is already nullable. Needed: an available-jobs query (EF Core spatial LINQ, rule 2), licence gating, quoting without an offer, a DB-backed settings store (see below), and board expiry.
+- **Known finding: admin settings are not persisted today.** `AdminService.UpdateSettingsAsync` mutates in-memory options and `GetSettingsAsync` returns fixed values for radius and feature flags, so edits are lost on restart. Q7.1 adds a real settings store; moving the existing locale/radius/feature fields onto it is a follow-up, not part of this plan.
 
-**Decisions to confirm:**
+**Decisions (confirmed by the owner, 2026-11-27):**
 
-1. **D5: open board for Project jobs?** Recommended: yes, as an addition to direct invites, Project jobs only.
-2. **D6: quote cap and window.** Recommended: close the job to new quotes at N received (suggest 5, config `MaxQuotesPerProject`) or after `QuoteWindowHours`, whichever first.
-3. **D7: visibility to tradies.** Recommended: suburb, service, scope, budget range and timing only; exact address and photos with location context stay hidden until `Booked`; tradies only see jobs for services they offer, in radius, with the right credential, not blocked.
+- **D5 yes:** open board for Project jobs, in addition to direct invites.
+- **D6: 72-hour window, not hard-coded, DB-backed and editable in the web admin.** Two separate settings in the new store, both defaulting to 72 and falling back to `appsettings` (`JobFlow:QuoteWindowHours`) if no row exists: (a) `Quotes.BoardWindowHours`, how long a posted project accepts new quotes; the close time is **stamped on the job at posting** (`QuotesCloseAtUtc`) so a later setting change never alters jobs already on the board; (b) `Quotes.ValidityHours`, how long a submitted quote stays valid (replaces the config-only `QuoteWindowHours` in `QuoteService`; also unparks Q4.2). No cap on the number of quotes for now; revisit if homeowners get flooded (add `Quotes.MaxPerJob` then).
+- **D7: show all the details** so tradies can quote properly: scope, notes, budget range, materials-by, site-visit-welcome, timing, all photos/attachments, suburb and distance. **Assumption to confirm:** the exact street address and the homeowner's contact stay masked until `Booked` (the existing P5-01 rule, `JobService` masks to the suburb), because the board is visible to every matching tradie, not just the chosen one. If you want the full street address on the board, that is a one-line change plus a privacy note in SPECS; say so.
 
-**Tasks (only after D5):**
+**Tasks:**
 
-- [ ] **Q7.1** Backend: `GET /api/tradie/available-jobs` (paged; Project, `Requested`, matches service + radius + licence board + not blocked, no quote yet from me; masked DTO per D7). Include `QuotesReceived` count and time left (M)
-- [ ] **Q7.2** Backend: `POST /api/jobs/{id}/quotes` accepts a tradie with no pending offer when the job is open to the board; set `OfferId = null`. Enforce D6 cap and window, one quote per tradie per job, same GST rules (M)
-- [ ] **Q7.3** Backend: add `OpenToBoard` (bool) on Project jobs and the post-job request; notification fan-out to matching tradies in batches through `INotificationService`, not one push per candidate in a loop (M)
-- [ ] **Q7.4** Counts: `QuoteCounts` drops the denominator for open jobs (`QuotesRequested` null or equal to received); mobile copy "N quotes in" without "of M"; keep "N of M" for invite-only jobs (S)
-- [ ] **Q7.5** Mobile tradie: "Available jobs" list screen and a lead detail reusing `tr_lead` + `TrQuoteSheet`; needs mockup frames first (`tr_available_jobs`), then goldens (L)
-- [ ] **Q7.6** Mobile homeowner: post-project choice "Invite tradies" vs "Open to nearby tradies"; open jobs skip `/tradies` and go straight to quotes (D4 routing updated) (M)
-- [ ] **Q7.7** Unify stage 0: one "Finding a tradie" screen for hourly (radar) and project (quotes) so both converge visually before booking (M)
-- [ ] **Q7.8** Docs: `docs/MVP.md` scope (open board, project only), `docs/SPECS.md` section 3 and the DTO notes, plan 01 gap table, mockups (S)
-- [ ] **Q7.9** Tests: query filters (service, radius, licence, blocked, already quoted), cap and window, privacy of the DTO, notification batching (M)
+- [ ] **Q7.1** Backend: DB-backed settings store: `platform_settings` table (key, value, updated by/at; EF migration), `IPlatformSettings` service with a short in-memory cache invalidated on write, typed accessors with `appsettings` fallback, audit log entry on change. Seed nothing: absence means fallback. Do not use `IOptions` mutation (S/M)
+- [ ] **Q7.2** Backend + web: admin API `GET/PUT /api/admin/settings/quotes` (validate 1-720 h integers) and a "Quotes" card on the web Settings page (`web/src/features/settings`), using the existing shared components and tokens; Superadmin only (confirm role with the existing settings guard) (M)
+- [ ] **Q7.3** Backend: `Job.OpenToBoard` (bool) and `Job.QuotesCloseAtUtc?`, set at posting from `Quotes.BoardWindowHours`; `QuoteService` uses `Quotes.ValidityHours` for `ValidUntilUtc` (M)
+- [ ] **Q7.4** Backend: `GET /api/tradie/available-jobs` (paged; Project, `Requested`, `OpenToBoard`, before `QuotesCloseAtUtc`; service offered by the tradie, within radius, licence board satisfied, not blocked, I have not quoted yet). Full detail DTO per D7 with address masked; include `QuotesReceived` and `QuotesCloseAtUtc` (M)
+- [ ] **Q7.5** Backend: `POST /api/jobs/{id}/quotes` accepts a tradie with no offer when the job is open and before `QuotesCloseAtUtc`; same eligibility as the list (service, radius, licence, not blocked), one quote per tradie per job, same GST rules, `OfferId = null` (M)
+- [ ] **Q7.6** Backend: board expiry. After `QuotesCloseAtUtc` no new quotes. If no valid quote remains, the job becomes `Expired` through `IJobStatusService` (extend `ExpirationWorker`; coordinate with plan 09 M6 quote-expiry) and the homeowner is notified (M)
+- [ ] **Q7.7** Backend: notify matching tradies when an open job is posted, batched through `INotificationService` (not a push loop), capped per run; respect device-token and email-fallback rules (M)
+- [ ] **Q7.8** Counts: for open jobs `QuotesRequested` is null and the UI shows "N quotes in" (no "of M"); invite-only jobs keep "N of M". Update `QuoteCounts` and tests; `Job.hasQuoteActivity` also true for open jobs with a close time (S)
+- [ ] **Q7.9** Mobile homeowner: post-project choice "Open to nearby tradies" (default) vs "Invite tradies"; open jobs skip `/tradies` and go straight to quotes; subtitle and D4 routing updated; quotes screen shows "Quotes close in 2 days" from `QuotesCloseAtUtc` (M)
+- [ ] **Q7.10** Mobile tradie: "Available jobs" screen and a job detail with all photos and details, reusing `tr_lead` pieces and `TrQuoteSheet`; shows "Quote valid for N hours" from the server value (Q4.2). **Design first:** frames `tr_available_jobs` and `tr_job_board_detail` in `ast/screens.mjs`, then generated stubs, gallery sync, mockup PNGs and goldens (L)
+- [ ] **Q7.11** Unify stage 0: one "Finding a tradie" screen for hourly (radar) and project (quotes) before booking (M)
+- [ ] **Q7.12** Docs: `docs/MVP.md` scope (open board, projects only, quote window setting), `docs/SPECS.md` (section 3 matching, job DTO fields, new endpoints, settings keys, privacy rule), plan 01 gap table, DESIGN_GUIDE screen lists (S)
+- [ ] **Q7.13** Tests: settings store (fallback, cache invalidation, audit), admin validation, available-jobs filters (service, radius, licence, blocked, already quoted, closed), quote-without-offer rules, window stamped at posting and unaffected by later setting changes, expiry, notification batching, address masking in the board DTO; mobile widget tests for both screens (M)
 
-**What survives from Q1-Q6 if D5 = yes:** the quotes screen, View quote sheet, accept and contract gate, `quote_submitted` push routing, Q4 quote sheet polish, status-constant fix. **What changes:** the "N of M" subtitle and badge only apply to invite-only jobs, and D4 routing gains an open-board branch.
+**Order:** Q7.1-Q7.3 (store + job fields) -> Q7.4-Q7.6 (API) -> Q7.7-Q7.8 -> mobile Q7.9-Q7.11 (design frames first) -> Q7.12-Q7.13. Slice as PR E (backend), PR F (web settings), PR G (mobile).
+
+**What survives from Q1-Q6:** the quotes screen, View quote sheet, accept and contract gate, `quote_submitted` push routing, Q4 quote sheet polish, status-constant fix. **What changes:** the "N of M" copy applies to invite-only jobs only, and D4 routing gains an open-board branch.
 
 ## 4. Suggested order and PR slicing
 
@@ -157,7 +163,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 ## 6. Out of scope
 
-(Until D5 is confirmed, Phase Q7, the open project board, is out of scope.) New quote features (sorting, side-by-side comparison, counter-offers), a SignalR quote event, changing pricing models or the accept contract, redesigning `ho_request_sent`, and any admin web change.
+New quote features (sorting, side-by-side comparison, counter-offers), a SignalR quote event, changing pricing models or the accept contract, redesigning `ho_request_sent`, and any admin web change.
 
 ## 7. Definition of done
 
@@ -179,9 +185,11 @@ A homeowner who has requested quotes sees a `Quotes` badge and "N of M quotes in
 
 ## Decisions and parked items
 
-- **D5-D7** (open project board, quote cap, tradie visibility): proposed 2026-11-27 in Phase Q7, awaiting the owner. Hourly jobs stay off the board; the quote stays binding, with changes only through approved adjustments.
+- **D5** open project board for Project jobs: yes (owner, 2026-11-27). Hourly stays off the board; the quote stays binding, changes only through approved adjustments.
+- **D6** 72-hour windows, DB-backed and editable in the web admin (`Quotes.BoardWindowHours`, `Quotes.ValidityHours`), never hard-coded; no quote-count cap for now.
+- **D7** show all job details to tradies; exact street address and contact stay masked until `Booked` (assumption, confirm).
 - **D1** applied as recommended (see section 3).
 - **D2** bottom sheet: confirmed by the owner 2026-11-27.
 - **D3** keep the tradie quote sheet: confirmed by the owner 2026-11-27 (gap G-20 closed).
 - **D4** applied as recommended (Q2.4).
-- Parked: Q4.2 (quote validity copy, needs the API to expose the quote window, never hard-code `QuoteWindowHours`).
+- Parked: Q4.2 (quote validity copy): now delivered by Q7.3/Q7.10 once validity is DB-backed and exposed.
