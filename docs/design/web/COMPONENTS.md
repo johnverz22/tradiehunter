@@ -40,7 +40,7 @@
 | **Stepper** `.stepper` | Job lifecycle | item states `done`, `current`, `halt`, todo. Vertical below 768 px | check icon for done, cross for halt. Each step draws one connector to the next, so the line is continuous at any label height; the connector turns red into a halted step. Pending dots and connectors use `line-strong` | `<ol>`, `aria-current="step"` |
 | **Timeline** `.timeline` | Status and audit history | item tones `done`, `warn`, `danger` | none | `<ol>` with `<time>` |
 | **Avatar** `.avatar` | Identify a person | `-sm` 32, default 40, `-lg` 56 | none | Decorative; name appears beside it |
-| **Sidebar** `.sidebar` | Primary navigation | full 240, `is-rail` 64, `is-drawer` | current page `aria-current="page"` + gold marker; counts as `.nav-count` | `aria-label="Admin navigation"`; rail keeps labels in the DOM |
+| **Sidebar** `.sidebar` | Primary navigation | full 240, `is-rail` 64, `is-drawer` | current page `aria-current="page"`; counts as `.nav-count` | `aria-label="Admin navigation"`; rail keeps labels in the DOM |
 | **Top bar** `.topbar` | Menu button (phone), theme switch | none | sticky, glass | Theme button has a label |
 | **Sign-in** `.auth` | Staff entry | none | Aside hidden below 1024 px | One `h1` |
 

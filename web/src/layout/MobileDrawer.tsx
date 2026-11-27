@@ -33,7 +33,6 @@ interface MobileDrawerProps {
   onClose: () => void;
   navItems: NavItem[];
   adminName: string;
-  onLogout: () => void;
 }
 
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
@@ -41,7 +40,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onClose,
   navItems,
   adminName,
-  onLogout,
 }) => {
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
@@ -134,7 +132,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         </nav>
 
         <div className="sidebar-foot" style={{ paddingBottom: 'max(var(--safe-bottom), var(--sp-4))' }}>
-          <UserMenu adminName={adminName} onLogout={onLogout} variant="dark" />
+          <UserMenu adminName={adminName} />
         </div>
       </div>
     </>

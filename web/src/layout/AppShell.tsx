@@ -3,8 +3,7 @@
  *
  * Desktop (>=1024px): full 240px SidebarNav; TopBar with the theme toggle; `.page` content (max 1280).
  * Tablet (640-1023px): 64px icon rail SidebarNav; same TopBar.
- * Phone (<640px): no persistent sidebar; TopBar with menu button, wordmark, theme and account
- *   menu (+ safe-area top); MobileDrawer overlay; `.page` with the phone gutters.
+ * Phone (<640px): no persistent sidebar; TopBar with menu button, wordmark, theme and logout (+ safe-area top); MobileDrawer overlay; `.page` with the phone gutters.
  *
  * The shell is locked to the viewport and `<main>` scrolls inside it, so the
  * sidebar and TopBar stay put (unchanged behaviour). The widths and what shows
@@ -12,7 +11,6 @@
  * show the account menu.
  */
 import React, { useState } from 'react';
-import { useBreakpoint } from '../hooks/useBreakpoint';
 import { SidebarNav, type NavItem } from './SidebarNav';
 import { TopBar } from './TopBar';
 import { MobileDrawer } from './MobileDrawer';
@@ -34,7 +32,6 @@ export const AppShell: React.FC<AppShellProps> = ({
   onLogout,
   children,
 }) => {
-  const { isPhone } = useBreakpoint();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -48,7 +45,6 @@ export const AppShell: React.FC<AppShellProps> = ({
       <SidebarNav
         navItems={navItems}
         adminName={adminName}
-        onLogout={onLogout}
       />
 
       {/* Mobile Drawer (phone + tablet overlay) */}
@@ -57,7 +53,6 @@ export const AppShell: React.FC<AppShellProps> = ({
         onClose={() => setDrawerOpen(false)}
         navItems={navItems}
         adminName={adminName}
-        onLogout={onLogout}
       />
 
       {/* Main column */}
@@ -67,9 +62,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           isDrawerOpen={drawerOpen}
           theme={theme}
           onToggleTheme={onToggleTheme}
-          adminName={adminName}
           onLogout={onLogout}
-          isPhone={isPhone}
         />
 
         {/* Scroll container; the kit `.page` inside it sets width, gutters and spacing */}

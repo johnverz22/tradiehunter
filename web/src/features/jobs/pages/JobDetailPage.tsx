@@ -1,8 +1,7 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { MessageSquare, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon } from 'lucide-react';
 import { Banner } from '../../../components/Banner';
-import { IconButton } from '../../../components/Button';
 import { PageHeader } from '../../../components/PageHeader';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { DescriptionList, InfoRow } from '../../../components/DescriptionList';
@@ -25,36 +24,12 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-NZ', {
   minute: '2-digit',
 });
 
-/** Returns a human-readable "X ago" label from a timestamp in ms. */
-function timeAgo(ms: number): string {
-  const seconds = Math.floor((Date.now() - ms) / 1000);
-  if (seconds < 10)  return 'just now';
-  if (seconds < 60)  return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60)  return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ago`;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export const JobDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const {
-    data: job,
-    isLoading,
-    dataUpdatedAt,
-    refetch,
-    isFetching,
-  } = useJobDetail(Number(id));
-
-  // Tick the "Updated X ago" label every 15 s.
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((n) => n + 1), 15_000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleRefresh = useCallback(() => { void refetch(); }, [refetch]);
+  // useJobDetail polls while the job is active, so the page stays current on its own.
+  const { data: job, isLoading } = useJobDetail(Number(id));
 
   if (isLoading)
     return (
@@ -73,21 +48,6 @@ export const JobDetailPage: React.FC = () => {
     (a, b) => new Date(a.changedAtUtc).getTime() - new Date(b.changedAtUtc).getTime(),
   );
 
-  const updatedCaption = (
-    <span className="row nowrap">
-      {timeAgo(dataUpdatedAt)}
-      <IconButton
-        kind="ghost"
-        size="sm"
-        label="Refresh job status"
-        onClick={handleRefresh}
-        disabled={isFetching}
-      >
-        <RefreshCw size={12} aria-hidden="true" className={isFetching ? 'animate-spin' : ''} />
-      </IconButton>
-    </span>
-  );
-
   return (
     <div className="stack">
       <PageHeader
@@ -103,7 +63,6 @@ export const JobDetailPage: React.FC = () => {
           <JobProgressStepper
             status={job.status}
             statusHistory={job.statusHistory}
-            updatedCaption={updatedCaption}
           />
         </div>
       </section>

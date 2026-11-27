@@ -189,22 +189,9 @@ test.describe('P-stepper — Job progress stepper', () => {
     await expect(srOnly.first()).toContainText(/Step \d+ of 4/, { timeout: 5_000 });
   });
 
-  // ── Refresh button ────────────────────────────────────────────────────────────
+  // ── No manual refresh ─────────────────────────────────────────────────────────
 
-  test('manual refresh button is present and enabled', async ({ page }) => {
-    const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
-    const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
-    if (!hasRow) { test.skip(); return; }
-
-    await firstRow.click();
-    await page.waitForURL(/\/jobs\/\d+/);
-
-    const refreshBtn = page.getByRole('button', { name: /refresh job status/i });
-    await expect(refreshBtn).toBeVisible({ timeout: 5_000 });
-    await expect(refreshBtn).not.toBeDisabled();
-  });
-
-  test('clicking refresh button triggers a network request', async ({ page }) => {
+  test('status updates on its own: no manual refresh button or "ago" caption', async ({ page }) => {
     const firstRow = page.locator('table tbody tr:not([aria-hidden="true"])').first();
     const hasRow = await firstRow.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
     if (!hasRow) { test.skip(); return; }
@@ -213,19 +200,8 @@ test.describe('P-stepper — Job progress stepper', () => {
     await page.waitForURL(/\/jobs\/\d+/);
     await stepper(page).waitFor({ state: 'visible', timeout: 10_000 });
 
-    // Intercept the jobs API call.
-    let jobFetchCount = 0;
-    await page.route(/\/api\/admin\/jobs\/\d+/, (route) => {
-      jobFetchCount++;
-      return route.continue();
-    });
-
-    const refreshBtn = page.getByRole('button', { name: /refresh job status/i });
-    await refreshBtn.click();
-
-    // Allow one tick for the request to fire.
-    await page.waitForTimeout(500);
-    expect(jobFetchCount).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: /refresh job status/i })).toHaveCount(0);
+    await expect(page.getByText(/just now|\d+[smh] ago/)).toHaveCount(0);
   });
 
   // ── Connectors ───────────────────────────────────────────────────────────────

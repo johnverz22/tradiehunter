@@ -25,14 +25,11 @@ import type { AdminStatusHistory } from '../services/adminApi';
 interface Props {
   status: string;
   statusHistory: AdminStatusHistory[];
-  /** Optional "Updated X ago" caption rendered beneath the stepper. */
-  updatedCaption?: React.ReactNode;
 }
 
 export const JobProgressStepper: React.FC<Props> = ({
   status,
   statusHistory,
-  updatedCaption,
 }) => {
   const progress = getJobProgress(status, statusHistory);
   const { steps, currentIndex, state, summary } = progress;
@@ -79,7 +76,6 @@ export const JobProgressStepper: React.FC<Props> = ({
           })}
         </ol>
 
-        {updatedCaption && <div className="muted">{updatedCaption}</div>}
       </div>
     </div>
   );

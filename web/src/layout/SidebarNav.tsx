@@ -4,8 +4,8 @@
  * The kit CSS owns the responsive behaviour: full 240px sidebar from 1024px,
  * 64px icon rail from 640px (labels stay in the DOM, visually hidden), hidden
  * below 640px (the MobileDrawer takes over). The current page is marked with
- * `aria-current="page"` (set by NavLink) and drawn with the gold marker.
- * The footer shows who is signed in and the Logout action.
+ * `aria-current="page"` (set by NavLink).
+ * The footer shows who is signed in.
  */
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -23,14 +23,9 @@ export interface NavItem {
 interface SidebarNavProps {
   navItems: NavItem[];
   adminName: string;
-  onLogout: () => void;
 }
 
-export const SidebarNav: React.FC<SidebarNavProps> = ({
-  navItems,
-  adminName,
-  onLogout,
-}) => {
+export const SidebarNav: React.FC<SidebarNavProps> = ({ navItems, adminName }) => {
   // In the rail the labels are hidden, so give sighted pointer users a native tooltip.
   const { isDesktop } = useBreakpoint();
 
@@ -56,7 +51,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       </nav>
 
       <div className="sidebar-foot">
-        <UserMenu adminName={adminName} onLogout={onLogout} variant="dark" showTitles={!isDesktop} />
+        <UserMenu adminName={adminName} />
       </div>
     </aside>
   );
