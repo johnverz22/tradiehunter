@@ -9,6 +9,7 @@
   "ho_post_quick": ["homeowner/06_post_quick"],
   "ho_post_project": ["homeowner/06c_post_project"],
   "ho_quotes": ["homeowner/11_quotes"],
+  "ho_quote_detail": ["homeowner/11b_quote_detail"],
   "ho_choose_tradie": ["homeowner/08_choose"],
   "ho_tradie_profile": ["homeowner/09_tradie_profile"],
   "ho_request_sent": ["homeowner/10_request_sent"],

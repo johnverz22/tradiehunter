@@ -71,13 +71,13 @@ All transient feedback uses `THNotice` (renamed from `FixoNotice` in v2 — D-3 
 | error | `.error` | Failed operation to retry | 5 s |
 | push | `.push(title, body, onTap)` | Foreground FCM banner | 5 s |
 
-## Screen inventory (30 screens, §7)
+## Screen inventory (31 screens, §7)
 
 Each screen has a Flutter class in `flutter/screens/<id>_screen.dart` and a route in `thScreenRoutes`.
 
 **Entry and shared (8):** `splash`, `onboarding`, `role_select`, `sign_in`, `verify_otp`, `chat`, `notifications`, `profile`.
 
-**Homeowner (15):** `ho_home`, `ho_post_quick`, `ho_post_project`, `ho_quotes`, `ho_choose_tradie`, `ho_tradie_profile`, `ho_request_sent`, `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_payment`, `ho_payment_status`, `ho_review`, `ho_dispute`, `ho_jobs`.
+**Homeowner (16):** `ho_home`, `ho_post_quick`, `ho_post_project`, `ho_quotes`, `ho_quote_detail`, `ho_choose_tradie`, `ho_tradie_profile`, `ho_request_sent`, `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_payment`, `ho_payment_status`, `ho_review`, `ho_dispute`, `ho_jobs`.
 
 **Tradie (7):** `tr_home`, `tr_lead`, `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`.
 

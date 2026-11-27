@@ -9,6 +9,7 @@ import 'ho_home_screen.dart';
 import 'ho_post_quick_screen.dart';
 import 'ho_post_project_screen.dart';
 import 'ho_quotes_screen.dart';
+import 'ho_quote_detail_screen.dart';
 import 'ho_choose_tradie_screen.dart';
 import 'ho_tradie_profile_screen.dart';
 import 'ho_request_sent_screen.dart';
@@ -41,6 +42,7 @@ const Map<String, String> thScreenRoutes = {
   'ho_post_quick': '/jobs/new',
   'ho_post_project': '/jobs/new (project)',
   'ho_quotes': '/jobs/:id/quotes',
+  'ho_quote_detail': '/jobs/:id/quotes (View quote sheet)',
   'ho_choose_tradie': '/jobs/:id/tradies',
   'ho_tradie_profile': '/tradie/:id?jobId=',
   'ho_request_sent': '/jobs/:id/request',
@@ -75,6 +77,7 @@ final Map<String, WidgetBuilder> thScreenBuilders = {
   'ho_post_quick': (_) => const HoPostQuickScreen(),
   'ho_post_project': (_) => const HoPostProjectScreen(),
   'ho_quotes': (_) => const HoQuotesScreen(),
+  'ho_quote_detail': (_) => const HoQuoteDetailScreen(),
   'ho_choose_tradie': (_) => const HoChooseTradieScreen(),
   'ho_tradie_profile': (_) => const HoTradieProfileScreen(),
   'ho_request_sent': (_) => const HoRequestSentScreen(),

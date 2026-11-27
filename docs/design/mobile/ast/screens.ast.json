@@ -1282,6 +1282,124 @@
    ]
   },
   {
+   "id": "ho_quote_detail",
+   "title": "Quote detail",
+   "route": "/jobs/:id/quotes (View quote sheet)",
+   "role": "homeowner",
+   "bar": {
+    "t": "bar",
+    "v": "Quote",
+    "sub": "Kitchen renovation"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Accept quote",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 12,
+       "c": [
+        {
+         "t": "avatar",
+         "v": "BB",
+         "sz": "md"
+        },
+        {
+         "t": "col",
+         "x": true,
+         "gap": 2,
+         "c": [
+          {
+           "t": "text",
+           "v": "Bay Builders",
+           "s": "title"
+          },
+          {
+           "t": "text",
+           "v": "4.9 · 38 reviews",
+           "s": "meta",
+           "tone": "soft"
+          }
+         ]
+        },
+        {
+         "t": "badge",
+         "v": "Verified",
+         "k": "ok",
+         "ic": "shield"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 12
+      },
+      {
+       "t": "text",
+       "v": "$18,400",
+       "s": "money"
+      },
+      {
+       "t": "text",
+       "v": "Incl. GST",
+       "s": "meta",
+       "tone": "soft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Includes",
+       "v": "Cabinets, benchtop, splashback, install",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Does not include",
+       "v": "Appliances, plumbing",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Materials",
+       "v": "Included",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Proposed start",
+       "v": "Mon 14 Dec",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Estimated duration",
+       "v": "6 weeks",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Valid until",
+       "v": "Tue 1 Dec",
+       "b": true
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "ho_choose_tradie",
    "title": "Choose a tradie",
    "route": "/jobs/:id/tradies",

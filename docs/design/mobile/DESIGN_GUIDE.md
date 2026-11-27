@@ -121,9 +121,9 @@ Each screen has its Flutter class in `flutter/screens/<id>_screen.dart` and its 
 
 **Entry and shared (8):** `splash`, `onboarding`, `role_select`, `sign_in`, `verify_otp`, `chat`, `notifications`, `profile`.
 
-**Homeowner (15):** `ho_home`, `ho_post_quick`, `ho_post_project`, `ho_quotes`, `ho_choose_tradie`, `ho_tradie_profile`, `ho_request_sent`, `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_payment`, `ho_payment_status`, `ho_review`, `ho_dispute`, `ho_jobs`.
+**Homeowner (16):** `ho_home`, `ho_post_quick`, `ho_post_project`, `ho_quotes`, `ho_quote_detail`, `ho_choose_tradie`, `ho_tradie_profile`, `ho_request_sent`, `ho_job_booked`, `ho_extra_cost`, `ho_review_completion`, `ho_payment`, `ho_payment_status`, `ho_review`, `ho_dispute`, `ho_jobs`.
 
-> **Quote screens:** `ho_quotes` shows compact cards; "View quote" opens a bottom-sheet detail in the app that has no mockup frame yet (`ho_quote_detail` is to be added, plan 10 Q3.1). The tradie quote builder is a bottom sheet by design (plan 10 D3) and has no `tr_quote` frame.
+> **Quote screens:** `ho_quotes` shows compact cards; "View quote" opens a bottom-sheet detail in the app, drawn as the `ho_quote_detail` frame (plan 10 Q3.1). The tradie quote builder is a bottom sheet by design (plan 10 D3) and has no `tr_quote` frame.
 
 **Tradie (7):** `tr_home`, `tr_lead` (full-screen request with every detail), `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`.
 

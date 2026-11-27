@@ -1,4 +1,4 @@
-// Phase 2.7: golden tests for the 30 generated v2 gallery screens, light + dark.
+// Phase 2.7: golden tests for the 31 generated v2 gallery screens, light + dark.
 //
 // Baselines live in test/ui/goldens/<id>_<light|dark>.png. Generate or refresh
 // them with:  flutter test --update-goldens test/ui/gallery_goldens_test.dart
@@ -86,8 +86,8 @@ void main() {
     ]);
   });
 
-  test('gallery exposes all 30 screens', () {
-    expect(thScreenBuilders.length, 30);
+  test('gallery exposes all 31 screens', () {
+    expect(thScreenBuilders.length, 31);
   });
 
   for (final dark in [false, true]) {

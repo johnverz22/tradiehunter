@@ -15,9 +15,9 @@ Visual and interaction source of truth for the Flutter app (sections 1–9) and 
 | `docs/design/mobile/TYPOGRAPHY.md` | Type scale, font families, `pubspec.yaml` font setup |
 | `docs/design/mobile/COMPONENTS.md` | Component vocabulary, v1→v2 widget mapping, screen inventory |
 | `docs/design/mobile/flutter/th_widgets.dart` | Hand-written component library (~1,040 lines) |
-| `docs/design/mobile/flutter/screens/` | Generated screen widgets (30 screens + route table) |
+| `docs/design/mobile/flutter/screens/` | Generated screen widgets (31 screens + route table) |
 | `docs/design/mobile/mockups/index.html` | Generated light + dark HTML mockups (visual reference) |
-| `docs/design/mobile/ast/screens.mjs` | 30 screen definitions (AST) |
+| `docs/design/mobile/ast/screens.mjs` | 31 screen definitions (AST) |
 | `docs/design/mobile/tools/build.mjs` | Generator pipeline (Node 18+, no deps) |
 | `mobile/lib/theme/design_tokens.dart` | Dart tokens consumed by the app (copy from `docs/design/mobile/tokens/`) |
 

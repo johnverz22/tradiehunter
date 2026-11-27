@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Close the gaps found when tracing the v2 mockups (`docs/design/mobile/ast/screens.mjs` -> `mockups/png/`) against the Flutter implementation (`mobile/lib/ui/`). The quote flow works end to end, but a homeowner who requested quotes has almost no way to find them. This plan makes quotes discoverable, adds the missing "View quote" detail, and records a decision on the tradie quote builder.
-> **Status:** In progress: Q0, Q1, Q2, Q3.2-Q3.4, Q4, Q5 landed (Q0.3 owner decisions, Q3.1/Q3.5 mockup+goldens, Q6 verification open) · **Prepared:** 2026-11-27
+> **Status:** Landed except: Q3.5 golden baselines + mockup PNG export, Q4.2 (needs API field), Q6 final verification · **Prepared:** 2026-11-27
 > **Naming rule:** code identifiers stay `Fixo` (Dart package imports are `package:fixo/...`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** continues `01_design_system_migration_plan.md` (gap table G-n) and `05_phase4_homeowner_audit.md`. Overlaps `09_notification_coverage_plan.md` in two places, see section 5.
@@ -56,7 +56,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 - [x] **Q0.1** Re-confirm F1-F8 against current `main` (line numbers above may have drifted). Run `grep -rn "jobs/\${.*}/quotes\|/quotes'" mobile/lib` to confirm the fallback is still the only entry (S)
 - [x] **Q0.2** Confirm `OfferResponse` values and that submitting a quote sets its offer to `Accepted` (`QuoteService.cs:120-131`); finalise D1 (S)
-- [ ] **Q0.3** Ask the owner for D2, D3, D4. Do not start Q3 or Q4 until D2/D3 are answered; Q1 and Q2 do not depend on them (S)
+- [x] **Q0.3** Ask the owner for D2, D3, D4. Do not start Q3 or Q4 until D2/D3 are answered; Q1 and Q2 do not depend on them (S)
 
 ## Phase Q1: Backend, quote counts on the job DTO (fixes F6, F8)
 
@@ -79,11 +79,11 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 ## Phase Q3: Mobile, "View quote" and quotes screen (fixes F2, F8)
 
-- [~] **Q3.1** **Design first.** Add frame `ho_quote_detail` (per D2) to `docs/design/mobile/ast/screens.mjs` using the existing DSL helpers (`card`, `row`, `T`, `btn`, `avatar`), showing: tradie header (avatar, name, rating, verified), price model line, amount/range/cap, GST line, inclusions, exclusions, materials, proposed start, duration, valid-until, sticky `Accept`. Run `cd docs/design/mobile && npm run build`, then `npm run check`; commit regenerated `mockups/png/` and AST (M)
+- [x] **Q3.1** (frame + generated Flutter stub + gallery sync done 2026-11-27; mockup PNG export left for a machine with web fonts) **Design first.** Add frame `ho_quote_detail` (per D2) to `docs/design/mobile/ast/screens.mjs` using the existing DSL helpers (`card`, `row`, `T`, `btn`, `avatar`), showing: tradie header (avatar, name, rating, verified), price model line, amount/range/cap, GST line, inclusions, exclusions, materials, proposed start, duration, valid-until, sticky `Accept`. Run `cd docs/design/mobile && npm run build`, then `npm run check`; commit regenerated `mockups/png/` and AST (M)
 - [x] **Q3.2** Compact `_QuoteCard` to match `ho_quotes`: avatar + name, `star rating · N weeks`, money on the right with `fixed · incl. GST` caption, buttons `View quote` (secondary) + `Accept` (primary/accent). Caption mapping: Fixed -> `fixed`, EstimateRange -> `estimate` (money shows `$min-$max`), HourlyWithCap -> `hourly · cap $X`; append `incl. GST` when `gstIncluded`. Duration: `< 14 days` -> `N days`, else `round(days/7) weeks`. Reuse the formatting already in `_QuoteCard` rather than rewriting it; move the detail rows that are removed from the card into the detail view (M)
 - [x] **Q3.3** Build the detail view per D2 (bottom sheet recommended: `showModalBottomSheet`, scroll-controlled, keys `quote_detail_<id>`, `quote_detail_accept_<id>`). Its Accept calls the **same** `QuotesNotifier.acceptQuote` path including the written-contract dialog; close the sheet on success/after the dialog resolves. Terminal quotes (`!isOpen`) hide Accept and keep showing the status badge (M)
 - [x] **Q3.4** Subtitle: `'<job title> · ${quotes.length} of ${job.quotesRequested} received'` when `quotesRequested` is known (`quotesJobProvider` already fetches the `Job`), else the existing `N received` copy. Never print a denominator smaller than the numerator (clamp: `max(requested, received)`) (S)
-- [~] **Q3.5** Update `phase4_ho_quotes_test.dart` (compact card content, View quote opens detail with scope text, Accept from detail triggers the contract dialog for >= $30k, subtitle with and without denominator) and refresh `lib/ui/gallery/ho_quotes_screen.dart` + goldens (`mobile/test/ui/goldens`, `gallery_goldens_test.dart`) if the gallery covers this screen (M)
+- [~] **Q3.5** (tests done earlier; gallery screen added and `thScreenBuilders` count bumped to 31; golden baselines `ho_quote_detail_{light,dark}.png` still to generate with `flutter test --update-goldens test/ui/gallery_goldens_test.dart`) Update `phase4_ho_quotes_test.dart` (compact card content, View quote opens detail with scope text, Accept from detail triggers the contract dialog for >= $30k, subtitle with and without denominator) and refresh `lib/ui/gallery/ho_quotes_screen.dart` + goldens (`mobile/test/ui/goldens`, `gallery_goldens_test.dart`) if the gallery covers this screen (M)
 
 ## Phase Q4: Tradie quote builder (F3; applies to D3 = keep the sheet)
 
@@ -96,7 +96,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 ## Phase Q5: Docs
 
 - [x] **Q5.1** `docs/todos/01_design_system_migration_plan.md` gap table: add rows for F1 (resolved by this plan), F2, F3 (owner decision D3) and F4 (accepted deviation: "Pick someone else" kept, justified by expired/gone states) (S)
-- [~] **Q5.2** (`ho_quote_detail` is not in the screen list because the frame is not drawn yet; the guide notes the sheets. Finish with Q3.1)  `docs/design/mobile/README.md` / screen list: add `ho_quote_detail`; note that the tradie quote builder is a sheet by design (if D3 = sheet) (S)
+- [x] **Q5.2** (`ho_quote_detail` added to the screen lists; counts now 31 / Homeowner 16)  `docs/design/mobile/README.md` / screen list: add `ho_quote_detail`; note that the tradie quote builder is a sheet by design (if D3 = sheet) (S)
 - [x] **Q5.3** `docs/SPECS.md`: Q1.5 fields, quote entry points, push `quote_submitted` -> quotes screen (S)
 - [x] **Q5.4** Fill the Results log and Decisions sections below (S)
 
@@ -142,10 +142,12 @@ A homeowner who has requested quotes sees a `Quotes` badge and "N of M quotes in
 - 2026-11-27: Q2.1/Q2.2 landed: `Job.quotesRequested/quotesReceived/hasQuoteActivity`, `Quote.statusPending` is now `'Submitted'` with `Quote.isOpen` (accepts legacy `'Pending'`), `ho_quotes_screen.dart` uses `!quote.isOpen`; tests in `mobile/test/job_quote_counts_test.dart`.
 - 2026-11-27: Q2.8 added without running Flutter (authoring environment has no toolchain): widget tests in `phase4_ho_jobs_test.dart` (Quotes badge, "2 of 3 quotes in", old copy without counts, D4 tap targets) and `phase4_ho_home_test.dart` ("Review quotes" hero opens quotes); pure tests were already in `quote_discoverability_test.dart`. Q5 docs: SPECS entry points + push, gap rows G-18..G-21 in plan 01, DESIGN_GUIDE note. **Run `flutter analyze --fatal-infos && flutter test` locally (Q6).**
 
+- 2026-11-27: owner confirmed D2 (sheet) and D3 (keep sheet) and reported PR A/B/C/D checks green locally. Q3.1 done: `ho_quote_detail` frame in `ast/screens.mjs` mirroring `_QuoteDetailSheet`, regenerated AST/mockup HTML/Flutter stubs (`build.mjs --check` ok, 31 screens), gallery copy + route table synced, `gallery_goldens_test` count 30 to 31. Not run here: PNG export (needs web fonts) and golden baselines.
+
 ## Decisions and parked items
 
 - **D1** applied as recommended (see section 3).
-- **D2** bottom sheet: default applied, **not yet confirmed by the owner** (Q0.3 open).
-- **D3** keep the tradie quote sheet: default applied, **not yet confirmed by the owner** (gap G-20).
+- **D2** bottom sheet: confirmed by the owner 2026-11-27.
+- **D3** keep the tradie quote sheet: confirmed by the owner 2026-11-27 (gap G-20 closed).
 - **D4** applied as recommended (Q2.4).
-- Parked: Q3.1/Q3.5 (`ho_quote_detail` frame + goldens, needs Flutter), Q4.2 (quote validity copy, needs API field), Q5.2 remainder.
+- Parked: Q3.5 golden baselines and the `ho_quote_detail` mockup PNGs (need Flutter / web fonts), Q4.2 (quote validity copy, needs API field).
