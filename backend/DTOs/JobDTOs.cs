@@ -179,6 +179,20 @@ public class JobDto
     public string? Suburb { get; set; }
 
     public List<JobPhotoDto> Photos { get; set; } = new();
+
+    // ── Quote progress (plan 10) ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Quote requests still live or answered ("M" in "N of M quotes in"). Null unless
+    /// the caller is the homeowner of a Project job in status Requested.
+    /// </summary>
+    public int? QuotesRequested { get; set; }
+
+    /// <summary>
+    /// Quotes the homeowner can act on ("N"): Submitted and not past ValidUntilUtc,
+    /// plus the Accepted one. Null under the same conditions as <see cref="QuotesRequested"/>.
+    /// </summary>
+    public int? QuotesReceived { get; set; }
 }
 
 public class JobPhotoDto

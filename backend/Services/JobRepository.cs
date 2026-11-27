@@ -49,6 +49,32 @@ public class JobRepository : IJobRepository
         return (items, total);
     }
 
+    public async Task<Dictionary<int, QuoteCountSummary>> GetQuoteCountsAsync(
+        IReadOnlyCollection<int> jobIds, DateTime nowUtc)
+    {
+        var result = jobIds.ToDictionary(id => id, _ => new QuoteCountSummary(0, 0));
+        if (jobIds.Count == 0) return result;
+
+        // Two narrow projections (no entity graphs), filtered to the page's job ids.
+        var offers = await _context.JobOffers
+            .Where(o => jobIds.Contains(o.JobId) && o.Kind == OfferKind.QuoteRequest)
+            .Select(o => new { o.JobId, o.Response })
+            .ToListAsync();
+        var quotes = await _context.Quotes
+            .Where(q => jobIds.Contains(q.JobId))
+            .Select(q => new { q.JobId, q.Status, q.ValidUntilUtc })
+            .ToListAsync();
+
+        foreach (var id in jobIds)
+        {
+            result[id] = QuoteCounts.Compute(
+                offers.Where(o => o.JobId == id).Select(o => o.Response),
+                quotes.Where(q => q.JobId == id).Select(q => (q.Status, q.ValidUntilUtc)),
+                nowUtc);
+        }
+        return result;
+    }
+
     public async Task<Job> CreateAsync(Job job)
     {
         _context.Jobs.Add(job);

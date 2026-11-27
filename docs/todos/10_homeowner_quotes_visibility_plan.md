@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Close the gaps found when tracing the v2 mockups (`docs/design/mobile/ast/screens.mjs` -> `mockups/png/`) against the Flutter implementation (`mobile/lib/ui/`). The quote flow works end to end, but a homeowner who requested quotes has almost no way to find them. This plan makes quotes discoverable, adds the missing "View quote" detail, and records a decision on the tradie quote builder.
-> **Status:** Not started · **Prepared:** 2026-11-27
+> **Status:** In progress: Q0, Q1, Q2.1, Q2.2 landed (not yet run locally) · **Prepared:** 2026-11-27
 > **Naming rule:** code identifiers stay `Fixo` (Dart package imports are `package:fixo/...`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** continues `01_design_system_migration_plan.md` (gap table G-n) and `05_phase4_homeowner_audit.md`. Overlaps `09_notification_coverage_plan.md` in two places, see section 5.
@@ -54,22 +54,22 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 
 ## Phase Q0: Recon and decisions (no code)
 
-- [ ] **Q0.1** Re-confirm F1-F8 against current `main` (line numbers above may have drifted). Run `grep -rn "jobs/\${.*}/quotes\|/quotes'" mobile/lib` to confirm the fallback is still the only entry (S)
-- [ ] **Q0.2** Confirm `OfferResponse` values and that submitting a quote sets its offer to `Accepted` (`QuoteService.cs:120-131`); finalise D1 (S)
+- [x] **Q0.1** Re-confirm F1-F8 against current `main` (line numbers above may have drifted). Run `grep -rn "jobs/\${.*}/quotes\|/quotes'" mobile/lib` to confirm the fallback is still the only entry (S)
+- [x] **Q0.2** Confirm `OfferResponse` values and that submitting a quote sets its offer to `Accepted` (`QuoteService.cs:120-131`); finalise D1 (S)
 - [ ] **Q0.3** Ask the owner for D2, D3, D4. Do not start Q3 or Q4 until D2/D3 are answered; Q1 and Q2 do not depend on them (S)
 
 ## Phase Q1: Backend, quote counts on the job DTO (fixes F6, F8)
 
-- [ ] **Q1.1** Add to `JobDto`: `int? QuotesRequested` and `int? QuotesReceived`. Populate only for homeowner callers, `JobType == Project`, and status `Requested`; otherwise leave `null` (so legacy/hourly clients and tradies see no change). XML-doc both fields with the D1 definition (S)
-- [ ] **Q1.2** Compute counts for the page in **one grouped query** keyed by job id inside `JobRepository.GetForUserAsync` (or a new `GetQuoteCountsAsync(IEnumerable<int> jobIds)` called from `GetJobsForUserAsync`). Do **not** `.Include(j => j.Quotes)` / `.Include(j => j.Offers)` on the list query: that loads every row for up to 50 jobs. Pass the counts into `MapToDto` via an optional parameter, keeping the current signature working for other callers (M)
-- [ ] **Q1.3** Same fields on `GET /api/jobs/{id}` (`GetJobByIdAsync` already loads offers; add quotes via the same count helper, not a full include) (S)
-- [ ] **Q1.4** Put the count rule in a small pure static helper next to `JobMoney` (e.g. `QuoteCounts.From(offers, quotes, now)`) so it can be unit-tested without a database. Add xunit tests in `backend/FixoApi.Tests`: 0 requested; 3 requested / 2 submitted; one declined offer frees its slot; expired quote not counted; accepted quote counted; non-project returns null (M)
-- [ ] **Q1.5** Update `docs/SPECS.md` job DTO / API section with the two fields (S)
+- [x] **Q1.1** Add to `JobDto`: `int? QuotesRequested` and `int? QuotesReceived`. Populate only for homeowner callers, `JobType == Project`, and status `Requested`; otherwise leave `null` (so legacy/hourly clients and tradies see no change). XML-doc both fields with the D1 definition (S)
+- [x] **Q1.2** Compute counts for the page in **one grouped query** keyed by job id inside `JobRepository.GetForUserAsync` (or a new `GetQuoteCountsAsync(IEnumerable<int> jobIds)` called from `GetJobsForUserAsync`). Do **not** `.Include(j => j.Quotes)` / `.Include(j => j.Offers)` on the list query: that loads every row for up to 50 jobs. Pass the counts into `MapToDto` via an optional parameter, keeping the current signature working for other callers (M)
+- [x] **Q1.3** Same fields on `GET /api/jobs/{id}` (`GetJobByIdAsync` already loads offers; add quotes via the same count helper, not a full include) (S)
+- [x] **Q1.4** Put the count rule in a small pure static helper next to `JobMoney` (e.g. `QuoteCounts.From(offers, quotes, now)`) so it can be unit-tested without a database. Add xunit tests in `backend/FixoApi.Tests`: 0 requested; 3 requested / 2 submitted; one declined offer frees its slot; expired quote not counted; accepted quote counted; non-project returns null (M)
+- [x] **Q1.5** Update `docs/SPECS.md` job DTO / API section with the two fields (S)
 
 ## Phase Q2: Mobile, make quotes discoverable (fixes F1, F5, F7)
 
-- [ ] **Q2.1** `marketplace.dart`: add `final int? quotesRequested; final int? quotesReceived;` to `Job` + `fromJson` (tolerate missing/null, accept num). Add a getter `bool get hasQuoteActivity` (project, `Requested`, `quotesRequested != null && quotesRequested! > 0`) (S)
-- [ ] **Q2.2** Fix F7: set `Quote.statusPending` to the wire value `'Submitted'` (keep `'Pending'` accepted in a `isOpen` helper for old fixtures), add `bool get isOpen` to `Quote`, and make `ho_quotes_screen.dart:249-252` use it. Update fixtures in `phase4_ho_quotes_test.dart` (S)
+- [x] **Q2.1** `marketplace.dart`: add `final int? quotesRequested; final int? quotesReceived;` to `Job` + `fromJson` (tolerate missing/null, accept num). Add a getter `bool get hasQuoteActivity` (project, `Requested`, `quotesRequested != null && quotesRequested! > 0`) (S)
+- [x] **Q2.2** Fix F7: set `Quote.statusPending` to the wire value `'Submitted'` (keep `'Pending'` accepted in a `isOpen` helper for old fixtures), add `bool get isOpen` to `Quote`, and make `ho_quotes_screen.dart:249-252` use it. Update fixtures in `phase4_ho_quotes_test.dart` (S)
 - [ ] **Q2.3** `ho_home_mapper.dart`: add `thHomeStatusBadgeForJob(Job)` returning `HoStatusBadge('Quotes', THBadgeKind.ok)` when `hasQuoteActivity`, else delegating to `thHomeStatusBadge(job.status)`. Add `thHomeJobSubtitle` branch: when `hasQuoteActivity` and `quotesReceived != null`, return `'$quotesReceived of $quotesRequested quotes in'` (mockup copy); when received is 0 keep "Waiting for quotes". `HoJobCard` switches to the job-aware badge (S)
 - [ ] **Q2.4** `ho_job_navigation.dart` `thHomeownerJobPath`: implement D4. Put the project branch **before** the `usesV2Flow` stage switch, otherwise stage 0 still returns `/matching`. Keep `Cancelled`/`Expired`/`Disputed` -> `/detail` first (S)
 - [ ] **Q2.5** Home attention: a project job with `quotesReceived >= 1` should appear in the "needs your attention" group with headline `Review quotes` / action `Compare`. `HoHomeGroups.from` and `thNeedsHomeownerAttention` take only status today, so add a job-aware predicate and extend `thAttentionHero` (`_attentionPriority` placement: after payment due, before dispute is fine; confirm with owner if unsure) (M)
@@ -132,7 +132,9 @@ A homeowner who has requested quotes sees a `Quotes` badge and "N of M quotes in
 
 ## 8. Results log
 
-_Empty. Append dated entries as phases land._
+- 2026-11-27: Q0.1/Q0.2 confirmed. The quotes screen's only entry is still the job-detail fallback; `OfferResponse` is `Pending/Accepted/Declined/TimedOut`; submitting a quote sets its offer `Accepted`. D1 applied as recommended.
+- 2026-11-27: Q1 landed: `QuoteCounts` helper (`backend/Services/QuoteCounts.cs`), `IJobRepository.GetQuoteCountsAsync` (two narrow projections, no includes), `JobDto.QuotesRequested/QuotesReceived`, wired into `GetJobsForUserAsync` and `GetJobByIdAsync`, tests in `QuoteCountsTests.cs`, SPECS updated. **Not compiled or run in the authoring environment (no dotnet/flutter there): run `dotnet test` and `flutter analyze --fatal-infos && flutter test` locally.**
+- 2026-11-27: Q2.1/Q2.2 landed: `Job.quotesRequested/quotesReceived/hasQuoteActivity`, `Quote.statusPending` is now `'Submitted'` with `Quote.isOpen` (accepts legacy `'Pending'`), `ho_quotes_screen.dart` uses `!quote.isOpen`; tests in `mobile/test/job_quote_counts_test.dart`.
 
 ## Decisions and parked items
 

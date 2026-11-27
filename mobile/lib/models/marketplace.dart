@@ -99,6 +99,13 @@ class Job {
   final bool? siteVisitWelcome;
   final String? scopeNotes;
 
+  /// Quote progress for a homeowner's Project job still collecting quotes
+  /// ("N of M quotes in"). Null when the server does not send it (older server,
+  /// hourly/legacy jobs, tradie view): callers must then keep their existing copy
+  /// and never render "0 of 3".
+  final int? quotesRequested;
+  final int? quotesReceived;
+
   const Job({
     required this.id,
     required this.title,
@@ -141,9 +148,18 @@ class Job {
     this.materialsBy,
     this.siteVisitWelcome,
     this.scopeNotes,
+    this.quotesRequested,
+    this.quotesReceived,
   });
 
   bool get isProject => jobType == Job.jobTypeProject;
+
+  /// A Project job still in `Requested` whose homeowner has sent at least one
+  /// quote request, so the quotes screen is the place to open it (plan 10).
+  bool get hasQuoteActivity =>
+      isProject &&
+      status == 'Requested' &&
+      (quotesRequested ?? 0) > 0;
 
   /// Whether this job uses the v1.7 pay-at-completion flow.
   bool get usesV2Flow => flowVersion >= Job.flowVersionV2;
@@ -245,6 +261,8 @@ class Job {
       materialsBy: json['materialsBy'] as String?,
       siteVisitWelcome: json['siteVisitWelcome'] as bool?,
       scopeNotes: json['scopeNotes'] as String?,
+      quotesRequested: (json['quotesRequested'] as num?)?.toInt(),
+      quotesReceived: (json['quotesReceived'] as num?)?.toInt(),
     );
   }
 
@@ -303,6 +321,8 @@ class Job {
     materialsBy: materialsBy,
     siteVisitWelcome: siteVisitWelcome,
     scopeNotes: scopeNotes,
+    quotesRequested: quotesRequested,
+    quotesReceived: quotesReceived,
   );
 
   Map<String, dynamic> toJson() => {
@@ -1061,7 +1081,9 @@ class Quote {
   static const pricingEstimateRange = 'EstimateRange';
   static const pricingHourlyWithCap = 'HourlyWithCap';
 
-  static const statusPending = 'Pending';
+  /// Wire value is `Submitted` (backend `QuoteStatus.Submitted`). Older fixtures
+  /// used `Pending`; [isOpen] accepts both.
+  static const statusPending = 'Submitted';
   static const statusAccepted = 'Accepted';
   static const statusDeclined = 'Declined';
   static const statusWithdrawn = 'Withdrawn';
@@ -1119,6 +1141,9 @@ class Quote {
     this.validUntilUtc,
     this.status = Quote.statusPending,
   });
+
+  /// Still awaiting the homeowner's decision.
+  bool get isOpen => status == Quote.statusPending || status == 'Pending';
 
   bool get isFixed => pricingModel == Quote.pricingFixed;
   bool get isEstimateRange => pricingModel == Quote.pricingEstimateRange;

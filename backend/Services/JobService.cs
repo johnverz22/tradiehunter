@@ -137,9 +137,16 @@ public class JobService : IJobService
 
         var (items, total) = await _jobRepo.GetForUserAsync(userId, isTradie, statusFilter, page, pageSize);
 
+        // Plan 10 Q1.2: one grouped read for the whole page, only when it can matter.
+        var quoteJobIds = items.Where(j => QuoteCounts.Applies(j, isTradie)).Select(j => j.Id).ToList();
+        var quoteCounts = quoteJobIds.Count > 0
+            ? await _jobRepo.GetQuoteCountsAsync(quoteJobIds, DateTime.UtcNow)
+            : new Dictionary<int, QuoteCountSummary>();
+
         return new JobListResponse
         {
-            Items      = items.Select(j => MapToDto(j, isTradie)).ToList(),
+            Items      = items.Select(j => MapToDto(j, isTradie,
+                quoteCounts.TryGetValue(j.Id, out var qc) ? qc : (QuoteCountSummary?)null)).ToList(),
             TotalCount = total,
             Page       = page,
             PageSize   = pageSize,
@@ -156,7 +163,13 @@ public class JobService : IJobService
         if (isTradie && job.MatchedTradieId != requestingUserId && !hasPendingOffer) return null;
         if (!isTradie && job.HomeownerId     != requestingUserId) return null;
 
-        return MapToDto(job, isTradie);
+        QuoteCountSummary? quoteCounts = null;
+        if (QuoteCounts.Applies(job, isTradie))
+        {
+            var counts = await _jobRepo.GetQuoteCountsAsync(new[] { job.Id }, DateTime.UtcNow);
+            quoteCounts = counts.TryGetValue(job.Id, out var c) ? c : (QuoteCountSummary?)null;
+        }
+        return MapToDto(job, isTradie, quoteCounts);
     }
 
     public async Task<bool> UpdateJobAsync(int id, string homeownerId, UpdateJobRequest request)
@@ -400,7 +413,7 @@ public class JobService : IJobService
         throw new InvalidOperationException("Could not generate a unique job reference code.");
     }
 
-    private JobDto MapToDto(Job job, bool isTradie = false)
+    private JobDto MapToDto(Job job, bool isTradie = false, QuoteCountSummary? quoteCounts = null)
     {
         var flow = _jobFlowOptions.Value;
         // P12-15: stage mapping follows the stepper order for the flow the job
@@ -482,6 +495,8 @@ public class JobService : IJobService
             MatchedTradieName = string.IsNullOrWhiteSpace(job.MatchedTradie?.FullName) ? null : job.MatchedTradie.FullName,
             DisputeStatus    = job.DisputeStatus,
             Stage            = stage,
+            QuotesRequested  = quoteCounts?.Requested,
+            QuotesReceived   = quoteCounts?.Received,
             Photos           = job.Photos.Select(p => new JobPhotoDto
             {
                 Id               = p.Id,

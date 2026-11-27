@@ -245,11 +245,7 @@ class _QuoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decided =
-        quote.status == Quote.statusAccepted ||
-        quote.status == Quote.statusDeclined ||
-        quote.status == Quote.statusWithdrawn ||
-        quote.status == Quote.statusExpired;
+    final decided = !quote.isOpen;
     return THCard(
       children: [
         Row(
