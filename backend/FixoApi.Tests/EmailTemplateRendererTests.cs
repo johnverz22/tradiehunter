@@ -80,6 +80,49 @@ public class EmailTemplateRendererTests
         Assert.Contains("post it again any time", rendered.Text);
     }
 
+    [Fact]
+    public async Task StaffAlert_renders_summary_rows_and_admin_cta_with_frontend()
+    {
+        var model = EmailPreviewSamples.All["StaffAlert"](EmailPreviewSamples.WithFrontend);
+        var rendered = await _renderer.RenderAsync("StaffAlert", model);
+
+        Assert.Contains("Receipt awaiting verification", rendered.Html);
+        Assert.Contains("Fence repair (#1042)", rendered.Html);
+        Assert.Contains("456.00 NZD", rendered.Html);
+        Assert.Contains("v:roundrect", rendered.Html);
+        Assert.Contains("Open in admin", rendered.Html);
+        Assert.Contains("https://app.tradiehunter.nz/payments", rendered.Html);
+
+        Assert.Contains("https://app.tradiehunter.nz/payments", rendered.Text);
+        Assert.Contains("Waiting", rendered.Text);
+    }
+
+    [Fact]
+    public async Task StaffAlert_omits_the_cta_when_no_frontend_url()
+    {
+        var model = EmailPreviewSamples.All["StaffAlert"](EmailPreviewSamples.SampleBrand);
+        var rendered = await _renderer.RenderAsync("StaffAlert", model);
+
+        Assert.DoesNotContain("v:roundrect", rendered.Html);
+        Assert.DoesNotContain("Open in admin", rendered.Html);
+        Assert.Contains("waiting for staff", rendered.Text);
+    }
+
+    [Fact]
+    public void StaffAlert_preheader_defaults_to_a_trimmed_body()
+    {
+        var longBody = new string('a', 300);
+        var model = new StaffAlertModel
+        {
+            Heading = "Heading",
+            Body = longBody,
+            Brand = EmailPreviewSamples.SampleBrand,
+        };
+
+        Assert.True(model.TextPreheader!.Length <= 110);
+        Assert.EndsWith("…", model.TextPreheader);
+    }
+
     public static IEnumerable<object[]> AllTemplates() =>
         EmailPreviewSamples.All.Keys.Select(k => new object[] { k });
 

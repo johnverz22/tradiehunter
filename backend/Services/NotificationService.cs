@@ -1,6 +1,8 @@
 using FixoApi.Data;
 using FixoApi.Email;
+using FixoApi.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FixoApi.Services;
 
@@ -37,6 +39,44 @@ public interface INotificationService
         CriticalNoticeModel emailNotice,
         bool critical = false,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Push-only fan-out to every device the user has registered. Per-token
+    /// failures never abort the remaining tokens; tokens FCM reports as
+    /// unregistered are deleted. Returns true when at least one push was sent.
+    /// This replaces the hand-rolled DeviceTokens loops (plan 09, N1.5).
+    /// Call it after your own SaveChanges: stale-token cleanup saves the shared context.
+    /// </summary>
+    Task<bool> SendPushToUserAsync(
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Policy-driven notification: <see cref="NotificationPolicy"/> decides push
+    /// and email for <paramref name="eventKey"/> (Always = critical, Fallback =
+    /// only when push missed, None = push only). The event key is added to the
+    /// push data as <c>type</c>. Email renders through the design-system
+    /// CriticalNotice template; pass <paramref name="emailNotice"/> for structured
+    /// sections, otherwise one is built from title and body. Never throws.
+    /// </summary>
+    Task NotifyAsync(
+        string eventKey,
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CriticalNoticeModel? emailNotice = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Alert the admin team (plan 09 §3.2). Deduplicated per event + entity,
+    /// resolved to active staff by <see cref="IStaffRecipientResolver"/>, and
+    /// emailed through the StaffAlert template. Never throws.
+    /// </summary>
+    Task SendToStaffAsync(StaffAlert alert, CancellationToken ct = default);
 }
 
 /// <summary>Critical notification kinds (P8-06) — these always get the email fallback.</summary>
@@ -51,19 +91,28 @@ public static class CriticalNotificationTypes
 public class NotificationService : INotificationService
 {
     private readonly FixoDbContext _db;
-    private readonly PushNotificationService _push;
+    private readonly IPushSender _push;
     private readonly IEmailSender _email;
+    private readonly IStaffRecipientResolver _staff;
+    private readonly INotificationDeduplicator _dedup;
+    private readonly BrandOptions _brand;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         FixoDbContext db,
-        PushNotificationService push,
+        IPushSender push,
         IEmailSender email,
+        IStaffRecipientResolver staff,
+        INotificationDeduplicator dedup,
+        IOptions<BrandOptions> brand,
         ILogger<NotificationService> logger)
     {
         _db = db;
         _push = push;
         _email = email;
+        _staff = staff;
+        _dedup = dedup;
+        _brand = brand.Value;
         _logger = logger;
     }
 
@@ -79,7 +128,7 @@ public class NotificationService : INotificationService
     {
         var (tokens, email) = await LoadTargetsAsync(userId, ct);
 
-        var pushOk = await SendPushAsync(tokens, title, body, data);
+        var pushOk = await SendPushAsync(userId, tokens, title, body, data);
 
         // Fallback: no tokens (push disabled), all pushes failed, or critical event.
         if ((!pushOk || critical) && !string.IsNullOrWhiteSpace(email))
@@ -107,7 +156,7 @@ public class NotificationService : INotificationService
     {
         var (tokens, email) = await LoadTargetsAsync(userId, ct);
 
-        var pushOk = await SendPushAsync(tokens, title, body, data);
+        var pushOk = await SendPushAsync(userId, tokens, title, body, data);
 
         if ((!pushOk || critical) && !string.IsNullOrWhiteSpace(email))
         {
@@ -144,22 +193,189 @@ public class NotificationService : INotificationService
         return (tokens, email);
     }
 
+    public async Task<bool> SendPushToUserAsync(
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CancellationToken ct = default)
+    {
+        var (tokens, _) = await LoadTargetsAsync(userId, ct);
+        return await SendPushAsync(userId, tokens, title, body, data);
+    }
+
+    public async Task NotifyAsync(
+        string eventKey,
+        string userId,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CriticalNoticeModel? emailNotice = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (!NotificationPolicy.TryGet(eventKey, out var def))
+            {
+                _logger.LogWarning("Notification skipped: unknown event '{EventKey}'.", eventKey);
+                return;
+            }
+
+            var payload = data is null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string>(data);
+            payload.TryAdd("type", def.Key);
+
+            var (tokens, email) = await LoadTargetsAsync(userId, ct);
+
+            var pushOk = def.Push && await SendPushAsync(userId, tokens, title, body, payload);
+
+            var sendEmail = def.Email switch
+            {
+                EmailPolicy.Always => true,
+                EmailPolicy.Fallback => !pushOk,
+                _ => false,
+            };
+            if (!sendEmail || string.IsNullOrWhiteSpace(email)) return;
+
+            try
+            {
+                await _email.SendCriticalNoticeAsync(email!, emailNotice ?? DefaultNotice(title, body));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Email for event {EventKey} to {Email} failed.", def.Key, email);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Notifications must never fail the business transition that raised them.
+            _logger.LogWarning(ex, "Notification {EventKey} for user {UserId} failed.", eventKey, userId);
+        }
+    }
+
+    public async Task SendToStaffAsync(StaffAlert alert, CancellationToken ct = default)
+    {
+        try
+        {
+            if (!NotificationPolicy.TryGet(alert.EventKey, out var def) || !def.IsStaffAlert)
+            {
+                _logger.LogWarning("Staff alert skipped: '{EventKey}' is not a staff event.", alert.EventKey);
+                return;
+            }
+
+            if (!_dedup.TryAcquire(alert.DedupKey, alert.DedupWindow ?? StaffAlert.DefaultDedupWindow))
+            {
+                _logger.LogDebug("Staff alert {DedupKey} suppressed as a duplicate.", alert.DedupKey);
+                return;
+            }
+
+            var recipients = await _staff.GetRecipientsAsync(ct);
+            if (recipients.Count == 0)
+            {
+                _logger.LogWarning("Staff alert {DedupKey} has no active staff recipients.", alert.DedupKey);
+                return;
+            }
+
+            var model = new StaffAlertModel
+            {
+                Heading = alert.Heading,
+                Body = alert.Body,
+                Rows = alert.Rows ?? [],
+                AdminUrl = WithBaseUrl(alert.AdminPath),
+                Brand = _brand,
+            };
+
+            foreach (var recipient in recipients)
+            {
+                try
+                {
+                    await _email.SendStaffAlertAsync(recipient.Email, model, alert.DedupKey);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Staff alert {DedupKey} email to {Email} failed.", alert.DedupKey, recipient.Email);
+                }
+
+                if (def.Push)
+                {
+                    await SendPushToUserAsync(
+                        recipient.UserId, alert.Heading, alert.Body,
+                        new Dictionary<string, string> { ["type"] = def.Key }, ct);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Staff alert {EventKey}/{EntityKey} failed.", alert.EventKey, alert.EntityKey);
+        }
+    }
+
+    private CriticalNoticeModel DefaultNotice(string title, string body) => new()
+    {
+        Heading = title,
+        Preheader = body.Length <= 110 ? body : null,
+        Sections = [new EmailSection("What's happening", body)],
+        Brand = _brand,
+    };
+
+    private string? WithBaseUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(_brand.FrontendBaseUrl) || string.IsNullOrWhiteSpace(path)) return null;
+        return _brand.FrontendBaseUrl.TrimEnd('/') + path;
+    }
+
+    /// <summary>
+    /// Sends to every token (one failure never aborts the rest) and removes tokens
+    /// FCM reports as unregistered. Returns true when at least one push landed.
+    /// </summary>
     private async Task<bool> SendPushAsync(
-        IReadOnlyList<string> tokens, string title, string body, Dictionary<string, string>? data)
+        string userId, IReadOnlyList<string> tokens, string title, string body,
+        Dictionary<string, string>? data)
     {
         var pushOk = false;
+        var stale = new List<string>();
+
         foreach (var token in tokens)
         {
             try
             {
-                await _push.SendAsync(token, title, body, data);
-                pushOk = true;
+                switch (await _push.TrySendAsync(token, title, body, data))
+                {
+                    case PushSendOutcome.Sent:
+                        pushOk = true;
+                        break;
+                    case PushSendOutcome.StaleToken:
+                        stale.Add(token);
+                        break;
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "FCM push to token for user failed.");
+                _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", userId);
             }
         }
+
+        if (stale.Count > 0) await RemoveStaleTokensAsync(userId, stale);
         return pushOk;
+    }
+
+    private async Task RemoveStaleTokensAsync(string userId, List<string> stale)
+    {
+        try
+        {
+            var rows = await _db.DeviceTokens
+                .Where(dt => dt.UserId == userId && stale.Contains(dt.Token))
+                .ToListAsync();
+            if (rows.Count == 0) return;
+
+            _db.DeviceTokens.RemoveRange(rows);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Removed {Count} stale device token(s) for user {UserId}.", rows.Count, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not remove stale device tokens for user {UserId}.", userId);
+        }
     }
 }

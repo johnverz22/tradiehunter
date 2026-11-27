@@ -296,3 +296,35 @@ public sealed class JobClosedModel : IEmailTextModel
     public string? TextCtaUrl => PostAgainUrl;
     public string? TextFooterNote => "You received this because your TradieHunter job was closed.";
 }
+
+/// <summary>
+/// E9 — staff alert: something needs the admin team (receipt waiting, credential
+/// to review, SLA breach, flag threshold, payout batch). One template for every
+/// staff event; the caller supplies heading, body, summary rows and the admin
+/// page to open, so there is no per-event layout to maintain.
+/// </summary>
+public sealed class StaffAlertModel : IEmailTextModel
+{
+    private const int PreheaderMax = 110;
+
+    public required string Heading { get; init; }
+    public required string Body { get; init; }
+    /// <summary>Inbox preview line; defaults to the body, trimmed to fit one line.</summary>
+    public string? Preheader { get; init; }
+    public IReadOnlyList<EmailSummaryRow> Rows { get; init; } = [];
+    /// <summary>Absolute admin URL (FrontendBaseUrl + path); empty → CTA omitted.</summary>
+    public string? AdminUrl { get; init; }
+    public required BrandOptions Brand { get; init; }
+
+    public string TextHeading => Heading;
+    public string? TextPreheader => string.IsNullOrWhiteSpace(Preheader) ? Trim(Body) : Preheader;
+    public string? TextHeroLine => null;
+    public IReadOnlyList<string> TextBodyLines => [Body];
+    public IReadOnlyList<EmailSummaryRow> TextSummaryRows => Rows;
+    public string? TextCtaLabel => string.IsNullOrWhiteSpace(AdminUrl) ? null : "Open in admin";
+    public string? TextCtaUrl => AdminUrl;
+    public string? TextFooterNote => "You received this because you are a TradieHunter staff member.";
+
+    private static string Trim(string text) =>
+        text.Length <= PreheaderMax ? text : text[..(PreheaderMax - 1)].TrimEnd() + "…";
+}

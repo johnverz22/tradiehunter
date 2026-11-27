@@ -28,6 +28,7 @@ public class EmailCopyInvariantTests
         Assert.Equal("Your refund is on its way", EmailSubjects.RefundProcessed);
         Assert.Equal("Your TradieHunter account has been suspended", EmailSubjects.AccountSuspended);
         Assert.Equal("Your job \"Deck staining\" has been closed", EmailSubjects.JobCancelled("Deck staining"));
+        Assert.Equal("Staff alert — Receipt awaiting verification", EmailSubjects.StaffAlert("Receipt awaiting verification"));
     }
 
     [Fact]

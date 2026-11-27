@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
 > **Purpose:** Close the gaps found in the notification coverage audit (2026-11-27). Today staff are never told when something needs them, several user-facing events fire no push or email, and a handful of code paths bypass `IJobStatusService` so their changes are never broadcast.
-> **Status:** Not started · **Prepared:** 2026-11-27
+> **Status:** N0 done; N1 foundation built (N1.5 push-loop migration pending) · **Prepared:** 2026-11-27 · **Updated:** 2026-11-27
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** independent of `08_e2e_persona_fabric_plan.md`, but N8 reuses its fabric (manifest, `e2e-journey.py` scenarios, `web/e2e/`) to prove the new notifications. Email template work follows the existing `EmailTemplateRenderer` + `EmailPreviewSamples` pattern.
@@ -57,21 +57,32 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N0 — Recon and decisions (no code)
 
-- [ ] **N0.1** Read the files in §0; confirm each audit row (H1-H10, M1-M10) against current `main` line numbers, since the audit cites ranges that may have drifted (S)
-- [ ] **N0.2** Confirm `SPECS.md` wording for every "staff are notified" / "admin is notified" line and list which transitions the spec says should notify the counterparty (S)
-- [ ] **N0.3** Decide the web admin channel (§3.4) and confirm it fits `docs/MVP.md`; record the decision in *Decisions and parked items* (S)
-- [ ] **N0.4** Inventory every hand-rolled `DeviceTokens` push loop (grep `DeviceTokens`) with file and notification type, to drive N1.5 (S)
-- [ ] **N0.5** Decide which M4 push-only events become email-fallback vs stay push-only, and which are `critical` (S)
+- [x] **N0.1** Read the files in §0; confirm each audit row (H1-H10, M1-M10) against current `main` line numbers, since the audit cites ranges that may have drifted (S)
+  - Done: every row confirmed on `main` (2026-11-27). H1 `DisputeService` has no `IJobStatusService` reference and sets `IsFlagged`/`DisputeStatus` directly; H2 `AdminService.ResolveDisputeAsync` (line 587) sets `job.Status = JobStatus.Cancelled` at line 605; H3/H4 `ReviewCredentialAsync` (661) and `VerifyUserAsync` (245) notify nobody; H5 `ProfileService.UploadCredentialAsync` (256) creates `Pending` silently; H6 `PaymentSlaJob` line 32 "Future: Alert admins"; H7 `AccountFlagService.LogFlagAsync` only writes the row; H8/H9 `PaymentExpiryJob` (170) and `AutoCompleteJob` (97) only log; H10 `PayoutService` line 119 "would normally broadcast"; M6 no quote-expiry job exists though `QuoteService` sets `ValidUntilUtc`.
+- [x] **N0.2** Confirm `SPECS.md` wording for every "staff are notified" / "admin is notified" line and list which transitions the spec says should notify the counterparty (S)
+  - Done: spec lines ("staff are notified" for overdue payments, "admin is notified" at flag threshold) match code comments; `AccountFlagService` threshold is `Counter >= 3` (sets `ThresholdHit`), which N5.6 reuses.
+- [x] **N0.3** Decide the web admin channel (§3.4) and confirm it fits `docs/MVP.md`; record the decision in *Decisions and parked items* (S)
+  - Done: persisted `StaffNotification` + polled bell (see Decisions §1). SignalR staff group (N6.5) parked.
+- [x] **N0.4** Inventory every hand-rolled `DeviceTokens` push loop (grep `DeviceTokens`) with file and notification type, to drive N1.5 (S)
+  - Done: 20 `DeviceTokens` push sites listed in Decisions §3; they split into simple loops (migrate in N1.5) and multicast/chat/schedule paths that already clean up stale tokens (migrate last or park).
+- [x] **N0.5** Decide which M4 push-only events become email-fallback vs stay push-only, and which are `critical` (S)
+  - Done: channel tiers are encoded in `NotificationPolicy` (Decisions §2) and pinned by `NotificationPolicyTests`.
 
 ## Phase N1 — Notification foundation (backend)
 
-- [ ] **N1.1** `IStaffRecipientResolver` + implementation (active Staff/Superadmin user ids and emails), with tests (S)
-- [ ] **N1.2** Extend `INotificationService`: `SendToStaffAsync(event, title, body, data, ct)`; non-critical variant with optional template so callers stop choosing between two overloads (M)
-- [ ] **N1.3** `NotificationPolicy` map (§3.3) covering every event in Phases N2-N5; unit tests assert channel/critical per event (M)
-- [ ] **N1.4** Fix stale-token cleanup in one place (`PushNotificationService`) so every caller gets it (S)
+- [x] **N1.1** `IStaffRecipientResolver` + implementation (active Staff/Superadmin user ids and emails), with tests (S)
+  - Done: `IStaffRecipientResolver` / `StaffRecipientResolver` (`Services/Notifications/`). Active Staff + Superadmin with an email, not bounced, not locked out. Invited-but-not-activated staff are `IsActive = false`, so they are excluded.
+- [x] **N1.2** Extend `INotificationService`: `SendToStaffAsync(event, title, body, data, ct)`; non-critical variant with optional template so callers stop choosing between two overloads (M)
+  - Done: `INotificationService` gains `SendPushToUserAsync`, policy-driven `NotifyAsync(eventKey, ...)` and `SendToStaffAsync(StaffAlert)`. Existing overloads are unchanged. **Email:** staff alerts use a new design-system `StaffAlert` template (E9: navy/gold layout, summary-row table, bulletproof CTA, plain-text twin); user emails keep using the existing `CriticalNotice` template. No second email stack was added.
+- [x] **N1.3** `NotificationPolicy` map (§3.3) covering every event in Phases N2-N5; unit tests assert channel/critical per event (M)
+  - Done: `NotificationPolicy` + `NotificationEvents` (38 events) with `NotificationPolicyTests` pinning the invariants (unique snake_case keys, every constant has a row, staff = email-only, existing critical kinds stay critical, push-only set is exactly the reminders/review events).
+- [x] **N1.4** Fix stale-token cleanup in one place (`PushNotificationService`) so every caller gets it (S)
+  - Done in `NotificationService` rather than `PushNotificationService` (that class is a DB-free singleton). New `IPushSender.TrySendAsync` seam returns `Sent`/`StaleToken`/`Failed`; stale tokens are deleted, `Failed` ones are kept, and one bad token no longer aborts the rest. Only `INotificationService` callers get this until N1.5 migrates the rest.
 - [ ] **N1.5** Replace the hand-rolled push loops from N0.4 with `INotificationService` calls, one service per commit, no behaviour change except email fallback now applying (L)
-- [ ] **N1.6** Fix M8: `AdminService` refund uses `INotificationService` with `critical: true` so the email always sends (S)
-- [ ] **N1.7** Idempotency key for staff alerts `(type, entityId)` with a short window; tests for Hangfire-retry duplicates (M)
+- [x] **N1.6** Fix M8: `AdminService` refund uses `INotificationService` with `critical: true` so the email always sends (S)
+  - Done: refund push goes through `SendPushToUserAsync`; the `RefundProcessed` email now ALWAYS sends (it previously only sent when no push landed, contradicting `refund_processed` being critical). Dedicated template kept for the amount/reference rows; `jobId` is now passed so the CTA and `X-Entity-Ref` are populated.
+- [x] **N1.7** Idempotency key for staff alerts `(type, entityId)` with a short window; tests for Hangfire-retry duplicates (M)
+  - Done: `INotificationDeduplicator` / `InMemoryNotificationDeduplicator` (atomic, `TimeProvider`-based, purges when large). Per-process only; the durable cross-instance guard is the N6 table.
 
 ## Phase N2 — Route bypasses through `IJobStatusService` (fixes H1, H2, M3)
 
@@ -150,4 +161,23 @@ _Empty. Append dated entries as phases land._
 
 ## Decisions and parked items
 
-_Empty. Record N0 decisions (web channel, staff recipient model, M4 channel choices, quote-expiry job) here._
+### N0 decisions (2026-11-27)
+
+**1. Web admin channel.** Persisted `StaffNotification` rows + `GET /api/admin/notifications` + a polled unread bell (30s and on window focus). Persisting beats SignalR-only because offline staff still see what they missed. SignalR staff group stays optional (N6.5). Until N6 lands, staff alerts are email-only, which is why every staff event is `Email = Always`, `Push = false`.
+
+**2. Channel tiers** (source of truth: `backend/Services/Notifications/NotificationPolicy.cs`).
+- **Critical, always email:** `refund_processed`, `account_suspended`, `job_cancelled`, `job_expired`, `dispute_opened`, `dispute_resolved`, `credential_decision`, `payout_processed` (money moved or a decision the user must see).
+- **Fallback, email only if push missed:** dispute evidence, credential submitted, user verified, job booked / in progress / awaiting confirmation / awaiting payment / payment review, offer accepted / declined / expired, quote accepted / declined, adjustment withdrawn / expired, receipt received, no-show reported.
+- **Push only:** `adjustment_reminder`, `pre_job_reminder`, `review_received`, `review_revealed` (an email after the moment has passed adds nothing).
+- **Staff alerts, email always:** receipt awaiting verification, payment SLA breach, payment overdue, job needs review, payout batch ready / completed, account flag threshold, dispute and credential staff alerts.
+- Owner can flip any row by editing one line plus its test; no call site changes.
+
+**3. Hand-rolled `DeviceTokens` push sites (N0.4).** Simple per-token loops, no stale cleanup (migrate in N1.5): `AutoCompleteJob`, `PreJobReminderJob`, `PaymentExpiryJob`, `RevealReviewsJob`, `AdjustmentExpiryJob` (x2), `OfferService`, `AdjustmentService`, `QuoteService`, `PayoutService`, `PaymentService`, `JobStatusService` (x2). Already clean up stale tokens, migrate last or park: `JobService` and `MatchingService` (multicast), `ReviewService`, `ScheduleService`, `ScheduleReminderService`, `ChatService` (rate limited). `ProfileController` is the token registration endpoint, not a send site.
+
+**4. Quote expiry (M6).** Still open: no job honours `ValidUntilUtc` today. Decide in N3.6 whether to build it or park it.
+
+### Verification limits for N1 (2026-11-27)
+
+`dotnet` is not installed on the host and NuGet is unreachable from the authoring sandbox, so the full `FixoApi.Tests` project could not be built there. What was verified: `NotificationPolicy`, the deduplicator, `NotificationService`, `StaffRecipientResolver` and the real fan-out/resolver test logic compiled on .NET 10 and ran (35 tests passed) against a stub of the EF surface and an xunit shim; the remaining edited files (`SmtpEmailSender`, `AdminService`, `PushNotificationService`, `Program.cs`) were syntax-checked only. **Not yet run:** the real `FixoApi.Tests` suite, RazorLight rendering of `StaffAlert.cshtml`, and the EF Core InMemory behaviour. Run `docker compose run --rm --entrypoint /bin/bash api -c "dotnet test"` once before relying on this.
+
+**Golden files.** `EmailGoldenSnapshotTests` writes `Goldens/email/StaffAlert.html|txt` the first time it runs because they do not exist yet. Run once with `UPDATE_EMAIL_GOLDENS=1`, review the diff and commit both files.

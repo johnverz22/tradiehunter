@@ -23,7 +23,7 @@ public class AdminService : IAdminService
     private readonly IBlobStorageService _blob;
     private readonly string _credentialsContainer;
     private readonly IOptions<LocaleOptions> _locale;
-    private readonly PushNotificationService _pushNotifications;
+    private readonly INotificationService _notifications;
     private readonly IAuditLogService _audit;
     private readonly ILogger<AdminService> _logger;
 
@@ -35,7 +35,7 @@ public class AdminService : IAdminService
         IBlobStorageService blob,
         IConfiguration config,
         IOptions<LocaleOptions> locale,
-        PushNotificationService pushNotifications,
+        INotificationService notifications,
         IAuditLogService audit,
         ILogger<AdminService> logger)
     {
@@ -46,7 +46,7 @@ public class AdminService : IAdminService
         _blob = blob;
         _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
         _locale = locale;
-        _pushNotifications = pushNotifications;
+        _notifications = notifications;
         _audit = audit;
         _logger = logger;
     }
@@ -1043,59 +1043,38 @@ public class AdminService : IAdminService
 
         await _db.SaveChangesAsync();
 
-        // P6-06: Notify the homeowner that their refund has been processed.
-        // P8-06: critical event — email fallback when push is disabled/misses.
+        // P6-06 / P8-06: refund_processed is a critical event (money moved) — the
+        // push goes through the shared fan-out (stale-token cleanup, per-token
+        // isolation) and the email ALWAYS sends, whether or not the push landed.
+        // Previously a successful push suppressed the email, contradicting the
+        // critical-types contract. The dedicated RefundProcessed template is kept
+        // because it carries the amount and reference rows.
         var homeownerId = refund.Job.HomeownerId;
-        var pushSent = false;
-        try
-        {
-            var tokens = await _db.DeviceTokens
-                .Where(dt => dt.UserId == homeownerId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
+        var currency = _locale.Value.DefaultCurrency;
 
-            var currency = _locale.Value.DefaultCurrency;
-            var amountStr = refund.FinalAmount.ToString("F2");
-
-            foreach (var token in tokens)
+        await _notifications.SendPushToUserAsync(
+            homeownerId,
+            "Refund processed",
+            $"${refund.FinalAmount:F2} {currency} has been transferred. Ref: {request.TransferReference}.",
+            new Dictionary<string, string>
             {
-                try
-                {
-                    await _pushNotifications.SendAsync(
-                        token,
-                        "Refund processed",
-                        $"${amountStr} {currency} has been transferred. Ref: {request.TransferReference}.",
-                        new Dictionary<string, string>
-                        {
-                            ["jobId"]    = refund.JobId.ToString(),
-                            ["refundId"] = refund.Id.ToString(),
-                            ["type"]     = "refund_processed",
-                        });
-                    pushSent = true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", homeownerId);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not send refund notification to homeowner {HomeownerId}.", homeownerId);
-        }
+                ["jobId"]    = refund.JobId.ToString(),
+                ["refundId"] = refund.Id.ToString(),
+                ["type"]     = NotificationEvents.RefundProcessed,
+            });
 
-        if (!pushSent && !string.IsNullOrWhiteSpace(refund.Job.Homeowner.Email))
+        if (!string.IsNullOrWhiteSpace(refund.Job.Homeowner.Email))
         {
             try
             {
                 await _emailSender.SendRefundProcessedAsync(
                     refund.Job.Homeowner.Email!, refund.Job.Title,
-                    refund.FinalAmount, _locale.Value.DefaultCurrency,
-                    request.TransferReference);
+                    refund.FinalAmount, currency,
+                    request.TransferReference, refund.JobId);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Refund fallback email to {Email} failed.", refund.Job.Homeowner.Email);
+                _logger.LogWarning(ex, "Refund email to {Email} failed.", refund.Job.Homeowner.Email);
             }
         }
 

@@ -96,6 +96,19 @@ public static class EmailPreviewSamples
                 Name = "Aroha Ngata",
                 Brand = brand,
             },
+            ["StaffAlert"] = brand => new StaffAlertModel
+            {
+                Heading = "Receipt awaiting verification",
+                Body = "A homeowner uploaded a payment receipt and the job is waiting for staff to verify it.",
+                Rows =
+                [
+                    new EmailSummaryRow("Job", "Fence repair (#1042)"),
+                    new EmailSummaryRow("Amount", Money.Format(456.00m, "NZD"), Emphasize: true),
+                    new EmailSummaryRow("Waiting", "32 minutes"),
+                ],
+                AdminUrl = Link(brand, "/payments"),
+                Brand = brand,
+            },
             ["JobCancelled"] = brand => new JobClosedModel
             {
                 JobTitle = "Deck staining",

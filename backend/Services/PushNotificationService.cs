@@ -2,11 +2,30 @@ using FirebaseAdmin.Messaging;
 
 namespace FixoApi.Services;
 
+/// <summary>Result of one device-token send, so callers can react without catching FCM exceptions.</summary>
+public enum PushSendOutcome
+{
+    Sent,
+    /// <summary>FCM says the token is unregistered or invalid — delete it.</summary>
+    StaleToken,
+    Failed,
+}
+
+/// <summary>
+/// Single-token push seam used by <see cref="NotificationService"/>. Exists so the
+/// fan-out (stale-token cleanup, email fallback) can be unit-tested without FCM.
+/// </summary>
+public interface IPushSender
+{
+    Task<PushSendOutcome> TrySendAsync(
+        string deviceToken, string title, string body, Dictionary<string, string>? data = null);
+}
+
 /// <summary>
 /// Wraps Firebase Cloud Messaging for sending push notifications.
 /// FirebaseApp must already be initialised (Program.cs) before this is called.
 /// </summary>
-public class PushNotificationService
+public class PushNotificationService : IPushSender
 {
     private readonly ILogger<PushNotificationService> _logger;
     private readonly FixoApi.Options.BrandOptions _brand;
@@ -55,6 +74,27 @@ public class PushNotificationService
         {
             _logger.LogError(ex, "FCM send failed for token {Token}", deviceToken);
             throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<PushSendOutcome> TrySendAsync(
+        string deviceToken, string title, string body, Dictionary<string, string>? data = null)
+    {
+        try
+        {
+            await SendAsync(deviceToken, title, body, data);
+            return PushSendOutcome.Sent;
+        }
+        catch (FirebaseMessagingException ex) when (
+            ex.MessagingErrorCode is MessagingErrorCode.Unregistered
+                                   or MessagingErrorCode.InvalidArgument)
+        {
+            return PushSendOutcome.StaleToken; // SendAsync already logged it
+        }
+        catch
+        {
+            return PushSendOutcome.Failed; // SendAsync already logged it
         }
     }
 

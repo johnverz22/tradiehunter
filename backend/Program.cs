@@ -287,6 +287,8 @@ builder.Services.AddSingleton<FixoApi.Email.EmailTemplateRenderer>();
 builder.Services.AddSingleton<FixoApi.Email.IEmailMetrics, FixoApi.Email.EmailMetrics>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IStaffRecipientResolver, StaffRecipientResolver>();
+builder.Services.AddSingleton<INotificationDeduplicator, InMemoryNotificationDeduplicator>();
 
 // ── Payments (P4-02, P4-03, P10-03) ──────────────────────────────────────────
 // The provider is the seam a real gateway drops into later; swapping
@@ -333,6 +335,7 @@ builder.Services.AddHostedService<DemoSeedService>();
 // PushNotificationService is a thin wrapper around FirebaseMessaging.DefaultInstance —
 // safe as singleton because FirebaseMessaging is thread-safe.
 builder.Services.AddSingleton<PushNotificationService>();
+builder.Services.AddSingleton<IPushSender>(sp => sp.GetRequiredService<PushNotificationService>());
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 

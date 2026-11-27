@@ -155,6 +155,21 @@ public class SmtpEmailSender : IEmailSender
             HelloIdentity(), template: "CriticalNotice");
     }
 
+    /// <summary>E9 staff alert — one design-system template for every staff event.</summary>
+    public async Task SendStaffAlertAsync(string toEmail, StaffAlertModel alert, string? entityRef = null)
+    {
+        var subject = EmailSubjects.StaffAlert(alert.Heading);
+        if (!_options.UseTemplates)
+        {
+            await SendLegacyAsync(toEmail, subject, alert.Body, HelloIdentity(), entityRef: entityRef);
+            return;
+        }
+
+        var rendered = await RenderAsync("StaffAlert", "StaffAlert", alert);
+        await SendAsync(toEmail, subject, rendered,
+            HelloIdentity(), template: "StaffAlert", entityRef: entityRef);
+    }
+
     public async Task SendRefundProcessedAsync(
         string toEmail, string jobTitle, decimal amount, string currency, string reference, int? jobId = null)
     {

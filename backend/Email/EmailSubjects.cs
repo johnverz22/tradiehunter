@@ -20,5 +20,7 @@ public static class EmailSubjects
 
     public static string AccountSuspended => "Your TradieHunter account has been suspended";
 
+    public static string StaffAlert(string heading) => $"Staff alert — {heading}";
+
     public static string JobCancelled(string jobTitle) => $"Your job \"{jobTitle}\" has been closed";
 }

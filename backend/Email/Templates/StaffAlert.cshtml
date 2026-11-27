@@ -1,0 +1,22 @@
+@model FixoApi.Email.StaffAlertModel
+@* E9 — staff alert: eyebrow + heading + what happened, a summary table of the
+    entity (job, amount, waiting time…) and an "Open in admin" CTA when a web host
+    exists. One template for every staff event — no per-event layouts. *@
+<p style="margin:0 0 8px 0; font-family:'IBM Plex Mono','Courier New',monospace; font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#5B6570;">Staff alert</p>
+<h1 class="th-h1" style="margin:0 0 6px 0; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; line-height:1.3; color:#193957;">@Model.TextHeading</h1>
+<p style="margin:0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:14px; color:#5B6570;">@Model.TextPreheader</p>
+<div style="height:1px; background-color:#E4E0D4; margin:20px 0;"></div>
+@foreach (var line in Model.TextBodyLines)
+{
+    <p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;">@line</p>
+}
+@if (Model.TextSummaryRows.Count > 0)
+{
+    <table role="presentation" width="100%" bgcolor="#E1EBF4" cellpadding="0" cellspacing="0" border="0" style="background-color:#E1EBF4; border-radius:8px; margin:16px 0;">
+        @foreach (var row in Model.TextSummaryRows)
+        {
+            <tr><td style="padding:4px 20px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">@{ await IncludeAsync("Email.Partials._SummaryRow", new FixoApi.Email.SummaryRowModel(row, Model.Brand)); }</table></td></tr>
+        }
+    </table>
+}
+@{ await IncludeAsync("Email.Partials._CtaButton", new FixoApi.Email.CtaButtonModel(Model.TextCtaLabel ?? string.Empty, Model.TextCtaUrl)); }

@@ -31,6 +31,10 @@ public interface IEmailSender
     /// </summary>
     Task SendCriticalNoticeAsync(string toEmail, CriticalNoticeModel notice);
 
+    /// <summary>E9: alert one staff member that something needs the admin team.
+    /// Renders the StaffAlert template; <paramref name="entityRef"/> becomes X-Entity-Ref.</summary>
+    Task SendStaffAlertAsync(string toEmail, StaffAlertModel alert, string? entityRef = null);
+
     /// <summary>P8-06: refund processed (money moved — always email if push missed).</summary>
     Task SendRefundProcessedAsync(
         string toEmail, string jobTitle, decimal amount, string currency,
