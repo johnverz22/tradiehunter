@@ -60,7 +60,10 @@ try {
   await page.goto(pathToFileURL(HTML).href, { waitUntil: 'networkidle' });
   const fontsOk = await page.evaluate(async () => {
     await document.fonts.ready;
-    return document.fonts.check("16px 'Lexend'") && document.fonts.check("16px 'Source Sans 3'");
+    // `document.fonts.check()` defaults to weight 400, which the mockup may never use (Lexend is
+    // only used at 500-800), so it reports false even when every used face loaded. Ask for loaded faces.
+    const loaded = (family) => [...document.fonts].some((f) => f.family.replace(/['"]/g, '') === family && f.status === 'loaded');
+    return loaded('Lexend') && loaded('Source Sans 3');
   });
   if (!fontsOk) console.warn('warning: Lexend / Source Sans 3 did not load (offline?); frames use fallback fonts');
 
