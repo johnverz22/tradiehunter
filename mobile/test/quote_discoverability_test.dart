@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 Job _project({
   String status = 'Requested',
+  int stage = 0,
   int? requested,
   int? received,
   String? tradie,
@@ -18,7 +19,7 @@ Job _project({
   category: 'Building',
   suburb: 'Grey Lynn',
   status: status,
-  stage: 0,
+  stage: stage,
   jobType: Job.jobTypeProject,
   quotesRequested: requested,
   quotesReceived: received,
@@ -90,7 +91,7 @@ void main() {
       expect(thHomeownerJobPath(_project()), '/jobs/9/matching');
       expect(thHomeownerJobPath(_hourly()), '/jobs/1/matching');
       expect(
-        thHomeownerJobPath(_project(status: 'Booked', requested: 3)),
+        thHomeownerJobPath(_project(status: 'Booked', stage: 1, requested: 3)),
         '/jobs/9/detail',
       );
       expect(
