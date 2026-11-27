@@ -35,7 +35,7 @@ public class OfferService
     private readonly FixoDbContext _context;
     private readonly IJobStatusService _jobStatusService;
     private readonly IHubContext<JobHub> _jobHub;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<JobFlowOptions> _flowOptions;
     private readonly ILogger<OfferService> _logger;
@@ -44,7 +44,7 @@ public class OfferService
         FixoDbContext context,
         IJobStatusService jobStatusService,
         IHubContext<JobHub> jobHub,
-        PushNotificationService push,
+        INotificationService notifications,
         IBackgroundJobClient hangfire,
         IOptions<JobFlowOptions> flowOptions,
         ILogger<OfferService> logger)
@@ -52,7 +52,7 @@ public class OfferService
         _context = context;
         _jobStatusService = jobStatusService;
         _jobHub = jobHub;
-        _push = push;
+        _notifications = notifications;
         _hangfire = hangfire;
         _flowOptions = flowOptions;
         _logger = logger;
@@ -166,29 +166,16 @@ public class OfferService
         await _jobHub.Clients.User(request.TradieId).SendAsync("OfferLifecycleEvent", payload);
 
         // FCM push to the tradie (best effort).
-        try
-        {
-            var tokens = await _context.DeviceTokens
-                .Where(dt => dt.UserId == request.TradieId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
-            foreach (var token in tokens)
+        await _notifications.SendPushToUserAsync(
+            request.TradieId,
+            title: "New job request",
+            body: $"{job.Title} — respond in {windowMinutes} minutes.",
+            data: new Dictionary<string, string>
             {
-                await _push.SendAsync(token,
-                    title: "New job request",
-                    body: $"{job.Title} — respond in {windowMinutes} minutes.",
-                    data: new Dictionary<string, string>
-                    {
-                        ["jobId"] = jobId.ToString(),
-                        ["offerId"] = offer.Id.ToString(),
-                        ["kind"] = kind.ToString(),
-                    });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "FCM push failed for direct request {OfferId}.", offer.Id);
-        }
+                ["jobId"] = jobId.ToString(),
+                ["offerId"] = offer.Id.ToString(),
+                ["kind"] = kind.ToString(),
+            });
 
         return ToDto(offer, tradie.FullName, job.Title);
     }

@@ -26,7 +26,7 @@ public class PaymentService : IPaymentService
     private readonly IJobStatusService _jobStatus;
     private readonly IBlobStorageService _blob;
     private readonly IPaymentProvider _provider;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IEmailSender _email;
     private readonly IAuditLogService _audit;
     private readonly IOptions<PaymentOptions> _paymentOptions;
@@ -39,7 +39,7 @@ public class PaymentService : IPaymentService
         IJobStatusService jobStatus,
         IBlobStorageService blob,
         IPaymentProvider provider,
-        PushNotificationService push,
+        INotificationService notifications,
         IEmailSender email,
         IAuditLogService audit,
         IOptions<PaymentOptions> paymentOptions,
@@ -51,7 +51,7 @@ public class PaymentService : IPaymentService
         _jobStatus = jobStatus;
         _blob = blob;
         _provider = provider;
-        _push = push;
+        _notifications = notifications;
         _email = email;
         _audit = audit;
         _paymentOptions = paymentOptions;
@@ -145,6 +145,19 @@ public class PaymentService : IPaymentService
         // IJobStatusService owns the transition, its history row and the broadcast.
         await _jobStatus.TransitionAsync(
             jobId, JobStatus.PaymentReview, homeownerUserId, UserRole.Homeowner);
+
+        // N5.1: alert staff that a receipt is awaiting verification.
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.ReceiptAwaitingVerification,
+            EntityKey: $"payment:{payment.Id}",
+            Heading: $"Receipt awaiting verification — job #{jobId}",
+            Body: $"A homeowner uploaded a payment receipt for \"{job.Title}\" (#{jobId}) and it is waiting for staff verification.",
+            Rows:
+            [
+                new EmailSummaryRow("Job", $"{job.Title} (#{jobId})"),
+                new EmailSummaryRow("Amount", Money.Format(payment.Amount, payment.Currency), Emphasize: true),
+            ],
+            AdminPath: "/payments"), ct);
 
         return MapToDto(job, payment);
     }
@@ -528,26 +541,11 @@ public class PaymentService : IPaymentService
         var homeowner = payment.Job.Homeowner;
         if (homeowner is null) return;
 
-        try
+        await _notifications.SendPushToUserAsync(homeowner.Id, title, body, new Dictionary<string, string>
         {
-            var tokens = await _db.DeviceTokens
-                .Where(dt => dt.UserId == homeowner.Id)
-                .Select(dt => dt.Token)
-                .ToListAsync(ct);
-
-            foreach (var token in tokens)
-            {
-                await _push.SendAsync(token, title, body, new Dictionary<string, string>
-                {
-                    ["jobId"]     = payment.JobId.ToString(),
-                    ["paymentId"] = payment.Id.ToString(),
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "FCM push to homeowner {UserId} failed.", homeowner.Id);
-        }
+            ["jobId"]     = payment.JobId.ToString(),
+            ["paymentId"] = payment.Id.ToString(),
+        }, ct);
 
         if (string.IsNullOrEmpty(homeowner.Email)) return;
 

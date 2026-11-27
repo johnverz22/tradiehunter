@@ -41,6 +41,7 @@ public class JobsController : ControllerBase
     private readonly IValidator<ScheduleJobRequest> _scheduleValidator;
     private readonly IValidator<CreateAdjustmentRequest> _adjustmentValidator;
     private readonly IValidator<SubmitQuoteRequest> _quoteValidator;
+    private readonly INotificationService _notifications;
     private readonly ILogger<JobsController> _logger;
 
     private const int MaxPhotos      = 5;
@@ -67,6 +68,7 @@ public class JobsController : ControllerBase
         IValidator<ScheduleJobRequest> scheduleValidator,
         IValidator<CreateAdjustmentRequest> adjustmentValidator,
         IValidator<SubmitQuoteRequest> quoteValidator,
+        INotificationService notifications,
         ILogger<JobsController> logger)
     {
         _jobService       = jobService;
@@ -85,6 +87,7 @@ public class JobsController : ControllerBase
         _scheduleValidator = scheduleValidator;
         _adjustmentValidator = adjustmentValidator;
         _quoteValidator   = quoteValidator;
+        _notifications    = notifications;
         _logger           = logger;
     }
 
@@ -730,13 +733,26 @@ public class JobsController : ControllerBase
         if (job.HomeownerId != userId && job.MatchedTradieId != userId)
             return Forbid();
 
-        job.IsFlagged = true;
-        job.FlagReason = request.Reason;
-        job.FlaggedAtUtc = DateTime.UtcNow;
-        job.DisputeStatus = "Open";
-        job.UpdatedAtUtc = DateTime.UtcNow;
+        await _jobStatusService.RecordFlagAsync(id, userId, request.Reason);
 
-        await _context.SaveChangesAsync();
+        var counterpartyId = job.HomeownerId == userId ? job.MatchedTradieId : job.HomeownerId;
+        var data = new Dictionary<string, string> { ["jobId"] = id.ToString() };
+        if (!string.IsNullOrEmpty(counterpartyId))
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.DisputeOpened,
+                counterpartyId,
+                "Job flagged for dispute",
+                $"\"{job.Title}\" was flagged for dispute review: {request.Reason}",
+                data);
+        }
+
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.DisputeStaffAlert,
+            EntityKey: $"dispute:{id}",
+            Heading: $"Job #{id} flagged for dispute",
+            Body: $"\"{job.Title}\" was flagged: {request.Reason}",
+            AdminPath: $"/disputes/{id}"));
 
         _logger.LogInformation("Job {JobId} flagged by user {UserId}: {Reason}", id, userId, request.Reason);
         return NoContent();

@@ -30,7 +30,7 @@ public class AdjustmentService
     private readonly FixoDbContext _context;
     private readonly IAuditLogService _audit;
     private readonly IHubContext<JobHub> _jobHub;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<JobFlowOptions> _flowOptions;
     private readonly ILogger<AdjustmentService> _logger;
@@ -39,7 +39,7 @@ public class AdjustmentService
         FixoDbContext context,
         IAuditLogService audit,
         IHubContext<JobHub> jobHub,
-        PushNotificationService push,
+        INotificationService notifications,
         IBackgroundJobClient hangfire,
         IOptions<JobFlowOptions> flowOptions,
         ILogger<AdjustmentService> logger)
@@ -47,7 +47,7 @@ public class AdjustmentService
         _context = context;
         _audit = audit;
         _jobHub = jobHub;
-        _push = push;
+        _notifications = notifications;
         _hangfire = hangfire;
         _flowOptions = flowOptions;
         _logger = logger;
@@ -281,21 +281,7 @@ public class AdjustmentService
     private async Task NotifyUserAsync(string? userId, string title, string body, Dictionary<string, string> data)
     {
         if (string.IsNullOrEmpty(userId)) return;
-        try
-        {
-            var tokens = await _context.DeviceTokens
-                .Where(dt => dt.UserId == userId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
-            foreach (var token in tokens)
-            {
-                await _push.SendAsync(token, title, body, data);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "FCM push to {UserId} about an adjustment failed.", userId);
-        }
+        await _notifications.SendPushToUserAsync(userId, title, body, data);
     }
 
     private AdjustmentDto ToDto(JobPriceAdjustment adjustment, Job job)

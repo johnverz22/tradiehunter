@@ -622,32 +622,8 @@ public class JobStatusService : IJobStatusService
     // ── P6-06: Push notification helper ──────────────────────────────────────
 
     /// <summary>Send a push notification to all devices registered to a user.</summary>
-    internal async Task SendPushToUserAsync(string userId, string title, string body, Dictionary<string, string>? data = null)
-    {
-        try
-        {
-            var tokens = await _context.DeviceTokens
-                .Where(dt => dt.UserId == userId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
-
-            foreach (var token in tokens)
-            {
-                try
-                {
-                    await _push.SendAsync(token, title, body, data);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", userId);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not load device tokens for user {UserId}.", userId);
-        }
-    }
+    internal Task SendPushToUserAsync(string userId, string title, string body, Dictionary<string, string>? data = null) =>
+        _notifications.SendPushToUserAsync(userId, title, body, data);
 
     private static JobDto MapToDto(Job job, bool isTradie = false)
     {
@@ -711,32 +687,17 @@ public class JobStatusService : IJobStatusService
 
         foreach (var userId in recipients)
         {
-            try
-            {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == userId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
+            var role = userId == job.HomeownerId ? "homeowner" : "tradie";
+            var title = "Job completed";
+            var body = $"How did it go with \"{job.Title}\"? Leave a review.";
 
-                var role = userId == job.HomeownerId ? "homeowner" : "tradie";
-                var title = "Job completed";
-                var body = $"How did it go with \"{job.Title}\"? Leave a review.";
-
-                foreach (var token in tokens)
+            await _notifications.SendPushToUserAsync(userId, title, body,
+                new Dictionary<string, string>
                 {
-                    await _push.SendAsync(token, title, body,
-                        new Dictionary<string, string>
-                        {
-                            ["jobId"] = job.Id.ToString(),
-                            ["type"] = "review_prompt",
-                            ["role"] = role
-                        });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "FCM push to {UserId} about review prompt for job {JobId} failed.", userId, job.Id);
-            }
+                    ["jobId"] = job.Id.ToString(),
+                    ["type"] = "review_prompt",
+                    ["role"] = role
+                });
         }
 
         _logger.LogInformation("Sent review prompts for completed job {JobId}.", job.Id);
@@ -836,5 +797,38 @@ public class JobStatusService : IJobStatusService
         {
             throw new UnauthorizedAccessException("Admin cannot report no-show directly.");
         }
+    }
+
+    public async Task RecordFlagAsync(int jobId, string userId, string reason, CancellationToken ct = default)
+    {
+        var job = await _context.Jobs.FirstOrDefaultAsync(j => j.Id == jobId, ct)
+            ?? throw new KeyNotFoundException($"Job {jobId} not found.");
+
+        var now = DateTime.UtcNow;
+        job.IsFlagged = true;
+        job.FlagReason = reason;
+        job.FlaggedAtUtc = now;
+        job.DisputeStatus = DisputeStatus.Open.ToString();
+        job.UpdatedAtUtc = now;
+
+        _context.JobStatusHistory.Add(new JobStatusHistory
+        {
+            JobId = job.Id,
+            FromStatus = job.Status,
+            ToStatus = job.Status,
+            ChangedByUserId = userId,
+            Reason = $"[Dispute/Flag] {reason}",
+            ChangedAtUtc = now,
+        });
+
+        await _context.SaveChangesAsync(ct);
+
+        await _jobHub.Clients.Group(JobHub.GroupName(job.Id)).SendAsync("JobStatusChanged", new JobStatusChangedPayload
+        {
+            JobId = job.Id,
+            Status = job.Status.ToString(),
+            PreviousStatus = job.Status.ToString(),
+            Reason = reason,
+        }, ct);
     }
 }

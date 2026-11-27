@@ -1023,13 +1023,6 @@ class _ThChatComposer extends StatelessWidget {
           spacing: Space.s2_5,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Attach / image button
-            if (onAttach != null)
-              THIconButton(
-                icon: Icons.image_outlined,
-                semanticLabel: 'Attach photo',
-                onPressed: onAttach,
-              ),
             // Text field — rounded rectangle (mockup), not a pill
             Expanded(
               child: Container(
@@ -1076,7 +1069,7 @@ class _ThChatComposer extends StatelessWidget {
                     color: c.brand,
                   ),
                   child: Icon(
-                    Icons.near_me_outlined,
+                    Icons.send_rounded,
                     color: c.onBrand,
                     size: Sizes.icon,
                   ),

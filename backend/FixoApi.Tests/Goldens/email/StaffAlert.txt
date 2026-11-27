@@ -1,0 +1,18 @@
+RECEIPT AWAITING VERIFICATION
+=============================
+
+A homeowner uploaded a payment receipt and the job is waiting for staff
+to verify it.
+
+  Job     Fence repair (#1042)
+  Amount  456.00 NZD
+  Waiting 32 minutes
+
+Open in admin:
+https://app.tradiehunter.nz/payments
+
+------------------------------------------------------------------------
+You received this because you are a TradieHunter staff member.
+
+TradieHunter · support@tradiehunter.nz · 8am - 6pm NZT, Mon-Fri
+Auckland, New Zealand

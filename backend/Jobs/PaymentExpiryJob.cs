@@ -1,4 +1,5 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
 using FixoApi.Services;
@@ -29,22 +30,22 @@ public class PaymentExpiryJob
 
     private readonly FixoDbContext _context;
     private readonly IJobStatusService _jobStatus;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly ILogger<PaymentExpiryJob> _logger;
 
     public PaymentExpiryJob(
         FixoDbContext context,
         IJobStatusService jobStatus,
-        PushNotificationService push,
+        INotificationService notifications,
         IBackgroundJobClient hangfire,
         ILogger<PaymentExpiryJob> logger)
     {
-        _context   = context;
-        _jobStatus = jobStatus;
-        _push      = push;
-        _hangfire  = hangfire;
-        _logger    = logger;
+        _context       = context;
+        _jobStatus     = jobStatus;
+        _notifications = notifications;
+        _hangfire      = hangfire;
+        _logger        = logger;
     }
 
     /// <summary>
@@ -166,9 +167,23 @@ public class PaymentExpiryJob
         await NotifyAsync(job, "Payment overdue",
             $"\"{job.Title}\" — the payment window has passed. Upload your receipt now to avoid restrictions on your account.");
 
+        var overdueAmount = payment?.Amount ?? job.FinalAmount ?? 0m;
+        var currency = payment?.Currency ?? "NZD";
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.PaymentOverdueStaff,
+            EntityKey: $"job:{job.Id}",
+            Heading: $"Payment overdue — job #{job.Id}",
+            Body: $"Payment for \"{job.Title}\" (#{job.Id}) is overdue past its payment window; homeowner account has been flagged.",
+            Rows:
+            [
+                new EmailSummaryRow("Job", $"{job.Title} (#{job.Id})"),
+                new EmailSummaryRow("Amount", Money.Format(overdueAmount, currency), Emphasize: true),
+            ],
+            AdminPath: "/payments"));
+
         _logger.LogInformation(
-            "PaymentExpiryJob: overdue payment for job {JobId} — staff should follow up (amount={Amount}).",
-            job.Id, payment?.Amount ?? job.FinalAmount ?? 0m);
+            "PaymentExpiryJob: overdue payment for job {JobId} — staff notified (amount={Amount}).",
+            job.Id, overdueAmount);
     }
 
     /// <summary>Tell both parties. Best effort — never throws.</summary>
@@ -181,23 +196,8 @@ public class PaymentExpiryJob
 
         foreach (var userId in recipients)
         {
-            try
-            {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == userId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
-
-                foreach (var token in tokens)
-                {
-                    await _push.SendAsync(token, title, body,
-                        new Dictionary<string, string> { ["jobId"] = job.Id.ToString() });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "FCM push to {UserId} about payment status for job {JobId} failed.", userId, job.Id);
-            }
+            await _notifications.SendPushToUserAsync(userId, title, body,
+                new Dictionary<string, string> { ["jobId"] = job.Id.ToString() });
         }
     }
 }

@@ -20,16 +20,16 @@ public class PreJobReminderJob
     internal const string SystemUserId = "system";
 
     private readonly FixoDbContext _context;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly ILogger<PreJobReminderJob> _logger;
 
     public PreJobReminderJob(
         FixoDbContext context,
-        PushNotificationService push,
+        INotificationService notifications,
         ILogger<PreJobReminderJob> logger)
     {
         _context = context;
-        _push = push;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -57,32 +57,17 @@ public class PreJobReminderJob
 
         foreach (var userId in recipients)
         {
-            try
-            {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == userId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
+            var role = userId == job.HomeownerId ? "homeowner" : "tradie";
+            var title = "Job starting soon";
+            var body = $"Your job \"{job.Title}\" starts in 1 hour.";
 
-                var role = userId == job.HomeownerId ? "homeowner" : "tradie";
-                var title = "Job starting soon";
-                var body = $"Your job \"{job.Title}\" starts in 1 hour.";
-
-                foreach (var token in tokens)
+            await _notifications.SendPushToUserAsync(userId, title, body,
+                new Dictionary<string, string>
                 {
-                    await _push.SendAsync(token, title, body,
-                        new Dictionary<string, string>
-                        {
-                            ["jobId"] = job.Id.ToString(),
-                            ["type"] = "pre_job_reminder",
-                            ["role"] = role
-                        });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "FCM push to {UserId} about pre-job reminder for job {JobId} failed.", userId, job.Id);
-            }
+                    ["jobId"] = job.Id.ToString(),
+                    ["type"] = "pre_job_reminder",
+                    ["role"] = role
+                });
         }
 
         _logger.LogInformation("PreJobReminderJob: sent reminders for job {JobId}.", jobId);

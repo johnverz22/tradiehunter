@@ -12,14 +12,14 @@ namespace FixoApi.Jobs;
 public class RevealReviewsJob
 {
     private readonly FixoDbContext _context;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IAccountFlagService _flagService;
     private readonly ILogger<RevealReviewsJob> _logger;
 
-    public RevealReviewsJob(FixoDbContext context, PushNotificationService push, IAccountFlagService flagService, ILogger<RevealReviewsJob> logger)
+    public RevealReviewsJob(FixoDbContext context, INotificationService notifications, IAccountFlagService flagService, ILogger<RevealReviewsJob> logger)
     {
         _context = context;
-        _push = push;
+        _notifications = notifications;
         _flagService = flagService;
         _logger = logger;
     }
@@ -37,15 +37,11 @@ public class RevealReviewsJob
         {
             try
             {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == review.RevieweeId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
-
-                foreach (var token in tokens)
-                {
-                    await _push.SendAsync(token, "New Review Revealed!", "A review for your recent job is now visible.", new System.Collections.Generic.Dictionary<string, string> { { "jobId", review.JobId.ToString() } });
-                }
+                await _notifications.SendPushToUserAsync(
+                    review.RevieweeId,
+                    "New Review Revealed!",
+                    "A review for your recent job is now visible.",
+                    new System.Collections.Generic.Dictionary<string, string> { { "jobId", review.JobId.ToString() } });
                 
                 // P10-12: Check Low Rating
                 var allReviews = await _context.Reviews

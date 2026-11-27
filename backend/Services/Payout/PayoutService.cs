@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FixoApi.Data;
 using FixoApi.DTOs;
+using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
 using FixoApi.Options;
@@ -17,18 +18,21 @@ public class PayoutService : IPayoutService
 {
     private readonly FixoDbContext _context;
     private readonly PayoutOptions _options;
-    private readonly PushNotificationService _push;
+    private readonly LocaleOptions _locale;
+    private readonly INotificationService _notifications;
     private readonly ILogger<PayoutService> _logger;
 
     public PayoutService(
         FixoDbContext context,
         IOptions<PayoutOptions> options,
-        PushNotificationService push,
+        IOptions<LocaleOptions> locale,
+        INotificationService notifications,
         ILogger<PayoutService> logger)
     {
         _context = context;
         _options = options.Value;
-        _push = push;
+        _locale = locale.Value;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -115,11 +119,22 @@ public class PayoutService : IPayoutService
         }
 
         await _context.SaveChangesAsync();
-        
-        // Notify staff (would normally broadcast to staff users)
-        // Leaving out generic broadcast, assuming an admin topic or we can log it.
+
         _logger.LogInformation("Created PayoutBatch {BatchId} with {Count} payouts.", batch.Id, batch.PayoutCount);
-        
+
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.PayoutBatchReady,
+            EntityKey: $"payout-batch:{batch.Id}",
+            Heading: "Payout batch ready",
+            Body: $"Payout batch {batch.Id} was created with {batch.PayoutCount} payout(s) ready to process.",
+            Rows:
+            [
+                new EmailSummaryRow("Batch", batch.Id.ToString()),
+                new EmailSummaryRow("Payouts", batch.PayoutCount.ToString()),
+                new EmailSummaryRow("Total", Money.Format(batch.TotalAmount, _locale.DefaultCurrency), Emphasize: true),
+            ],
+            AdminPath: "/payouts"));
+
         return batch;
     }
 
@@ -154,6 +169,7 @@ public class PayoutService : IPayoutService
                 batch.Status = PayoutBatchStatus.Completed;
                 batch.CompletedAtUtc = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+                await NotifyBatchCompletedAsync(batch);
             }
         }
 
@@ -252,10 +268,25 @@ public class PayoutService : IPayoutService
             batch.Status = PayoutBatchStatus.Completed;
             batch.CompletedAtUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await NotifyBatchCompletedAsync(batch);
         }
 
         return true;
     }
+
+    private Task NotifyBatchCompletedAsync(PayoutBatch batch) =>
+        _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.PayoutBatchCompleted,
+            EntityKey: $"payout-batch:{batch.Id}",
+            Heading: "Payout batch completed",
+            Body: $"All {batch.PayoutCount} payout(s) in batch {batch.Id} have been processed.",
+            Rows:
+            [
+                new EmailSummaryRow("Batch", batch.Id.ToString()),
+                new EmailSummaryRow("Payouts", batch.PayoutCount.ToString()),
+                new EmailSummaryRow("Total", Money.Format(batch.TotalAmount, _locale.DefaultCurrency), Emphasize: true),
+            ],
+            AdminPath: "/payouts"));
 
     /// <summary>
     /// Shared projection for every read that leaves the admin API, so the full
@@ -322,23 +353,6 @@ public class PayoutService : IPayoutService
         return digits.Length <= 4 ? digits : digits[^4..];
     }
     
-    private async Task SendPushToUserAsync(string userId, string title, string body, int jobId)
-    {
-        try
-        {
-            var tokens = await _context.DeviceTokens
-                .Where(dt => dt.UserId == userId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
-
-            foreach (var token in tokens)
-            {
-                await _push.SendAsync(token, title, body, new Dictionary<string, string> { { "jobId", jobId.ToString() } });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "FCM push to token for user {UserId} failed.", userId);
-        }
-    }
+    private Task SendPushToUserAsync(string userId, string title, string body, int jobId) =>
+        _notifications.SendPushToUserAsync(userId, title, body, new Dictionary<string, string> { { "jobId", jobId.ToString() } });
 }

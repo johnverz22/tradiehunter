@@ -78,7 +78,8 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
   - Done: `NotificationPolicy` + `NotificationEvents` (38 events) with `NotificationPolicyTests` pinning the invariants (unique snake_case keys, every constant has a row, staff = email-only, existing critical kinds stay critical, push-only set is exactly the reminders/review events).
 - [x] **N1.4** Fix stale-token cleanup in one place (`PushNotificationService`) so every caller gets it (S)
   - Done in `NotificationService` rather than `PushNotificationService` (that class is a DB-free singleton). New `IPushSender.TrySendAsync` seam returns `Sent`/`StaleToken`/`Failed`; stale tokens are deleted, `Failed` ones are kept, and one bad token no longer aborts the rest. Only `INotificationService` callers get this until N1.5 migrates the rest.
-- [ ] **N1.5** Replace the hand-rolled push loops from N0.4 with `INotificationService` calls, one service per commit, no behaviour change except email fallback now applying (L)
+- [x] **N1.5** Replace the hand-rolled push loops from N0.4 with `INotificationService` calls, one service per commit, no behaviour change except email fallback now applying (L)
+  - Done: migrated all 12 simple `DeviceTokens` push loops (`AutoCompleteJob`, `PreJobReminderJob`, `PaymentExpiryJob`, `RevealReviewsJob`, `AdjustmentExpiryJob` + `AdjustmentReminderJob`, `OfferService`, `AdjustmentService`, `QuoteService`, `PayoutService`, `PaymentService`, `JobStatusService` x2) to `INotificationService.SendPushToUserAsync` with stale-token cleanup. Multicast/rate-limited sites (`JobService`, `MatchingService`, `ReviewService`, `ScheduleService`, `ScheduleReminderService`, `ChatService`) already clean up stale tokens and remain parked.
 - [x] **N1.6** Fix M8: `AdminService` refund uses `INotificationService` with `critical: true` so the email always sends (S)
   - Done: refund push goes through `SendPushToUserAsync`; the `RefundProcessed` email now ALWAYS sends (it previously only sent when no push landed, contradicting `refund_processed` being critical). Dedicated template kept for the amount/reference rows; `jobId` is now passed so the CTA and `X-Entity-Ref` are populated.
 - [x] **N1.7** Idempotency key for staff alerts `(type, entityId)` with a short window; tests for Hangfire-retry duplicates (M)
@@ -86,11 +87,11 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N2 — Route bypasses through `IJobStatusService` (fixes H1, H2, M3)
 
-- [ ] **N2.1** `DisputeService.OpenDisputeAsync` and `JobsController.FlagJob` transition via `IJobStatusService` (history row, `JobStatusChanged`); notify counterparty + staff (M)
-- [ ] **N2.2** Dispute evidence upload notifies the other party and staff (S)
-- [ ] **N2.3** `AdminService.ResolveDisputeAsync`: `Completed`/`Cancelled` via `IJobStatusService`; push + critical email to both parties with the outcome (M)
-- [ ] **N2.4** Legacy `JobService.TransitionStatusAsync` paths (accept/decline/start-era, `DELETE /jobs/{id}`, v1 `RunMatchingAsync`): route through `IJobStatusService` or, if a path is dead under `JobFlow:Version=2`, delete it and record why. `DELETE /jobs/{id}` must notify the counterparty (L)
-- [ ] **N2.5** Tests: each path writes a `JobStatusHistory` row, emits `JobStatusChanged`, and triggers the policy's notifications (M)
+- [x] **N2.1** `DisputeService.OpenDisputeAsync` and `JobsController.FlagJob` transition via `IJobStatusService` (history row, `JobStatusChanged`); notify counterparty + staff (M)
+- [x] **N2.2** Dispute evidence upload notifies the other party and staff (S)
+- [x] **N2.3** `AdminService.ResolveDisputeAsync`: `Completed`/`Cancelled` via `IJobStatusService`; push + critical email to both parties with the outcome (M)
+- [x] **N2.4** Legacy `JobService.TransitionStatusAsync` paths (accept/decline/start-era, `DELETE /jobs/{id}`, v1 `RunMatchingAsync`): route through `IJobStatusService` or, if a path is dead under `JobFlow:Version=2`, delete it and record why. `DELETE /jobs/{id}` must notify the counterparty (L)
+- [x] **N2.5** Tests: each path writes a `JobStatusHistory` row, emits `JobStatusChanged`, and triggers the policy's notifications (M)
 
 ## Phase N3 — Per-transition notification policy (fixes M1, M2, M4, M7)
 

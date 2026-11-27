@@ -24,6 +24,7 @@ public class AdminService : IAdminService
     private readonly string _credentialsContainer;
     private readonly IOptions<LocaleOptions> _locale;
     private readonly INotificationService _notifications;
+    private readonly IJobStatusService _jobStatusService;
     private readonly IAuditLogService _audit;
     private readonly ILogger<AdminService> _logger;
 
@@ -36,6 +37,7 @@ public class AdminService : IAdminService
         IConfiguration config,
         IOptions<LocaleOptions> locale,
         INotificationService notifications,
+        IJobStatusService jobStatusService,
         IAuditLogService audit,
         ILogger<AdminService> logger)
     {
@@ -47,6 +49,7 @@ public class AdminService : IAdminService
         _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
         _locale = locale;
         _notifications = notifications;
+        _jobStatusService = jobStatusService;
         _audit = audit;
         _logger = logger;
     }
@@ -600,32 +603,54 @@ public class AdminService : IAdminService
                 job.DisputeStatus = "Escalated";
                 break;
             case "CancelJob":
-                var previousStatus = job.Status;
                 job.DisputeStatus = "Resolved";
-                job.Status = JobStatus.Cancelled;
-                _db.JobStatusHistory.Add(new JobStatusHistory
-                {
-                    JobId = job.Id,
-                    FromStatus = previousStatus,
-                    ToStatus = JobStatus.Cancelled,
-                    ChangedByUserId = adminUserId,
-                    Reason = $"[Admin dispute resolution] {request.Note}",
-                    ChangedAtUtc = DateTime.UtcNow,
-                });
+                job.DisputeNote = request.Note;
+                job.UpdatedAtUtc = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+                await _jobStatusService.TransitionAsync(
+                    job.Id, JobStatus.Cancelled, adminUserId, UserRole.Staff,
+                    null, $"[Admin dispute resolution] {request.Note}");
                 break;
             default:
                 _logger.LogWarning("Unknown dispute action {Action}", request.Action);
                 return false;
         }
 
-        job.DisputeNote = request.Note;
-        job.UpdatedAtUtc = DateTime.UtcNow;
+        if (request.Action != "CancelJob")
+        {
+            job.DisputeNote = request.Note;
+            job.UpdatedAtUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
 
-        await _db.SaveChangesAsync();
         await _audit.LogAsync(adminUserId, "dispute.resolve", "Job", jobId.ToString(),
             before, new { job.Id, Status = job.Status.ToString(), job.DisputeStatus, request.Action, request.Note });
         _logger.LogInformation("Dispute for job {JobId} resolved with action {Action} by admin {AdminId}",
             jobId, request.Action, adminUserId);
+
+        var outcomeText = request.Action switch
+        {
+            "CancelJob" => "The job has been cancelled.",
+            "Escalated" => "The dispute has been escalated for further review.",
+            _ => "The dispute has been resolved.",
+        };
+        var notifyData = new Dictionary<string, string>
+        {
+            ["jobId"] = job.Id.ToString(),
+            ["action"] = request.Action,
+        };
+        var body = string.IsNullOrWhiteSpace(request.Note)
+            ? $"Dispute update for \"{job.Title}\": {outcomeText}"
+            : $"Dispute update for \"{job.Title}\": {outcomeText} Note: {request.Note}";
+
+        await _notifications.NotifyAsync(
+            NotificationEvents.DisputeResolved, job.HomeownerId, "Dispute update", body, notifyData);
+        if (!string.IsNullOrEmpty(job.MatchedTradieId))
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.DisputeResolved, job.MatchedTradieId, "Dispute update", body, notifyData);
+        }
+
         return true;
     }
 

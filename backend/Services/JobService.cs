@@ -24,6 +24,7 @@ namespace FixoApi.Services;
 public class JobService : IJobService
 {
     private readonly IJobRepository _jobRepo;
+    private readonly IJobStatusService _jobStatusService;
     private readonly IMatchingService _matchingService;
     private readonly IHubContext<JobHub> _hub;
     private readonly PushNotificationService _push;
@@ -33,6 +34,7 @@ public class JobService : IJobService
 
     public JobService(
         IJobRepository jobRepo,
+        IJobStatusService jobStatusService,
         IMatchingService matchingService,
         IHubContext<JobHub> hub,
         PushNotificationService push,
@@ -40,8 +42,9 @@ public class JobService : IJobService
         IOptions<JobFlowOptions> jobFlowOptions,
         ILogger<JobService> logger)
     {
-        _jobRepo         = jobRepo;
-        _matchingService = matchingService;
+        _jobRepo          = jobRepo;
+        _jobStatusService = jobStatusService;
+        _matchingService  = matchingService;
         _hub             = hub;
         _push            = push;
         _context         = context;
@@ -214,7 +217,12 @@ public class JobService : IJobService
 
         if (job.Status is JobStatus.Completed or JobStatus.Cancelled) return false;
 
-        await TransitionStatusAsync(job, JobStatus.Cancelled);
+        var actorRole = isOwner ? UserRole.Homeowner : UserRole.Tradie;
+        var reasonCode = isOwner ? ReasonCode.homeowner_changed_mind : ReasonCode.tradie_unavailable;
+        await _jobStatusService.CancelJobAsync(job.Id, requestingUserId, actorRole, new CancelJobRequest
+        {
+            ReasonCode = reasonCode,
+        });
         return true;
     }
 
@@ -227,7 +235,10 @@ public class JobService : IJobService
             return new MatchResultDto();
 
         // Transition → Matching
-        await TransitionStatusAsync(job, JobStatus.Requested);
+        if (job.Status != JobStatus.Requested)
+        {
+            await _jobStatusService.TransitionAsync(job.Id, JobStatus.Requested, homeownerId, UserRole.Homeowner);
+        }
 
         var matches = await _matchingService.FindMatchesAsync(job);
 
@@ -249,7 +260,8 @@ public class JobService : IJobService
 
         // Legacy v1: transition → Matched (picks the top-ranked tradie as the suggested match)
         job.MatchedTradieId = matches[0].TradieId;
-        await TransitionStatusAsync(job, JobStatus.AwaitingPayment);
+        await _jobRepo.UpdateAsync(job);
+        await _jobStatusService.TransitionAsync(job.Id, JobStatus.AwaitingPayment, homeownerId, UserRole.Homeowner);
 
         // Notify all matched tradies via SignalR + FCM (M2-05, M2-06).
         await NotifyMatchedTradiesAsync(job, matches);
@@ -279,7 +291,8 @@ public class JobService : IJobService
         if (job.Status is not (JobStatus.AwaitingPayment or JobStatus.Requested)) return false;
 
         job.MatchedTradieId = tradieId;
-        await TransitionStatusAsync(job, JobStatus.AwaitingPayment);
+        await _jobRepo.UpdateAsync(job);
+        await _jobStatusService.TransitionAsync(job.Id, JobStatus.AwaitingPayment, homeownerId, UserRole.Homeowner);
         return true;
     }
 
@@ -290,7 +303,7 @@ public class JobService : IJobService
         if (job.FlowVersion >= 2) return false; // v2 accepts via the offer endpoints
         if (job.Status != JobStatus.AwaitingPayment) return false;
 
-        await TransitionStatusAsync(job, JobStatus.Booked);
+        await _jobStatusService.TransitionAsync(job.Id, JobStatus.Booked, tradieId, UserRole.Tradie);
         return true;
     }
 
@@ -303,7 +316,8 @@ public class JobService : IJobService
 
         // Clear matched tradie and go back to Matching so another can be found.
         job.MatchedTradieId = null;
-        await TransitionStatusAsync(job, JobStatus.Requested);
+        await _jobRepo.UpdateAsync(job);
+        await _jobStatusService.TransitionAsync(job.Id, JobStatus.Requested, tradieId, UserRole.Tradie);
         return true;
     }
 

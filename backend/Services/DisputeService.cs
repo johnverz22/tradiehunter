@@ -19,12 +19,21 @@ public class DisputeService : IDisputeService
 
     private readonly FixoDbContext _context;
     private readonly IBlobStorageService _blobStorage;
+    private readonly IJobStatusService _jobStatusService;
+    private readonly INotificationService _notifications;
     private readonly string _disputesContainer;
 
-    public DisputeService(FixoDbContext context, IBlobStorageService blobStorage, IConfiguration config)
+    public DisputeService(
+        FixoDbContext context,
+        IBlobStorageService blobStorage,
+        IConfiguration config,
+        IJobStatusService jobStatusService,
+        INotificationService notifications)
     {
         _context = context;
         _blobStorage = blobStorage;
+        _jobStatusService = jobStatusService;
+        _notifications = notifications;
         _disputesContainer = config["AzureBlob:DisputesContainer"] ?? "th-disputes";
     }
 
@@ -59,24 +68,42 @@ public class DisputeService : IDisputeService
         };
 
         _context.Disputes.Add(dispute);
-
-        job.DisputeStatus = DisputeStatus.Open.ToString();
-        // Surface on the admin disputes queue — for MVP the queue lists
-        // flagged jobs (see AdminDisputeListItemDto), so an open dispute must
-        // flag the job or staff can never see or resolve it.
-        job.IsFlagged = true;
-        job.FlagReason = request.Reason;
-        job.FlaggedAtUtc = DateTime.UtcNow;
-        job.UpdatedAtUtc = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
+
+        // Surface on the admin disputes queue, write JobStatusHistory, and broadcast JobStatusChanged.
+        await _jobStatusService.RecordFlagAsync(jobId, userId, request.Reason);
+
+        var counterpartyId = job.HomeownerId == userId ? job.MatchedTradieId : job.HomeownerId;
+        var data = new Dictionary<string, string>
+        {
+            ["jobId"] = jobId.ToString(),
+            ["disputeId"] = dispute.Id.ToString(),
+        };
+        if (!string.IsNullOrEmpty(counterpartyId))
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.DisputeOpened,
+                counterpartyId,
+                "Dispute opened",
+                $"A dispute was opened for \"{job.Title}\": {request.Reason}",
+                data);
+        }
+
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.DisputeStaffAlert,
+            EntityKey: $"dispute:{jobId}",
+            Heading: $"Dispute opened on job #{jobId}",
+            Body: $"\"{job.Title}\" was flagged for dispute: {request.Reason}",
+            AdminPath: $"/disputes/{jobId}"));
 
         return MapToDto(dispute);
     }
 
     public async Task<DisputeEvidenceDto> AddEvidenceTextAsync(int disputeId, string userId, AddEvidenceTextRequest request)
     {
-        var dispute = await _context.Disputes.FindAsync(disputeId);
+        var dispute = await _context.Disputes
+            .Include(d => d.Job)
+            .FirstOrDefaultAsync(d => d.Id == disputeId);
         if (dispute == null) throw new KeyNotFoundException("Dispute not found.");
 
         var evidence = new DisputeEvidence
@@ -91,12 +118,16 @@ public class DisputeService : IDisputeService
         _context.DisputeEvidences.Add(evidence);
         await _context.SaveChangesAsync();
 
+        await NotifyEvidenceAddedAsync(dispute, userId);
+
         return MapEvidenceDto(evidence);
     }
 
     public async Task<List<DisputeEvidenceDto>> AddEvidenceFilesAsync(int disputeId, string userId, List<IFormFile> files)
     {
-        var dispute = await _context.Disputes.FindAsync(disputeId);
+        var dispute = await _context.Disputes
+            .Include(d => d.Job)
+            .FirstOrDefaultAsync(d => d.Id == disputeId);
         if (dispute == null) throw new KeyNotFoundException("Dispute not found.");
 
         var results = new List<DisputeEvidenceDto>();
@@ -124,6 +155,7 @@ public class DisputeService : IDisputeService
         }
 
         await _context.SaveChangesAsync();
+        await NotifyEvidenceAddedAsync(dispute, userId);
 
         // Hydrate signed URLs (P8-03) — MapEvidenceDto can't be async.
         foreach (var dto in results)
@@ -137,6 +169,36 @@ public class DisputeService : IDisputeService
             catch { /* best-effort: row still returns without a URL */ }
         }
         return results;
+    }
+
+    private async Task NotifyEvidenceAddedAsync(Dispute dispute, string submittedByUserId)
+    {
+        var job = dispute.Job;
+        if (job is null) return;
+
+        var counterpartyId = job.HomeownerId == submittedByUserId ? job.MatchedTradieId : job.HomeownerId;
+        var data = new Dictionary<string, string>
+        {
+            ["jobId"] = job.Id.ToString(),
+            ["disputeId"] = dispute.Id.ToString(),
+        };
+
+        if (!string.IsNullOrEmpty(counterpartyId))
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.DisputeEvidenceAdded,
+                counterpartyId,
+                "New dispute evidence",
+                $"New evidence was added to the dispute for \"{job.Title}\".",
+                data);
+        }
+
+        await _notifications.SendToStaffAsync(new StaffAlert(
+            EventKey: NotificationEvents.DisputeStaffAlert,
+            EntityKey: $"dispute-evidence:{dispute.Id}",
+            Heading: $"Dispute evidence added on job #{job.Id}",
+            Body: $"New evidence was submitted for \"{job.Title}\".",
+            AdminPath: $"/disputes/{job.Id}"));
     }
 
     public async Task<DisputeDto> GetDisputeAsync(int disputeId)

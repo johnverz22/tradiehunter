@@ -1,4 +1,5 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace FixoApi.Services;
 public class AccountFlagService : IAccountFlagService
 {
     private readonly FixoDbContext _context;
+    private readonly INotificationService _notifications;
 
-    public AccountFlagService(FixoDbContext context)
+    public AccountFlagService(FixoDbContext context, INotificationService notifications)
     {
         _context = context;
+        _notifications = notifications;
     }
 
     public async Task LogFlagAsync(string userId, AccountFlagType flagType, string? note, string? createdBy = null)
@@ -37,16 +40,33 @@ public class AccountFlagService : IAccountFlagService
         else
         {
             flag.Counter++;
-            flag.Note = string.IsNullOrEmpty(flag.Note) ? note : $"{flag.Note}\n{note}";
+            flag.Note = string.IsNullOrEmpty(note) ? flag.Note : (string.IsNullOrEmpty(flag.Note) ? note : $"{flag.Note}\n{note}");
         }
 
         // Apply threshold logic. e.g., 3 strikes
+        var wasThresholdHit = flag.ThresholdHit;
         if (flag.Counter >= 3)
         {
             flag.ThresholdHit = true;
         }
 
         await _context.SaveChangesAsync();
+
+        if (flag.ThresholdHit && !wasThresholdHit)
+        {
+            await _notifications.SendToStaffAsync(new StaffAlert(
+                EventKey: NotificationEvents.AccountFlagThreshold,
+                EntityKey: $"flag:{userId}:{flagType}",
+                Heading: $"Account flag threshold reached — {flagType}",
+                Body: $"User {userId} reached {flag.Counter} unresolved {flagType} flags and requires staff review.",
+                Rows:
+                [
+                    new EmailSummaryRow("User", userId),
+                    new EmailSummaryRow("Flag type", flagType.ToString()),
+                    new EmailSummaryRow("Count", flag.Counter.ToString(), Emphasize: true),
+                ],
+                AdminPath: $"/users/{userId}"));
+        }
     }
 
     public async Task ResolveOverdueFlagAsync(string userId, string resolvedBy, string? note = null)

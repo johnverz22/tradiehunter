@@ -23,20 +23,20 @@ public class AdjustmentExpiryJob
 
     private readonly FixoDbContext _context;
     private readonly IHubContext<JobHub> _jobHub;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly ILogger<AdjustmentExpiryJob> _logger;
 
     public AdjustmentExpiryJob(
         FixoDbContext context,
         IHubContext<JobHub> jobHub,
-        PushNotificationService push,
+        INotificationService notifications,
         IBackgroundJobClient hangfire,
         ILogger<AdjustmentExpiryJob> logger)
     {
         _context = context;
         _jobHub = jobHub;
-        _push = push;
+        _notifications = notifications;
         _hangfire = hangfire;
         _logger = logger;
     }
@@ -94,28 +94,14 @@ public class AdjustmentExpiryJob
 
         foreach (var userId in new[] { job.HomeownerId, adjustment.ProposedByTradieId })
         {
-            try
-            {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == userId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
-                foreach (var token in tokens)
+            await _notifications.SendPushToUserAsync(userId, "Extra cost request expired",
+                $"\"{job.Title}\": the request for {adjustment.Amount:N2} expired without a response.",
+                new Dictionary<string, string>
                 {
-                    await _push.SendAsync(token, "Extra cost request expired",
-                        $"\"{job.Title}\": the request for {adjustment.Amount:N2} expired without a response.",
-                        new Dictionary<string, string>
-                        {
-                            ["jobId"] = job.Id.ToString(),
-                            ["adjustmentId"] = adjustment.Id.ToString(),
-                            ["type"] = "adjustment_expired",
-                        });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "FCM push about expired adjustment {AdjustmentId} failed.", adjustmentId);
-            }
+                    ["jobId"] = job.Id.ToString(),
+                    ["adjustmentId"] = adjustment.Id.ToString(),
+                    ["type"] = "adjustment_expired",
+                });
         }
     }
 }
@@ -127,16 +113,16 @@ public class AdjustmentExpiryJob
 public class AdjustmentReminderJob
 {
     private readonly FixoDbContext _context;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly ILogger<AdjustmentReminderJob> _logger;
 
     public AdjustmentReminderJob(
         FixoDbContext context,
-        PushNotificationService push,
+        INotificationService notifications,
         ILogger<AdjustmentReminderJob> logger)
     {
         _context = context;
-        _push = push;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -150,27 +136,14 @@ public class AdjustmentReminderJob
         if (adjustment == null || adjustment.Status != AdjustmentStatus.Pending)
             return; // decided (or withdrawn/expired) — nothing to remind about
 
-        try
-        {
-            var tokens = await _context.DeviceTokens
-                .Where(dt => dt.UserId == adjustment.Job.HomeownerId)
-                .Select(dt => dt.Token)
-                .ToListAsync();
-            foreach (var token in tokens)
+        await _notifications.SendPushToUserAsync(adjustment.Job.HomeownerId,
+            "Reminder: extra cost awaiting your approval",
+            $"\"{adjustment.Job.Title}\": {adjustment.Description} — {adjustment.Amount:N2}. Approve or decline.",
+            new Dictionary<string, string>
             {
-                await _push.SendAsync(token, "Reminder: extra cost awaiting your approval",
-                    $"\"{adjustment.Job.Title}\": {adjustment.Description} — {adjustment.Amount:N2}. Approve or decline.",
-                    new Dictionary<string, string>
-                    {
-                        ["jobId"] = adjustment.JobId.ToString(),
-                        ["adjustmentId"] = adjustment.Id.ToString(),
-                        ["type"] = "adjustment_reminder",
-                    });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Adjustment reminder push for {AdjustmentId} failed.", adjustmentId);
-        }
+                ["jobId"] = adjustment.JobId.ToString(),
+                ["adjustmentId"] = adjustment.Id.ToString(),
+                ["type"] = "adjustment_reminder",
+            });
     }
 }

@@ -1,4 +1,5 @@
 using FixoApi.Data;
+using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
 using FixoApi.Services;
@@ -29,7 +30,7 @@ public class AutoCompleteJob
 
     private readonly FixoDbContext _context;
     private readonly IJobStatusService _jobStatus;
-    private readonly PushNotificationService _push;
+    private readonly INotificationService _notifications;
     private readonly IBackgroundJobClient _hangfire;
     private readonly ILogger<AutoCompleteJob> _logger;
     private readonly FixoApi.Options.JobFlowOptions _flowOptions;
@@ -37,14 +38,14 @@ public class AutoCompleteJob
     public AutoCompleteJob(
         FixoDbContext context,
         IJobStatusService jobStatus,
-        PushNotificationService push,
+        INotificationService notifications,
         IBackgroundJobClient hangfire,
         Microsoft.Extensions.Options.IOptions<FixoApi.Options.JobFlowOptions> flowOptions,
         ILogger<AutoCompleteJob> logger)
     {
         _context = context;
         _jobStatus = jobStatus;
-        _push = push;
+        _notifications = notifications;
         _hangfire = hangfire;
         _flowOptions = flowOptions.Value;
         _logger = logger;
@@ -107,6 +108,19 @@ public class AutoCompleteJob
                 "Approval needs review",
                 $"Job \"{job.Title}\" needs staff review before the amount can be approved.",
                 "auto_approve_escalated");
+
+            await _notifications.SendToStaffAsync(new StaffAlert(
+                EventKey: NotificationEvents.JobNeedsReview,
+                EntityKey: $"job:{job.Id}",
+                Heading: $"Job #{job.Id} needs staff review",
+                Body: $"Auto-approve escalated \"{job.Title}\" (#{job.Id}) for staff review: {job.FlagReason}",
+                Rows:
+                [
+                    new EmailSummaryRow("Job", $"{job.Title} (#{job.Id})"),
+                    new EmailSummaryRow("Final amount", Money.Format(finalAmount, "NZD"), Emphasize: true),
+                    new EmailSummaryRow("Pending adjustments", pendingAdjustments ? "Yes" : "No"),
+                ],
+                AdminPath: $"/disputes/{job.Id}"));
             return;
         }
 
@@ -133,27 +147,12 @@ public class AutoCompleteJob
 
         foreach (var userId in recipients)
         {
-            try
-            {
-                var tokens = await _context.DeviceTokens
-                    .Where(dt => dt.UserId == userId)
-                    .Select(dt => dt.Token)
-                    .ToListAsync();
-
-                foreach (var token in tokens)
+            await _notifications.SendPushToUserAsync(userId, title, body,
+                new Dictionary<string, string>
                 {
-                    await _push.SendAsync(token, title, body,
-                        new Dictionary<string, string>
-                        {
-                            ["jobId"] = job.Id.ToString(),
-                            ["type"] = type
-                        });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "FCM push to {UserId} about auto action for job {JobId} failed.", userId, job.Id);
-            }
+                    ["jobId"] = job.Id.ToString(),
+                    ["type"] = type
+                });
         }
     }
 }

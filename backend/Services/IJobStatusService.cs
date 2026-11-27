@@ -11,4 +11,6 @@ public interface IJobStatusService
     Task<JobDto> CancelJobAsync(int jobId, string userId, UserRole actorRole, CancelJobRequest request);
 
     Task<JobDto> ReportNoShowAsync(int jobId, string userId, UserRole actorRole, ReportNoShowRequest request);
+
+    Task RecordFlagAsync(int jobId, string userId, string reason, CancellationToken ct = default);
 }
