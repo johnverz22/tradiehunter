@@ -156,7 +156,11 @@ String thHomeJobSubtitle(Job job) {
   if (tradie != null && tradie.isNotEmpty) return tradie;
   final received = job.quotesReceived;
   if (job.hasQuoteActivity && received != null) {
-    final requested = job.quotesRequested!;
+    final requested = job.quotesRequested;
+    if (requested == null) {
+      if (received <= 0) return 'Waiting for quotes';
+      return received == 1 ? '1 quote in' : '$received quotes in';
+    }
     // Never print a denominator smaller than the numerator.
     return received > 0
         ? '$received of ${received > requested ? received : requested} quotes in'

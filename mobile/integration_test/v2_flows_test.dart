@@ -1,4 +1,5 @@
 // V2 — Homeowner Phase-4 flows (quotes, extra cost, tradie profile request)
+// plus plan 10 quote discoverability on the live stack.
 //
 // Covered by scripts/run-e2e.sh config C1.
 //
@@ -171,6 +172,89 @@ void main() {
         );
         return offer != null;
       });
+    });
+  });
+
+  // ── Plan 10 quote discoverability on the live stack ─────────────────────
+  //
+  // The "2 of 3 quotes in" copy, the home "Review quotes" hero and the open
+  // board close-window label are covered deterministically by
+  // mobile/test/quote_discoverability_test.dart (fixtures + fake repos). Here
+  // we drive the parts that need the real API: the jobs card opens the quotes
+  // route with real counts, the quote detail sheet exposes accept, and a tradie
+  // loading the homeowner route leaks no quote UI.
+  group('ho_quotes visibility', () {
+    testWidgets('jobs card opens quotes with the real count', (tester) async {
+      final (jobId, quoteId, _) = await FixtureHelper.quotedJob(
+        tag: 'v2q-card',
+        amount: 2000,
+      );
+
+      app.main();
+      await loginAsHomeowner(tester);
+
+      appRouter.go('/jobs');
+      await pumpFor(tester, kNetworkSettle);
+
+      // One tradie was asked (quick match) and has quoted → 1 of 1.
+      expect(find.text('1 of 1 quotes in'), findsWidgets);
+
+      final card = find.byKey(ValueKey('$jobId'));
+      expect(card, findsOneWidget);
+      await tester.ensureVisible(card);
+      await tester.tap(card);
+      await pumpFor(tester, kNetworkSettle);
+
+      expect(appRouter.state.uri.path, '/jobs/$jobId/quotes');
+      expect(find.byKey(Key('view_quote_$quoteId')), findsOneWidget);
+    });
+
+    testWidgets('quote card opens details and the accept action', (
+      tester,
+    ) async {
+      final (jobId, quoteId, _) = await FixtureHelper.quotedJob(
+        tag: 'v2q-view',
+        amount: 2000,
+      );
+
+      app.main();
+      await loginAsHomeowner(tester);
+
+      appRouter.go('/jobs/$jobId/quotes');
+      await pumpFor(tester, kNetworkSettle);
+
+      final view = find.byKey(Key('view_quote_$quoteId'));
+      expect(view, findsOneWidget);
+      await tester.ensureVisible(view);
+      await tester.tap(view);
+      await pumpFor(tester);
+
+      expect(find.byKey(Key('quote_detail_$quoteId')), findsOneWidget);
+      expect(
+        find.byKey(Key('quote_detail_accept_$quoteId')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a tradie sees no quote UI on the homeowner route', (
+      tester,
+    ) async {
+      final (jobId, quoteId, _) = await FixtureHelper.quotedJob(
+        tag: 'v2q-tradie',
+        amount: 2000,
+      );
+
+      app.main();
+      await loginAsTradie(tester);
+
+      appRouter.go('/jobs/$jobId/quotes');
+      await pumpFor(tester, kNetworkSettle);
+
+      // The API refuses quotes to a non-owner; the screen shows the empty
+      // state instead of leaking the homeowner's competing quotes.
+      expect(find.text('No quotes yet'), findsOneWidget);
+      expect(find.byKey(Key('accept_quote_$quoteId')), findsNothing);
+      expect(find.byKey(Key('view_quote_$quoteId')), findsNothing);
     });
   });
 }

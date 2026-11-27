@@ -9,10 +9,10 @@
     var hours = string.IsNullOrWhiteSpace(brand.SupportHoursDisplay) ? "8am - 6pm NZT, Mon-Fri" : brand.SupportHoursDisplay;
     var address = string.IsNullOrWhiteSpace(brand.PostalAddress) ? "Auckland, New Zealand" : brand.PostalAddress;
 }
-<p style="margin:0 0 8px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#5B6570;">
+<p class="th-soft" style="margin:0 0 8px 0; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#4B5A71;">
     @(Model.Note ?? $"You received this because you have a {appName} account.")
 </p>
-<p style="margin:0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#5B6570;">
-    @appName &middot; <a href="mailto:@support" style="color:#3C75AA; text-decoration:none;">@support</a> &middot; @hours<br />
+<p class="th-soft" style="margin:0; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:12px; line-height:1.5; color:#4B5A71;">
+    @appName &middot; <a href="mailto:@support" style="color:#1E3A8A; text-decoration:none;">@support</a> &middot; @hours<br />
     @address
 </p>

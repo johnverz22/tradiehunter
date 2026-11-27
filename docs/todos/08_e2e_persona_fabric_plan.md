@@ -80,6 +80,8 @@ e2e-personas.py ──► manifest.json ──┬─► e2e-journey.py   (API ti
 - [~] **P2.9** Scenario: v1 in-flight path. **Parked:** `JobFlow:Version` is a global stack setting stamped on each job at creation; the API cannot create a v1 job per request (§C). The existing journey already has the v1 branch; it runs only against a stack started with `JobFlow__Version=1` (M)
 - [x] **P2.10** Append created job ids to the manifest so the mobile and web tiers can find them (`record_job`) (S)
 - [x] **P2.11** JUnit XML output preserved; `--fail-fast`, `--retry`, `--timeout` preserved (S)
+- [x] **P2.12** Scenarios for plan 10 quote visibility (E2E plan Phases 1a/1b/1c): `competing-quotes` now asserts the homeowner-only `quotesRequested`/`quotesReceived` counts on the detail and list DTOs (3/0 → 3/1 → 3/2 → 3/3, then null once booked; null for a tradie); `homeowner-quotes-visibility` covers the quotes/list contract, the D4 zero-request `(0,0)` precondition, hourly `(None,None)`, and the s362F gate at 29,999.99 / 30,000.00 / 45,000.00; `quote-settings` covers staff read-only (403), superadmin writes with 1–720 validation, new-quote validity (~96 h), non-retroactive changes, and restores the originals in `finally`. Live-verified on the local stack (manifest `e2eqv`, 3 tradies + staff). (M)
+- [x] **P2.13** Scenario for the open project board (plan 10 Q7.4–Q7.8; E2E plan Phase 3): `open-board-quotes` posts an open Project job and asserts it is on `GET /api/tradie/available-jobs` with suburb masking + full D7 details, quotes without an invite, rejects a second quote from the same tradie, hides invite-only / out-of-range / blocked jobs (blocks then unblocks tradie 3), keeps the close window stamped at posting (and a new job picks up a changed window, restored in `finally`), and books on accept. Board expiry stays with `OpenBoardTests.cs` (worker not deterministically triggerable). Live-verified. (M)
 - [x] **P2.12** `python3 -m py_compile scripts/e2e-journey.py` (S)
 
 ## Phase P3 — Mobile tier (Flutter)
@@ -155,6 +157,8 @@ PASS     web       (persona-fabric.spec.ts)
 - `e2e-journey.py --scenario all` passed all 7 scenarios in 2s (jobs 462, 463, 464, 466, 469, 470, 471).
 - `web/e2e/persona-fabric.spec.ts` logged in as the manifest staff persona and verified `/jobs/462`, `/payments`, `/disputes/471`, and `/users/{homeownerId}` in 4.3s.
 - `mobile` was skipped cleanly because `E2E_DEVICE` was unset (no booted simulator).
+
+**P2.12 quotes-visibility scenarios live run (2026-11-27, local docker stack, manifest `e2eqv` with 3 tradies + staff):** `e2e-journey.py --scenario all` passed all 9 scenarios. New coverage: `competing-quotes` asserts `quotesRequested/quotesReceived` (3/0 → 3/1 → 3/2 → 3/3, null after booking) on both the detail DTO and the jobs list, and null for a tradie; `homeowner-quotes-visibility` asserts the quotes/list contract, the D4 `(0,0)` zero-request precondition, hourly `(None,None)`, and the s362F gate at 29,999.99 (no gate) / 30,000.00 (gate) / 45,000.00 (gate); `quote-settings` asserts staff GET 200 + PUT 403, superadmin write 48/96, 1–720 rejects, new-quote validity ≈96 h, non-retroactive `validUntilUtc`, and restores 72/72 in `finally`. `scripts/run-e2e.sh` now reports `(9 scenarios)`.
 
 ## Decisions and parked items
 

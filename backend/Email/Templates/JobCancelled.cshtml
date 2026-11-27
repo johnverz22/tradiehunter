@@ -2,9 +2,9 @@
 @* E8 — job closed / expired (§4.2): reason line, "post it again" CTA. Wired
     from the expiry worker and the cancel paths — see ExpirationWorker +
     JobStatusService. *@
-<h1 class="th-h1" style="margin:0 0 6px 0; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; line-height:1.3; color:#193957;">@Model.TextHeading</h1>
-<p style="margin:0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:14px; color:#5B6570;">Your job details are saved in the app.</p>
-<div style="height:1px; background-color:#E4E0D4; margin:20px 0;"></div>
-<p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;"><strong style="color:#1D2226;">Reason:</strong> @Model.Reason</p>
-<p style="margin:0 0 14px 0; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; line-height:1.5; color:#1D2226;">Your job details are saved — post it again any time from the app.</p>
+<h1 class="th-h1" style="margin:0 0 6px 0; font-family:'Lexend',Arial,Helvetica,sans-serif; font-size:24px; font-weight:600; line-height:1.3; color:#1E3A8A;">@Model.TextHeading</h1>
+<p class="th-soft" style="margin:0; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:14px; color:#4B5A71;">Your job details are saved in the app.</p>
+<div style="height:1px; background-color:#DCE2EF; margin:20px 0;"></div>
+<p style="margin:0 0 14px 0; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:15px; line-height:1.45; color:#0F172A;"><strong style="color:#0F172A;">Reason:</strong> @Model.Reason</p>
+<p style="margin:0 0 14px 0; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:15px; line-height:1.45; color:#0F172A;">Your job details are saved — post it again any time from the app.</p>
 @{ await IncludeAsync("Email.Partials._CtaButton", new FixoApi.Email.CtaButtonModel(Model.TextCtaLabel ?? string.Empty, Model.TextCtaUrl)); }

@@ -24,5 +24,8 @@ appId: nz.co.fixo.fixo
       - tapOn:
           id: "login_button"
 
+- tapOn:
+    id: "dock_jobs"
+
 - assertVisible:
     id: "post_job_fab"

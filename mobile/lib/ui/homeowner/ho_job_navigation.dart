@@ -24,10 +24,13 @@ String thHomeownerJobPath(Job job) {
       job.status == 'Disputed') {
     return '/jobs/${job.id}/detail';
   }
-  // Plan 10 (D4): a project collecting quotes opens the quotes screen once a
-  // request is sent, or the tradie picker if none has been. Without counts
-  // (older server) fall through to the existing mapping.
+  // Plan 10 (D4 / Q7.9): an open-board project or one with quote requests
+  // opens the quotes screen; invite-only with 0 requests opens the tradie
+  // picker. Without counts (older server) fall through to the existing mapping.
   if (job.isProject && job.status == 'Requested') {
+    if (job.openToBoard || job.quotesCloseAtUtc != null) {
+      return '/jobs/${job.id}/quotes';
+    }
     final requested = job.quotesRequested;
     if (requested != null) {
       return requested > 0

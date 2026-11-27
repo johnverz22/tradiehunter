@@ -245,6 +245,7 @@ The backend API is the contract. **No backend change is planned by default.** Wh
 | G-19 | `ho_quotes` | Compact card with `View quote` + `Accept` | Implementation had one inline card with only Accept. | **Resolved by plan 10** (Q3): compact card + detail sheet. The `ho_quote_detail` frame is drawn (plan 10 Q3.1); PNG export and golden baselines pending. |
 | G-20 | `tr_lead` | Tradie quote builder | No `tr_quote*` mockup; implemented as `TrQuoteSheet`. | **Owner decision D3 (2026-11-27): keep the sheet, polished.** No `tr_quote` frame. |
 | G-21 | `ho_request_sent` | Sticky has only "Cancel request" | Implementation adds "Pick someone else" (needed for expired/gone states). | **Accepted deviation** (plan 10 F4). |
+| G-22 | `tr_available_jobs` / `tr_job_board_detail` | Open project board for tradies | Added for plan 10 Q7.10. | **Resolved by plan 10** (Q7.10): AST frames + Flutter screens + goldens added. |
 
 ### 4.2 Screens in the app with no v2 design (not in the 30)
 

@@ -174,6 +174,44 @@ class _TrJobsScreenState extends ConsumerState<TrJobsScreen> {
             key: const Key('tr_jobs_master_panel'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: Space.s3),
+                child: THCard(
+                  padding: Space.s3,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              THText(
+                                'Available projects',
+                                style: THTextStyle.title,
+                              ),
+                              THText(
+                                'Browse open projects nearby and send a quote',
+                                style: THTextStyle.meta,
+                                tone: THTone.soft,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: Space.s2),
+                        THButton(
+                          key: const Key('open_available_jobs_button'),
+                          label: 'Browse',
+                          kind: THButtonKind.accent,
+                          size: THButtonSize.sm,
+                          fullWidth: false,
+                          onPressed: () =>
+                              context.push('/tradie/available-jobs'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               SingleChildScrollView(
                 key: const Key('tradie_filter_row'),
                 scrollDirection: Axis.horizontal,

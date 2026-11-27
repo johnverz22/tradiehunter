@@ -35,7 +35,7 @@ class ThPostJobScreen extends ConsumerWidget {
     }
 
     final state = ref.watch(postJobProvider);
-    final copy = thPostJobCopy(state.jobType);
+    final copy = thPostJobCopy(state.jobType, openToBoard: state.openToBoard);
     final missing = thMissingFieldHelper(state);
     final canSubmit =
         !state.isSubmitting && (state.submittedJobId != null || state.isValid);
@@ -144,9 +144,14 @@ class ThPostJobScreen extends ConsumerWidget {
   }
 
   Future<void> _submitFlow(BuildContext context, WidgetRef ref) async {
+    final state = ref.read(postJobProvider);
     final jobId = await ref.read(postJobProvider.notifier).submit();
     if (jobId != null && context.mounted) {
-      context.push('/jobs/$jobId/tradies');
+      if (state.isProject && state.openToBoard) {
+        context.push('/jobs/$jobId/quotes');
+      } else {
+        context.push('/jobs/$jobId/tradies');
+      }
     }
   }
 }

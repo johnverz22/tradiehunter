@@ -73,6 +73,30 @@ public static class Money
 }
 
 /// <summary>
+/// Splits a brand name so its final segment can carry the hero-gold accent in
+/// the email header wordmark — mirrors web/src/features/branding/splitBrandName.ts
+/// ("TradieHunter" → "Tradie" + "Hunter"). The boundary is the last uppercase
+/// letter preceded by a lowercase letter or digit; names without one render
+/// with no accent segment.
+/// </summary>
+public static class BrandWordmark
+{
+    public static (string Lead, string Accent) Split(string name)
+    {
+        var last = -1;
+        for (var i = 1; i < name.Length; i++)
+        {
+            if (char.IsUpper(name[i]) && (char.IsLower(name[i - 1]) || char.IsDigit(name[i - 1])))
+            {
+                last = i;
+            }
+        }
+
+        return last <= 0 ? (name, string.Empty) : (name[..last], name[last..]);
+    }
+}
+
+/// <summary>
 /// Builds the plain-text twin of every email (§3.4): 72-column wrap, "===="
 /// under headings, summary rows as aligned label/value lines, and CTA URLs on
 /// their own line (full URLs only — no shortened links, deliverability).

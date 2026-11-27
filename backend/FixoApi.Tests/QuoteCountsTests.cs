@@ -6,7 +6,7 @@ using Xunit;
 namespace FixoApi.Tests;
 
 /// <summary>
-/// Plan 10 (Q1): "N of M quotes in" rules. Pure, no database.
+/// Plan 10 (Q1 / Q7.8): "N of M quotes in" rules. Pure, no database.
 /// </summary>
 public class QuoteCountsTests
 {
@@ -14,15 +14,20 @@ public class QuoteCountsTests
     private static readonly DateTime Future = Now.AddHours(24);
     private static readonly DateTime Past = Now.AddHours(-1);
 
+    // Invite-only helper (openToBoard: false).
     private static QuoteCountSummary Count(
         OfferResponse[] offers, (QuoteStatus, DateTime)[] quotes) =>
-        QuoteCounts.Compute(offers, quotes, Now);
+        QuoteCounts.Compute(openToBoard: false, offers, quotes, Now);
+
+    // Open-board helper (openToBoard: true).
+    private static QuoteCountSummary CountBoard((QuoteStatus, DateTime)[] quotes) =>
+        QuoteCounts.Compute(openToBoard: true, Array.Empty<OfferResponse>(), quotes, Now);
 
     [Fact]
     public void No_requests_gives_zero_of_zero()
     {
         var c = Count([], []);
-        Assert.Equal(0, c.Requested);
+        Assert.Equal(0, c.Requested);   // invite-only: 0 not null
         Assert.Equal(0, c.Received);
     }
 
@@ -71,6 +76,24 @@ public class QuoteCountsTests
         Assert.Equal(1, c.Received);
     }
 
+    // ── Q7.8: open-board jobs have null denominator ──────────────────────────
+
+    [Fact]
+    public void Open_board_job_requested_is_null()
+    {
+        var c = CountBoard([(QuoteStatus.Submitted, Future), (QuoteStatus.Submitted, Future)]);
+        Assert.Null(c.Requested);
+        Assert.Equal(2, c.Received);
+    }
+
+    [Fact]
+    public void Open_board_job_expired_quotes_not_counted()
+    {
+        var c = CountBoard([(QuoteStatus.Submitted, Past)]);
+        Assert.Null(c.Requested);
+        Assert.Equal(0, c.Received);
+    }
+
     [Theory]
     [InlineData(JobType.Project, JobStatus.Requested, false, true)]
     [InlineData(JobType.Project, JobStatus.Requested, true, false)]   // tradie
@@ -83,3 +106,4 @@ public class QuoteCountsTests
         Assert.Equal(expected, QuoteCounts.Applies(job, isTradie));
     }
 }
+

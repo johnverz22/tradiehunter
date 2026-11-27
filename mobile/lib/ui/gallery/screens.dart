@@ -1,6 +1,5 @@
 // GENERATED. Barrel + route table for the design-v2 screens.
 import 'package:flutter/widgets.dart';
-
 import 'splash_screen.dart';
 import 'onboarding_screen.dart';
 import 'role_select_screen.dart';
@@ -27,6 +26,8 @@ import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'tr_home_screen.dart';
 import 'tr_lead_screen.dart';
+import 'tr_available_jobs_screen.dart';
+import 'tr_job_board_detail_screen.dart';
 import 'tr_job_screen.dart';
 import 'tr_extra_cost_screen.dart';
 import 'tr_complete_screen.dart';
@@ -60,6 +61,8 @@ const Map<String, String> thScreenRoutes = {
   'profile': '/profile',
   'tr_home': '/tradie',
   'tr_lead': '/tradie/requests/:requestId',
+  'tr_available_jobs': '/tradie/available-jobs',
+  'tr_job_board_detail': '/tradie/available-jobs/:jobId',
   'tr_job': '/tradie/jobs/:jobId',
   'tr_extra_cost': '/tradie/jobs/:jobId (adjustment)',
   'tr_complete': '/tradie/jobs/:jobId (check-out)',
@@ -95,6 +98,8 @@ final Map<String, WidgetBuilder> thScreenBuilders = {
   'profile': (_) => const ProfileScreen(),
   'tr_home': (_) => const TrHomeScreen(),
   'tr_lead': (_) => const TrLeadScreen(),
+  'tr_available_jobs': (_) => const TrAvailableJobsScreen(),
+  'tr_job_board_detail': (_) => const TrJobBoardDetailScreen(),
   'tr_job': (_) => const TrJobScreen(),
   'tr_extra_cost': (_) => const TrExtraCostScreen(),
   'tr_complete': (_) => const TrCompleteScreen(),

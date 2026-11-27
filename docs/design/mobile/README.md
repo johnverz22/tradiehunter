@@ -8,7 +8,7 @@ tokens/design_tokens.dart  GENERATED  Space, Radii, Sizes, THType, THColors, THT
 tokens/tokens.css          GENERATED  CSS variables for the mockups
 tokens/contrast-report.txt GENERATED  WCAG AA gate results
 ast/dsl.mjs                node builders (the AST vocabulary)
-ast/screens.mjs            31 screens as AST (homeowner, tradie, shared)
+ast/screens.mjs            33 screens as AST (homeowner, tradie, shared)
 ast/screens.ast.json       GENERATED  the AST as JSON, for any other consumer
 flutter/th_widgets.dart    hand-written component library
 flutter/screens/*.dart     GENERATED  one StatelessWidget per screen + route table

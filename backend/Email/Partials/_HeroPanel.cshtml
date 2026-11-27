@@ -3,11 +3,11 @@
     one per email max (design token rule: max 2 orange elements per screen). *@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
     <tr>
-        <td bgcolor="#E1EBF4" style="background-color:#E1EBF4; border-top:2px solid #E38B29; border-radius:0 0 4px 4px; padding:16px 20px; text-align:center;">
-            <span style="display:block; font-family:'IBM Plex Mono','Courier New',monospace; font-size:32px; font-weight:600; letter-spacing:6px; color:#193957; white-space:nowrap;">@Model.Text</span>
+        <td class="th-panel th-hero" bgcolor="#EBEFF8" style="background-color:#EBEFF8; border-top:2px solid #B45309; border-radius:0 0 16px 16px; padding:16px 20px; text-align:center;">
+            <span style="display:block; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:32px; font-weight:600; letter-spacing:6px; color:#1E3A8A; white-space:nowrap;">@Model.Text</span>
             @if (!string.IsNullOrWhiteSpace(Model.SubText))
             {
-                <span style="display:block; margin-top:6px; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:13px; color:#5B6570;">@Model.SubText</span>
+                <span class="th-soft" style="display:block; margin-top:6px; font-family:'Source Sans 3',Arial,Helvetica,sans-serif; font-size:13px; color:#4B5A71;">@Model.SubText</span>
             }
         </td>
     </tr>
