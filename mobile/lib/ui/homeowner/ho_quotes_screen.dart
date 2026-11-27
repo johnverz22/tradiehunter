@@ -66,6 +66,21 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
     }
   }
 
+  Future<void> _view(Quote quote) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (sheetContext) => ThScope(
+      themeMode: ref.read(themeModeProvider),
+      child: _QuoteDetailSheet(
+        quote: quote,
+        onAccept: () {
+          Navigator.of(sheetContext).pop();
+          _accept(quote);
+        },
+      ),
+    ),
+  );
+
   Future<bool> _confirmContract(String? message) async {
     var checked = false;
     final confirmed = await showModalBottomSheet<bool>(
@@ -151,10 +166,14 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
         final state = ref.watch(quotesProvider(widget.jobId));
         final quotes = state.quotes;
         // Job title for the subtitle — G-6: omit rather than guess if null.
-        final jobTitle = ref
-            .watch(quotesJobProvider(widget.jobId))
-            .valueOrNull
-            ?.title;
+        final job = ref.watch(quotesJobProvider(widget.jobId)).valueOrNull;
+        final jobTitle = job?.title;
+        // Plan 10 Q3.4: "N of M received" when the server told us M; never a
+        // denominator below the numerator.
+        final requested = job?.quotesRequested;
+        final receivedLabel = requested == null
+            ? '${quotes.length} received'
+            : '${quotes.length} of ${requested < quotes.length ? quotes.length : requested} received';
         final body = state.isLoading && quotes.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.error != null && quotes.isEmpty
@@ -180,6 +199,7 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                   itemBuilder: (context, index) => _QuoteCard(
                     quote: quotes[index],
                     accepting: state.acceptingQuoteId == quotes[index].id,
+                    onView: () => _view(quotes[index]),
                     onAccept: () => _accept(quotes[index]),
                   ),
                 ),
@@ -190,8 +210,8 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
             subtitle: quotes.isEmpty
                 ? null
                 : jobTitle != null
-                ? '$jobTitle · ${quotes.length} received'
-                : '${quotes.length} received',
+                ? '$jobTitle · $receivedLabel'
+                : receivedLabel,
           ),
           scrollable: false,
           body: body,
@@ -213,42 +233,85 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
   );
 }
 
+// ── Quote presentation helpers (shared by the card and the detail sheet) ─────
+
+/// Full price line used in the detail view.
+String _fullPrice(Quote quote) {
+  if (quote.isFixed) return formatMoneyOrDash(quote.amount);
+  if (quote.isEstimateRange) {
+    final min = quote.minAmount;
+    final max = quote.maxAmount;
+    if (min == null && max == null) return '—';
+    if (min != null && max != null) {
+      return '${formatMoney(min)} – ${formatMoney(max)}';
+    }
+    return formatMoneyOrDash(min ?? max);
+  }
+  if (quote.isHourlyWithCap) {
+    final rate = quote.amount;
+    return rate == null
+        ? '—'
+        : '${formatRate(rate)} · cap ${formatMoneyOrDash(quote.cap)}';
+  }
+  return '—';
+}
+
+/// Headline money on the compact card (mockup `ho_quotes`).
+String _compactPrice(Quote quote) {
+  if (quote.isHourlyWithCap) {
+    final rate = quote.amount;
+    return rate == null ? '—' : formatRate(rate);
+  }
+  return _fullPrice(quote);
+}
+
+/// Caption under the compact price: `fixed · incl. GST`, `estimate · no GST`,
+/// `hourly · cap $2,000.00 · incl. GST`.
+String _caption(Quote quote) {
+  final model = quote.isFixed
+      ? 'fixed'
+      : quote.isEstimateRange
+      ? 'estimate'
+      : quote.isHourlyWithCap
+      ? 'hourly · cap ${formatMoneyOrDash(quote.cap)}'
+      : null;
+  final gst = quote.gstIncluded ? 'incl. GST' : 'no GST';
+  return model == null ? gst : '$model · $gst';
+}
+
+/// `N days` under two weeks, otherwise `N weeks` (rounded).
+String _durationLabel(int days) {
+  if (days < 14) return days == 1 ? '1 day' : '$days days';
+  return '${(days / 7).round()} weeks';
+}
+
+String _dateLabel(DateTime date) =>
+    '${date.toLocal().day}/${date.toLocal().month}/${date.toLocal().year}';
+
 class _QuoteCard extends StatelessWidget {
   const _QuoteCard({
     required this.quote,
     required this.accepting,
+    required this.onView,
     required this.onAccept,
   });
   final Quote quote;
   final bool accepting;
+  final VoidCallback onView;
   final VoidCallback onAccept;
-
-  String get _price {
-    if (quote.isFixed) return formatMoneyOrDash(quote.amount);
-    if (quote.isEstimateRange) {
-      final min = quote.minAmount;
-      final max = quote.maxAmount;
-      if (min == null && max == null) return '—';
-      if (min != null && max != null) {
-        return '${formatMoney(min)} – ${formatMoney(max)}';
-      }
-      return formatMoneyOrDash(min ?? max);
-    }
-    if (quote.isHourlyWithCap) {
-      final rate = quote.amount;
-      return rate == null
-          ? '—'
-          : '${formatRate(rate)} · cap ${formatMoneyOrDash(quote.cap)}';
-    }
-    return '—';
-  }
 
   @override
   Widget build(BuildContext context) {
     final decided = !quote.isOpen;
+    final days = quote.estimatedDurationDays;
+    final meta = [
+      if (quote.rating != null) quote.rating!.toStringAsFixed(1),
+      if (days != null) _durationLabel(days),
+    ].join(' · ');
     return THCard(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             THAvatar(quote.initials.isEmpty ? '?' : quote.initials),
             const SizedBox(width: Space.s3),
@@ -257,71 +320,186 @@ class _QuoteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   THText(quote.displayName, style: THTextStyle.title),
-                  if (quote.rating != null && quote.reviewCount != null)
+                  if (meta.isNotEmpty)
                     THText(
-                      '${quote.rating!.toStringAsFixed(1)} · ${quote.reviewCount} reviews',
+                      meta,
                       style: THTextStyle.meta,
                       tone: THTone.soft,
                     ),
+                  if (quote.verified) ...[
+                    const SizedBox(height: Space.s1),
+                    const THBadge(
+                      'Verified',
+                      kind: THBadgeKind.ok,
+                      icon: Icons.verified_outlined,
+                    ),
+                  ],
                 ],
               ),
             ),
-            if (quote.verified)
-              const THBadge(
-                'Verified',
-                kind: THBadgeKind.ok,
-                icon: Icons.verified_outlined,
+            const SizedBox(width: Space.s2),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  THText(
+                    _compactPrice(quote),
+                    style: THTextStyle.money,
+                    align: TextAlign.end,
+                  ),
+                  THText(
+                    _caption(quote),
+                    style: THTextStyle.meta,
+                    tone: THTone.soft,
+                    align: TextAlign.end,
+                  ),
+                ],
               ),
+            ),
           ],
         ),
         const SizedBox(height: Space.s3),
-        THText(_price, style: THTextStyle.money),
-        THText(
-          quote.gstIncluded ? 'Incl. GST' : 'No GST charged',
-          style: THTextStyle.meta,
-          tone: THTone.soft,
+        Row(
+          children: [
+            Expanded(
+              child: THButton(
+                key: Key('view_quote_${quote.id}'),
+                label: 'View quote',
+                kind: THButtonKind.secondary,
+                size: THButtonSize.sm,
+                onPressed: onView,
+              ),
+            ),
+            const SizedBox(width: Space.s3),
+            Expanded(
+              child: decided
+                  ? Align(
+                      alignment: Alignment.center,
+                      child: THBadge(
+                        quote.status,
+                        kind: quote.status == Quote.statusAccepted
+                            ? THBadgeKind.ok
+                            : THBadgeKind.brand,
+                      ),
+                    )
+                  : THButton(
+                      key: Key('accept_quote_${quote.id}'),
+                      label: accepting ? 'Accepting…' : 'Accept',
+                      kind: THButtonKind.accent,
+                      size: THButtonSize.sm,
+                      loading: accepting,
+                      onPressed: accepting ? null : onAccept,
+                    ),
+            ),
+          ],
         ),
-        if (quote.cap != null)
-          THKeyValue(
-            'Price cap',
-            '${formatMoneyOrDash(quote.cap)} · further costs need your approval',
-          ),
-        if (quote.inclusions?.isNotEmpty == true)
-          THKeyValue('Includes', quote.inclusions!),
-        if (quote.exclusions?.isNotEmpty == true)
-          THKeyValue('Does not include', quote.exclusions!),
-        THKeyValue(
-          'Materials',
-          quote.materialsIncluded ? 'Included' : 'By you',
-        ),
-        if (quote.proposedStartUtc != null)
-          THKeyValue('Proposed start', _dateLabel(quote.proposedStartUtc!)),
-        if (quote.estimatedDurationDays != null)
-          THKeyValue(
-            'Estimated duration',
-            '${quote.estimatedDurationDays} days',
-          ),
-        if (decided)
-          THBadge(
-            quote.status,
-            kind: quote.status == Quote.statusAccepted
-                ? THBadgeKind.ok
-                : THBadgeKind.brand,
-          )
-        else
-          THButton(
-            key: Key('accept_quote_${quote.id}'),
-            label: accepting ? 'Accepting…' : 'Accept quote',
-            kind: THButtonKind.accent,
-            loading: accepting,
-            onPressed: accepting ? null : onAccept,
-          ),
       ],
     );
   }
+}
 
-  String _dateLabel(DateTime date) =>
-      '${date.toLocal().day}/${date.toLocal().month}/${date.toLocal().year}';
+/// Full quote detail opened from "View quote" (plan 10 D2: bottom sheet).
+/// Accept here goes through the same `_accept` path (incl. the written-contract
+/// gate) as the card.
+class _QuoteDetailSheet extends StatelessWidget {
+  const _QuoteDetailSheet({required this.quote, required this.onAccept});
+  final Quote quote;
+  final VoidCallback onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = quote.estimatedDurationDays;
+    return ConstrainedBox(
+      key: Key('quote_detail_${quote.id}'),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          Space.s4,
+          Space.s5,
+          Space.s4,
+          Space.s5,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                THAvatar(quote.initials.isEmpty ? '?' : quote.initials),
+                const SizedBox(width: Space.s3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      THText(quote.displayName, style: THTextStyle.title),
+                      if (quote.rating != null && quote.reviewCount != null)
+                        THText(
+                          '${quote.rating!.toStringAsFixed(1)} · ${quote.reviewCount} reviews',
+                          style: THTextStyle.meta,
+                          tone: THTone.soft,
+                        ),
+                    ],
+                  ),
+                ),
+                if (quote.verified)
+                  const THBadge(
+                    'Verified',
+                    kind: THBadgeKind.ok,
+                    icon: Icons.verified_outlined,
+                  ),
+              ],
+            ),
+            const SizedBox(height: Space.s3),
+            THText(_fullPrice(quote), style: THTextStyle.money),
+            THText(
+              quote.gstIncluded ? 'Incl. GST' : 'No GST charged',
+              style: THTextStyle.meta,
+              tone: THTone.soft,
+            ),
+            if (quote.cap != null)
+              THKeyValue(
+                'Price cap',
+                '${formatMoneyOrDash(quote.cap)} · further costs need your approval',
+              ),
+            if (quote.inclusions?.isNotEmpty == true)
+              THKeyValue('Includes', quote.inclusions!),
+            if (quote.exclusions?.isNotEmpty == true)
+              THKeyValue('Does not include', quote.exclusions!),
+            THKeyValue(
+              'Materials',
+              quote.materialsIncluded ? 'Included' : 'By you',
+            ),
+            if (quote.proposedStartUtc != null)
+              THKeyValue('Proposed start', _dateLabel(quote.proposedStartUtc!)),
+            if (days != null)
+              THKeyValue('Estimated duration', _durationLabel(days)),
+            if (quote.validUntilUtc != null)
+              THKeyValue('Valid until', _dateLabel(quote.validUntilUtc!)),
+            const SizedBox(height: Space.s3),
+            if (quote.isOpen)
+              THButton(
+                key: Key('quote_detail_accept_${quote.id}'),
+                label: 'Accept quote',
+                kind: THButtonKind.accent,
+                onPressed: onAccept,
+              )
+            else
+              Align(
+                alignment: Alignment.centerLeft,
+                child: THBadge(
+                  quote.status,
+                  kind: quote.status == Quote.statusAccepted
+                      ? THBadgeKind.ok
+                      : THBadgeKind.brand,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _StatePanel extends StatelessWidget {

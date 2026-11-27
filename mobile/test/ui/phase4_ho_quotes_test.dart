@@ -36,13 +36,47 @@ void main() {
 
     expect(find.text('Bay Builders'), findsOneWidget);
     expect(find.text(r'$18,400.00'), findsOneWidget);
-    expect(find.text('Incl. GST'), findsOneWidget);
-    expect(find.text('Cabinetry and benchtop replacement'), findsOneWidget);
+    expect(find.text('fixed · incl. GST'), findsOneWidget);
+    expect(find.text('4.9 · 6 weeks'), findsOneWidget);
+    // Scope detail lives behind "View quote", not on the compact card.
+    expect(find.text('Cabinetry and benchtop replacement'), findsNothing);
+    expect(find.byKey(const Key('view_quote_quote-1')), findsOneWidget);
     expect(find.byKey(const Key('accept_quote_quote-1')), findsOneWidget);
     expect(
       find.text('Pay only when the job is done and you approve the total.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('View quote opens the full detail and Accept from it is gated', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_pump(repo: _ContractRequiredFixture()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('view_quote_quote-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('quote_detail_quote-1')), findsOneWidget);
+    expect(find.text('Cabinetry and benchtop replacement'), findsOneWidget);
+    expect(find.text('Incl. GST'), findsOneWidget);
+    expect(find.text('Materials'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quote_detail_accept_quote-1')));
+    await tester.pumpAndSettle();
+
+    // Same written-contract gate as the card's Accept.
+    expect(find.byKey(const Key('quote_detail_quote-1')), findsNothing);
+    expect(find.text('Written contract required'), findsOneWidget);
+  });
+
+  testWidgets('subtitle shows "N of M received" when the job carries counts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_pump(repo: _CountsFixture()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kitchen renovation · 1 of 3 received'), findsOneWidget);
   });
 
   testWidgets('subtitle includes job title when getJobById succeeds', (
@@ -123,6 +157,7 @@ final _baseQuote = Quote(
   inclusions: 'Cabinetry and benchtop replacement',
   materialsIncluded: true,
   gstIncluded: true,
+  estimatedDurationDays: 42,
 );
 
 final _baseJob = Job(
@@ -143,6 +178,27 @@ class _JobsFixture extends JobsRepository {
 
   @override
   Future<Job?> getJobById(String jobId) async => _baseJob;
+}
+
+/// Job read carries quote counts (plan 10): the subtitle gains a denominator.
+class _CountsFixture extends JobsRepository {
+  _CountsFixture() : super(Dio(), const FlutterSecureStorage());
+
+  @override
+  Future<List<Quote>> getQuotes(String jobId) async => [_baseQuote];
+
+  @override
+  Future<Job?> getJobById(String jobId) async => Job(
+    id: 'job-1',
+    title: 'Kitchen renovation',
+    category: 'Plumbing',
+    suburb: 'Grey Lynn',
+    status: 'Requested',
+    stage: 0,
+    jobType: Job.jobTypeProject,
+    quotesRequested: 3,
+    quotesReceived: 1,
+  );
 }
 
 /// Simulates a slow or failed job fetch so the subtitle degrades gracefully.
