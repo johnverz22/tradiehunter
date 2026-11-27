@@ -18,6 +18,12 @@ bool thNeedsHomeownerAttention(String status) => const {
   'Disputed',
 }.contains(status);
 
+/// Job-aware attention rule: the status-only rule plus a project job that has at
+/// least one quote waiting for the homeowner (plan 10 Q2.5).
+bool thJobNeedsHomeownerAttention(Job job) =>
+    thNeedsHomeownerAttention(job.status) ||
+    (job.hasQuoteActivity && (job.quotesReceived ?? 0) > 0);
+
 bool thIsBookedJob(String status) =>
     status == 'Booked' || status == 'InProgress';
 
@@ -46,9 +52,7 @@ class HoHomeGroups {
   final List<Job> past;
 
   factory HoHomeGroups.from(List<Job> jobs) {
-    final attention = jobs
-        .where((j) => thNeedsHomeownerAttention(j.status))
-        .toList();
+    final attention = jobs.where(thJobNeedsHomeownerAttention).toList();
     attention.sort((a, b) {
       final pA = _attentionPriority(a.status);
       final pB = _attentionPriority(b.status);
@@ -67,7 +71,7 @@ class HoHomeGroups {
           .where(
             (j) =>
                 !thIsPastHomeownerJob(j.status) &&
-                !thNeedsHomeownerAttention(j.status) &&
+                !thJobNeedsHomeownerAttention(j) &&
                 !thIsBookedJob(j.status),
           )
           .toList(),
@@ -100,6 +104,12 @@ HoStatusBadge thHomeStatusBadge(String status) => switch (status) {
   'Disputed' => const HoStatusBadge('Disputed', THBadgeKind.danger),
   _ => const HoStatusBadge('Status unavailable', THBadgeKind.brand),
 };
+
+/// Badge for a job card: `Quotes` for a project collecting quotes, else the
+/// status badge (plan 10 Q2.3).
+HoStatusBadge thHomeStatusBadgeForJob(Job job) => job.hasQuoteActivity
+    ? const HoStatusBadge('Quotes', THBadgeKind.ok)
+    : thHomeStatusBadge(job.status);
 
 /// Segmented progress for a job card, or null when the status has no
 /// progress (cancelled / expired / disputed / unknown).
@@ -144,6 +154,14 @@ HoProgress? thHomeProgress(Job job) {
 String thHomeJobSubtitle(Job job) {
   final tradie = job.matchedTradieName?.trim();
   if (tradie != null && tradie.isNotEmpty) return tradie;
+  final received = job.quotesReceived;
+  if (job.hasQuoteActivity && received != null) {
+    final requested = job.quotesRequested!;
+    // Never print a denominator smaller than the numerator.
+    return received > 0
+        ? '$received of ${received > requested ? received : requested} quotes in'
+        : 'Waiting for quotes';
+  }
   return switch (job.status) {
     'Requested' || 'Matching' => 'Finding a tradie',
     _ => job.suburb,
@@ -171,6 +189,14 @@ class HoAttentionHero {
 HoAttentionHero? thAttentionHero(List<Job> attention) {
   if (attention.isEmpty) return null;
   final job = attention.first;
+  if (job.hasQuoteActivity && !thNeedsHomeownerAttention(job.status)) {
+    return HoAttentionHero(
+      job: job,
+      headline: 'Review quotes',
+      subtitle: '${job.title} · ${thHomeJobSubtitle(job)}',
+      actionLabel: 'Compare',
+    );
+  }
   final (headline, action) = switch (job.status) {
     'AwaitingPayment' => ('Payment due', 'Pay now'),
     'PaymentReview' => ('Payment under review', 'View status'),

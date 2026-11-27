@@ -24,6 +24,17 @@ String thHomeownerJobPath(Job job) {
       job.status == 'Disputed') {
     return '/jobs/${job.id}/detail';
   }
+  // Plan 10 (D4): a project collecting quotes opens the quotes screen once a
+  // request is sent, or the tradie picker if none has been. Without counts
+  // (older server) fall through to the existing mapping.
+  if (job.isProject && job.status == 'Requested') {
+    final requested = job.quotesRequested;
+    if (requested != null) {
+      return requested > 0
+          ? '/jobs/${job.id}/quotes'
+          : '/jobs/${job.id}/tradies';
+    }
+  }
   if (job.usesV2Flow && _v2KnownStatuses.contains(job.status)) {
     switch (job.stage) {
       case 0:

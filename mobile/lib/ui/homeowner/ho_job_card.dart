@@ -25,7 +25,7 @@ class HoJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badge = thHomeStatusBadge(job.status);
+    final badge = thHomeStatusBadgeForJob(job);
     final progress = thHomeProgress(job);
     final subtitle = thHomeJobSubtitle(job);
     final amount = job.finalAmount ?? job.totalAmount ?? job.estimatedTotal;

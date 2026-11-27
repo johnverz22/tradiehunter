@@ -39,7 +39,7 @@ void main() {
           _json(
             jobType: type,
             status: status,
-            extra: {if (requested != null) 'quotesRequested': requested},
+            extra: {'quotesRequested': ?requested},
           ),
         ).hasQuoteActivity;
 

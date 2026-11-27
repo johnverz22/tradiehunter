@@ -14,6 +14,7 @@ import 'router/notification_route.dart';
 import 'ui/design/th_tokens.dart' show THTheme;
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
 import 'ui/shared/notification_center.dart'; // notificationCenterProvider (H20)
+import 'viewmodels/jobs_viewmodel.dart'; // jobsViewModelProvider, quotesProvider
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
 import 'viewmodels/theme_mode_viewmodel.dart'; // themeModeProvider
 
@@ -150,6 +151,15 @@ class _ThAppState extends ConsumerState<ThApp> {
           ),
         );
 
+    // Plan 10 Q2.7: a new quote refreshes the jobs list badge and quotes screen.
+    if (message.data['type'] == 'quote_submitted') {
+      ref.read(jobsViewModelProvider.notifier).loadHomeownerJobs();
+      final jobId = message.data['jobId']?.toString();
+      if (jobId != null && jobId.isNotEmpty) {
+        ref.invalidate(quotesProvider(jobId));
+      }
+    }
+
     THNotice.push(
       context,
       title: notification?.title ?? 'Fixo',
@@ -161,9 +171,8 @@ class _ThAppState extends ConsumerState<ThApp> {
   // Map the notification's `type` data field to a named route.
   // Backend should include `"type": "chat" | "job_status" | "match"` in the data payload.
   void _routeFromMessage(RemoteMessage message) {
-    final type = message.data['type'];
     // The shell route itself resolves homeowner/tradie destinations by role.
-    appRouter.go(routeForMessageType(type is String ? type : null));
+    appRouter.go(routeForMessage(message.data));
   }
 
   @override
