@@ -256,24 +256,20 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
             child: Container(
               key: const Key('th-notice-banner'),
               constraints: const BoxConstraints(minHeight: Sizes.tapMin),
-              padding: const EdgeInsets.only(
-                left: Space.s3_5,
-                top: Space.s2_5,
-                bottom: Space.s2_5,
-              ),
+              // No vertical padding here: the 48px dismiss target sets the
+              // single-line height, and the text column pads itself so
+              // multi-line notices still breathe.
+              padding: const EdgeInsets.only(left: Space.s3_5),
               decoration: BoxDecoration(
                 color: bg,
                 borderRadius: BorderRadius.circular(Radii.tile),
                 border: Border.all(color: border),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(
-                      top: Space.s1,
-                      right: Space.s3,
-                    ),
+                    padding: const EdgeInsets.only(right: Space.s3),
                     child: Icon(
                       _icon(notice.tone),
                       size: Sizes.icon,
@@ -281,43 +277,49 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
                     ),
                   ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (notice.title != null)
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: Space.s2_5,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (notice.title != null)
+                            Text(
+                              notice.title!,
+                              style: THType.title.copyWith(color: c.text),
+                            ),
                           Text(
-                            notice.title!,
-                            style: THType.title.copyWith(color: c.text),
+                            notice.message,
+                            style: THType.body.copyWith(color: c.text),
                           ),
-                        Text(
-                          notice.message,
-                          style: THType.body.copyWith(color: c.text),
-                        ),
-                        if (notice.action != null && notice.actionLabel != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: Space.s1_5),
-                            child: InkWell(
-                              onTap: () {
-                                notice.action!();
-                                widget.onDismiss();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: Space.s1,
-                                ),
-                                child: Text(
-                                  notice.actionLabel!,
-                                  style: THType.button.copyWith(
-                                    color: accent,
-                                    decoration: TextDecoration.underline,
-                                    decorationColor: accent,
+                          if (notice.action != null &&
+                              notice.actionLabel != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: Space.s1_5),
+                              child: InkWell(
+                                onTap: () {
+                                  notice.action!();
+                                  widget.onDismiss();
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: Space.s1,
+                                  ),
+                                  child: Text(
+                                    notice.actionLabel!,
+                                    style: THType.button.copyWith(
+                                      color: accent,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: accent,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   Semantics(

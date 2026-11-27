@@ -142,6 +142,7 @@ class THButton extends StatelessWidget {
     this.kind = THButtonKind.primary,
     this.size = THButtonSize.md,
     this.icon,
+    this.leading,
     this.fullWidth = true,
     this.onPressed,
     this.loading = false,
@@ -150,6 +151,10 @@ class THButton extends StatelessWidget {
   final THButtonKind kind;
   final THButtonSize size;
   final IconData? icon;
+
+  /// Custom leading widget (e.g. a multicolour brand mark that must not be
+  /// tinted). Takes precedence over [icon]; sized by the caller to 18.
+  final Widget? leading;
   final bool fullWidth;
   final VoidCallback? onPressed;
 
@@ -213,6 +218,8 @@ class THButton extends StatelessWidget {
                             color: fg,
                           ),
                         )
+                      else if (leading != null)
+                        leading!
                       else if (icon != null)
                         Icon(icon, size: 18, color: fg),
                       Flexible(
