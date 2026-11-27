@@ -313,6 +313,7 @@ public class NotificationN5StaffAlertTests
         public Task SendJobCancelledAsync(string toEmail, string jobTitle, string reason, int? jobId = null) => Task.CompletedTask;
         public Task SendCriticalAsync(string toEmail, string subject, string body) => Task.CompletedTask;
         public Task SendCriticalNoticeAsync(string toEmail, CriticalNoticeModel notice) => Task.CompletedTask;
+        public Task SendCredentialDecisionAsync(string toEmail, string credentialType, bool approved, string? reason = null, int? credentialId = null) => Task.CompletedTask;
         public Task SendCriticalNoticeAsync(string toEmail, string subject, CriticalNoticeModel notice, string? entityRef = null) => Task.CompletedTask;
         public Task SendStaffAlertAsync(string toEmail, StaffAlertModel alert, string? entityRef = null) => Task.CompletedTask;
     }

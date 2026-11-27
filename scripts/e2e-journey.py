@@ -831,6 +831,16 @@ def run_receipt_reject_resubmit(rec):
 
     rec.step("homeowner uploads first receipt", lambda: upload_receipt(job, ho))
     rec.step("job PaymentReview", lambda: wait_status(job, ho, "PaymentReview"))
+
+    def check_receipt_notif():
+        res = get("/admin/notifications?limit=20", st) or {}
+        items = res.get("items") or []
+        need(
+            any(i.get("jobId") == job for i in items),
+            "expected admin notification for receipt upload on job %d, got %r" % (job, items[:5]),
+        )
+
+    rec.step("admin notification created for receipt upload", check_receipt_notif)
     rec.step(
         "staff rejects receipt",
         lambda: post("/admin/payments/%d/reject" % pay_id, st, {"reason": "Blurry image, please re-upload"}),
@@ -937,6 +947,17 @@ def run_dispute_attachments_reviews(rec):
         need(isinstance(items, list) and len(items) == 2, "expected 2 revealed reviews, got %r" % res)
 
     rec.step("both reviews revealed after both submit", check_reviews)
+
+    def check_mailhog_for_dispute():
+        mailhog = os.environ.get("MAILHOG_URL", "http://localhost:8025").rstrip("/")
+        url = "%s/api/v2/search?kind=to&query=%s" % (mailhog, urllib.parse.quote(HOMEOWNER["email"]))
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        items = data.get("items") or []
+        need(len(items) > 0, "expected MailHog messages for %s, got 0" % HOMEOWNER["email"])
+
+    rec.step("MailHog received notification emails for homeowner", check_mailhog_for_dispute)
     return job
 
 

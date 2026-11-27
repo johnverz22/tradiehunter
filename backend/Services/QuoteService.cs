@@ -264,9 +264,27 @@ public class QuoteService
         await _jobStatusService.TransitionAsync(jobId, JobStatus.Booked, homeownerId, UserRole.Homeowner,
             note: $"Quote {quote.Id} accepted ({quote.PricingModel}).");
 
-        await NotifyUserAsync(quote.TradieId, "Your quote was accepted",
+        await _notifications.NotifyAsync(
+            NotificationEvents.QuoteAccepted,
+            quote.TradieId,
+            "Your quote was accepted",
             $"\"{job.Title}\": the homeowner accepted your quote. Chat is now open — agree a start time.",
-            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["quoteId"] = quote.Id.ToString(), ["type"] = "quote_accepted" });
+            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["quoteId"] = quote.Id.ToString() });
+
+        var losingTradieIds = await _context.Quotes
+            .Where(q => q.JobId == jobId && q.Id != quote.Id && q.Status == QuoteStatus.Declined)
+            .Select(q => q.TradieId)
+            .Distinct()
+            .ToListAsync();
+        foreach (var losingTradieId in losingTradieIds)
+        {
+            await _notifications.NotifyAsync(
+                NotificationEvents.QuoteDeclined,
+                losingTradieId,
+                "Quote not chosen",
+                $"Another quote was chosen for \"{job.Title}\".",
+                new Dictionary<string, string> { ["jobId"] = jobId.ToString() });
+        }
 
         var acceptedProfile = await _context.TradieProfiles
             .Where(p => p.UserId == quote.TradieId)

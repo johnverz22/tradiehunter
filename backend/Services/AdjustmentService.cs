@@ -220,6 +220,17 @@ public class AdjustmentService
 
         await BroadcastChangeAsync(jobId, adjustment, "AdjustmentWithdrawn");
 
+        await _notifications.NotifyAsync(
+            NotificationEvents.AdjustmentWithdrawn,
+            job.HomeownerId,
+            "Extra cost withdrawn",
+            $"The tradie withdrew the extra-cost request for \"{job.Title}\".",
+            new Dictionary<string, string>
+            {
+                ["jobId"] = jobId.ToString(),
+                ["adjustmentId"] = adjustmentId.ToString(),
+            });
+
         return ToDto(adjustment, job);
     }
 

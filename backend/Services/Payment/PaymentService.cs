@@ -159,6 +159,18 @@ public class PaymentService : IPaymentService
             ],
             AdminPath: "/payments"), ct);
 
+        await _notifications.NotifyAsync(
+            NotificationEvents.ReceiptReceived,
+            job.HomeownerId,
+            "Receipt received",
+            $"We received your payment receipt for \"{job.Title}\" (#{jobId}). Staff will verify it shortly.",
+            new Dictionary<string, string>
+            {
+                ["jobId"] = jobId.ToString(),
+                ["paymentId"] = payment.Id.ToString(),
+            },
+            ct: ct);
+
         return MapToDto(job, payment);
     }
 

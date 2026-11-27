@@ -29,7 +29,7 @@
 - Manual payment: bank-transfer instructions, receipt upload with duplicate-hash detection, staff verification queue with SLA colours
 - Tradie payouts: weekly batches, commission, admin "mark processed"
 - Cancellations, no-shows, refund queue (legacy flow only), disputes with evidence, account flags, audit log
-- Admin web: dashboard, users, credentials, payments, refunds, payouts, disputes, flags, settings
+- Admin web: dashboard, users, credentials, payments, refunds, payouts, disputes, flags, settings, notification bell (`StaffNotification`)
 
 **v1.7 additions (job-flow revision, code-complete, flag-gated)**
 - Optional timing (Flexible / ASAP / date / range); no rate or hours needed to post

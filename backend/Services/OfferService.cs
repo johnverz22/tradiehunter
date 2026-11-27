@@ -252,6 +252,13 @@ public class OfferService
         await _jobHub.Clients.Group(JobHub.GroupName(jobId)).SendAsync("OfferLifecycleEvent", lifecycle);
         await _jobHub.Clients.User(tradieId).SendAsync("OfferLifecycleEvent", lifecycle);
 
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferAccepted,
+            offer.Job.HomeownerId,
+            "Offer accepted",
+            $"A tradie accepted your request for \"{offer.Job.Title}\".",
+            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offerId.ToString() });
+
         return ToDto(offer, null, offer.Job.Title);
     }
 
@@ -297,6 +304,13 @@ public class OfferService
         };
         await _jobHub.Clients.Group(JobHub.GroupName(jobId)).SendAsync("OfferLifecycleEvent", lifecycle);
         await _jobHub.Clients.User(tradieId).SendAsync("OfferLifecycleEvent", lifecycle);
+
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferAccepted,
+            offer.Job.HomeownerId,
+            "Offer accepted",
+            $"A tradie accepted your request for \"{offer.Job.Title}\".",
+            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offerId.ToString() });
 
         return ToDto(offer, null, offer.Job.Title);
     }

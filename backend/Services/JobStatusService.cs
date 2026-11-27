@@ -205,6 +205,8 @@ public class JobStatusService : IJobStatusService
 
         await _jobHub.Clients.Group(JobHub.GroupName(jobId)).SendAsync("JobStatusChanged", payload);
 
+        await NotifyTransitionPolicyAsync(job, newStatus, userId, actorRole);
+
         // P5-05: Send review prompt notification when job is completed
         if (newStatus == JobStatus.Completed)
         {
@@ -830,5 +832,97 @@ public class JobStatusService : IJobStatusService
             PreviousStatus = job.Status.ToString(),
             Reason = reason,
         }, ct);
+    }
+
+    private async Task NotifyTransitionPolicyAsync(
+        Job job, JobStatus newStatus, string actorUserId, UserRole actorRole)
+    {
+        var data = new Dictionary<string, string> { ["jobId"] = job.Id.ToString() };
+
+        try
+        {
+            switch (newStatus)
+            {
+                case JobStatus.Booked:
+                {
+                    var title = "Job booked";
+                    var body = $"\"{job.Title}\" is now booked.";
+                    if (actorRole != UserRole.Homeowner && !string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(NotificationEvents.JobBooked, job.HomeownerId, title, body, data);
+                    if (actorRole != UserRole.Tradie && !string.IsNullOrEmpty(job.MatchedTradieId))
+                        await _notifications.NotifyAsync(NotificationEvents.JobBooked, job.MatchedTradieId, title, body, data);
+                    break;
+                }
+                case JobStatus.InProgress:
+                {
+                    if (actorUserId != job.HomeownerId && !string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(
+                            NotificationEvents.JobInProgress,
+                            job.HomeownerId,
+                            "Work started",
+                            $"Your tradie has started work on \"{job.Title}\".",
+                            data);
+                    break;
+                }
+                case JobStatus.AwaitingConfirmation:
+                {
+                    if (actorUserId != job.HomeownerId && !string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(
+                            NotificationEvents.JobAwaitingConfirmation,
+                            job.HomeownerId,
+                            "Job ready to confirm",
+                            $"Your tradie marked \"{job.Title}\" as finished. Please review and confirm.",
+                            data);
+                    break;
+                }
+                case JobStatus.AwaitingPayment:
+                {
+                    if (actorUserId != job.HomeownerId && !string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(
+                            NotificationEvents.JobAwaitingPayment,
+                            job.HomeownerId,
+                            "Payment due",
+                            $"Payment is now due for \"{job.Title}\".",
+                            data);
+                    break;
+                }
+                case JobStatus.PaymentReview:
+                {
+                    if (actorUserId != job.MatchedTradieId && !string.IsNullOrEmpty(job.MatchedTradieId))
+                        await _notifications.NotifyAsync(
+                            NotificationEvents.JobPaymentReview,
+                            job.MatchedTradieId,
+                            "Payment under review",
+                            $"The homeowner uploaded a payment receipt for \"{job.Title}\". Staff are verifying it.",
+                            data);
+                    break;
+                }
+                case JobStatus.Expired:
+                {
+                    if (!string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(
+                            NotificationEvents.JobExpired,
+                            job.HomeownerId,
+                            "Job expired",
+                            $"\"{job.Title}\" expired with no booking.",
+                            data);
+                    break;
+                }
+                case JobStatus.Cancelled:
+                {
+                    var title = "Job cancelled";
+                    var body = $"\"{job.Title}\" has been cancelled.";
+                    if (actorUserId != job.HomeownerId && !string.IsNullOrEmpty(job.HomeownerId))
+                        await _notifications.NotifyAsync(NotificationEvents.JobCancelled, job.HomeownerId, title, body, data);
+                    if (actorUserId != job.MatchedTradieId && !string.IsNullOrEmpty(job.MatchedTradieId))
+                        await _notifications.NotifyAsync(NotificationEvents.JobCancelled, job.MatchedTradieId, title, body, data);
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Transition policy notification failed for job {JobId} -> {Status}.", job.Id, newStatus);
+        }
     }
 }

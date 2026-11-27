@@ -3,7 +3,6 @@ using FixoApi.DTOs;
 using FixoApi.Email;
 using FixoApi.Enums;
 using FixoApi.Models;
-using FixoApi.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 
@@ -316,8 +315,7 @@ public class ProfileService : IProfileService
             {
                 await _notifications.SendToStaffAsync(new StaffAlert(
                     EventKey: NotificationEvents.CredentialStaffAlert,
-                    EntityType: "Credential",
-                    EntityId: cred.Id.ToString(),
+                    EntityKey: cred.Id.ToString(),
                     Heading: "Credential awaiting review",
                     Body: $"A tradie uploaded a {credTypeLabel} credential ({cred.OriginalFileName}) for review.",
                     Rows:

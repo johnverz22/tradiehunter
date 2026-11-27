@@ -92,5 +92,9 @@ test.describe('P4 — Persona Fabric Admin Verification', () => {
       await expect(page.locator('body')).not.toContainText('Error', { timeout: 10_000 });
       await expect(page.locator('body')).toContainText(homeowner.email, { timeout: 10_000 });
     }
+
+    // N8.3: Staff sees the notification bell badge (unread count from receipt/dispute uploads).
+    const bell = page.getByRole('button', { name: /Notifications \(\d+ unread\)/i });
+    await expect(bell).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -372,6 +372,8 @@ public class NotificationServiceTests
             return Task.CompletedTask;
         }
 
+        public Task SendCredentialDecisionAsync(string toEmail, string credentialType, bool approved, string? reason = null, int? credentialId = null) => Task.CompletedTask;
+
         public Task SendStaffAlertAsync(string toEmail, StaffAlertModel alert, string? entityRef = null)
         {
             if (ThrowOnSend || toEmail == FailFor) throw new InvalidOperationException("smtp down");

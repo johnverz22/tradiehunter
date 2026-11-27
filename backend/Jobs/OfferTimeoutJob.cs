@@ -23,6 +23,7 @@ public class OfferTimeoutJob
     private readonly FixoDbContext _context;
     private readonly IMatchingService _matching;
     private readonly IHubContext<JobHub> _jobHub;
+    private readonly INotificationService _notifications;
     private readonly ILogger<OfferTimeoutJob> _logger;
 
     // The system user ID used when performing automated status transitions.
@@ -32,12 +33,14 @@ public class OfferTimeoutJob
         FixoDbContext context,
         IMatchingService matching,
         IHubContext<JobHub> jobHub,
+        INotificationService notifications,
         ILogger<OfferTimeoutJob> logger)
     {
-        _context  = context;
-        _matching = matching;
-        _jobHub   = jobHub;
-        _logger   = logger;
+        _context       = context;
+        _matching      = matching;
+        _jobHub        = jobHub;
+        _notifications = notifications;
+        _logger        = logger;
     }
 
     /// <summary>
@@ -86,6 +89,24 @@ public class OfferTimeoutJob
             .SendAsync("OfferLifecycleEvent", payload);
         await _jobHub.Clients.User(offer.TradieId)
             .SendAsync("OfferLifecycleEvent", payload);
+
+        var data = new Dictionary<string, string>
+        {
+            ["jobId"] = offer.JobId.ToString(),
+            ["offerId"] = offer.Id.ToString(),
+        };
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferExpired,
+            offer.Job.HomeownerId,
+            "Offer expired",
+            $"A tradie did not respond in time for \"{offer.Job.Title}\".",
+            data);
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferExpired,
+            offer.TradieId,
+            "Offer expired",
+            $"Your offer for \"{offer.Job.Title}\" has expired.",
+            data);
 
         // Trigger the next sequential offer (P3-04 AC: triggers next ranked tradie).
         await _matching.SendNextOfferAsync(offer.JobId, SystemUserId);

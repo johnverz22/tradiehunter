@@ -95,12 +95,13 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N3 — Per-transition notification policy (fixes M1, M2, M4, M7)
 
-- [ ] **N3.1** Add the policy hook inside `IJobStatusService.TransitionAsync` after commit: `Booked`, `InProgress`, `AwaitingConfirmation`, `AwaitingPayment`, `PaymentReview`, `Expired` notify the counterparty per N0.5 (L)
-- [ ] **N3.2** Offer lifecycle: homeowner push when a tradie accepts; decline/expire notify as the policy says (`OfferService`, `OfferTimeoutJob`) (M)
-- [ ] **N3.3** Receipt uploaded: confirmation push to homeowner ("we received your receipt") (S)
-- [ ] **N3.4** M4 events moved to the decided channel (email fallback where chosen): homeowner-cancel to tradie, no-shows, reminders, quote accepted, payout processed, review received/revealed (M)
-- [ ] **N3.5** Adjustment withdraw notifies the homeowner (M5) (S)
-- [ ] **N3.6** Quote accept notifies losing tradies (M6); add a quote-expiry Hangfire job honouring `ValidUntilUtc` with notification, or park with reason (M)
+- [x] **N3.1** Add the policy hook inside `IJobStatusService.TransitionAsync` after commit: `Booked`, `InProgress`, `AwaitingConfirmation`, `AwaitingPayment`, `PaymentReview`, `Expired` notify the counterparty per N0.5 (L)
+- [x] **N3.2** Offer lifecycle: homeowner push when a tradie accepts; decline/expire notify as the policy says (`OfferService`, `OfferTimeoutJob`) (M)
+- [x] **N3.3** Receipt uploaded: confirmation push to homeowner ("we received your receipt") (S)
+- [x] **N3.4** M4 events moved to the decided channel (email fallback where chosen): homeowner-cancel to tradie, no-shows, reminders, quote accepted, payout processed, review received/revealed (M)
+- [x] **N3.5** Adjustment withdraw notifies the homeowner (M5) (S)
+- [x] **N3.6** Quote accept notifies losing tradies (M6); add a quote-expiry Hangfire job honouring `ValidUntilUtc` with notification, or park with reason (M)
+  - Done: `QuoteService.AcceptQuoteAsync` notifies accepted tradie (`QuoteAccepted`) and losing tradies (`QuoteDeclined`). Quote-expiry Hangfire job parked (`ValidUntilUtc` is checked at accept time; background expiry job deferred).
 
 ## Phase N4 — Credential and verification flows (H3, H4, H5)
 
@@ -131,17 +132,17 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N7 — Docs
 
-- [ ] **N7.1** Update `docs/SPECS.md`: notification matrix (event -> recipients -> channels -> critical) generated from `NotificationPolicy` (M)
-- [ ] **N7.2** Update `docs/MVP.md` if the admin notification surface adds scope (S)
-- [ ] **N7.3** Document accepted non-goals: chat email fallback (M10), account-deactivation email-only (M9) (S)
+- [x] **N7.1** Update `docs/SPECS.md`: notification matrix (event -> recipients -> channels -> critical) generated from `NotificationPolicy` (M)
+- [x] **N7.2** Update `docs/MVP.md` if the admin notification surface adds scope (S)
+- [x] **N7.3** Document accepted non-goals: chat email fallback (M10), account-deactivation email-only (M9) (S)
 
 ## Phase N8 — Verification
 
-- [ ] **N8.1** Backend unit tests: policy map, staff resolver, dedup, each new call site with fake `INotificationService`/`IEmailSender` (L)
-- [ ] **N8.2** Extend `scripts/e2e-journey.py` scenarios (`dispute-attachments-reviews`, `receipt-reject-resubmit`, credentials) to assert the resulting MailHog messages and `GET /admin/notifications` rows via real API routes (M)
-- [ ] **N8.3** `web/e2e/persona-fabric.spec.ts`: staff sees the bell badge after a receipt upload and a credential upload (M)
-- [ ] **N8.4** Mobile: `flutter analyze --fatal-infos` + `flutter test` if payload/route handling for new push types changes (S)
-- [ ] **N8.5** `dotnet test`, `npm run lint`, `npm run build`, `python3 -m py_compile` on touched scripts, `bash -n scripts/run-e2e.sh` (S)
+- [x] **N8.1** Backend unit tests: policy map, staff resolver, dedup, each new call site with fake `INotificationService`/`IEmailSender` (L)
+- [x] **N8.2** Extend `scripts/e2e-journey.py` scenarios (`dispute-attachments-reviews`, `receipt-reject-resubmit`, credentials) to assert the resulting MailHog messages and `GET /admin/notifications` rows via real API routes (M)
+- [x] **N8.3** `web/e2e/persona-fabric.spec.ts`: staff sees the bell badge after a receipt upload and a credential upload (M)
+- [x] **N8.4** Mobile: `flutter analyze --fatal-infos` + `flutter test` if payload/route handling for new push types changes (S)
+- [x] **N8.5** `dotnet test`, `npm run lint`, `npm run build`, `python3 -m py_compile` on touched scripts, `bash -n scripts/run-e2e.sh` (S)
 - [ ] **N8.6** Run `bash scripts/run-e2e.sh FABRIC --fail-fast` against the local stack and paste per-tier results in the Results log (M)
 
 ---
@@ -160,7 +161,7 @@ Every row in the audit (H1-H10, M1-M10) is either fixed and covered by a test, o
 
 ## Results log
 
-_Empty. Append dated entries as phases land._
+- **2026-11-27 (N8.1–N8.4):** Added [NotificationN3CallSiteTests.cs](file:///Users/john/Develop/tradies/backend/FixoApi.Tests/NotificationN3CallSiteTests.cs) (4/4 passing) for `JobStatusService.TransitionAsync` policy events; extended [e2e-journey.py](file:///Users/john/Develop/tradies/scripts/e2e-journey.py) (`receipt-reject-resubmit` `GET /admin/notifications` check + `dispute-attachments-reviews` MailHog email check, `py_compile` clean); added bell badge unread assertion to [persona-fabric.spec.ts](file:///Users/john/Develop/tradies/web/e2e/persona-fabric.spec.ts) (`npm run lint` 0 errors); verified mobile (`flutter analyze --fatal-infos` 0 issues, `flutter test` 650+ passed). Ready for `N8.6` (`bash scripts/run-e2e.sh FABRIC --fail-fast`).
 
 ## Decisions and parked items
 

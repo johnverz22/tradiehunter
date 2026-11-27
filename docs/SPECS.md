@@ -127,7 +127,8 @@ Net           = Gross − Commission
 - **Report/block:** blocked users are excluded from matching; reports create `Abuse` flags.
 - **Audit log:** admin actions (credential decisions, refunds, status overrides, suspensions) store old/new JSON.
 - **Private storage:** credentials, receipts, evidence and proofs are never public; reads use short-lived SAS URLs (15 min).
-- **Push with email fallback:** critical notifications fall back to email when no device token exists.
+- **Push with email fallback:** critical notifications always email; non-critical status/offer/quote/adjustment/receipt notifications fall back to email when push is unavailable or fails; time-sensitive reminders and review events are push-only. Staff alerts persist as `StaffNotification` rows (polled in the admin bell) and always email. Source of truth: `backend/Services/Notifications/NotificationPolicy.cs`.
+  - **Accepted non-goals (MVP):** account deactivation is email-only (user is locked out); chat messages are push + SignalR only with no email fallback.
 
 ## 9. Admin web (React, Staff + Superadmin)
 
