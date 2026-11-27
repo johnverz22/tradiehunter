@@ -115,7 +115,7 @@ Record the outcome of each in the "Decisions and parked items" section at the en
 **Assessment (from code and SPECS):**
 
 - **It fixes the root of F1/F5/F6/F8.** No pre-selection step, no "2 of 3" denominator, no `/tradies` routing for open jobs; quotes just arrive and the list says "N quotes".
-- **Convergence mostly exists.** Accepting a quote books a normal v2 job with the pricing model snapshotted, then it uses the same detail, payment and review screens as hourly. Only stage 0 differs (radar for hourly, quotes for projects); Q7.7 unifies it.
+- **Convergence mostly exists.** Accepting a quote books a normal v2 job with the pricing model snapshotted, then it uses the same detail, payment and review screens as hourly. Only stage 0 differs (radar for hourly, quotes for projects); Q7.11 unifies it.
 - **The quote stays binding.** SPECS section 5: a quote cannot rise without agreement; Fixed = agreed price + approved adjustments; the s362F gate (NZD 30,000+) is decided at booking. "Price changes on demand" is already covered: EstimateRange and HourlyWithCap settle on final hours, and any model can change through an approved adjustment. No free re-quote at completion.
 - **Hourly stays off the board**; they need fast acceptance (Quick match / direct request). Projects keep "invite a specific tradie" beside "open to all nearby".
 - **Cost is moderate, the data model is ready:** `Quote.OfferId` is already nullable. Needed: an available-jobs query (EF Core spatial LINQ, rule 2), licence gating, quoting without an offer, a DB-backed settings store (see below), and board expiry.
