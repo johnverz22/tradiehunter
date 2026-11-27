@@ -82,17 +82,19 @@ class TrLeadJobCard extends StatelessWidget {
 }
 
 /// Large total with the hours × rate breakdown beneath (v1 `_PriceBlock`).
+/// Before acceptance the price comes from the offer's rate snapshot.
 class TrLeadPriceCard extends StatelessWidget {
-  const TrLeadPriceCard({super.key, required this.job});
+  const TrLeadPriceCard({super.key, required this.job, this.offer});
   final Job job;
+  final JobOffer? offer;
 
   @override
   Widget build(BuildContext context) {
-    final breakdown = trPriceBreakdown(job);
+    final breakdown = trPriceBreakdown(job, offer: offer);
     return THCard(
       padding: Space.s4,
       children: [
-        THText(trPriceTotal(job), style: THTextStyle.moneyLg),
+        THText(trPriceTotal(job, offer: offer), style: THTextStyle.moneyLg),
         if (breakdown != null) ...[
           const SizedBox(height: Space.s1),
           THText(breakdown, style: THTextStyle.meta, tone: THTone.soft),

@@ -421,7 +421,7 @@ class TrJobFallbackScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  THText(job.title, style: THTextStyle.title),
+                  Expanded(child: THText(job.title, style: THTextStyle.title)),
                   THBadge(job.status, kind: THBadgeKind.glass),
                 ],
               ),

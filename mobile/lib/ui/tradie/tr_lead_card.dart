@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../models/marketplace.dart';
-import '../../utils/money.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import 'tr_lead_mapper.dart';
 
 class TrLeadCard extends StatefulWidget {
   const TrLeadCard({
@@ -120,9 +120,9 @@ class _TrLeadCardState extends State<TrLeadCard> {
       countdownKind = THBadgeKind.accent;
     }
 
-    final priceStr = widget.job.totalAmount != null
-        ? formatMoney(widget.job.totalAmount!)
-        : '—';
+    // Before acceptance the job has no total — the offer's rate snapshot is
+    // the tradie's real price (never the wire's non-nullable $0.00).
+    final priceStr = trPriceTotal(widget.job, offer: widget.offer);
 
     return InkWell(
       borderRadius: BorderRadius.circular(Radii.card),

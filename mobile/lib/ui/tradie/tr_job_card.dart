@@ -1,4 +1,5 @@
 // TrJobCard: v2 tradie job card for dashboard and job lists.
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -32,7 +33,19 @@ class TrJobCard extends StatelessWidget {
     final badge = thTradieStatusBadge(job.status, isOverdue: overdue);
     final progress = thTradieProgress(job);
     final subtitle = thTradieJobSubtitle(job);
-    final amount = job.finalAmount ?? job.totalAmount ?? job.estimatedTotal;
+    // The deprecated wire totalAmount is a non-nullable 0 when unpriced —
+    // only a positive amount is real (never render $0.00 as a price).
+    Decimal? amount;
+    for (final candidate in [
+      job.finalAmount,
+      job.totalAmount,
+      job.estimatedTotal,
+    ]) {
+      if (candidate != null && candidate > Decimal.zero) {
+        amount = candidate;
+        break;
+      }
+    }
     final actionRequired = thIsTradieActionRequired(job.status);
 
     final actionLabel = switch (job.status) {

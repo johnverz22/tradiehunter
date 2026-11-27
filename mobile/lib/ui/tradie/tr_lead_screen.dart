@@ -313,7 +313,7 @@ class _TradieLeadScreenState extends ConsumerState<TradieLeadScreen>
             },
           ),
           TrLeadJobCard(job: job),
-          TrLeadPriceCard(job: job),
+          TrLeadPriceCard(job: job, offer: _offer),
           if (job.photoUrls.isEmpty)
             const THText(
               'No photos attached.',

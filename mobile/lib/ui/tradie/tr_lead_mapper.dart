@@ -23,13 +23,24 @@ String trResolvePhotoUrl(String url, String baseUrl) =>
 String trLocationLabel(Job job) =>
     job.suburb.isNotEmpty ? job.suburb : (job.address ?? 'Location on file');
 
-/// Large total, or an em dash when the job has no total (never a fake zero).
-String trPriceTotal(Job job) =>
-    job.totalAmount != null ? formatMoney(job.totalAmount!) : '—';
+/// Headline price. A real total wins; before acceptance the job carries no
+/// total (the deprecated wire field is a non-nullable 0), so the pending
+/// offer's rate snapshot is the truthful figure — shown per hour. A
+/// non-positive or missing amount is a dash, never `$0.00`.
+String trPriceTotal(Job job, {JobOffer? offer}) {
+  final total = job.totalAmount;
+  if (total != null && total > Decimal.zero) return formatMoney(total);
+  final snapshot = offer?.hourlyRateSnapshot;
+  if (snapshot != null && snapshot > Decimal.zero) return formatRate(snapshot);
+  final rate = job.hourlyRate;
+  if (rate != null && rate > Decimal.zero) return formatRate(rate);
+  return '—';
+}
 
 /// `3 h × $85.00/h`, `3h`, or null when no hours are set (v1 `_PriceBlock`).
-String? trPriceBreakdown(Job job) {
-  final rate = job.hourlyRate;
+/// Falls back to the offer's rate snapshot while the job's own rate is unset.
+String? trPriceBreakdown(Job job, {JobOffer? offer}) {
+  final rate = job.hourlyRate ?? offer?.hourlyRateSnapshot;
   if (job.hours <= 0) return null;
   return rate != null
       ? '${job.hours} h × ${formatRate(rate)}'

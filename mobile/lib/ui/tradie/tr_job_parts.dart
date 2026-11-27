@@ -381,7 +381,9 @@ class TrAdjustmentsCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            THText('Extra costs', style: THTextStyle.title),
+            const Expanded(
+              child: THText('Extra costs', style: THTextStyle.title),
+            ),
             if (approvedTotal > Decimal.zero)
               THBadge(
                 'Approved: ${formatMoney(approvedTotal)}',
@@ -452,8 +454,14 @@ class _AdjustmentRow extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              THBadge(label, kind: kind),
-              THText(formatMoney(a.amount), style: THTextStyle.title),
+              Flexible(child: THBadge(label, kind: kind)),
+              Flexible(
+                child: THText(
+                  formatMoney(a.amount),
+                  style: THTextStyle.title,
+                  align: TextAlign.right,
+                ),
+              ),
             ],
           ),
           if (a.description.isNotEmpty) ...[

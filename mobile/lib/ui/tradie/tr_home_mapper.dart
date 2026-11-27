@@ -257,9 +257,11 @@ TrHeroNet trHeroNet(TradieEarningsState state) {
 /// Never added to the weekly figure (plan G-14 / G-15).
 Decimal? trPendingNet(TradieEarningsState state) => state.summary?.pendingNet;
 
-/// Jobs scheduled in the local calendar week of [now] (Monday to Sunday) that
+/// Jobs done in the local calendar week of [now] (Monday to Sunday) that
 /// are real work: booked, in progress, awaiting confirmation or completed.
-/// Derived client-side from the job list (plan G-13); never invented.
+/// Anchored on the scheduled start when the job has one; v1.7 flexible jobs
+/// carry no schedule, so they fall back to their creation date. Derived
+/// client-side from the job list (plan G-13); never invented.
 int trWeekJobCount(List<Job> jobs, DateTime now) {
   final startOfToday = DateTime(now.year, now.month, now.day);
   final weekStart = startOfToday.subtract(
@@ -268,7 +270,7 @@ int trWeekJobCount(List<Job> jobs, DateTime now) {
   final weekEnd = weekStart.add(const Duration(days: 7));
   const counted = {...kBookedWorkStatuses, 'Completed'};
   return jobs.where((j) {
-    final at = j.scheduledStartUtc?.toLocal();
+    final at = j.scheduledStartUtc?.toLocal() ?? j.createdAtUtc?.toLocal();
     return at != null &&
         counted.contains(j.status) &&
         !at.isBefore(weekStart) &&

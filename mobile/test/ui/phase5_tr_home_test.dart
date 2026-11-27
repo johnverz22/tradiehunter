@@ -27,6 +27,7 @@ Job _job(
   String status, {
   String title = 'Fix tap',
   DateTime? scheduledLocal,
+  DateTime? createdLocal,
 }) => Job(
   id: id,
   title: title,
@@ -36,6 +37,7 @@ Job _job(
   stage: Job.stageForStatus(status, flowVersion: Job.flowVersionV2),
   flowVersion: Job.flowVersionV2,
   scheduledStartUtc: scheduledLocal?.toUtc(),
+  createdAtUtc: createdLocal?.toUtc(),
 );
 
 JobOffer _offer(String jobId, DateTime expiresUtc) => JobOffer(
@@ -182,6 +184,15 @@ void main() {
         _job('g', 'Booked'),
       ];
       expect(trWeekJobCount(jobs, now), 2);
+    });
+
+    test('unscheduled jobs count by creation date (v1.7 flexible)', () {
+      final jobs = [
+        _job('a', 'Completed', createdLocal: DateTime(2026, 11, 24, 10)),
+        _job('b', 'Completed', createdLocal: DateTime(2026, 11, 30, 10)),
+        _job('c', 'Requested', createdLocal: DateTime(2026, 11, 24, 10)),
+      ];
+      expect(trWeekJobCount(jobs, now), 1);
     });
   });
 

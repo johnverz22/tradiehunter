@@ -52,6 +52,7 @@ JobOffer _offer({
   Duration left = const Duration(minutes: 10),
   String kind = 'Auto',
   Duration age = const Duration(minutes: 2),
+  Decimal? rateSnapshot,
 }) {
   final now = DateTime.now().toUtc();
   return JobOffer(
@@ -63,6 +64,7 @@ JobOffer _offer({
     response: 'Pending',
     stage: 'Auto',
     kind: kind,
+    hourlyRateSnapshot: rateSnapshot,
   );
 }
 
@@ -126,6 +128,25 @@ void main() {
 
     test('no total shows a dash, never a zero', () {
       expect(trPriceTotal(_job()), '—');
+      expect(trPriceTotal(_job(total: Decimal.zero)), '—');
+    });
+
+    test('a pending offer supplies the rate before acceptance', () {
+      final offer = _offer(rateSnapshot: Decimal.parse('85'));
+      // The wire totalAmount is a non-nullable 0 on a fresh request.
+      expect(
+        trPriceTotal(_job(total: Decimal.zero), offer: offer),
+        r'$85.00/h',
+      );
+      expect(trPriceBreakdown(_job(hours: 3), offer: offer), r'3 h × $85.00/h');
+    });
+
+    test('a real total still wins over the offer rate', () {
+      final offer = _offer(rateSnapshot: Decimal.parse('85'));
+      expect(
+        trPriceTotal(_job(total: Decimal.parse('255')), offer: offer),
+        r'$255.00',
+      );
     });
 
     test('hours without a rate, and no hours at all', () {
