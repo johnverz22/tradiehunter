@@ -145,11 +145,17 @@ class TrQuoteDraft {
   bool get rangeInverted =>
       rangeMin != null && rangeMax != null && rangeMin! > rangeMax!;
 
+  /// Hourly-with-cap where the cap sits below the hourly rate (a cap that
+  /// could never be reached by even one hour of work).
+  bool get capBelowRate =>
+      hourlyRate != null && hourlyCap != null && hourlyCap! < hourlyRate!;
+
   bool get canSubmit => switch (pricingModel) {
     Quote.pricingFixed => fixedAmount != null,
     Quote.pricingEstimateRange =>
       rangeMin != null && rangeMax != null && rangeMin! <= rangeMax!,
-    Quote.pricingHourlyWithCap => hourlyRate != null && hourlyCap != null,
+    Quote.pricingHourlyWithCap =>
+      hourlyRate != null && hourlyCap != null && !capBelowRate,
     _ => false,
   };
 

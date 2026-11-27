@@ -198,6 +198,9 @@ class _TrQuoteSheetState extends State<TrQuoteSheet> {
                   switchKey: const Key('quote_gst_switch'),
                   label: 'Quote includes GST',
                   on: _gstIncluded,
+                  // The server rejects a GST flag that disagrees with the
+                  // profile, so lock the switch when the profile is known.
+                  enabled: widget.gstRegisteredFromProfile == null,
                   onChanged: (v) => setState(() => _gstIncluded = v),
                 ),
                 THText(
@@ -294,6 +297,12 @@ class _TrQuoteSheetState extends State<TrQuoteSheet> {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         onChanged: _refresh,
       ),
+      if (draft.capBelowRate)
+        const THText(
+          'The cap must be at least your hourly rate.',
+          style: THTextStyle.meta,
+          tone: THTone.danger,
+        ),
     ],
   };
 }
@@ -304,11 +313,13 @@ class _SwitchRow extends StatelessWidget {
     required this.label,
     required this.on,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final Key switchKey;
   final String label;
   final bool on;
+  final bool enabled;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -318,7 +329,13 @@ class _SwitchRow extends StatelessWidget {
       Expanded(child: THText(label, style: THTextStyle.body)),
       Semantics(
         label: label,
-        child: THSwitch(key: switchKey, on: on, onChanged: onChanged),
+        child: IgnorePointer(
+          ignoring: !enabled,
+          child: Opacity(
+            opacity: enabled ? 1 : 0.6,
+            child: THSwitch(key: switchKey, on: on, onChanged: onChanged),
+          ),
+        ),
       ),
     ],
   );

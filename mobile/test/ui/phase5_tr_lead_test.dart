@@ -305,6 +305,24 @@ void main() {
       );
     });
 
+    test('hourly cap below the rate is rejected; equal is allowed', () {
+      const below = TrQuoteDraft(
+        pricingModel: Quote.pricingHourlyWithCap,
+        rate: '85',
+        cap: '60',
+      );
+      expect(below.capBelowRate, isTrue);
+      expect(below.canSubmit, isFalse);
+      expect(below.toPayload(), isNull);
+      const equal = TrQuoteDraft(
+        pricingModel: Quote.pricingHourlyWithCap,
+        rate: '85',
+        cap: '85',
+      );
+      expect(equal.capBelowRate, isFalse);
+      expect(equal.toPayload(), isNotNull);
+    });
+
     test('GST helper copy', () {
       expect(
         trGstHelper(fromProfile: true, included: true),
