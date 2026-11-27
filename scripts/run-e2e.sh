@@ -149,7 +149,7 @@ if [ "$CONFIG" = "FABRIC" ]; then
     --junit "$LOG_DIR/journey.xml" 2>&1 | tee "$LOG_DIR/journey.log"
   arc=${PIPESTATUS[0]}
   if [ "$arc" -eq 0 ]; then
-    RESULTS+=("PASS     api       (7 scenarios)")
+    RESULTS+=("PASS     api       (10 scenarios)")
   else
     RESULTS+=("FAIL     api       (log: $LOG_DIR/journey.log)")
     FAILED=1

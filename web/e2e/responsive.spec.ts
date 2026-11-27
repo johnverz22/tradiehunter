@@ -130,5 +130,21 @@ test.describe('Responsive Layout & Interaction', () => {
       await expect(dialog).not.toBeVisible({ timeout: 3000 });
     }
   });
+  test('quotes settings card is usable and does not overflow', async ({ page }) => {
+    await page.goto('/settings');
+    await page.waitForLoadState('domcontentloaded');
+
+    const region = page.getByRole('region', { name: 'Quotes' });
+    await expect(region).toBeVisible({ timeout: 8000 });
+    await expect(region.getByLabel('Board window (hours)')).toBeVisible();
+    await expect(region.getByLabel('Quote validity (hours)')).toBeVisible();
+
+    const hasNoOverflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      const scrolling = document.scrollingElement || root;
+      return scrolling.scrollWidth <= root.clientWidth + 1;
+    });
+    expect(hasNoOverflow).toBe(true);
+  });
 
 });

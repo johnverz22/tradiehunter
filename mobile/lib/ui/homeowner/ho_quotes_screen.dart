@@ -11,6 +11,24 @@ import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
 
+/// Plan 10 Q7.9: human-readable countdown for an open-board project's
+/// [Job.quotesCloseAtUtc]. Null when no close time is set.
+String? thQuotesCloseLabel(DateTime? closeAtUtc, {DateTime? nowUtc}) {
+  if (closeAtUtc == null) return null;
+  final diff = closeAtUtc.toUtc().difference((nowUtc ?? DateTime.now()).toUtc());
+  if (diff <= Duration.zero) return 'Quotes closed';
+  if (diff.inDays >= 1) {
+    final days = diff.inDays;
+    return days == 1 ? 'Quotes close in 1 day' : 'Quotes close in $days days';
+  }
+  if (diff.inHours >= 1) {
+    final hours = diff.inHours;
+    return hours == 1 ? 'Quotes close in 1 hour' : 'Quotes close in $hours hours';
+  }
+  final mins = diff.inMinutes < 1 ? 1 : diff.inMinutes;
+  return mins == 1 ? 'Quotes close in 1 minute' : 'Quotes close in $mins minutes';
+}
+
 /// Job title for the quotes app-bar subtitle. `null` means the fetch failed
 /// or is in progress; the subtitle shows the count alone in that case (G-6).
 final quotesJobProvider = FutureProvider.autoDispose.family<Job?, String>(
@@ -168,12 +186,14 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
         // Job title for the subtitle — G-6: omit rather than guess if null.
         final job = ref.watch(quotesJobProvider(widget.jobId)).valueOrNull;
         final jobTitle = job?.title;
-        // Plan 10 Q3.4: "N of M received" when the server told us M; never a
-        // denominator below the numerator.
+        // Plan 10 Q3.4 / Q7.9: "N of M received" when the server told us M;
+        // "N received" for open-board jobs (quotesRequested == null).
         final requested = job?.quotesRequested;
         final receivedLabel = requested == null
             ? '${quotes.length} received'
             : '${quotes.length} of ${requested < quotes.length ? quotes.length : requested} received';
+        final closeLabel = thQuotesCloseLabel(job?.quotesCloseAtUtc);
+        final isOpenBoard = job?.openToBoard ?? false;
         final body = state.isLoading && quotes.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.error != null && quotes.isEmpty
@@ -184,9 +204,12 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                 onPressed: _reload,
               )
             : quotes.isEmpty
-            ? const _StatePanel(
+            ? _StatePanel(
                 title: 'No quotes yet',
-                message: 'Tradies you asked are preparing their quotes. You will get a notification as each one arrives.',
+                message: isOpenBoard
+                    ? 'Nearby tradies can see your project and send quotes. You will get a notification as each one arrives.'
+                    : 'Tradies you asked are preparing their quotes. You will get a notification as each one arrives.',
+                badge: closeLabel,
               )
             : RefreshIndicator(
                 onRefresh: _reload,
@@ -194,14 +217,27 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                   padding: EdgeInsets.all(Space.s1),
                   shrinkWrap: true,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: quotes.length,
+                  itemCount: quotes.length + (closeLabel != null ? 1 : 0),
                   separatorBuilder: (_, _) => const SizedBox(height: Space.s3),
-                  itemBuilder: (context, index) => _QuoteCard(
-                    quote: quotes[index],
-                    accepting: state.acceptingQuoteId == quotes[index].id,
-                    onView: () => _view(quotes[index]),
-                    onAccept: () => _accept(quotes[index]),
-                  ),
+                  itemBuilder: (context, index) {
+                    if (closeLabel != null && index == 0) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: THBadge(
+                          closeLabel,
+                          key: const Key('quotes_close_badge'),
+                          kind: THBadgeKind.brand,
+                        ),
+                      );
+                    }
+                    final quote = quotes[closeLabel != null ? index - 1 : index];
+                    return _QuoteCard(
+                      quote: quote,
+                      accepting: state.acceptingQuoteId == quote.id,
+                      onView: () => _view(quote),
+                      onAccept: () => _accept(quote),
+                    );
+                  },
                 ),
               );
         return THScaffold(
@@ -506,11 +542,13 @@ class _StatePanel extends StatelessWidget {
   const _StatePanel({
     required this.title,
     required this.message,
+    this.badge,
     this.action,
     this.onPressed,
   });
   final String title;
   final String message;
+  final String? badge;
   final String? action;
   final VoidCallback? onPressed;
 
@@ -521,6 +559,16 @@ class _StatePanel extends StatelessWidget {
       child: THCard(
         children: [
           THText(title, style: THTextStyle.title, align: TextAlign.center),
+          if (badge != null) ...[
+            const SizedBox(height: Space.s2),
+            Center(
+              child: THBadge(
+                badge!,
+                key: const Key('quotes_close_badge'),
+                kind: THBadgeKind.brand,
+              ),
+            ),
+          ],
           const SizedBox(height: Space.s2),
           THText(
             message,

@@ -10,19 +10,13 @@ namespace FixoApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "ScheduledDateUtc",
-                table: "Jobs",
-                newName: "ScheduledStart");
+            // Column already exists as ScheduledStart; legacy rename not applicable.
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "ScheduledStart",
-                table: "Jobs",
-                newName: "ScheduledDateUtc");
+            // Column already exists as ScheduledStart; legacy rename not applicable.
         }
     }
 }

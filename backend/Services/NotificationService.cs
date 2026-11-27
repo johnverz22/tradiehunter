@@ -72,6 +72,24 @@ public interface INotificationService
         CancellationToken ct = default);
 
     /// <summary>
+    /// Plan 10 (Q7.7): policy-driven batch notification to many users (loads
+    /// tokens and emails in one batch instead of N round-trips, still respects
+    /// push + email-fallback rules per user).
+    /// </summary>
+    async Task NotifyManyAsync(
+        string eventKey,
+        IReadOnlyCollection<string> userIds,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CriticalNoticeModel? emailNotice = null,
+        CancellationToken ct = default)
+    {
+        foreach (var uid in userIds)
+            await NotifyAsync(eventKey, uid, title, body, data, emailNotice, ct);
+    }
+
+    /// <summary>
     /// Alert the admin team (plan 09 §3.2). Deduplicated per event + entity,
     /// resolved to active staff by <see cref="IStaffRecipientResolver"/>, and
     /// emailed through the StaffAlert template. Never throws.
@@ -252,6 +270,103 @@ public class NotificationService : INotificationService
             // Notifications must never fail the business transition that raised them.
             _logger.LogWarning(ex, "Notification {EventKey} for user {UserId} failed.", eventKey, userId);
         }
+    }
+
+    public async Task NotifyManyAsync(
+        string eventKey,
+        IReadOnlyCollection<string> userIds,
+        string title,
+        string body,
+        Dictionary<string, string>? data = null,
+        CriticalNoticeModel? emailNotice = null,
+        CancellationToken ct = default)
+    {
+        if (userIds.Count == 0) return;
+        try
+        {
+            if (!NotificationPolicy.TryGet(eventKey, out var def))
+            {
+                _logger.LogWarning("Batch notification skipped: unknown event '{EventKey}'.", eventKey);
+                return;
+            }
+
+            var payload = data is null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string>(data);
+            payload.TryAdd("type", def.Key);
+
+            var distinctIds = userIds.Distinct().ToList();
+            var (tokensByUser, emailsByUser) = await LoadTargetsBatchAsync(distinctIds, ct);
+
+            var notice = emailNotice ?? DefaultNotice(title, body);
+
+            foreach (var uid in distinctIds)
+            {
+                ct.ThrowIfCancellationRequested();
+                var tokens = tokensByUser.TryGetValue(uid, out var list) ? list : (IReadOnlyList<string>)Array.Empty<string>();
+                var pushOk = def.Push && await SendPushAsync(uid, tokens, title, body, payload);
+
+                var sendEmail = def.Email switch
+                {
+                    EmailPolicy.Always => true,
+                    EmailPolicy.Fallback => !pushOk,
+                    _ => false,
+                };
+                if (!sendEmail) continue;
+
+                if (!emailsByUser.TryGetValue(uid, out var email) || string.IsNullOrWhiteSpace(email))
+                    continue;
+
+                try
+                {
+                    await _email.SendCriticalNoticeAsync(email, notice);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Batch email for event {EventKey} to {Email} failed.", def.Key, email);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Batch notification {EventKey} failed.", eventKey);
+        }
+    }
+
+    private async Task<(Dictionary<string, List<string>> Tokens, Dictionary<string, string?> Emails)>
+        LoadTargetsBatchAsync(IReadOnlyCollection<string> userIds, CancellationToken ct)
+    {
+        var tokensByUser = new Dictionary<string, List<string>>();
+        var emailsByUser = new Dictionary<string, string?>();
+        try
+        {
+            var tokenRows = await _db.DeviceTokens
+                .AsNoTracking()
+                .Where(dt => userIds.Contains(dt.UserId))
+                .Select(dt => new { dt.UserId, dt.Token })
+                .ToListAsync(ct);
+
+            foreach (var row in tokenRows)
+            {
+                if (!tokensByUser.TryGetValue(row.UserId, out var list))
+                {
+                    list = new List<string>();
+                    tokensByUser[row.UserId] = list;
+                }
+                list.Add(row.Token);
+            }
+
+            emailsByUser = await _db.Users
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Email })
+                .ToDictionaryAsync(u => u.Id, u => u.Email, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not batch-load tokens/emails for {Count} user(s).", userIds.Count);
+        }
+        return (tokensByUser, emailsByUser);
     }
 
     public async Task SendToStaffAsync(StaffAlert alert, CancellationToken ct = default)

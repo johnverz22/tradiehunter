@@ -31,7 +31,7 @@ Runbooks for email delivery and Firebase/Google sign-in. Secrets never go in the
 ### Going live (open items)
 1. Choose a relay. Recommendation: Amazon SES `ap-southeast-2` (no NZ region) or Postmark. The code is provider-agnostic SMTP.
 2. DNS: SPF including the relay, 2048-bit DKIM, DMARC at `p=none` for two weeks (watch `rua=`), then `p=quarantine`; Return-Path set to the bounce address.
-3. Host the header logo (`wordmark-on-light@2x.png`) on the CDN and set `Brand:EmailLogoUrl`.
+3. ~~Host the header logo on the CDN~~ — no longer needed: the v2 header renders a text wordmark (Lexend, white + hero-gold accent). `Brand:EmailLogoUrl` is deprecated.
 4. Set `Brand:FrontendBaseUrl` once deep links resolve; supply the registered office in `Brand:PostalAddress`.
 5. Manual client matrix before the flip: Gmail (web/iOS/Android), Outlook 2016 + web, Apple Mail (light/dark), Yahoo.
 6. Confirm the sending domain (`tradiehunter.nz` vs `.co.nz` in older config samples).

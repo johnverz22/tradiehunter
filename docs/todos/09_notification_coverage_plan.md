@@ -143,7 +143,7 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 - [x] **N8.3** `web/e2e/persona-fabric.spec.ts`: staff sees the bell badge after a receipt upload and a credential upload (M)
 - [x] **N8.4** Mobile: `flutter analyze --fatal-infos` + `flutter test` if payload/route handling for new push types changes (S)
 - [x] **N8.5** `dotnet test`, `npm run lint`, `npm run build`, `python3 -m py_compile` on touched scripts, `bash -n scripts/run-e2e.sh` (S)
-- [ ] **N8.6** Run `bash scripts/run-e2e.sh FABRIC --fail-fast` against the local stack and paste per-tier results in the Results log (M)
+- [x] **N8.6** Run `bash scripts/run-e2e.sh FABRIC --fail-fast` against the local stack and paste per-tier results in the Results log (M)
 
 ---
 
@@ -161,6 +161,7 @@ Every row in the audit (H1-H10, M1-M10) is either fixed and covered by a test, o
 
 ## Results log
 
+- **2026-11-27 (N8.6):** `bash scripts/run-e2e.sh FABRIC --fail-fast` — **PASS**. Per-tier: personas PASS (6 accounts, manifest `test-logs/e2e-FABRIC-20261127-160857/manifest.json`), api PASS (7/7 scenarios incl. the new `admin/notifications` and MailHog assertions), mobile SKIP (`E2E_DEVICE` not set), web PASS (`persona-fabric.spec.ts`, bell badge verified). Three environment/script issues fixed to get there: the `fixo-api` image predated N6 (rebuilt + `docker compose up -d api`), the DB was two migrations behind (`dotnet ef database update --connection 'Host=db;…'` applied `AddStaffNotifications` + `AddPlatformSettingsAndOpenBoard`; the design-time factory hardcodes localhost so `--connection` is required), and two bugs in `e2e-journey.py` (receipt-notification check looked for a `jobId` field the DTO doesn't have — now matches `type`/`entityType`/`entityId` = payment id; MailHog check indexed the `HOMEOWNER` tuple as a dict — now `HOMEOWNER[0]`).
 - **2026-11-27 (N8.1–N8.4):** Added [NotificationN3CallSiteTests.cs](file:///Users/john/Develop/tradies/backend/FixoApi.Tests/NotificationN3CallSiteTests.cs) (4/4 passing) for `JobStatusService.TransitionAsync` policy events; extended [e2e-journey.py](file:///Users/john/Develop/tradies/scripts/e2e-journey.py) (`receipt-reject-resubmit` `GET /admin/notifications` check + `dispute-attachments-reviews` MailHog email check, `py_compile` clean); added bell badge unread assertion to [persona-fabric.spec.ts](file:///Users/john/Develop/tradies/web/e2e/persona-fabric.spec.ts) (`npm run lint` 0 errors); verified mobile (`flutter analyze --fatal-infos` 0 issues, `flutter test` 650+ passed). Ready for `N8.6` (`bash scripts/run-e2e.sh FABRIC --fail-fast`).
 
 ## Decisions and parked items

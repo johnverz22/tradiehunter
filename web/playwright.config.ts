@@ -19,7 +19,11 @@ export default defineConfig({
     // Run auth setup first, once — saves cookie state to e2e/.auth/staff.json
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: /auth\.setup\.ts/,
+    },
+    {
+      name: 'setup-superadmin',
+      testMatch: /superadmin\.setup\.ts/,
     },
     {
       name: 'chromium',
@@ -27,7 +31,18 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: './e2e/.auth/staff.json',
       },
+      // The superadmin-only spec has its own project/identity.
+      testIgnore: /admin-quotes-settings\.spec\.ts$/,
       dependencies: ['setup'],
+    },
+    {
+      name: 'chromium-superadmin',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './e2e/.auth/superadmin.json',
+      },
+      testMatch: /admin-quotes-settings\.spec\.ts$/,
+      dependencies: ['setup-superadmin'],
     },
     {
       name: 'tablet',

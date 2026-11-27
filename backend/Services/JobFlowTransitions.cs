@@ -31,6 +31,8 @@ public static class JobFlowTransitions
             (JobStatus.Requested, JobStatus.AwaitingPayment) => actorRole == UserRole.Tradie,
             // System cancels Requested jobs when matching is exhausted (no_tradie_found).
             (JobStatus.Requested, JobStatus.Cancelled) => actorRole is UserRole.Staff or UserRole.Superadmin,
+            // Plan 10 (Q7.6): open-board project expired with no valid quotes.
+            (JobStatus.Requested, JobStatus.Expired) => actorRole is UserRole.Staff or UserRole.Superadmin,
             (JobStatus.AwaitingPayment, JobStatus.PaymentReview) => actorRole == UserRole.Homeowner,
             (JobStatus.AwaitingPayment, JobStatus.Expired) => actorRole is UserRole.Staff or UserRole.Superadmin,
             (JobStatus.PaymentReview, JobStatus.Booked) => actorRole is UserRole.Staff or UserRole.Superadmin,
@@ -63,6 +65,8 @@ public static class JobFlowTransitions
             (JobStatus.Requested, JobStatus.Booked) => actorRole is UserRole.Tradie or UserRole.Homeowner,
             // System cancels Requested jobs when matching is exhausted (no_tradie_found).
             (JobStatus.Requested, JobStatus.Cancelled) => actorRole is UserRole.Staff or UserRole.Superadmin,
+            // Plan 10 (Q7.6): open-board project expired with no valid quotes.
+            (JobStatus.Requested, JobStatus.Expired) => actorRole is UserRole.Staff or UserRole.Superadmin,
             (JobStatus.Booked, JobStatus.InProgress) => actorRole == UserRole.Tradie,
             (JobStatus.Booked, JobStatus.Requested) => actorRole is UserRole.Staff or UserRole.Superadmin,
             (JobStatus.Booked, JobStatus.Cancelled) => true,

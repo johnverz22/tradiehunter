@@ -78,6 +78,11 @@ public static class NotificationEvents
     public const string OfferExpired = "offer_expired";
     public const string QuoteAccepted = "quote_accepted";
     public const string QuoteDeclined = "quote_declined";
+
+    // Board (plan 10 Q7.7): a new open project is posted to the available-jobs board.
+    public const string BoardJobPosted = "board_job_posted";
+    // Board expiry (plan 10 Q7.6): open project expired with no valid quote.
+    public const string BoardJobExpired = "board_job_expired";
     public const string AdjustmentWithdrawn = "adjustment_withdrawn";
     public const string AdjustmentExpired = "adjustment_expired";
     public const string AdjustmentReminder = "adjustment_reminder";
@@ -154,6 +159,8 @@ public static class NotificationPolicy
         Def(NotificationEvents.OfferExpired, Both, true, EmailPolicy.Fallback, "Offer window passed without a response."),
         Def(NotificationEvents.QuoteAccepted, Trade, true, EmailPolicy.Fallback, "Homeowner accepted the quote."),
         Def(NotificationEvents.QuoteDeclined, Trade, true, EmailPolicy.Fallback, "Quote not chosen."),
+        Def(NotificationEvents.BoardJobPosted, Trade, true, EmailPolicy.Fallback, "A new open project matching your trade was posted nearby."),
+        Def(NotificationEvents.BoardJobExpired, Home, true, EmailPolicy.Fallback, "Open project closed without receiving any quotes."),
         Def(NotificationEvents.AdjustmentWithdrawn, Home, true, EmailPolicy.Fallback, "Tradie withdrew the pending extra-cost request."),
         Def(NotificationEvents.AdjustmentExpired, Both, true, EmailPolicy.Fallback, "Extra-cost request expired unanswered."),
         Def(NotificationEvents.ReceiptReceived, Home, true, EmailPolicy.Fallback, "We received the payment receipt."),

@@ -106,6 +106,11 @@ class Job {
   final int? quotesRequested;
   final int? quotesReceived;
 
+  /// Plan 10 (Q7.3/Q7.8): project is open to the tradie board (not invite-only),
+  /// and when it stops accepting new quotes (UTC).
+  final bool openToBoard;
+  final DateTime? quotesCloseAtUtc;
+
   const Job({
     required this.id,
     required this.title,
@@ -150,16 +155,18 @@ class Job {
     this.scopeNotes,
     this.quotesRequested,
     this.quotesReceived,
+    this.openToBoard = false,
+    this.quotesCloseAtUtc,
   });
 
   bool get isProject => jobType == Job.jobTypeProject;
 
   /// A Project job still in `Requested` whose homeowner has sent at least one
-  /// quote request, so the quotes screen is the place to open it (plan 10).
+  /// quote request, or an open-board project job collecting quotes (plan 10 Q7.8).
   bool get hasQuoteActivity =>
       isProject &&
       status == 'Requested' &&
-      (quotesRequested ?? 0) > 0;
+      ((quotesRequested ?? 0) > 0 || openToBoard || quotesCloseAtUtc != null);
 
   /// Whether this job uses the v1.7 pay-at-completion flow.
   bool get usesV2Flow => flowVersion >= Job.flowVersionV2;
@@ -263,6 +270,10 @@ class Job {
       scopeNotes: json['scopeNotes'] as String?,
       quotesRequested: (json['quotesRequested'] as num?)?.toInt(),
       quotesReceived: (json['quotesReceived'] as num?)?.toInt(),
+      openToBoard: json['openToBoard'] as bool? ?? false,
+      quotesCloseAtUtc: json['quotesCloseAtUtc'] != null
+          ? DateTime.parse(json['quotesCloseAtUtc'] as String).toUtc()
+          : null,
     );
   }
 
@@ -323,6 +334,8 @@ class Job {
     scopeNotes: scopeNotes,
     quotesRequested: quotesRequested,
     quotesReceived: quotesReceived,
+    openToBoard: openToBoard,
+    quotesCloseAtUtc: quotesCloseAtUtc,
   );
 
   Map<String, dynamic> toJson() => {
@@ -1184,4 +1197,98 @@ class Quote {
         : null,
     status: json['status'] as String? ?? Quote.statusPending,
   );
+}
+
+/// One open project job on the tradie "Available jobs" board (plan 10 Q7.4/Q7.10).
+/// Mirrors backend `AvailableJobDto`. Address is masked to suburb until Booked.
+class AvailableJob {
+  final String id;
+  final String title;
+  final String category;
+  final String description;
+  final String urgency;
+  final int serviceId;
+  final String? suburb;
+  final double? distanceKm;
+  final String? scopeNotes;
+  final Decimal? budgetMin;
+  final Decimal? budgetMax;
+  final String materialsBy;
+  final bool siteVisitWelcome;
+  final String timingPreference;
+  final DateTime? scheduledStartUtc;
+  final DateTime? scheduledEndUtc;
+  final int quotesReceived;
+  final DateTime quotesCloseAtUtc;
+  final DateTime createdAtUtc;
+  final List<String> photoUrls;
+
+  /// Optional server-supplied quote validity window (Q4.2 / Q7.10); omitted if absent.
+  final int? quoteValidityHours;
+
+  const AvailableJob({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.description,
+    required this.urgency,
+    this.serviceId = 0,
+    this.suburb,
+    this.distanceKm,
+    this.scopeNotes,
+    this.budgetMin,
+    this.budgetMax,
+    this.materialsBy = 'Undecided',
+    this.siteVisitWelcome = false,
+    this.timingPreference = 'Flexible',
+    this.scheduledStartUtc,
+    this.scheduledEndUtc,
+    this.quotesReceived = 0,
+    required this.quotesCloseAtUtc,
+    required this.createdAtUtc,
+    this.photoUrls = const [],
+    this.quoteValidityHours,
+  });
+
+  factory AvailableJob.fromJson(Map<String, dynamic> json) {
+    final photos = json['photos'] as List?;
+    final photoUrls = photos != null
+        ? photos
+              .whereType<Map>()
+              .map((p) => (p['url'] ?? p['Url'])?.toString() ?? '')
+              .where((u) => u.isNotEmpty)
+              .toList()
+        : (json['photoUrls'] as List?)?.cast<String>() ?? const <String>[];
+    return AvailableJob(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      urgency: json['urgency'] as String? ?? 'Medium',
+      serviceId: (json['serviceId'] as num?)?.toInt() ?? 0,
+      suburb: json['suburb'] as String?,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+      scopeNotes: json['scopeNotes'] as String?,
+      budgetMin: _decimalFromJson(json['budgetMin']),
+      budgetMax: _decimalFromJson(json['budgetMax']),
+      materialsBy: json['materialsBy'] as String? ?? 'Undecided',
+      siteVisitWelcome: json['siteVisitWelcome'] as bool? ?? false,
+      timingPreference: json['timingPreference'] as String? ?? 'Flexible',
+      scheduledStartUtc: json['scheduledStartUtc'] != null
+          ? DateTime.parse(json['scheduledStartUtc'] as String).toUtc()
+          : null,
+      scheduledEndUtc: json['scheduledEndUtc'] != null
+          ? DateTime.parse(json['scheduledEndUtc'] as String).toUtc()
+          : null,
+      quotesReceived: (json['quotesReceived'] as num?)?.toInt() ?? 0,
+      quotesCloseAtUtc: json['quotesCloseAtUtc'] != null
+          ? DateTime.parse(json['quotesCloseAtUtc'] as String).toUtc()
+          : DateTime.now().toUtc(),
+      createdAtUtc: json['createdAtUtc'] != null
+          ? DateTime.parse(json['createdAtUtc'] as String).toUtc()
+          : DateTime.now().toUtc(),
+      photoUrls: photoUrls,
+      quoteValidityHours: (json['quoteValidityHours'] as num?)?.toInt(),
+    );
+  }
 }

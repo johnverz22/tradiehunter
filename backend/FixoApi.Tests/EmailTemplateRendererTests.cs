@@ -39,8 +39,8 @@ public class EmailTemplateRendererTests
         Assert.DoesNotContain("&lt;h1", rendered.Html);
         Assert.DoesNotContain("&lt;p", rendered.Html);
         Assert.Contains("<h1", rendered.Html);
-        Assert.Contains("#193957", rendered.Html);   // navy header
-        Assert.Contains("#F6F4EE", rendered.Html);   // cream page + footer
+        Assert.Contains("#1E3A8A", rendered.Html);   // v2 brand header + headings
+        Assert.Contains("#F4F6FB", rendered.Html);   // v2 paper page + footer
         Assert.Contains("TradieHunter", rendered.Html);
 
         // Plain-text twin (§3.4): no HTML tags, heading underlined with ====.

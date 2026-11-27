@@ -19,6 +19,7 @@ Future<Map<String, dynamic>?> showTrQuoteSheet(
   BuildContext context, {
   required ThemeMode themeMode,
   required bool? gstRegisteredFromProfile,
+  int? quoteValidityHours,
 }) => showModalBottomSheet<Map<String, dynamic>>(
   context: context,
   isScrollControlled: true,
@@ -26,15 +27,26 @@ Future<Map<String, dynamic>?> showTrQuoteSheet(
   backgroundColor: Colors.transparent,
   builder: (_) => ThScope(
     themeMode: themeMode,
-    child: TrQuoteSheet(gstRegisteredFromProfile: gstRegisteredFromProfile),
+    child: TrQuoteSheet(
+      gstRegisteredFromProfile: gstRegisteredFromProfile,
+      quoteValidityHours: quoteValidityHours,
+    ),
   ),
 );
 
 class TrQuoteSheet extends StatefulWidget {
-  const TrQuoteSheet({super.key, required this.gstRegisteredFromProfile});
+  const TrQuoteSheet({
+    super.key,
+    required this.gstRegisteredFromProfile,
+    this.quoteValidityHours,
+  });
 
   /// The tradie's profile GST registration, when known.
   final bool? gstRegisteredFromProfile;
+
+  /// Server-configured quote validity window in hours (Q4.2 / Q7.10).
+  /// Omitted when unknown — never hard-coded.
+  final int? quoteValidityHours;
 
   @override
   State<TrQuoteSheet> createState() => _TrQuoteSheetState();
@@ -143,9 +155,12 @@ class _TrQuoteSheetState extends State<TrQuoteSheet> {
               spacing: Space.s3,
               children: [
                 const THText('Submit quote', style: THTextStyle.h2),
-                const THText(
-                  'The homeowner compares quotes side by side — price, scope '
-                  'and timing all show on your card.',
+                THText(
+                  widget.quoteValidityHours != null
+                      ? 'The homeowner compares quotes side by side — price, scope '
+                          'and timing all show on your card. Valid for ${widget.quoteValidityHours} hours.'
+                      : 'The homeowner compares quotes side by side — price, scope '
+                          'and timing all show on your card.',
                   style: THTextStyle.meta,
                   tone: THTone.soft,
                 ),

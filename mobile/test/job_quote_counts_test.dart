@@ -75,4 +75,24 @@ void main() {
     expect(q(Quote.statusWithdrawn).isOpen, isFalse);
     expect(q(Quote.statusExpired).isOpen, isFalse);
   });
+
+  test('openToBoard and quotesCloseAtUtc parse and drive hasQuoteActivity', () {
+    final closeAt = DateTime.utc(2026, 11, 30, 12);
+    final openJob = Job.fromJson(
+      _json(
+        extra: {
+          'openToBoard': true,
+          'quotesCloseAtUtc': closeAt.toIso8601String(),
+          'quotesReceived': 2,
+        },
+      ),
+    );
+    expect(openJob.openToBoard, isTrue);
+    expect(openJob.quotesCloseAtUtc, closeAt);
+    expect(openJob.quotesRequested, isNull);
+    expect(openJob.quotesReceived, 2);
+    expect(openJob.hasQuoteActivity, isTrue);
+    expect(openJob.copyWith(status: 'Requested').openToBoard, isTrue);
+    expect(openJob.copyWith(status: 'Requested').quotesCloseAtUtc, closeAt);
+  });
 }

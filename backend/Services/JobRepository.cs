@@ -65,9 +65,16 @@ public class JobRepository : IJobRepository
             .Select(q => new { q.JobId, q.Status, q.ValidUntilUtc })
             .ToListAsync();
 
+        // Plan 10 (Q7.8): open-board jobs show no "of M" denominator.
+        var openBoardIds = await _context.Jobs
+            .Where(j => jobIds.Contains(j.Id) && j.OpenToBoard)
+            .Select(j => j.Id)
+            .ToHashSetAsync();
+
         foreach (var id in jobIds)
         {
             result[id] = QuoteCounts.Compute(
+                openBoardIds.Contains(id),
                 offers.Where(o => o.JobId == id).Select(o => o.Response),
                 quotes.Where(q => q.JobId == id).Select(q => (q.Status, q.ValidUntilUtc)),
                 nowUtc);

@@ -86,8 +86,8 @@ void main() {
     ]);
   });
 
-  test('gallery exposes all 31 screens', () {
-    expect(thScreenBuilders.length, 31);
+  test('gallery exposes all 33 screens', () {
+    expect(thScreenBuilders.length, 33);
   });
 
   for (final dark in [false, true]) {

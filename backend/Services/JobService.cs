@@ -2,8 +2,10 @@ using FixoApi.Data;
 using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Hubs;
+using FixoApi.Jobs;
 using FixoApi.Models;
 using FixoApi.Options;
+using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -31,6 +33,7 @@ public class JobService : IJobService
     private readonly FixoDbContext _context;
     private readonly IOptions<JobFlowOptions> _jobFlowOptions;
     private readonly IPlatformSettings _settings;
+    private readonly IBackgroundJobClient? _hangfire;
     private readonly ILogger<JobService> _logger;
 
     public JobService(
@@ -42,7 +45,8 @@ public class JobService : IJobService
         FixoDbContext context,
         IOptions<JobFlowOptions> jobFlowOptions,
         IPlatformSettings settings,
-        ILogger<JobService> logger)
+        ILogger<JobService> logger,
+        IBackgroundJobClient? hangfire = null)
     {
         _jobRepo          = jobRepo;
         _jobStatusService = jobStatusService;
@@ -52,6 +56,7 @@ public class JobService : IJobService
         _context         = context;
         _jobFlowOptions  = jobFlowOptions;
         _settings        = settings;
+        _hangfire        = hangfire;
         _logger          = logger;
     }
 
@@ -140,6 +145,12 @@ public class JobService : IJobService
         _logger.LogInformation(
             "Job {JobId} created by homeowner {HomeownerId} (type={JobType}, timing={Timing}, flow=v{Flow}).",
             created.Id, homeownerId, created.JobType, created.TimingPreference, created.FlowVersion);
+
+        if (openToBoard && created.Location != null && _hangfire != null)
+        {
+            _hangfire.Enqueue<BoardJobNotifyJob>(j => j.ExecuteAsync(created.Id, CancellationToken.None));
+        }
+
         return MapToDto(created);
     }
 

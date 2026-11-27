@@ -81,6 +81,27 @@ class JobsRepository {
         const [];
   }
 
+  // ── Tradie: available jobs board (plan 10 Q7.4 / Q7.10) ───────────────────
+
+  Future<List<AvailableJob>> getAvailableJobs({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final token = await _token();
+    if (token == null) return const [];
+    final res = await _dio.get(
+      '/api/tradie/available-jobs',
+      queryParameters: {'page': page, 'pageSize': pageSize},
+      options: _authOptions(token),
+    );
+    final items = res.data['items'] as List?;
+    return items
+            ?.whereType<Map<String, dynamic>>()
+            .map(AvailableJob.fromJson)
+            .toList() ??
+        const [];
+  }
+
   // ── GET /api/jobs/:id ────────────────────────────────────────────────────
 
   /// Fetches a single job. Returns null on 404 / no token.

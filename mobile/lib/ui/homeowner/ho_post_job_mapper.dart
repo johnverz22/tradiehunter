@@ -31,16 +31,18 @@ class PostJobCopy {
   final String buttonLabel;
 }
 
-PostJobCopy thPostJobCopy(String jobType) {
+PostJobCopy thPostJobCopy(String jobType, {bool openToBoard = true}) {
   if (jobType == Job.jobTypeProject) {
-    return const PostJobCopy(
-      subtitle: 'Get up to 3 quotes',
+    return PostJobCopy(
+      subtitle: openToBoard
+          ? 'Get quotes from nearby tradies'
+          : 'Get up to 3 quotes',
       modeHint: 'Project = tradies send you a quote',
       titleLabel: 'PROJECT SUMMARY',
       titleHint: 'e.g. Kitchen renovation',
       descriptionLabel: 'SCOPE',
       descriptionHint: 'What needs doing, what stays as it is…',
-      buttonLabel: 'Request up to 3 quotes',
+      buttonLabel: openToBoard ? 'Post project' : 'Request up to 3 quotes',
     );
   }
   return const PostJobCopy(

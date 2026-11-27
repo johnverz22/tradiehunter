@@ -11,6 +11,8 @@ import 'ho_extra_cost_screen.dart';
 import 'ho_job_detail_fallback_screen.dart';
 import 'ho_job_detail_providers.dart';
 import 'ho_job_detail_state.dart';
+import 'ho_matching_screen.dart';
+import 'ho_quotes_screen.dart';
 import 'ho_review_completion_screen.dart';
 import 'ho_review_screen.dart';
 
@@ -97,10 +99,15 @@ class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter>
               tradie: detail.tradie,
               hasReview: detail.hasReview,
             ),
-            HoJobDetailView.fallback => HoJobDetailFallbackScreen(
-              job: job,
-              reason: selection.fallback!,
-            ),
+            HoJobDetailView.fallback =>
+              (job.status == 'Requested' || job.status == 'Matching')
+              ? (job.isProject
+                    ? HoQuotesScreen(jobId: job.id)
+                    : ThMatchingScreen(jobId: job.id))
+              : HoJobDetailFallbackScreen(
+                  job: job,
+                  reason: selection.fallback!,
+                ),
           };
         },
       ),

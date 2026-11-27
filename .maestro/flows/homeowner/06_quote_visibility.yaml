@@ -1,0 +1,17 @@
+appId: nz.co.fixo.fixo
+---
+# Flow 6: Quote visibility smoke test (Plan 10)
+# Verifies homeowner sees "1 of 1 quotes in" on jobs list.
+- launchApp:
+    clearState: false
+
+- runFlow:
+    file: ../shared/login_quote.yaml
+
+- tapOn:
+    id: "dock_jobs"
+
+- assertVisible:
+    text: "1 of 1 quotes in"
+
+- takeScreenshot: quote_visibility.png

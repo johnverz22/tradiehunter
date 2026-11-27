@@ -281,6 +281,8 @@ builder.Services.AddScoped<FixoApi.Services.AdjustmentService>();
 
 // v1.7 (P12-23): project quotes.
 builder.Services.AddScoped<FixoApi.Services.QuoteService>();
+// Plan 10 (Q7.4): tradie available-jobs board.
+builder.Services.AddScoped<FixoApi.Services.AvailableJobsService>();
 
 // ── Email templates & sending (EMAIL-TEMPLATE-REVISION-PLAN §4/§5) ───────────
 builder.Services.Configure<FixoApi.Options.EmailSenderOptions>(builder.Configuration.GetSection("EmailSender"));

@@ -2,8 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/marketplace.dart' show AvailableJob;
 import '../ui/gallery/screen_gallery.dart' show ScreenGalleryPage;
+import '../ui/tradie/tr_available_jobs_screen.dart';
 import '../ui/tradie/tr_earnings_screen.dart';
+import '../ui/tradie/tr_job_board_detail_screen.dart';
 import '../ui/tradie/tr_jobs_screen.dart';
 import '../ui/tradie/tr_onboarding_screen.dart';
 import '../ui/homeowner/ho_matching_screen.dart';
@@ -200,6 +203,25 @@ final GoRouter appRouter = GoRouter(
         final requestId = state.pathParameters['requestId']!;
         final key = ValueKey('request_$requestId');
         return TradieLeadScreen(key: key, requestId: requestId);
+      },
+    ),
+    // Plan 10 Q7.10: Tradie open project board + detail
+    GoRoute(
+      path: '/tradie/available-jobs',
+      builder: (context, state) => const TrAvailableJobsScreen(),
+    ),
+    GoRoute(
+      path: '/tradie/available-jobs/:jobId',
+      builder: (context, state) {
+        final jobId = state.pathParameters['jobId']!;
+        final initial = state.extra is AvailableJob
+            ? state.extra! as AvailableJob
+            : null;
+        return TrJobBoardDetailScreen(
+          key: ValueKey('board_job_$jobId'),
+          jobId: jobId,
+          initialJob: initial,
+        );
       },
     ),
     // 11-chat

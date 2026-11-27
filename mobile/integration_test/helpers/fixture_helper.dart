@@ -173,9 +173,15 @@ class FixtureHelper {
       budgetMax: amount * 1.2,
       scopeNotes: 'Integration-test project scope.',
     );
-    await ApiHelper.dispatchMatch(jobId, homeowner);
 
-    // Wait until the matching engine has issued the tradie a QuoteRequest.
+    // Get tradie's user ID for the direct request.
+    final profile = await ApiHelper.getMyProfile(tradie);
+    final tradieId = profile['id'] as String;
+
+    // Directly request this tradie so a QuoteRequest offer is created (instant for project jobs).
+    await ApiHelper.requestTradie(jobId, tradieId, homeowner);
+
+    // Wait until the pending QuoteRequest appears for the tradie.
     Map<String, dynamic>? offer;
     await pollUntil(
       () async {
@@ -185,9 +191,6 @@ class FixtureHelper {
       timeout: const Duration(seconds: 45),
       interval: const Duration(seconds: 2),
     );
-
-    final profile = await ApiHelper.getMyProfile(tradie);
-    final tradieId = profile['id'] as String;
 
     Map<String, dynamic> quote;
     try {

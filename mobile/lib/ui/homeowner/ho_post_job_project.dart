@@ -66,6 +66,37 @@ class _HoPostJobProjectState extends ConsumerState<HoPostJobProject> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         THText(
+          'WHO CAN QUOTE?',
+          style: THTextStyle.label,
+          tone: THTone.soft,
+        ),
+        const SizedBox(height: Space.s2),
+        ThChoicePills(
+          items: [
+            ThChoicePillItem(
+              key: const Key('post_project_open_board_pill'),
+              label: 'Open to nearby tradies',
+              selected: state.openToBoard,
+              onSelected: () => notifier.setOpenToBoard(true),
+            ),
+            ThChoicePillItem(
+              key: const Key('post_project_invite_pill'),
+              label: 'Invite tradies',
+              selected: !state.openToBoard,
+              onSelected: () => notifier.setOpenToBoard(false),
+            ),
+          ],
+        ),
+        const SizedBox(height: Space.s2),
+        THText(
+          state.openToBoard
+              ? 'Nearby qualified tradies can see your project and send quotes.'
+              : 'You pick up to 3 specific tradies to request quotes from.',
+          style: THTextStyle.meta,
+          tone: THTone.soft,
+        ),
+        const SizedBox(height: Space.s4),
+        THText(
           'PROJECT DETAILS · OPTIONAL',
           style: THTextStyle.label,
           tone: THTone.soft,

@@ -328,6 +328,10 @@ class PostJobState {
   final bool siteVisitWelcome;
   final String scopeNotes;
 
+  /// Plan 10 (Q7.9): project-only. true = open to nearby tradies (default);
+  /// false = invite up to 3 specific tradies.
+  final bool openToBoard;
+
   const PostJobState({
     this.category = 'Plumber',
     this.title = '',
@@ -356,6 +360,7 @@ class PostJobState {
     this.materialsBy = 'Undecided',
     this.siteVisitWelcome = false,
     this.scopeNotes = '',
+    this.openToBoard = true,
   });
 
   bool get isProject => jobType == Job.jobTypeProject;
@@ -413,6 +418,7 @@ class PostJobState {
     String? materialsBy,
     bool? siteVisitWelcome,
     String? scopeNotes,
+    bool? openToBoard,
   }) => PostJobState(
     category: category ?? this.category,
     title: title ?? this.title,
@@ -451,6 +457,7 @@ class PostJobState {
     materialsBy: materialsBy ?? this.materialsBy,
     siteVisitWelcome: siteVisitWelcome ?? this.siteVisitWelcome,
     scopeNotes: scopeNotes ?? this.scopeNotes,
+    openToBoard: openToBoard ?? this.openToBoard,
   );
 }
 
@@ -563,6 +570,9 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
 
   void setScopeNotes(String value) => state = state.copyWith(scopeNotes: value);
 
+  void setOpenToBoard(bool value) =>
+      state = state.copyWith(openToBoard: value, error: null);
+
   void setCategory(String category) =>
       state = state.copyWith(category: category);
 
@@ -646,6 +656,7 @@ class PostJobNotifier extends StateNotifier<PostJobState> {
           'estimatedHours': state.estimatedHours,
         'jobType': state.jobType,
         if (state.isProject) ...{
+          'openToBoard': state.openToBoard,
           // Money stays text on the wire so it is never rounded through double.
           if (state.budgetMin != null) 'budgetMin': state.budgetMin.toString(),
           if (state.budgetMax != null) 'budgetMax': state.budgetMax.toString(),
@@ -915,3 +926,61 @@ final quotesProvider = StateNotifierProvider.autoDispose
       notifier.load();
       return notifier;
     });
+
+// ── Plan 10 Q7.10: Tradie available jobs board ───────────────────────────────
+
+class AvailableJobsState {
+  final List<AvailableJob> jobs;
+  final bool isLoading;
+  final String? error;
+
+  const AvailableJobsState({
+    this.jobs = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  AvailableJobsState copyWith({
+    List<AvailableJob>? jobs,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) => AvailableJobsState(
+    jobs: jobs ?? this.jobs,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
+}
+
+class AvailableJobsNotifier extends StateNotifier<AvailableJobsState> {
+  final JobsRepository _repo;
+  AvailableJobsNotifier(this._repo) : super(const AvailableJobsState());
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final jobs = await _repo.getAvailableJobs();
+      if (!mounted) return;
+      state = state.copyWith(isLoading: false, jobs: jobs);
+    } catch (e) {
+      if (!mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        error: e is ProfileApiException
+            ? e.message
+            : 'Could not load available jobs.',
+      );
+    }
+  }
+
+  void removeJob(String jobId) {
+    state = state.copyWith(
+      jobs: state.jobs.where((j) => j.id != jobId).toList(),
+    );
+  }
+}
+
+final availableJobsProvider =
+    StateNotifierProvider.autoDispose<AvailableJobsNotifier, AvailableJobsState>(
+      (ref) => AvailableJobsNotifier(ref.watch(jobsRepositoryProvider)),
+    );

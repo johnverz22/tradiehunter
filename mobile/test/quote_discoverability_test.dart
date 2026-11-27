@@ -3,6 +3,7 @@ import 'package:fixo/router/notification_route.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/homeowner/ho_home_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_job_navigation.dart';
+import 'package:fixo/ui/homeowner/ho_quotes_screen.dart' show thQuotesCloseLabel;
 import 'package:flutter_test/flutter_test.dart';
 
 // Plan 10 (Q2.3-Q2.6): quotes surfaced on cards, home, navigation and push taps.
@@ -13,6 +14,8 @@ Job _project({
   int? requested,
   int? received,
   String? tradie,
+  bool openToBoard = false,
+  DateTime? quotesCloseAtUtc,
 }) => Job(
   id: '9',
   title: 'Kitchen renovation',
@@ -24,6 +27,8 @@ Job _project({
   quotesRequested: requested,
   quotesReceived: received,
   matchedTradieName: tradie,
+  openToBoard: openToBoard,
+  quotesCloseAtUtc: quotesCloseAtUtc,
 );
 
 Job _hourly() => const Job(
@@ -117,6 +122,52 @@ void main() {
       expect(routeForMessage({'type': 'quote_submitted'}), '/messages');
       expect(routeForMessage({'type': 'match'}), '/jobs');
       expect(routeForMessage({}), '/messages');
+    });
+  });
+
+  group('open-board projects (Q7.8 / Q7.9)', () {
+    test('subtitle omits "of M" when quotesRequested is null', () {
+      final zero = _project(openToBoard: true, received: 0);
+      final one = _project(openToBoard: true, received: 1);
+      final three = _project(openToBoard: true, received: 3);
+      expect(thHomeStatusBadgeForJob(zero).label, 'Quotes');
+      expect(thHomeJobSubtitle(zero), 'Waiting for quotes');
+      expect(thHomeJobSubtitle(one), '1 quote in');
+      expect(thHomeJobSubtitle(three), '3 quotes in');
+    });
+
+    test('thHomeownerJobPath routes open-board project straight to quotes', () {
+      expect(
+        thHomeownerJobPath(_project(openToBoard: true)),
+        '/jobs/9/quotes',
+      );
+      expect(
+        thHomeownerJobPath(
+          _project(quotesCloseAtUtc: DateTime.utc(2026, 11, 30)),
+        ),
+        '/jobs/9/quotes',
+      );
+    });
+
+    test('thQuotesCloseLabel formats days, hours, minutes, and closed', () {
+      final now = DateTime.utc(2026, 11, 27, 12);
+      expect(
+        thQuotesCloseLabel(now.add(const Duration(hours: 50)), nowUtc: now),
+        'Quotes close in 2 days',
+      );
+      expect(
+        thQuotesCloseLabel(now.add(const Duration(hours: 5)), nowUtc: now),
+        'Quotes close in 5 hours',
+      );
+      expect(
+        thQuotesCloseLabel(now.add(const Duration(minutes: 15)), nowUtc: now),
+        'Quotes close in 15 minutes',
+      );
+      expect(
+        thQuotesCloseLabel(now.subtract(const Duration(minutes: 1)), nowUtc: now),
+        'Quotes closed',
+      );
+      expect(thQuotesCloseLabel(null, nowUtc: now), isNull);
     });
   });
 }

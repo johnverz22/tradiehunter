@@ -222,6 +222,68 @@ public class JobListResponse
     public int PageSize { get; set; }
 }
 
+// ── Plan 10 Q7.4: Available-jobs board ───────────────────────────────────────
+
+/// <summary>
+/// One open project job on the tradie "Available jobs" board (plan 10 Q7.4).
+/// Full detail per D7: scope, notes, budget range, materials-by, site-visit,
+/// timing, all photo URLs, suburb and distance.
+/// Address is masked to suburb until <c>Booked</c> (P5-01 privacy rule).
+/// </summary>
+public class AvailableJobDto
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Urgency { get; set; } = string.Empty;
+    public int ServiceId { get; set; }
+
+    /// <summary>Suburb-only (P5-01: address masked until Booked).</summary>
+    public string? Suburb { get; set; }
+
+    /// <summary>Straight-line distance from the tradie's registered location (km).</summary>
+    public double? DistanceKm { get; set; }
+
+    // ── Project details (D7) ──────────────────────────────────────────────────
+
+    public string? ScopeNotes { get; set; }
+    public decimal? BudgetMin { get; set; }
+    public decimal? BudgetMax { get; set; }
+
+    /// <summary>"Tradie" | "Homeowner" | "Undecided".</summary>
+    public string MaterialsBy { get; set; } = string.Empty;
+    public bool SiteVisitWelcome { get; set; }
+
+    // ── Timing ───────────────────────────────────────────────────────────────
+
+    /// <summary>"Flexible" | "Asap" | "SpecificDate" | "DateRange".</summary>
+    public string TimingPreference { get; set; } = "Flexible";
+    public DateTimeOffset? ScheduledStartUtc { get; set; }
+    public DateTimeOffset? ScheduledEndUtc { get; set; }
+
+    // ── Board state ───────────────────────────────────────────────────────────
+
+    /// <summary>How many quotes the homeowner has already received (from any tradie).</summary>
+    public int QuotesReceived { get; set; }
+
+    /// <summary>When the board stops accepting new quotes (UTC).</summary>
+    public DateTime QuotesCloseAtUtc { get; set; }
+
+    public DateTime CreatedAtUtc { get; set; }
+
+    public List<JobPhotoDto> Photos { get; set; } = new();
+}
+
+/// <summary>Paged response for GET /api/tradie/available-jobs.</summary>
+public class AvailableJobsResponse
+{
+    public List<AvailableJobDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}
+
 /// <summary>
 /// Counterparty contact for a booked-or-later job (V15-15). Only the job's
 /// homeowner or matched tradie can read this, and only while the job is in a

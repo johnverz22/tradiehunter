@@ -1,0 +1,25 @@
+appId: nz.co.fixo.fixo
+---
+# Reusable shared login flow for homeowner persona.
+# Uses Semantics identifiers mirrored from Flutter Keys (Phase E3).
+- runFlow:
+    when:
+      visible:
+        id: "skip_button"
+    commands:
+      - tapOn:
+          id: "skip_button"
+
+- runFlow:
+    when:
+      visible:
+        id: "email_field"
+    commands:
+      - tapOn:
+          id: "email_field"
+      - inputText: ${EMAIL:-homeowner-a@fixo.test}
+      - tapOn:
+          id: "password_field"
+      - inputText: ${PASSWORD:-Test1234!}
+      - tapOn:
+          id: "login_button"

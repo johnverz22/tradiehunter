@@ -99,6 +99,16 @@ for (const vp of VIEWPORTS) {
       await shot(name, 1200);
     }
 
+    // ── Quotes settings card (plan 10 Q7.2) ──────────────────────────────────
+    await page.goto(`${BASE}/settings`);
+    await page.waitForTimeout(1200);
+    const quotesCard = page.locator('section[aria-labelledby="quote-settings-title"]');
+    if (await quotesCard.count()) {
+      const filename = `11b_settings_quotes_${vp.name}_${theme}.png`;
+      await quotesCard.screenshot({ path: path.join(OUT, filename) });
+      console.log(`captured ${filename}`);
+    }
+
     // ── Detail views ─────────────────────────────────────────────────────────
     for (const [route, name] of [
       ['/disputes', '12_dispute_detail'],

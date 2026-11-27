@@ -10,6 +10,7 @@ import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../feedback/th_notice.dart';
+import 'ho_quotes_screen.dart';
 import 'ho_radar_screen.dart';
 import 'ho_request_sent_screen.dart';
 
@@ -75,6 +76,7 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
   bool _reconnecting = false;
   bool _animationsEnabled = false;
   bool _busy = false;
+  bool _isProject = false;
 
   /// This screen holds one ref-counted watch on the job's hub group.
   bool _watching = false;
@@ -133,6 +135,20 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
         if (mounted) _loadRequest();
       });
       return;
+    }
+
+    // Plan 10 Q7.11: unify stage 0 — Project jobs show quotes instead of
+    // dispatching hourly quick-match.
+    try {
+      final job = await ref.read(jobsRepositoryProvider).getJobById(widget.jobId);
+      if (!mounted) return;
+      if (job != null && job.isProject) {
+        _ctrl.stop();
+        setState(() => _isProject = true);
+        return;
+      }
+    } catch (_) {
+      // Fall through to hourly dispatch if job lookup fails.
     }
 
     await _dispatch();
@@ -380,6 +396,9 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isProject) {
+      return HoQuotesScreen(jobId: widget.jobId);
+    }
     if (_isRequestSent) {
       return ThRequestSentScreen(
         requestChecked: _requestChecked,

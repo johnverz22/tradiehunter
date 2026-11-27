@@ -1,18 +1,20 @@
 @model FixoApi.Email.CtaButtonModel
 @* Bulletproof CTA button (§3.4): VML roundrect for Outlook, styled <a> everywhere else.
-    Navy #193957, 48px+ tap target, 14px control radius, white 16px/600 label (§3.2).
-    Renders nothing when there is no URL (§4.1/Q1 — body stands alone). *@
+    v2 accent gold #B45309 — the single commit action per email (design token
+    rule: one gold action). 48px+ tap target, 10px control radius, Lexend
+    16px/600 label. Renders nothing when there is no URL (§4.1/Q1 — body
+    stands alone). *@
 @if (!string.IsNullOrWhiteSpace(Model.Url) && !string.IsNullOrWhiteSpace(Model.Label))
 {
     <div style="margin:24px 0 8px 0;">
         <!--[if mso]>
-        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="@Model.Url" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="28%" stroke="f" fillcolor="#193957">
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="@Model.Url" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="21%" stroke="f" fillcolor="#B45309">
         <w:anchorlock />
         <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">@Model.Label</center>
         </v:roundrect>
         <![endif]-->
         <!--[if !mso]><!-->
-        <a href="@Model.Url" target="_blank" style="display:inline-block; background-color:#193957; color:#ffffff; font-family:'IBM Plex Sans',Arial,Helvetica,sans-serif; font-size:16px; font-weight:600; line-height:50px; text-align:center; text-decoration:none; padding:0 32px; border-radius:8px; mso-padding-alt:0; -webkit-text-size-adjust:100%;">@Model.Label</a>
+        <a class="th-cta" href="@Model.Url" target="_blank" style="display:inline-block; background-color:#B45309; color:#ffffff; font-family:'Lexend',Arial,Helvetica,sans-serif; font-size:16px; font-weight:600; line-height:48px; text-align:center; text-decoration:none; padding:0 32px; border-radius:10px; mso-padding-alt:0; -webkit-text-size-adjust:100%;">@Model.Label</a>
         <!--<![endif]-->
     </div>
 }

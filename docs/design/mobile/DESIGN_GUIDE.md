@@ -115,7 +115,7 @@ Motion: 150 / 220 / 320 ms (`THDurations.fast/base/slow`). Use for toggles, dots
 
 `THMapPlaceholder` and `THPhotoStrip` are stand-ins. Replace them with your map widget and `Image.network` when wiring data.
 
-## 7. Screen inventory (30)
+## 7. Screen inventory (33)
 
 Each screen has its Flutter class in `flutter/screens/<id>_screen.dart` and its route in `thScreenRoutes`.
 
@@ -125,7 +125,7 @@ Each screen has its Flutter class in `flutter/screens/<id>_screen.dart` and its 
 
 > **Quote screens:** `ho_quotes` shows compact cards; "View quote" opens a bottom-sheet detail in the app, drawn as the `ho_quote_detail` frame (plan 10 Q3.1). The tradie quote builder is a bottom sheet by design (plan 10 D3) and has no `tr_quote` frame.
 
-**Tradie (7):** `tr_home`, `tr_lead` (full-screen request with every detail), `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`.
+**Tradie (9):** `tr_home`, `tr_lead` (full-screen request with every detail), `tr_available_jobs`, `tr_job_board_detail`, `tr_job`, `tr_extra_cost`, `tr_complete`, `tr_earnings`, `tr_onboarding`.
 
 The **tradie lead** is a full screen, not a card. It shows the offer countdown, job title, service, timing, full description, photos, area and distance (exact address only after accepting), estimated hours, job type, homeowner name and rating, the locked rate with commission and what the tradie keeps, a what-happens-next timeline, and sticky Decline and Accept.
 

@@ -36,7 +36,7 @@
 - Choose-a-Tradie list + profile-in-context + direct request (fixes the "chosen tradie ignored" bug); Quick match remains as fallback
 - Pay at completion; final amount = labour + approved adjustments
 - Price adjustments with recorded homeowner approval
-- Project jobs: up to 3 concurrent quotes, large-job (NZD 30k+) contract confirmation
+- Project jobs: open project board (default, DB-backed quote window setting) or up to 3 concurrent direct quote requests; large-job (NZD 30k+) contract confirmation
 - GST-inclusive consumer pricing with `IsGstRegistered`
 
 **Cross-cutting**

@@ -8,6 +8,7 @@ using FixoApi.Options;
 using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -34,6 +35,7 @@ public class QuoteService
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<JobFlowOptions> _flowOptions;
     private readonly IPlatformSettings _settings;
+    private readonly IConfiguration _config;
     private readonly ILogger<QuoteService> _logger;
 
     public QuoteService(
@@ -44,6 +46,7 @@ public class QuoteService
         IBackgroundJobClient hangfire,
         IOptions<JobFlowOptions> flowOptions,
         IPlatformSettings settings,
+        IConfiguration config,
         ILogger<QuoteService> logger)
     {
         _context = context;
@@ -53,6 +56,7 @@ public class QuoteService
         _hangfire = hangfire;
         _flowOptions = flowOptions;
         _settings = settings;
+        _config = config;
         _logger = logger;
     }
 
@@ -73,23 +77,79 @@ public class QuoteService
         if (job.Status != JobStatus.Requested)
             throw new InvalidOperationException($"Job is in state '{job.Status}' — quotes can no longer be submitted.");
 
-        // The tradie must hold a pending QuoteRequest offer for this job.
-        var offer = job.Offers
-            .Where(o => o.TradieId == tradieId
-                        && o.Kind == OfferKind.QuoteRequest
-                        && o.Response == OfferResponse.Pending)
-            .OrderByDescending(o => o.OfferedAtUtc)
-            .FirstOrDefault()
-            ?? throw new InvalidOperationException("You have no pending quote request for this job.");
-
         // D8: GST-registered tradies price GST-inclusive; unregistered tradies
         // cannot charge GST at all (NZ: under $60k turnover must not register).
         var profile = await _context.TradieProfiles
             .Where(p => p.UserId == tradieId)
-            .Select(p => new { p.IsGstRegistered, p.BusinessName, p.IsVerified })
+            .Select(p => new { p.IsGstRegistered, p.BusinessName, p.IsVerified, p.Location })
             .FirstOrDefaultAsync();
         if (profile == null)
             throw new InvalidOperationException("Tradie profile not found.");
+
+        // Plan 10 (Q7.5): a tradie may quote without an invite when the job is
+        // open to the board and within its accepting window.
+        // For invite-only jobs, the original offer requirement stands.
+        JobOffer? offer = null;
+        var now = DateTime.UtcNow;
+        var isOpenBoard = job.OpenToBoard && job.QuotesCloseAtUtc.HasValue && job.QuotesCloseAtUtc > now;
+
+        if (isOpenBoard)
+        {
+            // Check eligibility: tradie must not have already quoted.
+            if (job.Quotes.Any(q => q.TradieId == tradieId))
+                throw new InvalidOperationException("You have already submitted a quote for this job.");
+
+            // Service offered check: tradie must have a rate for this job's service.
+            var offersService = await _context.TradieRates
+                .AnyAsync(r => r.TradieProfile.UserId == tradieId && r.ServiceId == job.ServiceId);
+            if (!offersService)
+                throw new InvalidOperationException("Your profile does not list this job's service.");
+
+            // Radius check: same radius as AvailableJobsService.
+            var radiusMetres = _config.GetValue<double>("Matching:RadiusKm", 25.0) * 1000.0;
+            if (profile.Location == null || job.Location == null ||
+                Geo.HaversineMetres(profile.Location, job.Location) > radiusMetres)
+                throw new InvalidOperationException("This job is outside your service area.");
+
+            // Check blocks.
+            var blocked = await _context.UserBlocks
+                .AnyAsync(b =>
+                    (b.BlockerId == job.HomeownerId && b.BlockedId == tradieId) ||
+                    (b.BlockerId == tradieId && b.BlockedId == job.HomeownerId));
+            if (blocked)
+                throw new InvalidOperationException("You cannot quote on this job.");
+
+            // Licence gate: same rule as FindMatchesAsync (Q7.4 / P10-08).
+            var service = await _context.Services.FindAsync(job.ServiceId);
+            if (service != null && service.RequiresLicence)
+            {
+                var hasLicence = await _context.TradieCredentials
+                    .AnyAsync(c =>
+                        c.TradieProfile.UserId == tradieId &&
+                        c.Status == CredentialStatus.Approved &&
+                        c.Type == CredentialType.License);
+                if (!hasLicence)
+                    throw new InvalidOperationException(
+                        "This job requires a licence credential. Upload your licence and wait for approval.");
+            }
+        }
+        else
+        {
+            // The tradie must hold a pending QuoteRequest offer for this job.
+            offer = job.Offers
+                .Where(o => o.TradieId == tradieId
+                            && o.Kind == OfferKind.QuoteRequest
+                            && o.Response == OfferResponse.Pending)
+                .OrderByDescending(o => o.OfferedAtUtc)
+                .FirstOrDefault();
+
+            if (offer == null)
+            {
+                if (job.OpenToBoard && job.QuotesCloseAtUtc.HasValue && job.QuotesCloseAtUtc <= now)
+                    throw new InvalidOperationException("The quoting window for this project has closed.");
+                throw new InvalidOperationException("You have no pending quote request for this job.");
+            }
+        }
 
         if (profile.IsGstRegistered && !request.GstIncluded)
             throw new InvalidOperationException(
@@ -122,18 +182,22 @@ public class QuoteService
             EstimatedDurationDays = request.EstimatedDurationDays,
             ValidUntilUtc = DateTime.UtcNow.AddHours(windows.ValidityHours),
             Status = QuoteStatus.Submitted,
-            OfferId = offer.Id,
+            // OfferId is null for board quotes (Q7.5); invite quotes carry the offer id.
+            OfferId = offer?.Id,
             CreatedAtUtc = DateTime.UtcNow,
         };
 
         _context.Quotes.Add(quote);
 
-        // The quote answers the request — mark the offer accepted.
-        offer.Response = OfferResponse.Accepted;
-        if (!string.IsNullOrEmpty(offer.HangfireJobId))
+        // The quote answers the invite-offer — mark it accepted (not applicable for board quotes).
+        if (offer != null)
         {
-            try { _hangfire.Delete(offer.HangfireJobId); }
-            catch (Exception ex) { _logger.LogWarning(ex, "Could not cancel quote-request timeout {OfferId}.", offer.Id); }
+            offer.Response = OfferResponse.Accepted;
+            if (!string.IsNullOrEmpty(offer.HangfireJobId))
+            {
+                try { _hangfire.Delete(offer.HangfireJobId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Could not cancel quote-request timeout {OfferId}.", offer.Id); }
+            }
         }
 
         await _context.SaveChangesAsync();

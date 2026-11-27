@@ -46,6 +46,30 @@ public class TradieController : ControllerBase
         return Ok(await earnings.GetAsync(userId, DateTime.UtcNow));
     }
 
+    // ── Available jobs board (plan 10 Q7.4) ──────────────────────────────────
+
+    /// <summary>
+    /// GET /api/tradie/available-jobs — paged list of open project jobs the
+    /// tradie can quote on without an invite. Filtered by service, radius,
+    /// licence, blocks, and "not already quoted". Address masked to suburb
+    /// (P5-01) until the job is Booked.
+    /// </summary>
+    [HttpGet("available-jobs")]
+    [Authorize(Roles = "Tradie")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> GetAvailableJobs(
+        [FromServices] AvailableJobsService svc,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var userId = CurrentUserId ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null) return Unauthorized();
+
+        var result = await svc.GetAvailableJobsAsync(userId, page, pageSize, ct);
+        return Ok(result);
+    }
+
     // ── Schedule ─────────────────────────────────────────────────────────────
 
     [HttpGet("schedule")]

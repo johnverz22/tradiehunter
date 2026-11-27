@@ -3742,6 +3742,395 @@
    ]
   },
   {
+   "id": "tr_available_jobs",
+   "title": "Available jobs",
+   "route": "/tradie/available-jobs",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Available jobs",
+    "sub": "Open projects near you"
+   },
+   "nav": "jobs",
+   "dock": "tradie",
+   "body": [
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "Projects posted by homeowners looking for quotes. Exact street addresses stay hidden until booked.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Carpentry",
+         "k": "brand",
+         "ic": "job"
+        },
+        {
+         "t": "badge",
+         "v": "Closes in 2 days",
+         "k": "accent",
+         "ic": "clock"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "text",
+       "v": "Kitchen renovation",
+       "s": "title"
+      },
+      {
+       "t": "text",
+       "v": "Papamoa, Tauranga · 4.2 km · 2 quotes in",
+       "s": "meta",
+       "tone": "soft"
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "kv",
+       "l": "Budget",
+       "v": "$15,000 – $25,000",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Materials",
+       "v": "Undecided",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Timing",
+       "v": "Flexible",
+       "b": true
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "btn",
+       "v": "View details & quote",
+       "k": "accent",
+       "sz": "sm"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Painting",
+         "k": "brand",
+         "ic": "job"
+        },
+        {
+         "t": "badge",
+         "v": "Closes in 18 hours",
+         "k": "accent",
+         "ic": "clock"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "text",
+       "v": "Exterior house repaint",
+       "s": "title"
+      },
+      {
+       "t": "text",
+       "v": "Mt Maunganui, Tauranga · 2.1 km · No quotes yet",
+       "s": "meta",
+       "tone": "soft"
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "kv",
+       "l": "Budget",
+       "v": "Up to $12,000",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Materials",
+       "v": "Tradie supplies",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Timing",
+       "v": "Date range",
+       "b": true
+      },
+      {
+       "t": "gap",
+       "n": 8
+      },
+      {
+       "t": "btn",
+       "v": "View details & quote",
+       "k": "secondary",
+       "sz": "sm"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tr_job_board_detail",
+   "title": "Open project · detail",
+   "route": "/tradie/available-jobs/:jobId",
+   "role": "tradie",
+   "bar": {
+    "t": "bar",
+    "v": "Open project",
+    "sub": "Closes in 2 days · 2 quotes in"
+   },
+   "sticky": [
+    {
+     "t": "btn",
+     "v": "Submit quote",
+     "k": "accent"
+    }
+   ],
+   "body": [
+    {
+     "t": "hero",
+     "c": [
+      {
+       "t": "row",
+       "c": [
+        {
+         "t": "text",
+         "v": "QUOTES CLOSE IN",
+         "s": "label",
+         "tone": "gold",
+         "x": true
+        },
+        {
+         "t": "badge",
+         "v": "Open project",
+         "k": "glass"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "2 days",
+       "s": "moneyLg",
+       "tone": "onHero"
+      },
+      {
+       "t": "text",
+       "v": "Quote valid for 72 hours once submitted.",
+       "s": "meta",
+       "tone": "onHeroSoft"
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "row",
+       "gap": 6,
+       "c": [
+        {
+         "t": "badge",
+         "v": "Carpentry",
+         "k": "brand",
+         "ic": "job"
+        },
+        {
+         "t": "badge",
+         "v": "Flexible timing",
+         "k": "accent",
+         "ic": "cal"
+        }
+       ]
+      },
+      {
+       "t": "gap",
+       "n": 10
+      },
+      {
+       "t": "text",
+       "v": "Kitchen renovation",
+       "s": "h2"
+      },
+      {
+       "t": "gap",
+       "n": 6
+      },
+      {
+       "t": "text",
+       "v": "Full kitchen strip-out and new cabinetry installation. Plumbing and electrical rough-in coordinated separately.",
+       "s": "body",
+       "tone": "soft"
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Photos from the homeowner",
+     "s": "title"
+    },
+    {
+     "t": "photos",
+     "count": 3
+    },
+    {
+     "t": "text",
+     "v": "Location",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Suburb",
+       "v": "Papamoa, Tauranga",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Distance",
+       "v": "4.2 km away",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Exact address",
+       "v": "Shared after you are booked",
+       "badge": true
+      }
+     ]
+    },
+    {
+     "t": "text",
+     "v": "Project scope and budget",
+     "s": "title"
+    },
+    {
+     "t": "card",
+     "pad": 16,
+     "c": [
+      {
+       "t": "kv",
+       "l": "Budget range",
+       "v": "$15,000 – $25,000",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Materials",
+       "v": "Undecided",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Site visit",
+       "v": "Welcome before quoting",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Scope notes",
+       "v": "Keep existing island footprint.",
+       "b": true
+      },
+      {
+       "t": "kv",
+       "l": "Preferred timing",
+       "v": "Flexible",
+       "b": true
+      }
+     ]
+    },
+    {
+     "t": "card",
+     "tone": "default",
+     "pad": 14,
+     "c": [
+      {
+       "t": "row",
+       "gap": 10,
+       "align": "start",
+       "c": [
+        {
+         "t": "icon",
+         "n": "info",
+         "size": 18,
+         "tone": "brand"
+        },
+        {
+         "t": "text",
+         "v": "Your quote stays binding once submitted. Any extra costs later require homeowner approval.",
+         "s": "meta",
+         "x": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "tr_job",
    "title": "Job · check in",
    "route": "/tradie/jobs/:jobId",

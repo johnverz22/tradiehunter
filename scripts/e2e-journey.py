@@ -44,11 +44,13 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime
 from decimal import Decimal
 from xml.sax.saxutils import quoteattr
 
@@ -60,6 +62,9 @@ HOMEOWNER = ("homeowner-a@fixo.test", "Test1234!")
 TRADIE = ("tradie-verified@fixo.test", "Test1234!")
 STAFF = ("staff@fixo.test", "Test1234!")
 DEMO_TRADIE = ("tradie@fixo.nz", "Demo1!Fixo")  # competes for offers; parked
+# Superadmin for the admin quote-settings scenario (same defaults as e2e-personas.py).
+SUPERADMIN = (os.environ.get("FIXO_ADMIN_EMAIL", "admin@fixo.nz"),
+              os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!Fixo"))
 
 # Real-looking street address for fixture jobs (the API path bypasses the LINZ
 # lookup, so any well-formed string works; keep it realistic for the demo).
@@ -553,6 +558,51 @@ def expect_http_error(desc, fn):
     raise StepFailed("%s: expected an HTTP error but the call succeeded" % desc)
 
 
+def http_status(method, path, token=None, body=None):
+    """Like _request but returns the HTTP status instead of raising on >= 400."""
+    headers, data = {}, None
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    if body is not None:
+        data, headers["Content-Type"] = json.dumps(body, default=_json_default).encode(), "application/json"
+    req = urllib.request.Request(API + path, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        return e.code
+    except (urllib.error.URLError, OSError) as e:
+        raise Unreachable("%s %s: %s" % (method, path, e))
+
+
+def expect_http_status(desc, fn, code):
+    """fn must return the exact HTTP status `code` (stricter than expect_http_error)."""
+    got = fn()
+    need(got == code, "%s: expected HTTP %d, got %r" % (desc, code, got))
+
+
+def parse_utc(value):
+    """ISO-8601 string from the API -> aware datetime, or None.
+
+    Python 3.9's fromisoformat rejects fractional seconds that are not exactly
+    3 or 6 digits, but .NET emits a variable count (7/6/5/4 digits), so normalise
+    to exactly 6 before parsing.
+    """
+    if not value:
+        return None
+    m = re.match(
+        r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})?$",
+        str(value).strip(),
+    )
+    if not m:
+        return None
+    base, frac, tz = m.group(1), (m.group(2) or "")[:6].ljust(6, "0"), m.group(3) or "Z"
+    try:
+        return datetime.fromisoformat("%s.%s%s" % (base, frac, "+00:00" if tz == "Z" else tz))
+    except ValueError:
+        return None
+
+
 def submit_quote(job, token, amount):
     """Fixed-price quote. GST must match the tradie's registration (D8), which
     the persona fabric does not set, so retry once with the opposite flag."""
@@ -564,6 +614,54 @@ def submit_quote(job, token, amount):
             raise
         body["gstIncluded"] = True
         return post("/jobs/%d/quotes" % job, token, body)
+
+
+def quote_counts(job, token):
+    """(quotesRequested, quotesReceived) from GET /jobs/{id}; nulls stay None."""
+    j = get("/jobs/%d" % job, token) or {}
+    return j.get("quotesRequested"), j.get("quotesReceived")
+
+
+def poll_counts(job, token, want):
+    """Poll until the job's quote counts equal `want` (offers/quotes can lag)."""
+    poll("quote counts %r on job %d" % (want, job), lambda: quote_counts(job, token) == want)
+
+
+def job_list_row(job, token):
+    """Find the job row in GET /jobs (JobListResponse.Items), or None."""
+    res = get("/jobs?pageSize=50", token) or {}
+    for row in res.get("items") or []:
+        if row.get("id") == job:
+            return row
+    return None
+
+
+def list_quote_counts(job, token, want):
+    """Assert the jobs-list row carries the same counts as the detail DTO."""
+    row = job_list_row(job, token)
+    need(row is not None, "job %d not found in the homeowner jobs list" % job)
+    got = (row.get("quotesRequested"), row.get("quotesReceived"))
+    need(got == want, "jobs-list counts for job %d are %r, expected %r" % (job, got, want))
+
+
+def _get_quote_settings(token):
+    return get("/admin/settings/quotes", token) or {}
+
+
+def _find_quote(job, token, quote_id):
+    for q in get("/jobs/%d/quotes" % job, token) or []:
+        if q.get("id") == quote_id:
+            return q
+    raise StepFailed("quote %r not found on job %d" % (quote_id, job))
+
+
+def available_job_ids(token):
+    """Tradie available-jobs board as {job_id: item}."""
+    res = get("/tradie/available-jobs?pageSize=50", token) or {}
+    return {j.get("id"): j for j in (res.get("items") or [])}
+
+
+
 
 
 def run_competing_quotes(rec):
@@ -604,11 +702,26 @@ def run_competing_quotes(rec):
     for i, tid in enumerate(ids):
         rec.step("homeowner requests a quote from tradie %d" % (i + 1),
                  lambda tid=tid: post("/jobs/%d/request" % job, ho, {"tradieId": tid}))
+
+    rec.step("job shows 3 requested, 0 received", lambda: poll_counts(job, ho, (3, 0)))
+
+    def tradie_counts_hidden():
+        j = get("/jobs/%d" % job, tokens[0]) or {}
+        need(j.get("quotesRequested") is None and j.get("quotesReceived") is None,
+             "tradie sees counts %r/%r, expected null (homeowner-only)"
+             % (j.get("quotesRequested"), j.get("quotesReceived")))
+
+    rec.step("tradie view has null quote counts", tradie_counts_hidden)
+
     quote_ids = []
     for i, (tok, amt) in enumerate(zip(tokens, amounts)):
         def q(tok=tok, amt=amt):
             quote_ids.append(int(submit_quote(job, tok, amt)["id"]))
         rec.step("tradie %d submits Fixed quote %s" % (i + 1, amt), q)
+        n = i + 1
+        rec.step("counts show 3 requested, %d received" % n, lambda n=n: poll_counts(job, ho, (3, n)))
+        rec.step("homeowner list shows 3 requested, %d received" % n,
+                 lambda n=n: list_quote_counts(job, ho, (3, n)))
     # Order of GET results is not guaranteed; key everything by quote id.
 
     def before_accept():
@@ -630,6 +743,7 @@ def run_competing_quotes(rec):
     rec.step("homeowner accepts the middle quote",
              lambda: post("/jobs/%d/quotes/%d/accept" % (job, win_id), ho, {"confirmWrittenContract": False}))
     rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
+    rec.step("counts are null once booked", lambda: poll_counts(job, ho, (None, None)))
 
     def after_accept():
         j = get("/jobs/%d" % job, ho) or {}
@@ -666,6 +780,23 @@ def _create_hourly_job(ho, prefix="Hourly", lat=-36.8485, lng=174.7633, address=
         "urgency": "Medium", "latitude": lat, "longitude": lng,
         "address": address, "serviceId": 1, "timingPreference": "Flexible",
         "jobType": "Hourly", "estimatedHours": 2,
+    })
+    need(body and "id" in body, "no job id in response: %r" % body)
+    return int(body["id"])
+
+
+def _create_project_job(ho, prefix="Quotes", lat=-36.8485, lng=174.7633,
+                        address=DEMO_ADDRESS, open_to_board=False, budget=(1200, 2400)):
+    """Project job. open_to_board=False keeps the invite-only path (D4); true
+    posts it to the tradie board (plan 10 Q7)."""
+    body = post("/jobs", ho, {
+        "title": "%s — %d" % (prefix, int(time.time() * 1000)),
+        "description": "%s journey job." % prefix,
+        "urgency": "Medium", "latitude": lat, "longitude": lng,
+        "address": address, "serviceId": 1, "timingPreference": "Flexible",
+        "jobType": "Project", "budgetMin": budget[0], "budgetMax": budget[1],
+        "scopeNotes": "%s journey scope." % prefix,
+        "openToBoard": bool(open_to_board),
     })
     need(body and "id" in body, "no job id in response: %r" % body)
     return int(body["id"])
@@ -835,9 +966,16 @@ def run_receipt_reject_resubmit(rec):
     def check_receipt_notif():
         res = get("/admin/notifications?limit=20", st) or {}
         items = res.get("items") or []
+        # Staff alerts key on the entity (payment:{id}); the job id only
+        # appears in the title/body, so match the payment entity.
         need(
-            any(i.get("jobId") == job for i in items),
-            "expected admin notification for receipt upload on job %d, got %r" % (job, items[:5]),
+            any(
+                i.get("type") == "receipt_awaiting_verification"
+                and i.get("entityType") == "payment"
+                and str(i.get("entityId")) == str(pay_id)
+                for i in items
+            ),
+            "expected admin notification for receipt upload on job %d (payment %s), got %r" % (job, pay_id, items[:5]),
         )
 
     rec.step("admin notification created for receipt upload", check_receipt_notif)
@@ -950,20 +1088,366 @@ def run_dispute_attachments_reviews(rec):
 
     def check_mailhog_for_dispute():
         mailhog = os.environ.get("MAILHOG_URL", "http://localhost:8025").rstrip("/")
-        url = "%s/api/v2/search?kind=to&query=%s" % (mailhog, urllib.parse.quote(HOMEOWNER["email"]))
+        url = "%s/api/v2/search?kind=to&query=%s" % (mailhog, urllib.parse.quote(HOMEOWNER[0]))
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         items = data.get("items") or []
-        need(len(items) > 0, "expected MailHog messages for %s, got 0" % HOMEOWNER["email"])
+        need(len(items) > 0, "expected MailHog messages for %s, got 0" % HOMEOWNER[0])
 
     rec.step("MailHog received notification emails for homeowner", check_mailhog_for_dispute)
+    return job
+
+
+def run_homeowner_quotes_visibility(rec):
+    """Plan 10 Q6.5: the data contract behind the Quotes badge/subtitle, the D4
+    entry-point precondition, hourly jobs unchanged, and the s362F written-
+    contract gate on accept.
+
+    Push payload (E2E plan 1b step 5) is skipped on purpose: QuoteService
+    notifies via SendPushToUserAsync, which pushes only and does not fall back
+    to email, so MailHog has nothing to query. The `quote_submitted` route is
+    covered by mobile/test/quote_discoverability_test.dart instead.
+    """
+    if not MANIFEST_PATH or len(TRADIES) < 2:
+        raise Unreachable(
+            "homeowner-quotes-visibility needs --manifest with >= 2 tradies; have %d" % len(TRADIES)
+        )
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr1 = rec.step("login tradie 1", lambda: login(TRADIES[0]))
+    tr2 = rec.step("login tradie 2", lambda: login(TRADIES[1]))
+    id1 = (get("/profile", tr1) or {}).get("id")
+    id2 = (get("/profile", tr2) or {}).get("id")
+    need(id1 and id2 and id1 != id2, "need 2 distinct tradie ids: %r, %r" % (id1, id2))
+
+    # 1. Detail and list contract for a Project job with 2 requests, 1 quote.
+    job = rec.step("homeowner posts Project job", lambda: _create_project_job(ho, "Visibility"))
+    record_job(job, "homeowner-quotes-visibility")
+    for tid in (id1, id2):
+        rec.step("homeowner requests a quote from a tradie",
+                 lambda tid=tid: post("/jobs/%d/request" % job, ho, {"tradieId": tid}))
+    quote = rec.step("tradie 1 submits a Fixed quote",
+                     lambda: submit_quote(job, tr1, Decimal("1500")))
+
+    def detail_contract():
+        need(quote.get("status") == "Submitted", "quote status %r, expected Submitted" % quote.get("status"))
+        need(quote.get("pricingModel") == "Fixed", "quote pricingModel %r, expected Fixed" % quote.get("pricingModel"))
+        need(quote.get("tradieId") == id1, "quote tradieId %r != tradie 1 %r" % (quote.get("tradieId"), id1))
+        need(dec(quote.get("amount")) == Decimal("1500"), "quote amount %r != 1500" % quote.get("amount"))
+        need(quote.get("validUntilUtc"), "quote validUntilUtc missing")
+        quotes = get("/jobs/%d/quotes" % job, ho) or []
+        need(isinstance(quotes, list) and len(quotes) == 1, "expected 1 quote, got %r" % quotes)
+        q = quotes[0]
+        need(q.get("id") == quote.get("id"), "list quote id %r != created %r" % (q.get("id"), quote.get("id")))
+        need(q.get("status") == "Submitted", "list quote status %r, expected Submitted" % q.get("status"))
+        need(parse_utc(q.get("validUntilUtc")) is not None,
+             "validUntilUtc not parseable: %r" % q.get("validUntilUtc"))
+
+    rec.step("GET /jobs/{id}/quotes returns the submitted quote", detail_contract)
+    rec.step("counts show 2 requested, 1 received", lambda: poll_counts(job, ho, (2, 1)))
+    rec.step("jobs list shows 2 requested, 1 received", lambda: list_quote_counts(job, ho, (2, 1)))
+
+    # 2. D4 entry-point precondition: a Project job with no requests shows (0, 0).
+    zero_job = rec.step("homeowner posts a Project job with no requests",
+                        lambda: _create_project_job(ho, "NoRequests"))
+    record_job(zero_job, "homeowner-quotes-zero-requests")
+    rec.step("no-request job counts are 0, 0 (not null)", lambda: poll_counts(zero_job, ho, (0, 0)))
+
+    # 3. Hourly jobs are unchanged (counts null).
+    hourly = rec.step("homeowner posts an Hourly job", lambda: _create_hourly_job(ho, "VisibilityHourly"))
+    record_job(hourly, "homeowner-quotes-hourly")
+    rec.step("hourly job has null quote counts", lambda: poll_counts(hourly, ho, (None, None)))
+
+    # 4. s362F written-contract gate. Each case needs its own job because
+    # accepting books the job; all cases use tradie 1.
+    def s362f_case(label, amount, expect_gate):
+        case_job = _create_project_job(ho, "Contract" + label, budget=(1000, int(amount) + 1000))
+        record_job(case_job, "homeowner-quotes-contract-" + label.lower())
+        post("/jobs/%d/request" % case_job, ho, {"tradieId": id1})
+        qid = int(submit_quote(case_job, tr1, amount)["id"])
+        if expect_gate:
+            expect_http_error(
+                "%s: accept without contract confirmation is rejected" % label,
+                lambda: post("/jobs/%d/quotes/%d/accept" % (case_job, qid), ho,
+                             {"confirmWrittenContract": False}),
+            )
+            need(status_of(case_job, ho) == "Requested",
+                 "%s: job left Requested after the gate" % label)
+            quotes = get("/jobs/%d/quotes" % case_job, ho) or []
+            need(any(x.get("id") == qid and x.get("status") == "Submitted" for x in quotes),
+                 "%s: quote no longer Submitted after the gate" % label)
+            post("/jobs/%d/quotes/%d/accept" % (case_job, qid), ho, {"confirmWrittenContract": True})
+        else:
+            post("/jobs/%d/quotes/%d/accept" % (case_job, qid), ho, {"confirmWrittenContract": False})
+        wait_status(case_job, ho, "Booked")
+        need(dec((get("/jobs/%d" % case_job, ho) or {}).get("estimatedTotal")) == amount,
+             "%s: estimatedTotal != %s" % (label, amount))
+
+    rec.step("s362F: 29999.99 books without confirmation",
+             lambda: s362f_case("JustUnder", Decimal("29999.99"), expect_gate=False))
+    rec.step("s362F: 30000.00 gates, then books when confirmed",
+             lambda: s362f_case("At", Decimal("30000.00"), expect_gate=True))
+    rec.step("s362F: 45000.00 gates, then books when confirmed",
+             lambda: s362f_case("Over", Decimal("45000"), expect_gate=True))
+    return job
+
+
+def run_open_board_quotes(rec):
+    """Plan 10 Q7.4-Q7.8 (open project board): an open Project job appears on the
+    tradie board (suburb-masked, full details), a tradie quotes without an invite
+    (one per tradie), invite-only / out-of-range / blocked jobs stay hidden, the
+    close window is stamped at posting, and accepting a quote books the job.
+
+    Board expiry (ExpirationWorker.ExpireBoardJobsAsync) is not asserted: the
+    worker is not deterministically triggerable from this harness, so that rule
+    stays with OpenBoardTests.cs / manual QA (noted in the plan).
+    """
+    if not MANIFEST_PATH or len(TRADIES) < 3:
+        raise Unreachable("open-board-quotes needs --manifest with >= 3 tradies; have %d" % len(TRADIES))
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr1 = rec.step("login tradie 1", lambda: login(TRADIES[0]))
+    tr2 = rec.step("login tradie 2", lambda: login(TRADIES[1]))
+    tr3 = rec.step("login tradie 3", lambda: login(TRADIES[2]))
+    staff = rec.step("login staff", lambda: login(STAFF))
+    id1 = (get("/profile", tr1) or {}).get("id")
+    id2 = (get("/profile", tr2) or {}).get("id")
+    id3 = (get("/profile", tr3) or {}).get("id")
+    need(id1 and id2 and id3 and len({id1, id2, id3}) == 3, "need 3 distinct tradie ids")
+
+    settings = rec.step("read quote settings", lambda: _get_quote_settings(staff))
+    board_hours = settings.get("boardWindowHours")
+    need(isinstance(board_hours, int) and 1 <= board_hours <= 720, "boardWindowHours %r" % board_hours)
+
+    job = rec.step("homeowner posts an open Project job",
+                   lambda: _create_project_job(ho, "OpenBoard", open_to_board=True))
+    record_job(job, "open-board-quotes")
+
+    def stamped():
+        j = get("/jobs/%d" % job, ho) or {}
+        need(j.get("openToBoard") is True, "openToBoard %r, expected true" % j.get("openToBoard"))
+        close, created = parse_utc(j.get("quotesCloseAtUtc")), parse_utc(j.get("createdAtUtc"))
+        need(close is not None, "quotesCloseAtUtc missing on an open job")
+        need(created is not None, "createdAtUtc missing")
+        hours = (close - created).total_seconds() / 3600.0
+        need(abs(hours - board_hours) <= (5 / 60.0),
+             "close window is %.2f h, expected ~%d h" % (hours, board_hours))
+
+    rec.step("open job has openToBoard and a stamped close window", stamped)
+
+    def listed():
+        item = available_job_ids(tr1).get(job)
+        need(item is not None, "job %d is not on tradie 1's available board" % job)
+        suburb = DEMO_ADDRESS.split(",")[0].strip()
+        need(item.get("suburb") == suburb,
+             "board suburb %r, expected masked first segment %r" % (item.get("suburb"), suburb))
+        need(not item.get("address"), "board item leaks a full address: %r" % item.get("address"))
+        need(item.get("scopeNotes"), "board item missing scopeNotes")
+        need(dec(item.get("budgetMin")) is not None and dec(item.get("budgetMax")) is not None,
+             "board item missing budget range: %r" % item)
+        need(item.get("description"), "board item missing description")
+        need(parse_utc(item.get("quotesCloseAtUtc")) is not None, "board item missing quotesCloseAtUtc")
+        need(item.get("quotesReceived") == 0, "board quotesReceived %r, expected 0" % item.get("quotesReceived"))
+
+    rec.step("job is on the board with suburb masking + details", listed)
+
+    quote = rec.step("tradie 1 quotes without an invite", lambda: submit_quote(job, tr1, Decimal("1500")))
+    need(quote.get("status") == "Submitted", "board quote status %r, expected Submitted" % quote.get("status"))
+
+    def owner_sees():
+        quotes = get("/jobs/%d/quotes" % job, ho) or []
+        need(any(q.get("id") == quote.get("id") for q in quotes), "homeowner does not see the board quote")
+        poll_counts(job, ho, (None, 1))  # open-board: Requested null, Received 1
+
+    rec.step("homeowner sees the board quote; counts are (null, 1)", owner_sees)
+
+    rec.step("second quote from tradie 1 is rejected",
+             lambda: expect_http_error("duplicate board quote",
+                                       lambda: submit_quote(job, tr1, Decimal("1600"))))
+
+    def gone_but_visible_to_tradie2():
+        need(job not in available_job_ids(tr1), "tradie 1 still sees a job they already quoted")
+        need(job in available_job_ids(tr2), "tradie 2 no longer sees the open job")
+
+    rec.step("tradie 1 drops off the board, tradie 2 stays", gone_but_visible_to_tradie2)
+
+    invite_only = rec.step("post an invite-only Project job", lambda: _create_project_job(ho, "InviteOnly"))
+    record_job(invite_only, "open-board-invite-only")
+    rec.step("invite-only job is not on the board",
+             lambda: need(invite_only not in available_job_ids(tr2), "invite-only job listed on the board"))
+
+    remote = rec.step("post an open job outside the radius",
+                      lambda: _create_project_job(ho, "Remote", lat=-46.4132, lng=168.3538,
+                                                  address="1 Tay St, Invercargill", open_to_board=True))
+    record_job(remote, "open-board-remote")
+    rec.step("out-of-range open job is not on the board",
+             lambda: need(remote not in available_job_ids(tr2), "remote open job listed on the board"))
+
+    rec.step("homeowner blocks tradie 3", lambda: post("/profile/block", ho, {"blockedUserId": id3}))
+    try:
+        rec.step("blocked tradie does not see the job",
+                 lambda: need(job not in available_job_ids(tr3), "blocked tradie sees the open job"))
+        rec.step("blocked tradie cannot quote",
+                 lambda: expect_http_error("blocked board quote",
+                                           lambda: submit_quote(job, tr3, Decimal("1400"))))
+    finally:
+        try:
+            _request("DELETE", "/profile/block/%s" % id3, ho)
+        except Exception as e:  # noqa: BLE001 — cleanup must not mask the assertion
+            print("    warning: could not unblock tradie 3: %s" % e)
+
+    # Window stamped at posting: a later settings change must not move it, and a
+    # new job must pick up the new window. Restore the original in finally.
+    try:
+        superadmin = login(SUPERADMIN)
+    except Unreachable as e:
+        raise Unreachable(
+            "open-board-quotes needs a superadmin login for the window check: %s — set "
+            "FIXO_ADMIN_EMAIL / FIXO_ADMIN_PASSWORD" % e
+        )
+
+    def put_windows(board, validity):
+        return _request("PUT", "/admin/settings/quotes", superadmin,
+                        {"boardWindowHours": board, "validityHours": validity}) or {}
+
+    before = (get("/jobs/%d" % job, ho) or {}).get("quotesCloseAtUtc")
+    new_board = 1 if board_hours != 1 else 2
+    try:
+        rec.step("superadmin raises the board window",
+                 lambda: put_windows(new_board, settings.get("validityHours")))
+
+        def unchanged():
+            after = (get("/jobs/%d" % job, ho) or {}).get("quotesCloseAtUtc")
+            need(after == before, "existing job close moved from %r to %r after a settings change" % (before, after))
+
+        rec.step("existing job keeps its stamped close window", unchanged)
+
+        def new_job_uses_new_window():
+            nj = _create_project_job(ho, "NewWindow", open_to_board=True)
+            record_job(nj, "open-board-new-window")
+            j = get("/jobs/%d" % nj, ho) or {}
+            close, created = parse_utc(j.get("quotesCloseAtUtc")), parse_utc(j.get("createdAtUtc"))
+            need(close is not None and created is not None, "new job timestamps missing: %r" % j)
+            hours = (close - created).total_seconds() / 3600.0
+            need(abs(hours - new_board) <= (5 / 60.0),
+                 "new job window is %.2f h, expected ~%d h" % (hours, new_board))
+
+        rec.step("a new job uses the new board window", new_job_uses_new_window)
+    finally:
+        try:
+            put_windows(settings.get("boardWindowHours"), settings.get("validityHours"))
+        except Exception as e:  # noqa: BLE001
+            print("    warning: could not restore quote settings: %s" % e)
+
+    rec.step("homeowner accepts the board quote",
+             lambda: post("/jobs/%d/quotes/%d/accept" % (job, quote["id"]), ho,
+                          {"confirmWrittenContract": False}))
+    rec.step("job Booked", lambda: wait_status(job, ho, "Booked"))
+    rec.step("tradie 2 can no longer quote a booked job",
+             lambda: expect_http_error("quote after booking",
+                                       lambda: submit_quote(job, tr2, Decimal("1700"))))
+    return job
+
+
+def run_quote_settings(rec):
+    """Plan 10 Q7.2/Q7.3: admin quote-window settings — staff read-only, superadmin
+    writes, 1-720 validation, new quotes honour ValidityHours, and changes are not
+    retroactive. The original values are restored in `finally`.
+    """
+    staff = rec.step("login staff", lambda: login(STAFF))
+    try:
+        superadmin = login(SUPERADMIN)
+    except Unreachable as e:
+        raise Unreachable(
+            "quote-settings needs a superadmin login: %s — set FIXO_ADMIN_EMAIL / "
+            "FIXO_ADMIN_PASSWORD (demo seed defaults: admin@fixo.nz / Admin1!Fixo)" % e
+        )
+    ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
+    tr = rec.step("login tradie", lambda: login(TRADIE))
+
+    def put(board, validity):
+        return _request("PUT", "/admin/settings/quotes", superadmin,
+                        {"boardWindowHours": board, "validityHours": validity}) or {}
+
+    def assert_settings(board, validity):
+        got = _get_quote_settings(staff)
+        need(got.get("boardWindowHours") == board and got.get("validityHours") == validity,
+             "settings are %r, expected %d/%d" % (got, board, validity))
+
+    original = rec.step("staff can read quote settings", lambda: _get_quote_settings(staff))
+    for field in ("boardWindowHours", "validityHours"):
+        v = original.get(field)
+        need(isinstance(v, int) and 1 <= v <= 720, "%s is %r, expected int 1..720" % (field, v))
+
+    rec.step("staff cannot change quote settings (403)",
+             lambda: expect_http_status(
+                 "staff PUT /admin/settings/quotes",
+                 lambda: http_status("PUT", "/admin/settings/quotes", staff,
+                                     {"boardWindowHours": 48, "validityHours": 96}),
+                 403))
+
+    try:
+        def set_and_check(board, validity):
+            body = put(board, validity)
+            need(body.get("boardWindowHours") == board and body.get("validityHours") == validity,
+                 "PUT echoed %r, expected %d/%d" % (body, board, validity))
+            assert_settings(board, validity)
+
+        rec.step("superadmin sets 48/96 and staff reads it back", lambda: set_and_check(48, 96))
+
+        for bad in ({"boardWindowHours": 0}, {"boardWindowHours": 721},
+                    {"validityHours": 0}, {"validityHours": 721}, {"validityHours": -1}):
+            body = {"boardWindowHours": 48, "validityHours": 96}
+            body.update(bad)
+            rec.step("reject invalid settings %r" % bad,
+                     lambda body=body: expect_http_status(
+                         "invalid quote settings %r" % body,
+                         lambda: http_status("PUT", "/admin/settings/quotes", superadmin, body),
+                         400))
+        rec.step("settings unchanged after rejected writes", lambda: assert_settings(48, 96))
+
+        job = rec.step("post Project job for validity", lambda: _create_project_job(ho, "Validity"))
+        record_job(job, "quote-settings-validity")
+        tr_id = (get("/profile", tr) or {}).get("id")
+        rec.step("request the tradie", lambda: post("/jobs/%d/request" % job, ho, {"tradieId": tr_id}))
+        quote = rec.step("tradie submits a quote", lambda: submit_quote(job, tr, Decimal("1500")))
+        qid = quote.get("id")
+
+        def check_validity():
+            q = _find_quote(job, ho, qid)
+            created, valid = parse_utc(q.get("createdAtUtc")), parse_utc(q.get("validUntilUtc"))
+            need(created and valid, "quote timestamps missing: %r" % q)
+            hours = (valid - created).total_seconds() / 3600.0
+            need(abs(hours - 96) <= (1 / 60.0), "validity is %.3f h, expected ~96 h" % hours)
+
+        rec.step("new quote is valid for ~96 h", check_validity)
+
+        before = rec.step("read the quote's validUntil",
+                          lambda: _find_quote(job, ho, qid).get("validUntilUtc"))
+        rec.step("superadmin lowers validity to 24", lambda: set_and_check(48, 24))
+
+        def unchanged():
+            after = _find_quote(job, ho, qid).get("validUntilUtc")
+            need(after == before,
+                 "validUntil changed from %r to %r after a settings update" % (before, after))
+
+        rec.step("existing quote is not retroactively changed", unchanged)
+    finally:
+        try:
+            put(original.get("boardWindowHours"), original.get("validityHours"))
+        except Exception as e:  # noqa: BLE001 — restore must not mask the real failure
+            print("    warning: could not restore quote settings: %s" % e)
+        else:
+            print("    (restored quote settings to %s/%s)"
+                  % (original.get("boardWindowHours"), original.get("validityHours")))
     return job
 
 
 SCENARIOS = {
     "happy-path": run_journey,
     "competing-quotes": run_competing_quotes,
+    "homeowner-quotes-visibility": run_homeowner_quotes_visibility,
+    "quote-settings": run_quote_settings,
+    "open-board-quotes": run_open_board_quotes,
     "hourly-decline-reoffer": run_hourly_decline_reoffer,
     "withdraw-no-match-repost": run_withdraw_no_match_repost,
     "cancellations": run_cancellations,
@@ -1005,7 +1489,8 @@ def main():
         "--scenario",
         choices=tuple(SCENARIOS) + ("all",),
         default="happy-path",
-        help="happy-path (default; the run-e2e.sh gate) | competing-quotes (needs --manifest, >= 3 tradies) | all",
+        help="happy-path (default; the run-e2e.sh gate) | competing-quotes (needs --manifest, >= 3 tradies) "
+        "| homeowner-quotes-visibility (>= 2 tradies) | quote-settings | all",
     )
     ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
     ap.add_argument("--fail-fast", action="store_true", help="stop on first failed scenario (default)")
