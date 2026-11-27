@@ -277,6 +277,31 @@ public class NotificationService : INotificationService
                 return;
             }
 
+            try
+            {
+                var now = DateTime.UtcNow;
+                var (entityType, entityId) = SplitEntityKey(alert.EntityKey);
+                var title = Truncate(alert.Heading, 200);
+                var body = Truncate(alert.Body, 1000);
+                var rows = recipients.Select(r => new Models.StaffNotification
+                {
+                    UserId = r.UserId,
+                    Type = Truncate(alert.EventKey, 64),
+                    EntityType = Truncate(entityType, 64),
+                    EntityId = Truncate(entityId, 128),
+                    Title = title,
+                    Body = body,
+                    AdminPath = alert.AdminPath is null ? null : Truncate(alert.AdminPath, 256),
+                    CreatedUtc = now,
+                });
+                _db.StaffNotifications.AddRange(rows);
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Staff alert {DedupKey} persistence failed.", alert.DedupKey);
+            }
+
             var model = new StaffAlertModel
             {
                 Heading = alert.Heading,
@@ -324,6 +349,17 @@ public class NotificationService : INotificationService
         if (string.IsNullOrWhiteSpace(_brand.FrontendBaseUrl) || string.IsNullOrWhiteSpace(path)) return null;
         return _brand.FrontendBaseUrl.TrimEnd('/') + path;
     }
+
+    private static (string EntityType, string EntityId) SplitEntityKey(string entityKey)
+    {
+        var idx = entityKey.IndexOf(':');
+        if (idx <= 0 || idx >= entityKey.Length - 1)
+            return ("entity", entityKey);
+        return (entityKey[..idx], entityKey[(idx + 1)..]);
+    }
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : value[..maxLength];
 
     /// <summary>
     /// Sends to every token (one failure never aborts the rest) and removes tokens

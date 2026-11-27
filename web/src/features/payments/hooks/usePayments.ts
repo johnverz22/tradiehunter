@@ -21,6 +21,7 @@ export const usePaymentQueue = (params: PaymentQueueParams) =>
   useQuery({
     queryKey: [...QUEUE_KEY, params],
     queryFn: () => fetchPendingPayments(params),
+    refetchInterval: 30_000,
     staleTime: 30_000,
   });
 
@@ -28,6 +29,7 @@ export const useOverduePayments = (params: OverduePaymentsParams) =>
   useQuery({
     queryKey: [...OVERDUE_KEY, params],
     queryFn: () => fetchOverduePayments(params),
+    refetchInterval: 30_000,
     staleTime: 30_000,
   });
 

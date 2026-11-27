@@ -1130,6 +1130,73 @@ public class AdminService : IAdminService
         DateTime? fromUtc, DateTime? toUtc, string? action, string? userId, int page, int pageSize) =>
         _audit.QueryAsync(fromUtc, toUtc, action, userId, page, pageSize);
 
+    // ── Staff notifications (plan 09 N6) ─────────────────────────────────────
+
+    public async Task<StaffNotificationListDto> GetStaffNotificationsAsync(
+        string userId, bool unreadOnly = false, int limit = 20, CancellationToken ct = default)
+    {
+        var clampedLimit = Math.Clamp(limit, 1, 50);
+
+        var unreadCount = await _db.StaffNotifications
+            .AsNoTracking()
+            .CountAsync(n => n.UserId == userId && n.ReadUtc == null, ct);
+
+        var query = _db.StaffNotifications
+            .AsNoTracking()
+            .Where(n => n.UserId == userId);
+
+        if (unreadOnly)
+            query = query.Where(n => n.ReadUtc == null);
+
+        var items = await query
+            .OrderByDescending(n => n.CreatedUtc)
+            .ThenByDescending(n => n.Id)
+            .Take(clampedLimit)
+            .Select(n => new StaffNotificationDto(
+                n.Id,
+                n.Type,
+                n.EntityType,
+                n.EntityId,
+                n.Title,
+                n.Body,
+                n.AdminPath,
+                n.CreatedUtc,
+                n.ReadUtc))
+            .ToListAsync(ct);
+
+        return new StaffNotificationListDto(items, unreadCount);
+    }
+
+    public async Task<bool> MarkStaffNotificationReadAsync(int id, string userId, CancellationToken ct = default)
+    {
+        var notification = await _db.StaffNotifications
+            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId, ct);
+        if (notification is null) return false;
+
+        if (notification.ReadUtc is null)
+        {
+            notification.ReadUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return true;
+    }
+
+    public async Task<int> MarkAllStaffNotificationsReadAsync(string userId, CancellationToken ct = default)
+    {
+        var unread = await _db.StaffNotifications
+            .Where(n => n.UserId == userId && n.ReadUtc == null)
+            .ToListAsync(ct);
+        if (unread.Count == 0) return 0;
+
+        var now = DateTime.UtcNow;
+        foreach (var n in unread)
+            n.ReadUtc = now;
+
+        await _db.SaveChangesAsync(ct);
+        return unread.Count;
+    }
+
     private static RefundSummaryDto MapRefundToDto(Refund r) => new()    {
         Id               = r.Id,
         JobId            = r.JobId,

@@ -642,3 +642,33 @@ export interface AppConfig {
  */
 export const fetchAppConfig = (): Promise<AppConfig> =>
   api.get('/config/locale').then((r) => r.data);
+
+// ── Staff notifications (plan 09 N6) ─────────────────────────────────────────
+
+export interface StaffNotification {
+  id: number;
+  type: string;
+  entityType: string;
+  entityId: string;
+  title: string;
+  body: string;
+  adminPath?: string | null;
+  createdUtc: string;
+  readUtc?: string | null;
+}
+
+export interface StaffNotificationList {
+  items: StaffNotification[];
+  unreadCount: number;
+}
+
+export const fetchStaffNotifications = (
+  params: { unreadOnly?: boolean; limit?: number } = {},
+): Promise<StaffNotificationList> =>
+  api.get('/admin/notifications', { params }).then((r) => r.data);
+
+export const markStaffNotificationRead = (id: number): Promise<void> =>
+  api.post(`/admin/notifications/${id}/read`).then(() => undefined);
+
+export const markAllStaffNotificationsRead = (): Promise<void> =>
+  api.post('/admin/notifications/read-all').then(() => undefined);

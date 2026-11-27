@@ -14,6 +14,7 @@ export const useDisputeList = (params: {
   useQuery({
     queryKey: ['admin', 'disputes', params],
     queryFn: () => fetchDisputes(params),
+    refetchInterval: 30_000,
     staleTime: 30_000,
   });
 
@@ -21,6 +22,7 @@ export const useDisputeDetail = (jobId: number) =>
   useQuery({
     queryKey: ['admin', 'disputes', jobId],
     queryFn: () => fetchDisputeDetail(jobId),
+    refetchInterval: 30_000,
     enabled: !!jobId,
   });
 

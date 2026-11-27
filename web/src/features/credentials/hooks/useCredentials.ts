@@ -15,6 +15,7 @@ export const useCredentialQueue = (params: CredentialQueueParams) =>
   useQuery({
     queryKey: [...QUEUE_KEY, params],
     queryFn: () => fetchPendingCredentials(params),
+    refetchInterval: 30_000,
     staleTime: 30_000,
   });
 

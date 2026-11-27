@@ -111,21 +111,23 @@ Code: `backend/Services/NotificationService.cs`, `PushNotificationService.cs`, `
 
 ## Phase N5 — Staff alerts from jobs and flags (H6-H10)
 
-- [ ] **N5.1** `PaymentService.UploadReceiptAsync`: staff alert "receipt awaiting verification" (S)
-- [ ] **N5.2** `PaymentSlaJob`: replace the log with a staff alert at the 30-minute SLA breach, idempotent per payment (S)
-- [ ] **N5.3** `PaymentExpiryJob.HandleOverdueAsync`: staff alert per `SPECS.md` (S)
-- [ ] **N5.4** `AutoCompleteJob` escalation: staff alert that a job needs review (S)
-- [ ] **N5.5** `PayoutService.CreateBatchAsync` / `CompleteBatchAsync` and `PayoutBatchJob`: staff alert when a batch is ready/completed; remove the "would normally broadcast" comment (S)
-- [ ] **N5.6** `AccountFlagService.LogFlagAsync`: alert staff when the threshold the `AccountFlag` doc describes is crossed (confirm the threshold in N0.2); covers report, no-show, `LowRating`, `OverduePayment` (M)
-- [ ] **N5.7** Email templates for dispute opened/resolved, payout batch ready, flag threshold, staff digest (M)
+- [x] **N5.1** `PaymentService.UploadReceiptAsync`: staff alert "receipt awaiting verification" (S)
+- [x] **N5.2** `PaymentSlaJob`: replace the log with a staff alert at the 30-minute SLA breach, idempotent per payment (S)
+- [x] **N5.3** `PaymentExpiryJob.HandleOverdueAsync`: staff alert per `SPECS.md` (S)
+- [x] **N5.4** `AutoCompleteJob` escalation: staff alert that a job needs review (S)
+- [x] **N5.5** `PayoutService.CreateBatchAsync` / `CompleteBatchAsync` and `PayoutBatchJob`: staff alert when a batch is ready/completed; remove the "would normally broadcast" comment (S)
+- [x] **N5.6** `AccountFlagService.LogFlagAsync`: alert staff when the threshold the `AccountFlag` doc describes is crossed (confirm the threshold in N0.2); covers report, no-show, `LowRating`, `OverduePayment` (M)
+- [x] **N5.7** Email templates for dispute opened/resolved, payout batch ready, flag threshold, staff digest (M)
+  - Done via N1.2's `StaffAlert` (E9, one template for all staff alerts with summary rows) + `CriticalNotice` (E5, dispute opened/resolved); no per-event `.cshtml` layouts needed and no separate staff digest job in `NotificationPolicy`.
 
 ## Phase N6 — Web admin surface (staff awareness)
 
-- [ ] **N6.1** Backend: `StaffNotification` entity + migration (`type`, `entityType`, `entityId`, `title`, `body`, `createdUtc`, `readUtc`), `GET /api/admin/notifications`, `POST .../read`, `POST .../read-all`; migration follows the existing EF process (M)
-- [ ] **N6.2** `SendToStaffAsync` persists a row per staff user (or one shared row with per-user read state; decide in N0.3) (M)
-- [ ] **N6.3** Web: bell + unread badge in the layout, dropdown list linking to the entity (`/payments`, `/credentials`, `/disputes/{id}`, `/users/{id}`), polled 30s + refetch on focus, built from existing components (`Badge`, `Modal`, `EmptyState`), design tokens only (L)
-- [ ] **N6.4** Add `refetchInterval` to the payment, credential and dispute queues so lists update without navigation (S)
-- [ ] **N6.5** Optional: staff SignalR group + `@microsoft/signalr` client to push `StaffNotificationCreated` for instant badge updates. **Park if polling is accepted in N0.3** (M)
+- [x] **N6.1** Backend: `StaffNotification` entity + migration (`type`, `entityType`, `entityId`, `title`, `body`, `createdUtc`, `readUtc`), `GET /api/admin/notifications`, `POST .../read`, `POST .../read-all`; migration follows the existing EF process (M)
+- [x] **N6.2** `SendToStaffAsync` persists a row per staff user (or one shared row with per-user read state; decide in N0.3) (M)
+- [x] **N6.3** Web: bell + unread badge in the layout, dropdown list linking to the entity (`/payments`, `/credentials`, `/disputes/{id}`, `/users/{id}`), polled 30s + refetch on focus, built from existing components (`Badge`, `Modal`, `EmptyState`), design tokens only (L)
+- [x] **N6.4** Add `refetchInterval` to the payment, credential and dispute queues so lists update without navigation (S)
+- [~] **N6.5** Optional: staff SignalR group + `@microsoft/signalr` client to push `StaffNotificationCreated` for instant badge updates. **Park if polling is accepted in N0.3** (M)
+  - Parked per N0.3 decision: persisted `StaffNotification` + 30s polling/focus refetch is accepted.
 
 ## Phase N7 — Docs
 

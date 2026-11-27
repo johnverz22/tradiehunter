@@ -37,6 +37,7 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TradiePayout> TradiePayouts { get; set; } = null!;
     public DbSet<JobPriceAdjustment> JobPriceAdjustments { get; set; } = null!;
     public DbSet<Quote> Quotes { get; set; } = null!;
+    public DbSet<StaffNotification> StaffNotifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -389,6 +390,15 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(b => b.TotalAmount).HasColumnType("decimal(18,2)");
             
             entity.HasIndex(b => b.Status);
+        });
+
+        builder.Entity<StaffNotification>(entity =>
+        {
+            entity.HasIndex(n => new { n.UserId, n.ReadUtc, n.CreatedUtc });
+            entity.HasOne<ApplicationUser>()
+                  .WithMany()
+                  .HasForeignKey(n => n.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

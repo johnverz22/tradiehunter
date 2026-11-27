@@ -112,6 +112,83 @@ div.nav-item-static:hover {
   color: var(--on-sidebar-soft);
 }
 
+/* ── Staff notification bell & menu (plan 09 N6.3, tokens only) ──── */
+.notif-bell-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(25%, -25%);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--sp-1);
+  justify-content: center;
+  pointer-events: none;
+}
+.notif-menu {
+  width: min(380px, calc(100vw - var(--sp-6)));
+  padding: var(--sp-2);
+}
+.notif-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2) var(--sp-2);
+  border-bottom: 1px solid var(--line);
+}
+.notif-list {
+  list-style: none;
+  margin: var(--sp-1) 0 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.notif-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-control);
+  padding: var(--sp-2) var(--sp-2_5);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.notif-item:hover {
+  background: var(--surface-alt);
+}
+.notif-item-unread {
+  background: var(--brand-tint);
+}
+.notif-item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.notif-item-title {
+  font: var(--ty-body-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+.notif-item-time {
+  font: var(--ty-caption);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.notif-item-body {
+  font: var(--ty-caption);
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ── Sign-in (kit `.auth`): app-level additions, tokens only ──────────
    Design-system gaps (DESIGN_GUIDE §12), so these rules can go once the kit has them:
    `.auth` uses 100vh (taller than the visible area on phones) and has no safe-area

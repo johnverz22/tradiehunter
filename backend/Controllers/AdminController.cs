@@ -523,4 +523,36 @@ public class AdminController : ControllerBase
 
         return BadRequest(new { message = "Cannot complete batch. Not all payouts are processed." });
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STAFF NOTIFICATIONS (plan 09 N6)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [HttpGet("notifications")]
+    [ProducesResponseType<StaffNotificationListDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNotifications(
+        [FromQuery] bool unreadOnly = false,
+        [FromQuery] int limit = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _admin.GetStaffNotificationsAsync(CurrentUserId, unreadOnly, limit, ct);
+        return Ok(result);
+    }
+
+    [HttpPost("notifications/{id:int}/read")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkNotificationRead(int id, CancellationToken ct = default)
+    {
+        var found = await _admin.MarkStaffNotificationReadAsync(id, CurrentUserId, ct);
+        return found ? NoContent() : NotFound();
+    }
+
+    [HttpPost("notifications/read-all")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MarkAllNotificationsRead(CancellationToken ct = default)
+    {
+        await _admin.MarkAllStaffNotificationsReadAsync(CurrentUserId, ct);
+        return NoContent();
+    }
 }

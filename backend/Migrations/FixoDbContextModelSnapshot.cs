@@ -68,7 +68,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AccountFlags", (string)null);
+                    b.ToTable("AccountFlags");
                 });
 
             modelBuilder.Entity("FixoApi.Models.ApplicationUser", b =>
@@ -219,7 +219,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("Action", "CreatedAtUtc");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("FixoApi.Models.ChatMessage", b =>
@@ -254,7 +254,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("JobId", "SentAtUtc");
 
-                    b.ToTable("ChatMessages", (string)null);
+                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("FixoApi.Models.DeviceTokenEntity", b =>
@@ -285,7 +285,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("UserId", "Token")
                         .IsUnique();
 
-                    b.ToTable("DeviceTokens", (string)null);
+                    b.ToTable("DeviceTokens");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Dispute", b =>
@@ -338,7 +338,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("JobId")
                         .IsUnique();
 
-                    b.ToTable("Disputes", (string)null);
+                    b.ToTable("Disputes");
                 });
 
             modelBuilder.Entity("FixoApi.Models.DisputeEvidence", b =>
@@ -376,7 +376,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("DisputeId");
 
-                    b.ToTable("DisputeEvidences", (string)null);
+                    b.ToTable("DisputeEvidences");
                 });
 
             modelBuilder.Entity("FixoApi.Models.EmailOtp", b =>
@@ -408,7 +408,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EmailOtps", (string)null);
+                    b.ToTable("EmailOtps");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Job", b =>
@@ -600,7 +600,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("ReferenceCode")
                         .IsUnique();
 
-                    b.ToTable("Jobs", (string)null);
+                    b.ToTable("Jobs");
                 });
 
             modelBuilder.Entity("FixoApi.Models.JobOffer", b =>
@@ -619,7 +619,7 @@ namespace FixoApi.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("HourlyRateSnapshot")
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("JobId")
                         .HasColumnType("integer");
@@ -658,7 +658,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("JobId", "TradieId")
                         .IsUnique();
 
-                    b.ToTable("JobOffers", (string)null);
+                    b.ToTable("JobOffers");
                 });
 
             modelBuilder.Entity("FixoApi.Models.JobPhoto", b =>
@@ -693,7 +693,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("JobPhotos", (string)null);
+                    b.ToTable("JobPhotos");
                 });
 
             modelBuilder.Entity("FixoApi.Models.JobPriceAdjustment", b =>
@@ -757,7 +757,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("JobId", "Status");
 
-                    b.ToTable("JobPriceAdjustments", null, t =>
+                    b.ToTable("JobPriceAdjustments", t =>
                         {
                             t.HasCheckConstraint("CK_Adjustment_Amount", "\"Amount\" > 0");
                         });
@@ -804,7 +804,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("JobStatusHistory", (string)null);
+                    b.ToTable("JobStatusHistory");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Payment", b =>
@@ -890,7 +890,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("Status", "SubmittedAtUtc");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("FixoApi.Models.PayoutBatch", b =>
@@ -925,7 +925,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("PayoutBatches", (string)null);
+                    b.ToTable("PayoutBatches");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Quote", b =>
@@ -1005,7 +1005,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("JobId", "Status");
 
-                    b.ToTable("Quotes", (string)null);
+                    b.ToTable("Quotes");
                 });
 
             modelBuilder.Entity("FixoApi.Models.RefreshToken", b =>
@@ -1046,7 +1046,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Refund", b =>
@@ -1106,7 +1106,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Refunds", (string)null);
+                    b.ToTable("Refunds");
                 });
 
             modelBuilder.Entity("FixoApi.Models.Review", b =>
@@ -1152,7 +1152,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("JobId", "ReviewerId")
                         .IsUnique();
 
-                    b.ToTable("Reviews", null, t =>
+                    b.ToTable("Reviews", t =>
                         {
                             t.HasCheckConstraint("CK_Review_Rating", "\"Rating\" BETWEEN 1 AND 5");
                         });
@@ -1182,7 +1182,7 @@ namespace FixoApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Services", (string)null);
+                    b.ToTable("Services");
 
                     b.HasData(
                         new
@@ -1262,6 +1262,61 @@ namespace FixoApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FixoApi.Models.StaffNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminPath")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("ReadUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ReadUtc", "CreatedUtc");
+
+                    b.ToTable("StaffNotifications");
+                });
+
             modelBuilder.Entity("FixoApi.Models.TradieCredential", b =>
                 {
                     b.Property<int>("Id")
@@ -1304,7 +1359,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("TradieProfileId");
 
-                    b.ToTable("TradieCredentials", (string)null);
+                    b.ToTable("TradieCredentials");
                 });
 
             modelBuilder.Entity("FixoApi.Models.TradiePayout", b =>
@@ -1370,7 +1425,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("TradieId");
 
-                    b.ToTable("TradiePayouts", (string)null);
+                    b.ToTable("TradiePayouts");
                 });
 
             modelBuilder.Entity("FixoApi.Models.TradieProfile", b =>
@@ -1444,7 +1499,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TradieProfiles", (string)null);
+                    b.ToTable("TradieProfiles");
                 });
 
             modelBuilder.Entity("FixoApi.Models.TradieRate", b =>
@@ -1470,7 +1525,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("TradieProfileId");
 
-                    b.ToTable("TradieRates", (string)null);
+                    b.ToTable("TradieRates");
                 });
 
             modelBuilder.Entity("FixoApi.Models.TradieSchedule", b =>
@@ -1497,7 +1552,7 @@ namespace FixoApi.Migrations
 
                     b.HasIndex("TradieProfileId");
 
-                    b.ToTable("TradieSchedules", (string)null);
+                    b.ToTable("TradieSchedules");
                 });
 
             modelBuilder.Entity("FixoApi.Models.UserBlock", b =>
@@ -1528,7 +1583,7 @@ namespace FixoApi.Migrations
                     b.HasIndex("BlockerId", "BlockedId")
                         .IsUnique();
 
-                    b.ToTable("UserBlocks", (string)null);
+                    b.ToTable("UserBlocks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1902,6 +1957,15 @@ namespace FixoApi.Migrations
                     b.Navigation("Reviewee");
 
                     b.Navigation("Reviewer");
+                });
+
+            modelBuilder.Entity("FixoApi.Models.StaffNotification", b =>
+                {
+                    b.HasOne("FixoApi.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FixoApi.Models.TradieCredential", b =>

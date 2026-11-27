@@ -14,6 +14,7 @@ import { Menu } from 'lucide-react';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { IconButton } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import { UserMenu } from './UserMenu';
 import type { NavItem } from './SidebarNav';
 
@@ -58,6 +59,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     <BrandWordmark className="phone-only" />
 
     <span className="grow" />
+
+    <NotificationBell />
 
     <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 

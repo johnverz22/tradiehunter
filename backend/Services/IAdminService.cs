@@ -58,4 +58,12 @@ public interface IAdminService
     // Audit log (P8-04 / P8-07)
     Task<PagedResult<AuditLogDto>> GetAuditLogsAsync(
         DateTime? fromUtc, DateTime? toUtc, string? action, string? userId, int page, int pageSize);
+
+    // Staff notifications (plan 09 N6)
+    Task<StaffNotificationListDto> GetStaffNotificationsAsync(
+        string userId, bool unreadOnly = false, int limit = 20, CancellationToken ct = default);
+
+    Task<bool> MarkStaffNotificationReadAsync(int id, string userId, CancellationToken ct = default);
+
+    Task<int> MarkAllStaffNotificationsReadAsync(string userId, CancellationToken ct = default);
 }

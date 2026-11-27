@@ -282,6 +282,52 @@ public class NotificationServiceTests
         Assert.Equal("good@tradiehunter.nz", Assert.Single(h.Email.StaffAlerts).To);
     }
 
+    [Fact]
+    public async Task Staff_alert_persists_one_notification_row_per_recipient()
+    {
+        var h = await BuildAsync();
+        h.Staff.Recipients =
+        [
+            new StaffRecipient("s1", "s1@tradiehunter.nz", "One"),
+            new StaffRecipient("s2", "s2@tradiehunter.nz", "Two"),
+        ];
+
+        await h.Service.SendToStaffAsync(new StaffAlert(
+            NotificationEvents.ReceiptAwaitingVerification,
+            "payment:42",
+            "Receipt awaiting verification",
+            "Payment #42 needs review.",
+            AdminPath: "/payments"));
+
+        var rows = await h.Db.StaffNotifications.OrderBy(n => n.UserId).ToListAsync();
+        Assert.Equal(2, rows.Count);
+        Assert.Equal("s1", rows[0].UserId);
+        Assert.Equal("s2", rows[1].UserId);
+        Assert.All(rows, r =>
+        {
+            Assert.Equal(NotificationEvents.ReceiptAwaitingVerification, r.Type);
+            Assert.Equal("payment", r.EntityType);
+            Assert.Equal("42", r.EntityId);
+            Assert.Equal("Receipt awaiting verification", r.Title);
+            Assert.Equal("/payments", r.AdminPath);
+            Assert.Null(r.ReadUtc);
+        });
+    }
+
+    [Fact]
+    public async Task Staff_alert_still_persists_when_email_sending_fails()
+    {
+        var h = await BuildAsync();
+        h.Staff.Recipients = [new StaffRecipient("s1", "s1@tradiehunter.nz", "One")];
+        h.Email.ThrowOnSend = true;
+
+        await h.Service.SendToStaffAsync(ReceiptAlert("payment:99"));
+
+        var row = Assert.Single(h.Db.StaffNotifications);
+        Assert.Equal("payment", row.EntityType);
+        Assert.Equal("99", row.EntityId);
+    }
+
     // ── Fakes ─────────────────────────────────────────────────────────────────
 
     private sealed record PushCall(string Token, string Title, string Body, Dictionary<string, string>? Data);

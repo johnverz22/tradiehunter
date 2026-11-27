@@ -329,3 +329,18 @@ public class MetricsWindowDto
     /// <summary>Total new users in window.</summary>
     public int TotalSignups { get; set; }
 }
+
+public sealed record StaffNotificationDto(
+    int Id,
+    string Type,
+    string EntityType,
+    string EntityId,
+    string Title,
+    string Body,
+    string? AdminPath,
+    DateTime CreatedUtc,
+    DateTime? ReadUtc);
+
+public sealed record StaffNotificationListDto(
+    IReadOnlyList<StaffNotificationDto> Items,
+    int UnreadCount);
