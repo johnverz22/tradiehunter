@@ -203,6 +203,57 @@ public class OpenBoardTests
         Assert.Empty(blkRes.Items);
     }
 
+    [Fact]
+    public async Task AvailableJobs_is_empty_for_unverified_or_deactivated_tradies()
+    {
+        using var db = MakeDb();
+        await SeedBasicAsync(db);
+        db.Jobs.Add(new Job { Id = 1, HomeownerId = "ho-1", Title = "Open", Category = TradeCategory.Plumber, JobType = JobType.Project, Status = JobStatus.Requested, OpenToBoard = true, QuotesCloseAtUtc = DateTime.UtcNow.AddHours(48), ServiceId = 1, Location = Akl(0.01, 0.01) });
+        await db.SaveChangesAsync();
+        var sut = new AvailableJobsService(db, MakeConfig(), NullLogger<AvailableJobsService>.Instance);
+
+        Assert.Single((await sut.GetAvailableJobsAsync("tr-1", 1, 20)).Items);
+
+        (await db.TradieProfiles.SingleAsync(p => p.UserId == "tr-1")).IsVerified = false;
+        await db.SaveChangesAsync();
+        Assert.Empty((await sut.GetAvailableJobsAsync("tr-1", 1, 20)).Items);
+
+        (await db.TradieProfiles.SingleAsync(p => p.UserId == "tr-1")).IsVerified = true;
+        (await db.Users.FindAsync("tr-1"))!.IsActive = false;
+        await db.SaveChangesAsync();
+        Assert.Empty((await sut.GetAvailableJobsAsync("tr-1", 1, 20)).Items);
+    }
+
+    [Fact]
+    public async Task SubmitQuote_rejects_unverified_and_deactivated_tradies()
+    {
+        using var db = MakeDb();
+        await SeedBasicAsync(db);
+        db.Jobs.Add(new Job { Id = 10, HomeownerId = "ho-1", Title = "Open project", Category = TradeCategory.Plumber, JobType = JobType.Project, Status = JobStatus.Requested, OpenToBoard = true, QuotesCloseAtUtc = DateTime.UtcNow.AddHours(24), ServiceId = 1, Location = Akl(0.01, 0.01) });
+        await db.SaveChangesAsync();
+
+        var sut = new QuoteService(
+            db,
+            new FakeJobStatusService(db),
+            new StubHubContext(),
+            new RecordingNotifications(),
+            new NoopHangfire(),
+            Microsoft.Extensions.Options.Options.Create(new JobFlowOptions()),
+            new PlatformSettings(db, Microsoft.Extensions.Options.Options.Create(new JobFlowOptions()), new RecordingAudit()),
+            MakeConfig(),
+            NullLogger<QuoteService>.Instance);
+        var req = new SubmitQuoteRequest { PricingModel = "Fixed", Amount = 1200m, GstIncluded = true, EstimatedDurationDays = 2 };
+
+        (await db.TradieProfiles.SingleAsync(p => p.UserId == "tr-1")).IsVerified = false;
+        await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.SubmitQuoteAsync(10, "tr-1", req));
+
+        (await db.TradieProfiles.SingleAsync(p => p.UserId == "tr-1")).IsVerified = true;
+        (await db.Users.FindAsync("tr-1"))!.IsActive = false;
+        await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.SubmitQuoteAsync(10, "tr-1", req));
+    }
+
     // ── Q7.5 Quote without offer ─────────────────────────────────────────────
 
     [Fact]
