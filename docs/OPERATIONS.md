@@ -51,4 +51,6 @@ Project `fixo-dev-75df4`; Flutter package / bundle ID `nz.co.fixo.fixo` (identif
 6. **iOS push:** Xcode → Signing & Capabilities → Push Notifications + Background Modes (Remote notifications); real-device push needs an APNs `.p8` key uploaded to Firebase (paid Apple Developer Program). Android works without it.
 7. **Verify:** `POST /api/auth/google` with a real `idToken` → 200 + JWT; Flutter Google login stores the token and registers an FCM token (`POST /api/profile/device-token`); a Firebase test message reaches a backgrounded Android device.
 
+Google login failures: `503 google_not_configured` = the API container has no `GOOGLE_CLIENT_ID` (set it in the root `.env`; compose maps it to `Authentication__Google__ClientId`); `401 invalid_google_token` = the token audience differs from that client ID (mobile `GOOGLE_CLIENT_ID` must be the same web client). A Google account that quit at role select resumes it on the next Google login (fresh `registrationToken`). Password login on a Google-only account returns `401 use_google_sign_in`.
+
 Checks worth re-confirming in code (the old guide listed them as to-do while the features ship): `GoogleSignIn` uses the web `serverClientId`; iOS `Info.plist` has the `REVERSED_CLIENT_ID` URL scheme; Google token validation sets the audience, requires `EmailVerified` and rejects inactive users.

@@ -202,7 +202,7 @@ class AuthRepository {
       if (verificationEmail != null) {
         return GoogleLoginRequiresVerification(verificationEmail);
       }
-      throw Exception(_friendlyDioError(e));
+      throw Exception(_googleDioError(e));
     } catch (e) {
       debugPrint('[AuthRepository] Google login unexpected error: $e');
       rethrow;
@@ -314,12 +314,35 @@ class AuthRepository {
     return (body['email'] as String?) ?? fallback;
   }
 
+  /// Google sign-in has no password, so a 401 here means the Google token was
+  /// rejected — never "Incorrect email or password". A 503 means the server
+  /// has no Google client configured; surface its message.
+  String _googleDioError(DioException e) {
+    final status = e.response?.statusCode;
+    final serverMessage = extractServerMessage(e.response?.data);
+    if (status == 401 || status == 503) {
+      return serverMessage ??
+          'Google sign-in could not be completed. Please try again.';
+    }
+    return _friendlyDioError(e);
+  }
+
   /// Translates a [DioException] into a short, user-friendly message.
   /// Full technical detail is always printed to the debug console first.
   /// Shared implementation lives in `network/api_error.dart`; the status
   /// overrides below keep auth-specific copy (wrong password, unverified
   /// account, duplicate email) intact.
-  String _friendlyDioError(DioException e) => friendlyDioError(
+  String _friendlyDioError(DioException e) {
+    // A Google-only account tried a password: the server says so explicitly.
+    if (e.response?.statusCode == 401 &&
+        extractServerCode(e.response?.data) == 'use_google_sign_in') {
+      return extractServerMessage(e.response?.data) ??
+          'This account uses Google sign-in.';
+    }
+    return _friendlyDioErrorDefault(e);
+  }
+
+  String _friendlyDioErrorDefault(DioException e) => friendlyDioError(
     e,
     tag: 'AuthRepository',
     statusOverrides: const {

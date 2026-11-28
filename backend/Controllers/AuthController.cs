@@ -121,6 +121,15 @@ public class AuthController : ControllerBase
         if (!user.IsActive)
             return Unauthorized(new { message = "Account is deactivated." });
 
+        // Accounts created through Google have no password. Say so, instead of
+        // a misleading "invalid password" for a password that can never match.
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            return Unauthorized(new
+            {
+                code = "use_google_sign_in",
+                message = "This account uses Google sign-in. Tap \"Continue with Google\" to log in.",
+            });
+
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
         if (result.IsLockedOut)
             return StatusCode(429, new { message = "Account temporarily locked. Please try again later." });
@@ -272,8 +281,17 @@ public class AuthController : ControllerBase
     [HttpPost("google")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthRequest request)
     {
-        var googleClientId = _config["Authentication:Google:ClientId"]
-            ?? throw new InvalidOperationException("Authentication:Google:ClientId is not configured.");
+        // An empty ClientId would make every Google token fail the audience
+        // check and surface as a bogus "invalid token" 401 — report the real
+        // problem (server misconfiguration) instead.
+        var googleClientId = _config["Authentication:Google:ClientId"];
+        if (string.IsNullOrWhiteSpace(googleClientId)
+            || googleClientId.StartsWith("REPLACE_WITH", StringComparison.OrdinalIgnoreCase))
+            return StatusCode(503, new
+            {
+                code = "google_not_configured",
+                message = "Google sign-in is not available right now. Please use email instead.",
+            });
 
         GoogleJsonWebSignature.Payload payload;
         try
@@ -287,7 +305,7 @@ public class AuthController : ControllerBase
         }
         catch (InvalidJwtException)
         {
-            return Unauthorized(new { message = "Invalid Google token." });
+            return Unauthorized(new { code = "invalid_google_token", message = "Google sign-in could not be verified. Please try again." });
         }
 
         if (!payload.EmailVerified)
@@ -326,6 +344,19 @@ public class AuthController : ControllerBase
 
         if (!user.IsActive)
             return Unauthorized(new { message = "Account is deactivated." });
+
+        // A Google stub account whose owner never finished the role-select step
+        // still carries its RegistrationToken (cleared only by
+        // complete-registration). Signing in again must resume role selection
+        // with a fresh token — not mint a JWT for an account with no chosen role.
+        if (user.AuthProvider == "google" && user.RegistrationToken != null)
+        {
+            var resumeToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            user.RegistrationToken = HashCode(resumeToken);
+            user.RegistrationTokenExpiresAtUtc = DateTime.UtcNow.AddMinutes(10);
+            await _userManager.UpdateAsync(user);
+            return Ok(new { RequiresRegistration = true, UserId = user.Id, RegistrationToken = resumeToken });
+        }
 
         // P1-04: only link a Google login to an existing password-based
         // account if that account already completed email verification.

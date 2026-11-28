@@ -77,6 +77,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-fixo};Username=${POSTGRES_USER:-fixo};Password=${POSTGRES_PASSWORD:-fixo_dev}"
+      # Web OAuth client ID: POST /api/auth/google checks the idToken audience against it.
+      # Empty => Google sign-in returns 503 (must match the mobile GOOGLE_CLIENT_ID).
+      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
       Jwt__Secret: ${JWT_SECRET:-GOCSPX-VOkvwdTNIZ3|0_5KTg|0cbVVmvzg}
       ConnectionStrings__Redis: "redis:6379"
       AzureBlob__ServiceUrl: "http://azurite:10000"
