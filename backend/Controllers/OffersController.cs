@@ -17,6 +17,7 @@ namespace FixoApi.Controllers;
 ///
 /// Endpoints:
 ///   GET  /api/jobs/{id}/offers/pending          — tradie or homeowner polls the pending offer
+///   GET  /api/offers/pending/mine               — tradie's live offers across all jobs (QA §3)
 ///   POST /api/jobs/{id}/offers/{offerId}/respond — tradie accepts or declines
 ///   POST /api/jobs/{id}/offers/{offerId}/withdraw — homeowner withdraws (P1 QA §2A)
 ///
@@ -114,6 +115,23 @@ public class OffersController : ControllerBase
             TradieName   = string.IsNullOrWhiteSpace(tradieName) ? null : tradieName.Trim(),
             JobTitle     = offer.Job?.Title,
         });
+    }
+
+    // ── GET /api/offers/pending/mine ────────────────────────────────────────
+
+    /// <summary>
+    /// The calling tradie's live (Pending, unexpired) offers across every job,
+    /// earliest expiry first. The mobile incoming-request coordinator reads this
+    /// on cold start, resume and reconnect so nothing missed offline is lost.
+    /// </summary>
+    [HttpGet("~/api/offers/pending/mine")]
+    [Authorize(Roles = "Tradie")]
+    public async Task<IActionResult> GetMyPendingOffers()
+    {
+        var userId = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null) return Unauthorized();
+
+        return Ok(await _offerService.GetPendingForTradieAsync(userId));
     }
 
     // ── POST /api/jobs/{id}/offers/{offerId}/respond ──────────────────────────

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../viewmodels/incoming_offer_coordinator.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../design/th_scope.dart';
@@ -438,6 +439,9 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                       label: 'Sign out',
                       kind: THButtonKind.ghost,
                       onPressed: () async {
+                        ref
+                            .read(incomingOfferCoordinatorProvider.notifier)
+                            .stop();
                         await ref.read(authViewModelProvider.notifier).logout();
                         ref.invalidate(profileViewModelProvider);
                         if (context.mounted) context.go('/auth');

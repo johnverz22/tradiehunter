@@ -8,12 +8,15 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
+import 'services/local_notifications.dart';
 import 'ui/feedback/th_notice.dart';
+import 'ui/shared/incoming_offer_host.dart';
 import 'router/app_router.dart';
 import 'router/notification_route.dart';
-import 'ui/design/th_tokens.dart' show THTheme;
+import 'ui/design/th_tokens.dart' show THDurations, THTheme;
 import 'viewmodels/auth_viewmodel.dart'; // authRepositoryProvider
 import 'ui/shared/notification_center.dart'; // notificationCenterProvider (H20)
+import 'viewmodels/incoming_offer_coordinator.dart';
 import 'viewmodels/jobs_viewmodel.dart'; // jobsViewModelProvider, quotesProvider
 import 'viewmodels/locale_viewmodel.dart'; // localeConfigProvider
 import 'viewmodels/theme_mode_viewmodel.dart'; // themeModeProvider
@@ -68,6 +71,14 @@ void main() async {
   // unanswered prompt still photobombs simctl captures.
   if (!const bool.fromEnvironment('FIXO_DISABLE_PUSH')) {
     unawaited(_requestNotificationPermission());
+    // Channels + tap handling for OS notifications shown while foregrounded.
+    unawaited(
+      LocalNotifications.instance
+          .init(
+            onTap: (data) => appRouter.go(routeForMessage(data)),
+          )
+          .catchError((Object e) => debugPrint('Local notifications init: $e')),
+    );
   }
 
   // Check if the app was launched by tapping a notification (terminated state).
@@ -160,12 +171,50 @@ class _ThAppState extends ConsumerState<ThApp> {
       }
     }
 
+    // Incoming job request (QA §3): the full-screen alert owns it, so no
+    // toast. Refetch so the queue has the offer even if the hub event lags.
+    if (message.data['channel'] == LocalNotifications.incomingRequestsChannel) {
+      unawaited(ref.read(incomingOfferCoordinatorProvider.notifier).refresh());
+      return;
+    }
+
+    unawaited(_showForeground(message));
+  }
+
+  bool _warnedNotificationsOff = false;
+
+  // Foreground pushes go to the OS notification shade (QA §6). When the user
+  // has notifications off, or posting fails, fall back to the in-app notice
+  // and nudge once per session toward Settings.
+  Future<void> _showForeground(RemoteMessage message) async {
+    final notification = message.notification;
+    final title = notification?.title ?? 'TradieHunter';
+    final body = notification?.body ?? '';
+    final permitted = await LocalNotifications.instance.isPermitted();
+    final shown =
+        permitted &&
+        await LocalNotifications.instance.show(
+          title: title,
+          body: body,
+          data: message.data,
+        );
+    if (shown || !mounted) return;
+
     THNotice.push(
       context,
-      title: notification?.title ?? 'Fixo',
-      body: notification?.body ?? '',
+      title: title,
+      body: body,
       onView: () => _routeFromMessage(message),
     );
+    if (!permitted && !_warnedNotificationsOff) {
+      _warnedNotificationsOff = true;
+      // Wait out the push notice above: only one notice shows at a time.
+      unawaited(
+        Future<void>.delayed(THDurations.noticePush, () {
+          if (mounted) THNotice.info(context, NoticeCopy.notificationsOff);
+        }),
+      );
+    }
   }
 
   // Map the notification's `type` data field to a named route.
@@ -197,7 +246,9 @@ class _ThAppState extends ConsumerState<ThApp> {
       // icons). `context` here sits below MaterialApp's resolved Theme.
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: THTheme.systemOverlayStyle(Theme.of(context).brightness),
-        child: THNoticeHost(child: child ?? const SizedBox()),
+        child: THNoticeHost(
+          child: IncomingOfferHost(child: child ?? const SizedBox()),
+        ),
       ),
     );
   }

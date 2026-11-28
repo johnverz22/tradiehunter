@@ -375,7 +375,7 @@ public class P1OfferLifecycleTests
             => Task.CompletedTask;
     }
 
-    private sealed class StubJobStatusService : IJobStatusService
+    internal sealed class StubJobStatusService : IJobStatusService
     {
         public Task<JobDto> TransitionAsync(int jobId, JobStatus newStatus, string userId, UserRole actorRole,
             ReasonCode? reasonCode = null, string? note = null)
@@ -388,7 +388,7 @@ public class P1OfferLifecycleTests
             => Task.FromResult(new JobDto { Id = jobId });
     }
 
-    private sealed class StubJobHubContext : IHubContext<JobHub>
+    internal sealed class StubJobHubContext : IHubContext<JobHub>
     {
         public IHubClients Clients { get; } = new StubHubClients();
         public IGroupManager Groups => throw new NotImplementedException();
@@ -414,7 +414,7 @@ public class P1OfferLifecycleTests
         }
     }
 
-    private sealed class NoOpBackgroundJobClient : IBackgroundJobClient
+    internal sealed class NoOpBackgroundJobClient : IBackgroundJobClient
     {
         public string Create(Hangfire.Common.Job job, IState state) => "hf-p1";
         public bool ChangeState(string jobId, IState state, string expectedState) => true;

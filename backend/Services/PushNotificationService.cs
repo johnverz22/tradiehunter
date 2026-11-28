@@ -47,14 +47,8 @@ public class PushNotificationService : IPushSender
             Fid = deviceToken,
             Notification = new Notification { Title = finalTitle, Body = body },
             Data = data ?? new Dictionary<string, string>(),
-            Apns = new ApnsConfig
-            {
-                Aps = new Aps { Sound = "default" }
-            },
-            Android = new AndroidConfig
-            {
-                Priority = Priority.High
-            }
+            Apns = BuildApns(data),
+            Android = BuildAndroid(data)
         };
 
         try
@@ -118,8 +112,8 @@ public class PushNotificationService : IPushSender
             Fids = tokens,
             Notification = new Notification { Title = finalTitle, Body = body },
             Data = data ?? new Dictionary<string, string>(),
-            Apns = new ApnsConfig { Aps = new Aps { Sound = "default" } },
-            Android = new AndroidConfig { Priority = Priority.High }
+            Apns = BuildApns(data),
+            Android = BuildAndroid(data)
         };
 
         var response = await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message);
@@ -141,6 +135,48 @@ public class PushNotificationService : IPushSender
             response.SuccessCount, tokens.Count, staleTokens.Count);
 
         return staleTokens;
+    }
+
+    /// <summary>Data key carrying the Android notification channel id (QA plan §3).</summary>
+    public const string ChannelKey = "channel";
+
+    /// <summary>Channel for incoming job requests: heads-up, sound, full-screen intent.</summary>
+    public const string IncomingRequestsChannel = "incoming_requests";
+
+    /// <summary>
+    /// Android config: always high priority; routes to the named channel when the
+    /// payload carries <see cref="ChannelKey"/> so the device plays the channel's
+    /// sound and can raise a full-screen intent.
+    /// </summary>
+    public static AndroidConfig BuildAndroid(Dictionary<string, string>? data)
+    {
+        var android = new AndroidConfig { Priority = Priority.High };
+        if (data is not null
+            && data.TryGetValue(ChannelKey, out var channel)
+            && !string.IsNullOrWhiteSpace(channel))
+        {
+            android.Notification = new AndroidNotification { ChannelId = channel };
+        }
+        return android;
+    }
+
+    /// <summary>
+    /// APNs config: default sound; incoming-request pushes are marked
+    /// <c>time-sensitive</c> so iOS can break through Focus modes.
+    /// </summary>
+    public static ApnsConfig BuildApns(Dictionary<string, string>? data)
+    {
+        var aps = new Aps { Sound = "default" };
+        if (data is not null
+            && data.TryGetValue(ChannelKey, out var channel)
+            && channel == IncomingRequestsChannel)
+        {
+            aps.CustomData = new Dictionary<string, object>
+            {
+                ["interruption-level"] = "time-sensitive",
+            };
+        }
+        return new ApnsConfig { Aps = aps };
     }
 
     /// <summary>

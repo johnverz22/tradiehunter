@@ -13,6 +13,8 @@ String routeForMessageType(String? type) => switch (type) {
 String routeForMessage(Map<String, dynamic> data) {
   final type = data['type'];
   final jobId = data['jobId']?.toString();
+  // Incoming job request (QA §3): open the full-screen alert.
+  if (data['channel'] == 'incoming_requests') return '/tradie/incoming';
   if (type == 'quote_submitted' && jobId != null && jobId.isNotEmpty) {
     return '/jobs/$jobId/quotes';
   }

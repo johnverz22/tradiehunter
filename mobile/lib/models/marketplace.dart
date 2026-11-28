@@ -504,6 +504,10 @@ class JobOffer {
   /// Title of the job the offer belongs to.
   final String? jobTitle;
 
+  /// Server clock when this offer was serialised (UTC), when supplied. Used to
+  /// correct the countdown for device clock drift.
+  final DateTime? serverNowUtc;
+
   const JobOffer({
     required this.id,
     required this.jobId,
@@ -517,6 +521,7 @@ class JobOffer {
     this.message,
     this.tradieName,
     this.jobTitle,
+    this.serverNowUtc,
   });
 
   bool get isPending => response == 'Pending';
@@ -540,6 +545,9 @@ class JobOffer {
     message: json['message'] as String?,
     tradieName: json['tradieName'] as String?,
     jobTitle: json['jobTitle'] as String?,
+    serverNowUtc: json['serverNowUtc'] != null
+        ? DateTime.tryParse(json['serverNowUtc'] as String)?.toUtc()
+        : null,
   );
 }
 

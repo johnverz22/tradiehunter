@@ -453,6 +453,12 @@ public class OfferDto
 
     /// <summary>Job title, for the tradie's request-detail header.</summary>
     public string? JobTitle { get; set; }
+
+    /// <summary>
+    /// Server clock at response time (UTC). Clients compute a clock offset from it so
+    /// the offer countdown does not drift with a wrong device clock (QA plan §3).
+    /// </summary>
+    public DateTime ServerNowUtc { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>

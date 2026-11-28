@@ -42,6 +42,9 @@ abstract class NoticeCopy {
       'Could not decline — please try again.';
   static const String offerAcceptFailed =
       'Could not accept — please try again.';
+  static const String offerAccepted = 'Request accepted — the job is booked.';
+  static const String notificationsOff =
+      'Notifications are off. Turn them on in Settings to be alerted when the app is closed.';
   static const String offerNoLongerAvailable =
       'This request is no longer available.';
   static const String offerWithdrawn =

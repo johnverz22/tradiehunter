@@ -572,6 +572,8 @@ public class MatchingService : IMatchingService
                     {
                         ["jobId"]   = job.Id.ToString(),
                         ["offerId"] = offer.Id.ToString(),
+                        [PushNotificationService.ChannelKey] = PushNotificationService.IncomingRequestsChannel,
+                        ["expiresAtUtc"] = expires.ToString("O"),
                     });
             }
         }

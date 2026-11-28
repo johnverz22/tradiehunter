@@ -36,6 +36,7 @@ import '../ui/shared/profile_screen.dart';
 import '../ui/shared/settings_screen.dart';
 import '../ui/feedback/th_state_view.dart';
 import '../ui/tradie/tr_home_screen.dart';
+import '../ui/tradie/tr_incoming_offer_screen.dart';
 import '../ui/tradie/tr_job_router.dart';
 import '../ui/tradie/tr_lead_screen.dart';
 
@@ -204,6 +205,12 @@ final GoRouter appRouter = GoRouter(
         final key = ValueKey('request_$requestId');
         return TradieLeadScreen(key: key, requestId: requestId);
       },
+    ),
+    // QA §3: full-screen incoming request alert (outside the shell so it
+    // covers the dock). Declared before `/tradie/:id`.
+    GoRoute(
+      path: TrIncomingOfferScreen.route,
+      builder: (context, state) => const TrIncomingOfferScreen(),
     ),
     // Plan 10 Q7.10: Tradie open project board + detail
     GoRoute(

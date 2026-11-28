@@ -779,6 +779,27 @@ class JobsRepository {
     }
   }
 
+  // ── GET /api/offers/pending/mine ───────────────────────────────────────────
+
+  /// Every live offer waiting on the calling tradie, earliest expiry first
+  /// (QA plan §3). Feeds the incoming-request alert on cold start, resume and
+  /// reconnect. Throws on network failure so callers keep their current queue
+  /// instead of treating an outage as "no offers".
+  Future<List<JobOffer>> getMyPendingOffers() async {
+    final token = await _token();
+    if (token == null) return const [];
+    final res = await _dio.get(
+      '/api/offers/pending/mine',
+      options: _authOptions(token),
+    );
+    final data = res.data;
+    if (data is! List) return const [];
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(JobOffer.fromJson)
+        .toList();
+  }
+
   // ── POST /api/jobs/:id/offers/:offerId/withdraw ────────────────────────────
 
   /// Homeowner withdraws their pending direct request (QA plan §2A/2D).

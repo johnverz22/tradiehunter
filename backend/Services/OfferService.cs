@@ -197,6 +197,8 @@ public class OfferService
                 ["jobId"] = jobId.ToString(),
                 ["offerId"] = offer.Id.ToString(),
                 ["kind"] = kind.ToString(),
+                [PushNotificationService.ChannelKey] = PushNotificationService.IncomingRequestsChannel,
+                ["expiresAtUtc"] = offer.ExpiresAtUtc.ToString("O"),
             });
 
         return ToDto(offer, tradie.FullName, job.Title);
@@ -543,6 +545,28 @@ public class OfferService
         _logger.LogInformation(
             "CloseOrphanedOffers: closed {Count} pending offers on job {JobId} as {CloseAs}.",
             orphans.Count, jobId, closeAs);
+    }
+
+    /// <summary>
+    /// Every live offer waiting on <paramref name="tradieId"/> across all jobs
+    /// (QA plan §3). Feeds the tradie's incoming-request alert on cold start,
+    /// resume and reconnect, so offers missed while the app was closed still
+    /// surface. Only Pending offers that have not passed <c>ExpiresAtUtc</c> on
+    /// jobs still in Requested are returned, earliest expiry first.
+    /// </summary>
+    public async Task<List<OfferDto>> GetPendingForTradieAsync(string tradieId)
+    {
+        var now = DateTime.UtcNow;
+        var offers = await _context.JobOffers
+            .Include(o => o.Job)
+            .Where(o => o.TradieId == tradieId
+                && o.Response == OfferResponse.Pending
+                && o.ExpiresAtUtc > now
+                && o.Job.Status == JobStatus.Requested)
+            .OrderBy(o => o.ExpiresAtUtc)
+            .ToListAsync();
+
+        return offers.Select(o => ToDto(o, null, o.Job.Title)).ToList();
     }
 
     private static OfferDto ToDto(JobOffer offer, string? tradieName, string? jobTitle) => new()

@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
 import '../../viewmodels/auth_viewmodel.dart' show resolveBaseUrl;
+import '../../viewmodels/incoming_offer_coordinator.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/offer_responder.dart';
 import '../../viewmodels/profile_viewmodel.dart';
@@ -77,6 +78,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
       if (!mounted) return;
       unawaited(_refreshAll());
       unawaited(_initSignalR());
+      unawaited(ref.read(incomingOfferCoordinatorProvider.notifier).start());
     });
   }
 
@@ -156,11 +158,9 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
       if (!mounted) return;
       switch (event.eventType) {
         case OfferEventType.created:
+          // The full-screen alert (IncomingOfferHost) announces the offer;
+          // this screen only refreshes its lead cards.
           _refreshJobsAndOffers();
-          THNotice.info(
-            context,
-            'New Job Offer: ${event.jobTitle ?? "New Request"}',
-          );
         case OfferEventType.expired ||
             OfferEventType.declined ||
             OfferEventType.accepted ||
