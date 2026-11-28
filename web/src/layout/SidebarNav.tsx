@@ -33,11 +33,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ navItems, adminName }) =
   return (
     <aside className="sidebar" aria-label="Admin navigation">
       <div className="sidebar-brand">
-        <span className="brand-lockup">
-          <BrandMark />
-          <BrandWordmark className="wordmark-lg" />
-        </span>
-        <span className="monogram" aria-hidden="true">TH</span>
+        <BrandWordmark className="wordmark-lg" />
+        <BrandMark className="sidebar-rail-mark" variant="color" size={26} />
       </div>
 
       <nav className="sidebar-nav">

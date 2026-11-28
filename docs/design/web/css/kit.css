@@ -50,12 +50,16 @@ a { color: var(--ink-brand); }
   .sidebar:not(.is-drawer) { width: var(--sz-rail); }
   .sidebar:not(.is-drawer) .sidebar-brand { padding: var(--sp-6) 0 var(--sp-8); display: flex; justify-content: center; }
   .sidebar:not(.is-drawer) .wordmark { display: none; }
-  .sidebar:not(.is-drawer) .monogram { display: inline-flex; }
+  .sidebar:not(.is-drawer) .monogram,
+  .sidebar:not(.is-drawer) .sidebar-rail-mark { display: inline-flex; }
   .sidebar:not(.is-drawer) .nav-item { justify-content: center; padding: 0; }
   .sidebar:not(.is-drawer) .nav-label, .sidebar:not(.is-drawer) .nav-count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 }
-.sidebar .monogram { display: none; }
-.sidebar.is-rail .wordmark { display: none; } .sidebar.is-rail .monogram { display: inline-flex; }
+.sidebar .monogram,
+.sidebar .sidebar-rail-mark { display: none; }
+.sidebar.is-rail .wordmark { display: none; }
+.sidebar.is-rail .monogram,
+.sidebar.is-rail .sidebar-rail-mark { display: inline-flex; }
 @media (max-width: 639px) { .sidebar:not(.is-drawer) { display: none; } }
 .sidebar.is-drawer { position: fixed; inset: 0 auto 0 0; z-index: 60; width: min(85vw, var(--sz-drawer)); animation: th-slide-in var(--dur-base) var(--ease-standard); }
 .topbar { position: sticky; top: 0; z-index: 20; height: var(--sz-topbar); display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sz-gutter); background: var(--glass); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
@@ -81,6 +85,7 @@ a { color: var(--ink-brand); }
 :root[data-theme="dark"] .brand-mark-dark { display: inline; }
 .brand-lockup { display: inline-flex; align-items: center; gap: 10px; }
 .monogram { width: var(--sz-avatar); height: var(--sz-avatar); border-radius: var(--r-card); display: inline-flex; align-items: center; justify-content: center; background: var(--hero-gold); color: var(--hero-start); font: 800 14px/1 var(--ff-display); }
+.sidebar-rail-mark { width: var(--sz-avatar); height: var(--sz-avatar); border-radius: var(--r-card); align-items: center; justify-content: center; background: var(--on-hero); }
 
 /* ── Surfaces ───────────────────────────────────────────── */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); box-shadow: var(--sh-card); min-width: 0; }
