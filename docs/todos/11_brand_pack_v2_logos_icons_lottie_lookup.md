@@ -5,7 +5,7 @@
 > **Status:** Not started. Decisions D1-D4 (section 3) need owner answers; the defaults are safe to start with. **Prepared:** 2026-11-28
 > **Naming rule:** code identifiers stay `Fixo` (`package:fixo/...`, namespace `FixoApi`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
-> **Relationship to plan 11:** `11_brand_assets_integration_plan.md` was written against an **earlier pack** (`mark.svg`, `logo-reversed.svg`, `tradiehunter-animated.svg`, no Lottie, a Flutter `CustomPainter` ripple). This zip has different file names and a different palette, so **this plan supersedes plan 11's asset inventory, Phase A and its ripple spec**. Plan 11's findings on email delivery (CID, F6) and the unused old pin assets still hold and are reused below. Do not execute both plans.
+> **History:** this replaces an earlier draft of todo 11 that targeted a previous asset pack (different file names, SVG animation, no Lottie). That draft was removed; nothing else references it.
 
 ---
 
@@ -39,7 +39,7 @@ Paths are inside the zip (`tradiehunter-assets/`).
 
 | # | Finding | Evidence |
 |---|---|---|
-| F1 | **Palette matches the design system.** Logo hexes `#1E3A8A`, `#8FA8F2`, `#B45309` equal the brand token, dark-theme brand and accent already used by web tokens, `th_tokens.dart` and the email layout. No token retune needed (unlike plan 11's pack). | `brand-colors.css`; `_EmailLayout.cshtml` line 73 |
+| F1 | **Palette matches the design system.** Logo hexes `#1E3A8A`, `#8FA8F2`, `#B45309` equal the brand token, dark-theme brand and accent already used by web tokens, `th_tokens.dart` and the email layout. No token retune needed. | `brand-colors.css`; `_EmailLayout.cshtml` line 73 |
 | F2 | `web/public/favicon.svg` is still the Vite starter bolt (`#863bff`). No PNG favicon, no apple-touch icon. | `web/public/favicon.svg`, `web/index.html` |
 | F3 | The emblem appears nowhere in UI. Web (`BrandWordmark.tsx`), mobile (`THWordmark`, `th_widgets.dart:2025`) and email all use a text wordmark. | files cited |
 | F4 | Android has only `mipmap-*/ic_launcher.png`: no round icon, no `mipmap-anydpi-v26` adaptive/monochrome icon, no notification small icon (`firebase_messaging` is a dependency but the manifest has no `default_notification_icon`). iOS icon set exists but predates this pack; `launch_background.xml` is plain white. | `mobile/android/app/src/main/res`, `AndroidManifest.xml` |
@@ -259,4 +259,3 @@ SVG and Lottie cannot be used in Gmail/Outlook, so the email logo is a **PNG**. 
 | D4 web Lottie | _pending_ (default: none; admin has no lookup screen) |
 | Ripple-only Lottie (no house/hammer) | _not requested_; ask the designer if V3 finds the 0.9 s build too busy for a waiting screen |
 | `web/og-image.png`, `expo/*`, play-store icon | not wired (admin private; Flutter app; upload to Play Console by hand) |
-| Plan 11 | Superseded by this plan for assets, Phase A and the ripple spec (see header) |
