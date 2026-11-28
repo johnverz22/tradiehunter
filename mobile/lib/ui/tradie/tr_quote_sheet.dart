@@ -158,9 +158,9 @@ class _TrQuoteSheetState extends State<TrQuoteSheet> {
                 THText(
                   widget.quoteValidityHours != null
                       ? 'The homeowner compares quotes side by side — price, scope '
-                          'and timing all show on your card. Valid for ${widget.quoteValidityHours} hours.'
+                            'and timing all show on your card. Valid for ${widget.quoteValidityHours} hours.'
                       : 'The homeowner compares quotes side by side — price, scope '
-                          'and timing all show on your card.',
+                            'and timing all show on your card.',
                   style: THTextStyle.meta,
                   tone: THTone.soft,
                 ),

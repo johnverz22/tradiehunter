@@ -57,6 +57,16 @@ String friendlyDioError(
   }
 }
 
+/// Pulls the machine-readable `code` from `{ "code": "...", "message": "..." }`
+/// error bodies (QA plan §2C). Returns `null` when absent.
+String? extractServerCode(dynamic body) {
+  if (body is Map) {
+    final code = body['code'];
+    if (code is String && code.isNotEmpty) return code;
+  }
+  return null;
+}
+
 /// Pulls a human-readable message from common ASP.NET Core error shapes.
 String? extractServerMessage(dynamic body) {
   if (body == null) return null;
@@ -97,8 +107,8 @@ String? extractServerMessage(dynamic body) {
       if (messages.isNotEmpty) return messages.join('\n');
     }
 
-    // ── Simple {message} or {title} ───────────────────────────────────────
-    final msg = body['message'] ?? body['title'];
+    // ── Simple {message}, {error}, or {title} ──────────────────────────────
+    final msg = body['message'] ?? body['error'] ?? body['title'];
     if (msg is String && msg.isNotEmpty) return msg;
   }
 

@@ -11,7 +11,8 @@ import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/shared/chat_unread_provider.dart';
 import 'package:fixo/ui/shared/th_shell.dart';
-import 'package:fixo/viewmodels/jobs_viewmodel.dart' show chatRepositoryProvider;
+import 'package:fixo/viewmodels/jobs_viewmodel.dart'
+    show chatRepositoryProvider;
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,7 +45,6 @@ class _ChatRepo extends ChatRepository {
     return conversations;
   }
 }
-
 
 ConversationSummary _conv(String jobId, int unread) => ConversationSummary(
   jobId: jobId,

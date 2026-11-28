@@ -30,6 +30,7 @@ public class JobsController : ControllerBase
     private readonly IMatchingService _matching;
     private readonly IScheduleService _scheduleService;
     private readonly IBlobStorageService _blob;
+    private readonly IPhotoUrlSigner _photoSigner; // §4: signed photo URLs
     private readonly FixoDbContext _context;
     private readonly IBackgroundJobClient _hangfire;
     private readonly OfferService _offerService;
@@ -57,6 +58,7 @@ public class JobsController : ControllerBase
         IMatchingService matching,
         IScheduleService scheduleService,
         IBlobStorageService blob,
+        IPhotoUrlSigner photoSigner,
         FixoDbContext context,
         IBackgroundJobClient hangfire,
         OfferService offerService,
@@ -76,6 +78,7 @@ public class JobsController : ControllerBase
         _matching         = matching;
         _scheduleService  = scheduleService;
         _blob             = blob;
+        _photoSigner      = photoSigner;
         _context          = context;
         _hangfire         = hangfire;
         _offerService     = offerService;
@@ -110,12 +113,12 @@ public class JobsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(ApiError.From("validation_error", ex.Message));
         }
         catch (InvalidOperationException ex)
         {
             // OverduePayment posting block and other business rules (P12-12).
-            return Conflict(new { message = ex.Message });
+            return Conflict(ApiError.From("job_conflict", ex.Message));
         }
     }
 
@@ -278,7 +281,7 @@ public class JobsController : ControllerBase
             uploaded.Add(new JobPhotoDto
             {
                 Id               = photo.Id,
-                Url              = $"/api/photos/{blobKey}",
+                Url              = await _photoSigner.SignAsync(blobKey),
                 OriginalFileName = file.FileName,
             });
         }
@@ -302,7 +305,7 @@ public class JobsController : ControllerBase
 
         if (job.HomeownerId != userId) return Forbid();
         if (job.Status != JobStatus.Requested)
-            return Conflict(new { error = $"Job is in state '{job.Status}' — cannot start matching." });
+            return Conflict(ApiError.From("job_not_requestable", $"Job is in state '{job.Status}' — cannot start matching."));
 
         // Sequential dispatch runs in a Hangfire job, not on this request:
         // SendNextOfferAsync touches a scoped DbContext, the SignalR hub, and
@@ -359,7 +362,7 @@ public class JobsController : ControllerBase
         if (userId == null) return Unauthorized();
 
         if (string.IsNullOrWhiteSpace(request?.TradieId))
-            return BadRequest(new { error = "tradieId is required." });
+            return BadRequest(ApiError.From("validation_error", "tradieId is required."));
 
         try
         {
@@ -374,9 +377,13 @@ public class JobsController : ControllerBase
         {
             return Forbid();
         }
+        catch (BusinessRuleException ex)
+        {
+            return Conflict(ApiError.From(ex.Code, ex.Message));
+        }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { error = ex.Message });
+            return Conflict(ApiError.From("request_conflict", ex.Message));
         }
     }
 

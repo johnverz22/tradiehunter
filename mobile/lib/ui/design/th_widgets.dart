@@ -423,8 +423,14 @@ class THCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.th;
     final border = switch (tone) {
-      THCardTone.accent => Border.all(color: c.accent, width: Sizes.borderStrong),
-      THCardTone.danger => Border.all(color: c.danger, width: Sizes.borderStrong),
+      THCardTone.accent => Border.all(
+        color: c.accent,
+        width: Sizes.borderStrong,
+      ),
+      THCardTone.danger => Border.all(
+        color: c.danger,
+        width: Sizes.borderStrong,
+      ),
       THCardTone.defaultTone => Border.all(color: c.line),
     };
     return thTestIdWrap(
@@ -2339,7 +2345,10 @@ class THDock extends StatelessWidget {
                           color: c.accent,
                           borderRadius: BorderRadius.circular(Radii.pill),
                           // Same colour as the bar so the badge reads as cut out.
-                          border: Border.all(color: barColor, width: Sizes.borderStrong),
+                          border: Border.all(
+                            color: barColor,
+                            width: Sizes.borderStrong,
+                          ),
                         ),
                         child: Text(
                           badge,

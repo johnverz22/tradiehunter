@@ -163,7 +163,10 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
           );
         case OfferEventType.expired ||
             OfferEventType.declined ||
-            OfferEventType.accepted:
+            OfferEventType.accepted ||
+            OfferEventType.withdrawn ||
+            OfferEventType.superseded ||
+            OfferEventType.closed:
           _pendingOffers.remove(event.jobId);
           _refreshJobsAndOffers();
         case OfferEventType.unknown:
@@ -201,12 +204,8 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
       case OfferResponseOutcome.success:
         _refreshJobsAndOffers();
       case OfferResponseOutcome.rejected:
-        THNotice.error(
-          context,
-          accept
-              ? 'Could not accept this offer — it may have expired.'
-              : 'Could not decline this offer.',
-        );
+        final code = ref.read(offerResponderProvider).lastErrorCode;
+        THNotice.error(context, NoticeCopy.forOfferError(code, accept: accept));
         _refreshJobsAndOffers();
       case OfferResponseOutcome.alreadyInFlight:
         break;

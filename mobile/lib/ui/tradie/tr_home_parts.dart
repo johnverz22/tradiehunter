@@ -64,11 +64,7 @@ class TrHomeHero extends StatelessWidget {
                 children: [
                   THText(greeting, style: THTextStyle.label, tone: THTone.gold),
                   if (name != null && name!.isNotEmpty)
-                    THText(
-                      name!,
-                      style: THTextStyle.h2,
-                      tone: THTone.onHero,
-                    ),
+                    THText(name!, style: THTextStyle.h2, tone: THTone.onHero),
                 ],
               ),
             ),

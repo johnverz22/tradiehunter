@@ -159,14 +159,22 @@ class _TradieLeadScreenState extends ConsumerState<TradieLeadScreen>
     _offerSub = hub.onOfferLifecycle.listen((event) {
       if (event.jobId != widget.requestId || !mounted) return;
       final type = event.eventType;
-      if (type != OfferEventType.expired && type != OfferEventType.accepted) {
+      if (type == OfferEventType.created || type == OfferEventType.unknown) {
         return;
       }
       setState(() {
         _offer = null;
         _busy = false;
       });
-      if (type == OfferEventType.accepted) _leave();
+      if (type == OfferEventType.withdrawn ||
+          type == OfferEventType.superseded ||
+          type == OfferEventType.closed) {
+        THNotice.info(context, NoticeCopy.offerNoLongerAvailable);
+        _leave();
+      } else if (type == OfferEventType.accepted ||
+          type == OfferEventType.declined) {
+        _leave();
+      }
     });
     _statusSub = hub.onJobStatusChanged.listen((event) {
       if (event.jobId != widget.requestId || !mounted) return;
@@ -199,13 +207,11 @@ class _TradieLeadScreenState extends ConsumerState<TradieLeadScreen>
       case OfferResponseOutcome.success:
         _leave();
       case OfferResponseOutcome.rejected:
+        final code = ref.read(offerResponderProvider).lastErrorCode;
         setState(() => _busy = false);
         await _reloadOffer();
         if (!mounted) return;
-        THNotice.error(
-          context,
-          'Could not respond to this offer — it may have expired.',
-        );
+        THNotice.error(context, NoticeCopy.forOfferError(code, accept: accept));
       case OfferResponseOutcome.alreadyInFlight:
         setState(() => _busy = false);
     }

@@ -187,7 +187,7 @@ public class OpenBoardTests
         db.Quotes.Add(new Quote { JobId = 6, TradieId = "tr-1", PricingModel = QuotePricingModel.Fixed, Amount = 500m, Status = QuoteStatus.Submitted, ValidUntilUtc = now.AddHours(24) });
         await db.SaveChangesAsync();
 
-        var sut = new AvailableJobsService(db, MakeConfig(), NullLogger<AvailableJobsService>.Instance);
+        var sut = new AvailableJobsService(db, MakeConfig(), photoSigner: null!, NullLogger<AvailableJobsService>.Instance);
 
         var res = await sut.GetAvailableJobsAsync("tr-1", 1, 20);
         Assert.Single(res.Items);
@@ -210,7 +210,7 @@ public class OpenBoardTests
         await SeedBasicAsync(db);
         db.Jobs.Add(new Job { Id = 1, HomeownerId = "ho-1", Title = "Open", Category = TradeCategory.Plumber, JobType = JobType.Project, Status = JobStatus.Requested, OpenToBoard = true, QuotesCloseAtUtc = DateTime.UtcNow.AddHours(48), ServiceId = 1, Location = Akl(0.01, 0.01) });
         await db.SaveChangesAsync();
-        var sut = new AvailableJobsService(db, MakeConfig(), NullLogger<AvailableJobsService>.Instance);
+        var sut = new AvailableJobsService(db, MakeConfig(), photoSigner: null!, NullLogger<AvailableJobsService>.Instance);
 
         Assert.Single((await sut.GetAvailableJobsAsync("tr-1", 1, 20)).Items);
 

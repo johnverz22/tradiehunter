@@ -278,9 +278,7 @@ class _THNoticeBannerState extends State<THNoticeBanner> {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: Space.s2_5,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: Space.s2_5),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,

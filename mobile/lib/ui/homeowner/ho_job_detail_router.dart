@@ -101,13 +101,13 @@ class _ThJobDetailRouterState extends ConsumerState<ThJobDetailRouter>
             ),
             HoJobDetailView.fallback =>
               (job.status == 'Requested' || job.status == 'Matching')
-              ? (job.isProject
-                    ? HoQuotesScreen(jobId: job.id)
-                    : ThMatchingScreen(jobId: job.id))
-              : HoJobDetailFallbackScreen(
-                  job: job,
-                  reason: selection.fallback!,
-                ),
+                  ? (job.isProject
+                        ? HoQuotesScreen(jobId: job.id)
+                        : ThMatchingScreen(jobId: job.id))
+                  : HoJobDetailFallbackScreen(
+                      job: job,
+                      reason: selection.fallback!,
+                    ),
           };
         },
       ),

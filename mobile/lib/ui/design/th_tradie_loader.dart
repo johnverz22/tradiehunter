@@ -44,8 +44,7 @@ class _ThTradieLoaderState extends State<ThTradieLoader>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this)
-      ..addListener(_handleTick);
+    _controller = AnimationController(vsync: this)..addListener(_handleTick);
   }
 
   @override
@@ -135,9 +134,7 @@ class _ThTradieLoaderState extends State<ThTradieLoader>
           errorBuilder: (_, _, _) => SizedBox(
             width: widget.size,
             height: widget.size,
-            child: Center(
-              child: ThBrandMark(size: widget.size * 0.4),
-            ),
+            child: Center(child: ThBrandMark(size: widget.size * 0.4)),
           ),
         ),
       ),

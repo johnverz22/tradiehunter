@@ -121,7 +121,9 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
     // Plan 10 Q7.11: unify stage 0 — Project jobs show quotes instead of
     // dispatching hourly quick-match.
     try {
-      final job = await ref.read(jobsRepositoryProvider).getJobById(widget.jobId);
+      final job = await ref
+          .read(jobsRepositoryProvider)
+          .getJobById(widget.jobId);
       if (!mounted) return;
       if (job != null && job.isProject) {
         // no-op: ThTradieLoader owns its animation lifecycle
@@ -143,9 +145,14 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
           _goToBookedDetail();
         case OfferEventType.declined:
         case OfferEventType.expired:
+        case OfferEventType.withdrawn:
           _returnToList(
             'Your request wasn\u2019t taken up — pick another tradie.',
           );
+        case OfferEventType.superseded:
+          _goToBookedDetail();
+        case OfferEventType.closed:
+          _returnToList('This job is no longer open.');
         case OfferEventType.created:
         case OfferEventType.unknown:
           break;
@@ -161,8 +168,8 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
     if (_isRequestSent) {
       if (event.status == 'Booked') {
         _goToBookedDetail();
-      } else if (event.status == 'Cancelled') {
-        _returnToList('This job was cancelled.');
+      } else if (event.status == 'Cancelled' || event.status == 'Expired') {
+        _returnToList('This job is no longer open.');
       }
       return;
     }
@@ -380,17 +387,27 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
       return HoQuotesScreen(jobId: widget.jobId);
     }
     if (_isRequestSent) {
-      return ThRequestSentScreen(
-        requestChecked: _requestChecked,
-        reconnecting: _reconnecting,
-        request: _request,
-        gstLabel: widget.gstLabel,
-        onPickSomeoneElse: () =>
-            _returnToList('Pick another tradie — the job is still open.'),
-        onCancelRequest: _cancelRequest,
-        onExpired: () {
-          if (mounted) setState(() {});
+      final hasLiveOffer =
+          _request != null && _request!.remaining() > Duration.zero;
+      return PopScope(
+        canPop: !hasLiveOffer,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && hasLiveOffer) {
+            unawaited(_cancelRequest());
+          }
         },
+        child: ThRequestSentScreen(
+          requestChecked: _requestChecked,
+          reconnecting: _reconnecting,
+          request: _request,
+          gstLabel: widget.gstLabel,
+          onPickSomeoneElse: () =>
+              _returnToList('Pick another tradie — the job is still open.'),
+          onCancelRequest: _cancelRequest,
+          onExpired: () {
+            if (mounted) setState(() {});
+          },
+        ),
       );
     }
     final progress = ref.watch(matchingProgressProvider(widget.jobId));
@@ -417,15 +434,20 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
     }
   }
 
-  /// The only server-side cancel for a request-stage job is DELETE
-  /// /api/jobs/:id (P6-03 contract) — the request dies with the job.
+  /// Withdraws the pending direct request (POST /api/jobs/:id/offers/:offerId/withdraw)
+  /// so the job stays Requested and the homeowner can pick another tradie (QA plan §2A/2D).
   Future<void> _cancelRequest() async {
+    final offer = _request;
+    final tradieName = offer?.tradieName?.trim();
+    final who = (tradieName != null && tradieName.isNotEmpty)
+        ? tradieName
+        : 'this tradie';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel this request?'),
-        content: const Text(
-          'Cancelling closes the whole job request — the tradie will be told and nothing is charged. You can always post it again.',
+        title: const Text('Withdraw this request?'),
+        content: Text(
+          'Withdrawing closes your request to $who — the job stays open so you can pick someone else.',
         ),
         actions: [
           TextButton(
@@ -434,7 +456,7 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Cancel request'),
+            child: const Text('Withdraw request'),
           ),
         ],
       ),
@@ -442,10 +464,16 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
     if (confirmed != true || !mounted) return;
     _pollTimer?.cancel();
     await _leave();
-    await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
+    if (offer != null) {
+      await ref
+          .read(jobsRepositoryProvider)
+          .withdrawOffer(widget.jobId, offer.id);
+    } else {
+      await ref.read(jobsRepositoryProvider).cancelJob(widget.jobId);
+    }
     if (mounted) {
       context.pushReplacement('/jobs/${widget.jobId}/tradies');
-      THNotice.info(context, 'Request cancelled — the job is closed.');
+      THNotice.info(context, NoticeCopy.offerWithdrawn);
     }
   }
 }

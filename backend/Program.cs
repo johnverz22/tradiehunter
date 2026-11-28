@@ -260,6 +260,7 @@ builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<IMatchingService, MatchingService>();
 builder.Services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
+builder.Services.AddScoped<IPhotoUrlSigner, PhotoUrlSigner>(); // §4: signed photo URLs
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IJobStatusService, JobStatusService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();

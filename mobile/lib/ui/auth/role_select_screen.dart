@@ -263,7 +263,10 @@ class _ThRoleChoice extends StatelessWidget {
                         height: Space.s6,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: c.line, width: Sizes.borderStrong),
+                          border: Border.all(
+                            color: c.line,
+                            width: Sizes.borderStrong,
+                          ),
                         ),
                       ),
               ),

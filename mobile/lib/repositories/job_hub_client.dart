@@ -265,6 +265,9 @@ enum OfferEventType {
   expired,
   accepted,
   declined,
+  withdrawn,
+  superseded,
+  closed,
   unknown;
 
   static OfferEventType parse(String? raw) => switch (raw?.toLowerCase()) {
@@ -272,6 +275,9 @@ enum OfferEventType {
     'offerexpired' => OfferEventType.expired,
     'offeraccepted' => OfferEventType.accepted,
     'offerdeclined' => OfferEventType.declined,
+    'offerwithdrawn' => OfferEventType.withdrawn,
+    'offersuperseded' => OfferEventType.superseded,
+    'offerclosed' => OfferEventType.closed,
     _ => OfferEventType.unknown,
   };
 }

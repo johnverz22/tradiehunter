@@ -662,7 +662,8 @@ namespace FixoApi.Migrations
                     b.HasIndex("JobId", "Response");
 
                     b.HasIndex("JobId", "TradieId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"Response\" NOT IN ('Withdrawn', 'TimedOut', 'Superseded', 'JobClosed')");
 
                     b.ToTable("JobOffers");
                 });

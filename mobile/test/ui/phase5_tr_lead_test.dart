@@ -446,7 +446,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       expect(
         container(tester).read(thNoticeProvider)?.message,
-        'Could not respond to this offer — it may have expired.',
+        'Could not accept — please try again.',
       );
       expect(find.text('Accept Job'), findsOneWidget);
     });

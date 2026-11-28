@@ -76,6 +76,12 @@ public static class NotificationEvents
     public const string OfferAccepted = "offer_accepted";
     public const string OfferDeclined = "offer_declined";
     public const string OfferExpired = "offer_expired";
+
+    /// <summary>Homeowner withdrew the request (sent to the tradie).</summary>
+    public const string OfferWithdrawn = "offer_withdrawn";
+
+    /// <summary>Another tradie got the job; this pending offer is closed (sent to the tradie).</summary>
+    public const string OfferSuperseded = "offer_superseded";
     public const string QuoteAccepted = "quote_accepted";
     public const string QuoteDeclined = "quote_declined";
 
@@ -157,6 +163,8 @@ public static class NotificationPolicy
         Def(NotificationEvents.OfferAccepted, Home, true, EmailPolicy.Fallback, "Tradie accepted the request."),
         Def(NotificationEvents.OfferDeclined, Home, true, EmailPolicy.Fallback, "Tradie declined the request."),
         Def(NotificationEvents.OfferExpired, Both, true, EmailPolicy.Fallback, "Offer window passed without a response."),
+        Def(NotificationEvents.OfferWithdrawn, Trade, true, EmailPolicy.None, "Homeowner withdrew their request."),
+        Def(NotificationEvents.OfferSuperseded, Trade, true, EmailPolicy.None, "Another tradie accepted the job."),
         Def(NotificationEvents.QuoteAccepted, Trade, true, EmailPolicy.Fallback, "Homeowner accepted the quote."),
         Def(NotificationEvents.QuoteDeclined, Trade, true, EmailPolicy.Fallback, "Quote not chosen."),
         Def(NotificationEvents.BoardJobPosted, Trade, true, EmailPolicy.Fallback, "A new open project matching your trade was posted nearby."),

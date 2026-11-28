@@ -99,6 +99,8 @@ public class NotificationPolicyTests
             new[]
             {
                 NotificationEvents.AdjustmentReminder,
+                NotificationEvents.OfferSuperseded,
+                NotificationEvents.OfferWithdrawn,
                 NotificationEvents.PreJobReminder,
                 NotificationEvents.ReviewReceived,
                 NotificationEvents.ReviewRevealed,

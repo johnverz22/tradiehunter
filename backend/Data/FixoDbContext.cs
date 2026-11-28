@@ -181,7 +181,12 @@ public class FixoDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(o => new { o.JobId, o.Response });
             // A tradie is offered a given job at most once — the sequential
             // engine skips previously-offered tradies, this index backstops it.
-            entity.HasIndex(o => new { o.JobId, o.TradieId }).IsUnique();
+            // Filtered unique: only one active offer per (job, tradie).
+            // Withdrawn / TimedOut / Superseded / JobClosed rows are exempt so a tradie
+            // can be re-contacted after their previous offer ends in one of those states.
+            entity.HasIndex(o => new { o.JobId, o.TradieId })
+                  .IsUnique()
+                  .HasFilter("\"Response\" NOT IN ('Withdrawn', 'TimedOut', 'Superseded', 'JobClosed')");
 
             entity.HasOne(o => o.Job)
                   .WithMany(j => j.Offers)

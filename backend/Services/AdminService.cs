@@ -24,6 +24,7 @@ public class AdminService : IAdminService
     private readonly IEmailSender _emailSender;
     private readonly TokenService _tokenService;
     private readonly IBlobStorageService _blob;
+    private readonly IPhotoUrlSigner _photoSigner; // §4: signed photo URLs
     private readonly string _credentialsContainer;
     private readonly IOptions<LocaleOptions> _locale;
     private readonly INotificationService _notifications;
@@ -38,6 +39,7 @@ public class AdminService : IAdminService
         IEmailSender emailSender,
         TokenService tokenService,
         IBlobStorageService blob,
+        IPhotoUrlSigner photoSigner,
         IConfiguration config,
         IOptions<LocaleOptions> locale,
         INotificationService notifications,
@@ -51,6 +53,7 @@ public class AdminService : IAdminService
         _emailSender = emailSender;
         _tokenService = tokenService;
         _blob = blob;
+        _photoSigner = photoSigner;
         _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
         _locale = locale;
         _notifications = notifications;
@@ -801,6 +804,26 @@ public class AdminService : IAdminService
             .Where(u => changedByIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.FullName);
 
+        // §4: sign photo URLs for admin view.
+        var photos = new List<JobPhotoDto>(job.Photos.Count);
+        foreach (var p in job.Photos)
+        {
+            try
+            {
+                photos.Add(new JobPhotoDto
+                {
+                    Id = p.Id,
+                    Url = await _photoSigner.SignAsync(p.BlobKey),
+                    OriginalFileName = p.OriginalFileName,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "AdminService: could not sign photo URL for blob {BlobKey} — omitting.", p.BlobKey);
+            }
+        }
+
         return new AdminJobDetailDto
         {
             Id = job.Id,
@@ -818,12 +841,7 @@ public class AdminService : IAdminService
             ScheduleStatus = job.ScheduleStatus.ToString(),
             CreatedAtUtc = job.CreatedAtUtc,
             UpdatedAtUtc = job.UpdatedAtUtc,
-            Photos = job.Photos.Select(p => new JobPhotoDto
-            {
-                Id = p.Id,
-                Url = $"/api/photos/{p.BlobKey}",
-                OriginalFileName = p.OriginalFileName,
-            }).ToList(),
+            Photos = photos,
             ChatTranscript = job.ChatMessages
                 .OrderBy(m => m.SentAtUtc)
                 .Select(m => new AdminChatMessageDto

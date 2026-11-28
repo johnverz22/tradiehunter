@@ -36,6 +36,9 @@ class OfferResponder {
   /// Job ids with a response currently being dispatched.
   bool isResponding(String jobId) => _inFlight.contains(jobId);
 
+  /// Machine-readable `code` from the most recent rejected [respond] call.
+  String? get lastErrorCode => _repo.lastOfferErrorCode;
+
   /// Dispatches one accept/decline command for [offer] on [jobId].
   ///
   /// Returns [OfferResponseOutcome.alreadyInFlight] without dispatching when

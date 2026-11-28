@@ -66,7 +66,7 @@ class ThRequestSentScreen extends StatelessWidget {
                 ),
                 THButton(
                   key: const Key('cancel_request_button'),
-                  label: 'Cancel request',
+                  label: 'Withdraw request',
                   kind: THButtonKind.ghost,
                   onPressed: req == null || expired ? null : onCancelRequest,
                 ),

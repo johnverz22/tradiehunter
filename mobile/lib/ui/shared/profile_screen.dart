@@ -94,8 +94,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
   // booked work asks first, exactly like home.
   Future<void> _setAvailability(bool value) async {
     if (_availabilitySaving) return;
-    if (!value &&
-        trNeedsOfflineConfirm(ref.read(jobsViewModelProvider).jobs)) {
+    if (!value && trNeedsOfflineConfirm(ref.read(jobsViewModelProvider).jobs)) {
       final confirmed = await showTrGoOfflineSheet(
         context,
         themeMode: ref.read(themeModeProvider),
@@ -671,10 +670,7 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                                 ],
                               ),
                             ] else ...[
-                              valueRow(
-                                'Bank Account Name',
-                                _bankNameCtrl.text,
-                              ),
+                              valueRow('Bank Account Name', _bankNameCtrl.text),
                               valueRow(
                                 'Bank Account Number',
                                 _bankNumberCtrl.text,

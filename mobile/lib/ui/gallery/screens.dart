@@ -1,5 +1,6 @@
 // GENERATED. Barrel + route table for the design-v2 screens.
 import 'package:flutter/widgets.dart';
+
 import 'splash_screen.dart';
 import 'onboarding_screen.dart';
 import 'role_select_screen.dart';

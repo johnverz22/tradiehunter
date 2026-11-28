@@ -54,11 +54,7 @@ void main() {
       testWidgets('tradie logs in and views API-created job', (tester) async {
         await const FlutterSecureStorage().deleteAll();
         app.main();
-        await loginAs(
-          tester,
-          manifest.tradieEmail,
-          manifest.tradiePassword,
-        );
+        await loginAs(tester, manifest.tradieEmail, manifest.tradiePassword);
 
         expect(find.byKey(const Key('tradie_dashboard')), findsOneWidget);
 

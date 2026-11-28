@@ -22,6 +22,7 @@ public class StaffNotificationAdminTests
             emailSender: null!,
             tokenService: null!,
             blob: null!,
+            photoSigner: null!,
             config: config,
             locale: Microsoft.Extensions.Options.Options.Create(new LocaleOptions()),
             notifications: null!,

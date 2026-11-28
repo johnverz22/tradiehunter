@@ -108,6 +108,19 @@ public class OfferTimeoutJob
             $"Your offer for \"{offer.Job.Title}\" has expired.",
             data);
 
+        // §7a fix: only auto-dispatch the next offer for quick-match (Auto/Broadened)
+        // stages or legacy v1 flow. Direct v2 requests time out without broadening
+        // — the homeowner must pick another tradie themselves (QA plan §2 §7a).
+        var isDirect = offer.Stage == OfferStage.Direct;
+        var isV2 = offer.Job.FlowVersion >= 2;
+        if (isDirect && isV2)
+        {
+            _logger.LogInformation(
+                "OfferTimeoutJob: offer {OfferId} is a Direct v2 request — skipping auto-dispatch.",
+                offerId);
+            return;
+        }
+
         // Trigger the next sequential offer (P3-04 AC: triggers next ranked tradie).
         await _matching.SendNextOfferAsync(offer.JobId, SystemUserId);
     }

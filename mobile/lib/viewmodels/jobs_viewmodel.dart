@@ -231,10 +231,13 @@ class MatchingProgressNotifier extends StateNotifier<MatchingProgressState> {
         );
       case OfferEventType.expired:
       case OfferEventType.declined:
+      case OfferEventType.withdrawn:
         // The next offer (or the terminal cancel) arrives on a later event.
         state = state.copyWith(offersMade: state.offersMade + 1, reason: null);
       case OfferEventType.accepted:
+      case OfferEventType.superseded:
         state = state.copyWith(phase: MatchingPhase.matched, reason: null);
+      case OfferEventType.closed:
       case OfferEventType.unknown:
         break;
     }
@@ -981,6 +984,7 @@ class AvailableJobsNotifier extends StateNotifier<AvailableJobsState> {
 }
 
 final availableJobsProvider =
-    StateNotifierProvider.autoDispose<AvailableJobsNotifier, AvailableJobsState>(
-      (ref) => AvailableJobsNotifier(ref.watch(jobsRepositoryProvider)),
-    );
+    StateNotifierProvider.autoDispose<
+      AvailableJobsNotifier,
+      AvailableJobsState
+    >((ref) => AvailableJobsNotifier(ref.watch(jobsRepositoryProvider)));

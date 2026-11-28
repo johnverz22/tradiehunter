@@ -15,10 +15,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _BoardJobsRepo extends JobsRepository {
-  _BoardJobsRepo({
-    this.available = const [],
-    this.job,
-  }) : super(Dio(), const FlutterSecureStorage());
+  _BoardJobsRepo({this.available = const [], this.job})
+    : super(Dio(), const FlutterSecureStorage());
 
   final List<AvailableJob> available;
   final Job? job;
@@ -60,42 +58,43 @@ AvailableJob _sampleBoardJob({int? validityHours = 72}) => AvailableJob(
 );
 
 void main() {
-  testWidgets('HoPostJobProject defaults to Open to nearby tradies and toggles', (
-    tester,
-  ) async {
-    late ProviderContainer container;
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          jobsRepositoryProvider.overrideWithValue(_BoardJobsRepo()),
-          themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
-        ],
-        child: Consumer(
-          builder: (context, ref, _) {
-            container = ProviderScope.containerOf(context);
-            return const MaterialApp(
-              home: ThScope(
-                themeMode: ThemeMode.light,
-                child: Scaffold(
-                  body: SingleChildScrollView(child: HoPostJobProject()),
+  testWidgets(
+    'HoPostJobProject defaults to Open to nearby tradies and toggles',
+    (tester) async {
+      late ProviderContainer container;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            jobsRepositoryProvider.overrideWithValue(_BoardJobsRepo()),
+            themeModeProvider.overrideWith((ref) => ThemeModeNotifier()),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              container = ProviderScope.containerOf(context);
+              return const MaterialApp(
+                home: ThScope(
+                  themeMode: ThemeMode.light,
+                  child: Scaffold(
+                    body: SingleChildScrollView(child: HoPostJobProject()),
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    );
-    container.read(postJobProvider.notifier).setJobType(Job.jobTypeProject);
-    await tester.pumpAndSettle();
+      );
+      container.read(postJobProvider.notifier).setJobType(Job.jobTypeProject);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Open to nearby tradies'), findsOneWidget);
-    expect(find.text('Invite tradies'), findsOneWidget);
-    expect(container.read(postJobProvider).openToBoard, isTrue);
+      expect(find.text('Open to nearby tradies'), findsOneWidget);
+      expect(find.text('Invite tradies'), findsOneWidget);
+      expect(container.read(postJobProvider).openToBoard, isTrue);
 
-    await tester.tap(find.byKey(const Key('post_project_invite_pill')));
-    await tester.pumpAndSettle();
-    expect(container.read(postJobProvider).openToBoard, isFalse);
-  });
+      await tester.tap(find.byKey(const Key('post_project_invite_pill')));
+      await tester.pumpAndSettle();
+      expect(container.read(postJobProvider).openToBoard, isFalse);
+    },
+  );
 
   testWidgets('HoQuotesScreen shows close countdown for open-board projects', (
     tester,

@@ -9,5 +9,17 @@ public enum OfferResponse
     Pending,
     Accepted,
     Declined,
-    TimedOut
+    TimedOut,
+
+    /// <summary>Homeowner withdrew the request before the tradie responded.</summary>
+    Withdrawn,
+
+    /// <summary>
+    /// Another tradie accepted the same job, so this pending offer is closed.
+    /// Used for project jobs where multiple concurrent offers exist.
+    /// </summary>
+    Superseded,
+
+    /// <summary>Job was cancelled or expired while this offer was still pending.</summary>
+    JobClosed,
 }

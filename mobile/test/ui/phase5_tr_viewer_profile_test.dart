@@ -5,7 +5,8 @@ import 'package:fixo/models/marketplace.dart';
 import 'package:fixo/repositories/chat_reviews_repository.dart';
 import 'package:fixo/repositories/profile_repository.dart';
 import 'package:fixo/ui/homeowner/ho_tradie_profile_screen.dart';
-import 'package:fixo/viewmodels/jobs_viewmodel.dart' show reviewsRepositoryProvider;
+import 'package:fixo/viewmodels/jobs_viewmodel.dart'
+    show reviewsRepositoryProvider;
 import 'package:fixo/viewmodels/profile_viewmodel.dart';
 import 'package:fixo/viewmodels/theme_mode_viewmodel.dart';
 import 'package:flutter/material.dart';

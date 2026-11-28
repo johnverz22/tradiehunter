@@ -73,29 +73,53 @@ public class OfferService
             throw new UnauthorizedAccessException();
 
         if (job.FlowVersion < 2)
-            throw new InvalidOperationException("This job was posted under the legacy flow.");
+            throw new BusinessRuleException("legacy_flow", "This job was posted under the legacy flow.");
 
         if (job.Status != JobStatus.Requested)
-            throw new InvalidOperationException($"Job is in state '{job.Status}' — it cannot take new requests.");
+            throw new BusinessRuleException("job_not_requestable", $"Job is in state '{job.Status}' — it cannot take new requests.");
 
         if (string.IsNullOrWhiteSpace(request.TradieId))
-            throw new InvalidOperationException("tradieId is required.");
+            throw new BusinessRuleException("validation_error", "tradieId is required.");
+
+        // Re-contact rules (P1 QA §2B) — evaluated BEFORE the pending-count guard so
+        // idempotent double-taps are short-circuited before hitting the "one at a time" limit.
+        //  • Existing Pending offer for THIS tradie → idempotent: return it immediately.
+        //  • Declined → blocked ("tradie_already_declined").
+        //  • Withdrawn or TimedOut → allow a fresh re-ask (falls through to new-offer creation below).
+        var existingForTradie = job.Offers.FirstOrDefault(o => o.TradieId == request.TradieId);
+        if (existingForTradie != null)
+        {
+            if (existingForTradie.Response == OfferResponse.Pending)
+            {
+                // Idempotent double-tap: load the tradie name and return existing offer.
+                var tradie2 = await _context.Users.FindAsync(request.TradieId);
+                var tradieName2 = tradie2 != null ? (tradie2.FirstName + " " + tradie2.LastName).Trim() : "";
+                return ToDto(existingForTradie, tradieName2, job.Title);
+            }
+            if (existingForTradie.Response == OfferResponse.Declined)
+                throw new BusinessRuleException(
+                    "tradie_already_declined",
+                    "This tradie already declined this job — pick someone else.");
+            // Withdrawn or TimedOut: proceed — the filtered unique index permits a new row.
+        }
 
         // Hourly: exactly one pending request at a time (existing invariant).
         // Project: up to MaxConcurrentQuoteRequests concurrent QuoteRequests (P12-23).
         var pendingCount = job.Offers.Count(o => o.Response == OfferResponse.Pending);
         if (job.JobType == JobType.Hourly && pendingCount > 0)
-            throw new InvalidOperationException(
+            throw new BusinessRuleException(
+                "pending_request_exists",
                 "This job already has a pending request. Cancel it or wait for a response before asking someone else.");
 
         if (job.JobType == JobType.Project && pendingCount >= _flowOptions.Value.MaxConcurrentQuoteRequests)
-            throw new InvalidOperationException(
+            throw new BusinessRuleException(
+                "pending_request_exists",
                 $"A project can have at most {_flowOptions.Value.MaxConcurrentQuoteRequests} concurrent quote requests.");
 
         // The chosen tradie must be offerable: verified, available, and carrying
         // a rate for the job's service — the homeowner must see a real price.
         var tradie = await _context.Users.FindAsync(request.TradieId)
-            ?? throw new InvalidOperationException("That tradie no longer exists.");
+            ?? throw new BusinessRuleException("tradie_unreachable", "That tradie no longer exists.");
 
         var rate = await _context.TradieRates
             .Where(r => r.ServiceId == job.ServiceId
@@ -105,12 +129,9 @@ public class OfferService
                         && r.TradieProfile.IsAvailable)
             .Select(r => (decimal?)r.HourlyRate)
             .FirstOrDefaultAsync()
-            ?? throw new InvalidOperationException(
+            ?? throw new BusinessRuleException(
+                "tradie_unreachable",
                 "That tradie is not available for this service — pick another tradie from the list.");
-
-        // A tradie is offered a given job at most once (unique index backstops).
-        if (job.Offers.Any(o => o.TradieId == request.TradieId))
-            throw new InvalidOperationException("This tradie was already asked about this job.");
 
         // D7: urgency-aware, configurable expiry window.
         var windowMinutes = job.Urgency is JobUrgency.High or JobUrgency.Emergency
@@ -186,20 +207,75 @@ public class OfferService
     /// snapshot onto the job. v1 legacy jobs keep the old Requested →
     /// AwaitingPayment edge. Returns the accepted offer DTO.
     /// </summary>
+    /// <summary>
+    /// Tradie accepts an offer. v2 flow: Requested → Booked, copying the rate
+    /// snapshot onto the job. v1 legacy jobs keep the old Requested →
+    /// AwaitingPayment edge. Returns the accepted offer DTO.
+    ///
+    /// Atomicity (P1 QA §2A): a conditional ExecuteUpdate claims the offer
+    /// atomically, so two racing accepts can never both succeed. The loser gets
+    /// a 0-row result and receives a typed 409 (offer_not_pending).
+    /// </summary>
     public async Task<OfferDto> AcceptOfferAsync(int jobId, int offerId, string tradieId)
     {
+        // 1. Atomic claim: flip Pending → Accepted in one conditional UPDATE.
+        //    Zero rows updated means someone else already claimed it.
+        var now = DateTime.UtcNow;
+        int claimed;
+        if (_context.Database.IsRelational())
+        {
+            claimed = await _context.JobOffers
+                .Where(o => o.Id == offerId
+                         && o.JobId == jobId
+                         && o.TradieId == tradieId
+                         && o.Response == OfferResponse.Pending
+                         && o.ExpiresAtUtc > now)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Response, OfferResponse.Accepted));
+        }
+        else
+        {
+            // InMemory provider (unit tests) does not support ExecuteUpdateAsync.
+            var candidate = await _context.JobOffers
+                .FirstOrDefaultAsync(o => o.Id == offerId
+                                       && o.JobId == jobId
+                                       && o.TradieId == tradieId
+                                       && o.Response == OfferResponse.Pending
+                                       && o.ExpiresAtUtc > now);
+            if (candidate != null)
+            {
+                candidate.Response = OfferResponse.Accepted;
+                await _context.SaveChangesAsync();
+                claimed = 1;
+            }
+            else
+            {
+                claimed = 0;
+            }
+        }
+
+        if (claimed == 0)
+        {
+            // Load to give a typed error; throw typed so controller maps it correctly.
+            var stale = await _context.JobOffers
+                .Include(o => o.Job)
+                .FirstOrDefaultAsync(o => o.Id == offerId && o.JobId == jobId)
+                ?? throw new KeyNotFoundException($"Offer {offerId} not found.");
+            if (stale.TradieId != tradieId) throw new UnauthorizedAccessException();
+            if (stale.ExpiresAtUtc <= now)
+                throw new BusinessRuleException("offer_expired", "This offer has expired — it can no longer be accepted.");
+            if (stale.Job.Status != JobStatus.Requested)
+                throw new BusinessRuleException(
+                    stale.Job.Status == JobStatus.Booked ? "job_already_booked" : "job_not_requestable",
+                    $"Job is in state '{stale.Job.Status}' — this offer can no longer be accepted.");
+            throw new BusinessRuleException("offer_not_pending", $"Offer is already in state '{stale.Response}'.");
+        }
+
+        // 2. Reload the full offer + job now that we own it.
         var offer = await _context.JobOffers
             .Include(o => o.Job)
-            .FirstOrDefaultAsync(o => o.Id == offerId && o.JobId == jobId)
-            ?? throw new KeyNotFoundException($"Offer {offerId} not found.");
+            .FirstAsync(o => o.Id == offerId);
 
-        if (offer.TradieId != tradieId) throw new UnauthorizedAccessException();
-        if (offer.Response != OfferResponse.Pending)
-            throw new InvalidOperationException($"Offer is already in state '{offer.Response}'.");
-        if (offer.Job.Status != JobStatus.Requested)
-            throw new InvalidOperationException($"Job is in state '{offer.Job.Status}' — this offer can no longer be accepted.");
-
-        // Cancel the Hangfire timeout — the tradie responded in time.
+        // 3. Cancel the Hangfire timeout.
         if (!string.IsNullOrEmpty(offer.HangfireJobId))
         {
             try { _hangfire.Delete(offer.HangfireJobId); }
@@ -209,11 +285,8 @@ public class OfferService
             }
         }
 
-        offer.Response = OfferResponse.Accepted;
+        // 4. Apply rate snapshot to job (P12-08).
         offer.Job.MatchedTradieId = tradieId;
-
-        // P12-08: the request-time snapshot becomes the job's rate. Legacy v1
-        // offers predate the snapshot (0 in the DB) — keep their existing rate.
         if (offer.HourlyRateSnapshot > 0m)
         {
             offer.Job.HourlyRate = offer.HourlyRateSnapshot;
@@ -223,17 +296,16 @@ public class OfferService
                     offer.HourlyRateSnapshot * offer.Job.EstimatedHours.Value, 2);
             }
         }
-
         await _context.SaveChangesAsync();
 
+        // 5. Transition job status (this will also close any sibling offers via
+        //    CloseOrphanedOffersAsync which TransitionAsync calls on Booked/Cancelled).
         if (offer.Job.FlowVersion >= 2)
         {
-            // v2: accept books the job directly — payment moves to the end (P12-10).
             await _jobStatusService.TransitionAsync(jobId, JobStatus.Booked, tradieId, UserRole.Tradie);
         }
         else
         {
-            // v1 legacy: the old "tradie matched" edge.
             await _jobStatusService.TransitionAsync(jobId, JobStatus.AwaitingPayment, tradieId, UserRole.Tradie);
         }
 
@@ -241,6 +313,7 @@ public class OfferService
             "Offer {OfferId} accepted: job {JobId} → {Status} with tradie {TradieId} at rate {Rate}.",
             offerId, jobId, offer.Job.Status, tradieId, offer.HourlyRateSnapshot);
 
+        // 6. SignalR + notifications.
         var lifecycle = new OfferLifecyclePayload
         {
             EventType = "OfferAccepted",
@@ -253,12 +326,24 @@ public class OfferService
         await _jobHub.Clients.Group(JobHub.GroupName(jobId)).SendAsync("OfferLifecycleEvent", lifecycle);
         await _jobHub.Clients.User(tradieId).SendAsync("OfferLifecycleEvent", lifecycle);
 
+        // Notify homeowner: the job is booked (not "declined" — fixed copy-paste bug).
+        var data = new Dictionary<string, string>
+        {
+            ["jobId"] = jobId.ToString(),
+            ["offerId"] = offerId.ToString(),
+        };
         await _notifications.NotifyAsync(
             NotificationEvents.OfferAccepted,
             offer.Job.HomeownerId,
-            "Offer accepted",
-            $"A tradie accepted your request for \"{offer.Job.Title}\".",
-            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offerId.ToString() });
+            "Tradie accepted!",
+            $"Your request for \"{offer.Job.Title}\" was accepted — the job is now booked.",
+            data);
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferAccepted,
+            tradieId,
+            "Job booked",
+            $"You accepted the request for \"{offer.Job.Title}\".",
+            data);
 
         return ToDto(offer, null, offer.Job.Title);
     }
@@ -276,7 +361,7 @@ public class OfferService
 
         if (offer.TradieId != tradieId) throw new UnauthorizedAccessException();
         if (offer.Response != OfferResponse.Pending)
-            throw new InvalidOperationException($"Offer is already in state '{offer.Response}'.");
+            throw new BusinessRuleException("offer_not_pending", $"Offer is already in state '{offer.Response}'.");
 
         if (!string.IsNullOrEmpty(offer.HangfireJobId))
         {
@@ -307,13 +392,157 @@ public class OfferService
         await _jobHub.Clients.User(tradieId).SendAsync("OfferLifecycleEvent", lifecycle);
 
         await _notifications.NotifyAsync(
-            NotificationEvents.OfferAccepted,
+            NotificationEvents.OfferDeclined,
             offer.Job.HomeownerId,
-            "Offer accepted",
-            $"A tradie accepted your request for \"{offer.Job.Title}\".",
+            "Request declined",
+            $"The tradie declined your request for \"{offer.Job.Title}\" — pick someone else.",
+            new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offerId.ToString() });
+        // Also notify the tradie so their screen confirms the decline was recorded.
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferDeclined,
+            tradieId,
+            "Request declined",
+            $"You declined the request for \"{offer.Job.Title}\".",
             new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offerId.ToString() });
 
         return ToDto(offer, null, offer.Job.Title);
+    }
+
+    /// <summary>
+    /// Homeowner withdraws their pending direct request (P1 QA §2A/2D).
+    /// The tradie gets a push/SignalR close event; the job stays Requested
+    /// so the homeowner can pick someone else.
+    /// </summary>
+    public async Task<OfferDto> WithdrawOfferAsync(int jobId, int offerId, string homeownerId)
+    {
+        var offer = await _context.JobOffers
+            .Include(o => o.Job)
+            .FirstOrDefaultAsync(o => o.Id == offerId && o.JobId == jobId)
+            ?? throw new KeyNotFoundException($"Offer {offerId} not found.");
+
+        if (offer.Job.HomeownerId != homeownerId) throw new UnauthorizedAccessException();
+        if (offer.Response != OfferResponse.Pending)
+            throw new BusinessRuleException("offer_not_pending",
+                $"Offer is already in state '{offer.Response}' — it cannot be withdrawn.");
+
+        if (!string.IsNullOrEmpty(offer.HangfireJobId))
+        {
+            try { _hangfire.Delete(offer.HangfireJobId); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not cancel timeout job for offer {OfferId}.", offerId);
+            }
+        }
+
+        offer.Response = OfferResponse.Withdrawn;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Offer {OfferId} withdrawn by homeowner {UserId}: job {JobId} stays Requested.",
+            offerId, homeownerId, jobId);
+
+        var lifecycle = new OfferLifecyclePayload
+        {
+            EventType = "OfferWithdrawn",
+            JobId = jobId,
+            OfferId = offerId,
+            TradieId = offer.TradieId,
+            ExpiresAtUtc = offer.ExpiresAtUtc,
+            JobTitle = offer.Job.Title,
+        };
+        await _jobHub.Clients.Group(JobHub.GroupName(jobId)).SendAsync("OfferLifecycleEvent", lifecycle);
+        await _jobHub.Clients.User(offer.TradieId).SendAsync("OfferLifecycleEvent", lifecycle);
+
+        var data = new Dictionary<string, string>
+        {
+            ["jobId"] = jobId.ToString(),
+            ["offerId"] = offerId.ToString(),
+        };
+        await _notifications.NotifyAsync(
+            NotificationEvents.OfferWithdrawn,
+            offer.TradieId,
+            "Request withdrawn",
+            $"The homeowner withdrew their request for \"{offer.Job.Title}\".",
+            data);
+
+        return ToDto(offer, null, offer.Job.Title);
+    }
+
+    /// <summary>
+    /// Closes all Pending offers on a job that are not the winning offer (P1 QA §2A/2C).
+    /// Called by JobStatusService when a job leaves the Requested state (Booked or Cancelled/Expired).
+    /// Each affected tradie receives a SignalR event and a push notification.
+    ///
+    /// <paramref name="closeAs"/>: use <see cref="OfferResponse.Superseded"/> when another tradie
+    /// was booked, <see cref="OfferResponse.JobClosed"/> when the job is cancelled or expired.
+    /// <paramref name="winnerOfferId"/>: exclude this offer ID from closing (the accepted offer).
+    /// </summary>
+    public async Task CloseOrphanedOffersAsync(
+        int jobId,
+        OfferResponse closeAs,
+        int? winnerOfferId,
+        CancellationToken ct = default)
+    {
+        var orphans = await _context.JobOffers
+            .Include(o => o.Job)
+            .Where(o => o.JobId == jobId
+                     && o.Response == OfferResponse.Pending
+                     && (winnerOfferId == null || o.Id != winnerOfferId.Value))
+            .ToListAsync(ct);
+
+        if (orphans.Count == 0) return;
+
+        var closingEventType = closeAs == OfferResponse.Superseded ? "OfferSuperseded" : "OfferClosed";
+        var notifEvent = closeAs == OfferResponse.Superseded
+            ? NotificationEvents.OfferSuperseded
+            : NotificationEvents.OfferExpired;  // JobClosed reuses OfferExpired (closest semantic)
+        var notifTitle = closeAs == OfferResponse.Superseded
+            ? "Job taken"
+            : "Request closed";
+
+        foreach (var offer in orphans)
+        {
+            offer.Response = closeAs;
+
+            if (!string.IsNullOrEmpty(offer.HangfireJobId))
+            {
+                try { _hangfire.Delete(offer.HangfireJobId); }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not cancel timeout for orphaned offer {OfferId}.", offer.Id);
+                }
+            }
+        }
+        await _context.SaveChangesAsync(ct);
+
+        foreach (var offer in orphans)
+        {
+            var payload = new OfferLifecyclePayload
+            {
+                EventType = closingEventType,
+                JobId = jobId,
+                OfferId = offer.Id,
+                TradieId = offer.TradieId,
+                ExpiresAtUtc = offer.ExpiresAtUtc,
+                JobTitle = offer.Job?.Title,
+            };
+            await _jobHub.Clients.User(offer.TradieId).SendAsync("OfferLifecycleEvent", payload, ct);
+
+            var notifBody = closeAs == OfferResponse.Superseded
+                ? $"Another tradie accepted the job \"{offer.Job?.Title}\"."
+                : $"The job \"{offer.Job?.Title}\" is no longer available.";
+            await _notifications.NotifyAsync(
+                notifEvent,
+                offer.TradieId,
+                notifTitle,
+                notifBody,
+                new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = offer.Id.ToString() },
+                ct: ct);
+        }
+
+        _logger.LogInformation(
+            "CloseOrphanedOffers: closed {Count} pending offers on job {JobId} as {CloseAs}.",
+            orphans.Count, jobId, closeAs);
     }
 
     private static OfferDto ToDto(JobOffer offer, string? tradieName, string? jobTitle) => new()

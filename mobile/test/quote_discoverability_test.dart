@@ -3,7 +3,8 @@ import 'package:fixo/router/notification_route.dart';
 import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/homeowner/ho_home_mapper.dart';
 import 'package:fixo/ui/homeowner/ho_job_navigation.dart';
-import 'package:fixo/ui/homeowner/ho_quotes_screen.dart' show thQuotesCloseLabel;
+import 'package:fixo/ui/homeowner/ho_quotes_screen.dart'
+    show thQuotesCloseLabel;
 import 'package:flutter_test/flutter_test.dart';
 
 // Plan 10 (Q2.3-Q2.6): quotes surfaced on cards, home, navigation and push taps.
@@ -137,10 +138,7 @@ void main() {
     });
 
     test('thHomeownerJobPath routes open-board project straight to quotes', () {
-      expect(
-        thHomeownerJobPath(_project(openToBoard: true)),
-        '/jobs/9/quotes',
-      );
+      expect(thHomeownerJobPath(_project(openToBoard: true)), '/jobs/9/quotes');
       expect(
         thHomeownerJobPath(
           _project(quotesCloseAtUtc: DateTime.utc(2026, 11, 30)),
@@ -164,7 +162,10 @@ void main() {
         'Quotes close in 15 minutes',
       );
       expect(
-        thQuotesCloseLabel(now.subtract(const Duration(minutes: 1)), nowUtc: now),
+        thQuotesCloseLabel(
+          now.subtract(const Duration(minutes: 1)),
+          nowUtc: now,
+        ),
         'Quotes closed',
       );
       expect(thQuotesCloseLabel(null, nowUtc: now), isNull);

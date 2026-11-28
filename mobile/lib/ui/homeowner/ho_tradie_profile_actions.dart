@@ -13,6 +13,7 @@ import '../shared/th_rating_sheet.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
+import 'ho_choose_tradie_screen.dart';
 import 'ho_tradie_profile_mapper.dart';
 
 class ThTradieProfileActions extends StatelessWidget {
@@ -144,14 +145,16 @@ class _JobRequestBarState extends ConsumerState<_JobRequestBar> {
 
   @override
   Widget build(BuildContext context) {
+    final job = ref.watch(chooseTradieJobProvider(widget.jobId)).valueOrNull;
+    final canRequest = job == null || job.status == 'Requested';
     return THStickyBar(
       children: [
         THButton(
           key: const Key('request_this_tradie_button'),
-          label: 'Request this tradie',
+          label: canRequest ? 'Request this tradie' : 'Job is no longer open',
           kind: THButtonKind.accent,
           loading: _sending,
-          onPressed: _sending
+          onPressed: (_sending || !canRequest)
               ? null
               : () {
                   unawaited(_request());

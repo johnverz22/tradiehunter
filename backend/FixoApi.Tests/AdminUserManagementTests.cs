@@ -82,6 +82,7 @@ public class AdminUserManagementTests
         var audit = new RecordingAudit();
         var sut = new AdminService(
             db, userManager, email, tokenService: null!, blob: null!,
+            photoSigner: null!,
             config: new ConfigurationBuilder().Build(),
             locale: Microsoft.Extensions.Options.Options.Create(new LocaleOptions()),
             notifications: null!, jobStatusService: null!, audit: audit,

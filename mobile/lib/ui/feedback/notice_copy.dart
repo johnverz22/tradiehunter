@@ -42,6 +42,33 @@ abstract class NoticeCopy {
       'Could not decline — please try again.';
   static const String offerAcceptFailed =
       'Could not accept — please try again.';
+  static const String offerNoLongerAvailable =
+      'This request is no longer available.';
+  static const String offerWithdrawn =
+      'Request withdrawn — pick another tradie.';
+
+  /// Maps a backend `ApiError.code` from an offer accept/decline 409 to
+  /// concise user-facing copy (QA plan §2C/§2E).
+  static String forOfferError(String? code, {required bool accept}) =>
+      switch (code) {
+        'offer_expired' => 'This offer has expired.',
+        'job_already_booked' => 'Another tradie already took this job.',
+        'job_not_requestable' => 'This job is no longer open.',
+        'offer_not_pending' => offerNoLongerAvailable,
+        _ => accept ? offerAcceptFailed : offerDeclineFailed,
+      };
+
+  /// Maps a backend `ApiError.code` from a homeowner direct-request 409 to
+  /// concise user-facing copy (QA plan §2C/§2D).
+  static String forRequestError(String? code) => switch (code) {
+    'job_already_booked' => 'This job is already booked.',
+    'job_not_requestable' => 'This job is no longer open.',
+    'pending_request_exists' =>
+      'You already have a pending request for this job.',
+    'tradie_already_declined' => 'This tradie already declined — pick another.',
+    'tradie_unreachable' => 'That tradie just went offline — pick another.',
+    _ => requestFailed,
+  };
 
   // ── Profile ───────────────────────────────────────────────────────────────
   static const String profileUpdated = 'Profile updated successfully.';

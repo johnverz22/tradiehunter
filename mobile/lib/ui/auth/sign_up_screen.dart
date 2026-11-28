@@ -157,10 +157,7 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       spacing: Space.s2,
-                      children: [
-                        const ThBrandMark(),
-                        const THWordmark(),
-                      ],
+                      children: [const ThBrandMark(), const THWordmark()],
                     ),
                     const SizedBox(height: Space.s7),
                     Text(

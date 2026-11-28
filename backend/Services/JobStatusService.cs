@@ -186,6 +186,27 @@ public class JobStatusService : IJobStatusService
 
         await _context.SaveChangesAsync();
 
+        // P1 QA §2A/2C: when the job leaves Requested state, close any pending
+        // offers that were not the winning one (project jobs may have up to 3).
+        // This is idempotent and best-effort — a failure logs but does not block
+        // the transition.
+        if (from == JobStatus.Requested)
+        {
+            var closeAs = newStatus == JobStatus.Booked
+                ? OfferResponse.Superseded
+                : OfferResponse.JobClosed;
+            // For Booked, skip the accepted offer (it is already Accepted in the DB).
+            // For Cancelled/Expired, close all Pending offers.
+            var winnerOfferId = newStatus == JobStatus.Booked
+                ? await _context.JobOffers
+                    .Where(o => o.JobId == jobId && o.Response == OfferResponse.Accepted)
+                    .Select(o => (int?)o.Id)
+                    .FirstOrDefaultAsync()
+                : null;
+
+            await CloseOrphanedOffersAsync(jobId, closeAs, winnerOfferId);
+        }
+
         if (newStatus == JobStatus.Cancelled && from == JobStatus.AwaitingPayment)
         {
             await _accountFlagService.ResolveOverdueFlagAsync(
@@ -245,6 +266,75 @@ public class JobStatusService : IJobStatusService
         // finish under the rules they were posted with (P12-27).
         if (!JobFlowTransitions.IsValid(from, to, actorRole, flowVersion))
             throw new InvalidOperationException($"Invalid transition from {from} to {to} by {actorRole}.");
+    }
+
+    /// <summary>
+    /// Closes all Pending offers on a job that weren't accepted (P1 QA §2A/2C).
+    /// Runs inside JobStatusService (not OfferService) to avoid a circular
+    /// dependency — both share the same scoped DbContext.
+    /// </summary>
+    private async Task CloseOrphanedOffersAsync(
+        int jobId, OfferResponse closeAs, int? winnerOfferId)
+    {
+        try
+        {
+            var orphans = await _context.JobOffers
+                .Include(o => o.Job)
+                .Where(o => o.JobId == jobId
+                         && o.Response == OfferResponse.Pending
+                         && (winnerOfferId == null || o.Id != winnerOfferId.Value))
+                .ToListAsync();
+
+            if (orphans.Count == 0) return;
+
+            var eventType = closeAs == OfferResponse.Superseded ? "OfferSuperseded" : "OfferClosed";
+            var notifEvent = closeAs == OfferResponse.Superseded
+                ? NotificationEvents.OfferSuperseded
+                : NotificationEvents.OfferExpired;
+
+            foreach (var o in orphans)
+            {
+                o.Response = closeAs;
+                if (!string.IsNullOrEmpty(o.HangfireJobId))
+                {
+                    try { _hangfire.Delete(o.HangfireJobId); }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not cancel timeout for orphaned offer {OfferId}.", o.Id);
+                    }
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            foreach (var o in orphans)
+            {
+                var payload = new OfferLifecyclePayload
+                {
+                    EventType    = eventType,
+                    JobId        = jobId,
+                    OfferId      = o.Id,
+                    TradieId     = o.TradieId,
+                    ExpiresAtUtc = o.ExpiresAtUtc,
+                    JobTitle     = o.Job?.Title,
+                };
+                await _jobHub.Clients.User(o.TradieId).SendAsync("OfferLifecycleEvent", payload);
+
+                var title = closeAs == OfferResponse.Superseded ? "Job taken" : "Request closed";
+                var body  = closeAs == OfferResponse.Superseded
+                    ? $"Another tradie accepted the job \"{o.Job?.Title}\"."
+                    : $"The job \"{o.Job?.Title}\" is no longer available.";
+                await _notifications.NotifyAsync(notifEvent, o.TradieId, title, body,
+                    new Dictionary<string, string> { ["jobId"] = jobId.ToString(), ["offerId"] = o.Id.ToString() });
+            }
+
+            _logger.LogInformation(
+                "CloseOrphanedOffers: closed {Count} pending offers on job {JobId} as {CloseAs}.",
+                orphans.Count, jobId, closeAs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to close orphaned offers for job {JobId}.", jobId);
+        }
     }
 
     private int PaymentWindowHours() => Math.Max(0, _paymentOptions.Value.WindowHours);
@@ -460,6 +550,10 @@ public class JobStatusService : IJobStatusService
         }
 
         await _context.SaveChangesAsync();
+
+        // P1 QA §2: close any pending offers when HO cancels from Requested.
+        if (from == JobStatus.Requested)
+            await CloseOrphanedOffersAsync(job.Id, OfferResponse.JobClosed, null);
 
         // Broadcast status change via SignalR.
         await _jobHub.Clients.Group(JobHub.GroupName(job.Id)).SendAsync("JobStatusChanged", new JobStatusChangedPayload

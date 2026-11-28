@@ -34,14 +34,13 @@ void main() {
   });
 
   test('hasQuoteActivity needs a Requested project with a request sent', () {
-    bool activity(String type, String status, int? requested) =>
-        Job.fromJson(
-          _json(
-            jobType: type,
-            status: status,
-            extra: {'quotesRequested': ?requested},
-          ),
-        ).hasQuoteActivity;
+    bool activity(String type, String status, int? requested) => Job.fromJson(
+      _json(
+        jobType: type,
+        status: status,
+        extra: {'quotesRequested': ?requested},
+      ),
+    ).hasQuoteActivity;
 
     expect(activity('Project', 'Requested', 1), isTrue);
     expect(activity('Project', 'Requested', 0), isFalse);

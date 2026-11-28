@@ -34,6 +34,7 @@ public class JobService : IJobService
     private readonly IOptions<JobFlowOptions> _jobFlowOptions;
     private readonly IPlatformSettings _settings;
     private readonly IBackgroundJobClient? _hangfire;
+    private readonly IPhotoUrlSigner _photoSigner; // §4: signed photo URLs
     private readonly ILogger<JobService> _logger;
 
     public JobService(
@@ -45,6 +46,7 @@ public class JobService : IJobService
         FixoDbContext context,
         IOptions<JobFlowOptions> jobFlowOptions,
         IPlatformSettings settings,
+        IPhotoUrlSigner photoSigner,
         ILogger<JobService> logger,
         IBackgroundJobClient? hangfire = null)
     {
@@ -57,6 +59,7 @@ public class JobService : IJobService
         _jobFlowOptions  = jobFlowOptions;
         _settings        = settings;
         _hangfire        = hangfire;
+        _photoSigner     = photoSigner;
         _logger          = logger;
     }
 
@@ -151,7 +154,9 @@ public class JobService : IJobService
             _hangfire.Enqueue<BoardJobNotifyJob>(j => j.ExecuteAsync(created.Id, CancellationToken.None));
         }
 
-        return MapToDto(created);
+        // §4: sign photo URLs — newly created jobs have no photos yet, so this is a no-op.
+        var signedOnCreate = await SignPhotoUrlsAsync(new[] { created });
+        return MapToDto(created, signedUrls: signedOnCreate);
     }
 
     public async Task<JobListResponse> GetJobsForUserAsync(
@@ -172,10 +177,14 @@ public class JobService : IJobService
             ? await _jobRepo.GetQuoteCountsAsync(quoteJobIds, DateTime.UtcNow)
             : new Dictionary<int, QuoteCountSummary>();
 
+        // §4: pre-sign photo URLs for the whole page in one async pass.
+        var signedUrls = await SignPhotoUrlsAsync(items);
+
         return new JobListResponse
         {
             Items      = items.Select(j => MapToDto(j, isTradie,
-                quoteCounts.TryGetValue(j.Id, out var qc) ? qc : (QuoteCountSummary?)null)).ToList(),
+                quoteCounts.TryGetValue(j.Id, out var qc) ? qc : (QuoteCountSummary?)null,
+                signedUrls)).ToList(),
             TotalCount = total,
             Page       = page,
             PageSize   = pageSize,
@@ -198,7 +207,9 @@ public class JobService : IJobService
             var counts = await _jobRepo.GetQuoteCountsAsync(new[] { job.Id }, DateTime.UtcNow);
             quoteCounts = counts.TryGetValue(job.Id, out var c) ? c : (QuoteCountSummary?)null;
         }
-        return MapToDto(job, isTradie, quoteCounts);
+        // §4: sign photo URLs for this single job.
+        var signedUrls = await SignPhotoUrlsAsync(new[] { job });
+        return MapToDto(job, isTradie, quoteCounts, signedUrls);
     }
 
     public async Task<bool> UpdateJobAsync(int id, string homeownerId, UpdateJobRequest request)
@@ -453,7 +464,34 @@ public class JobService : IJobService
         throw new InvalidOperationException("Could not generate a unique job reference code.");
     }
 
-    private JobDto MapToDto(Job job, bool isTradie = false, QuoteCountSummary? quoteCounts = null)
+    /// <summary>
+    /// Signs photo URLs for a set of jobs in one batch. Returns a mapping from
+    /// JobPhoto.Id → absolute signed URL. §4: callers pass this into MapToDto.
+    /// </summary>
+    private async Task<Dictionary<int, string>> SignPhotoUrlsAsync(IEnumerable<Job> jobs)
+    {
+        var result = new Dictionary<int, string>();
+        foreach (var job in jobs)
+        {
+            foreach (var p in job.Photos)
+            {
+                if (!result.ContainsKey(p.Id))
+                {
+                    try { result[p.Id] = await _photoSigner.SignAsync(p.BlobKey); }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Could not sign photo URL for blob {BlobKey} — omitting.", p.BlobKey);
+                        result[p.Id] = string.Empty; // omitted in MapToDto
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private JobDto MapToDto(Job job, bool isTradie = false, QuoteCountSummary? quoteCounts = null,
+        Dictionary<int, string>? signedUrls = null)
     {
         var flow = _jobFlowOptions.Value;
         // P12-15: stage mapping follows the stepper order for the flow the job
@@ -539,19 +577,29 @@ public class JobService : IJobService
             QuotesReceived   = quoteCounts?.Received,
             OpenToBoard      = job.OpenToBoard,
             QuotesCloseAtUtc = job.QuotesCloseAtUtc,
-            Photos           = job.Photos.Select(p => new JobPhotoDto
-            {
-                Id               = p.Id,
-                Url              = BuildPhotoUrl(p.BlobKey),
-                OriginalFileName = p.OriginalFileName,
-            }).ToList(),
+            Photos           = job.Photos
+                .Select(p =>
+                {
+                    var url = signedUrls != null && signedUrls.TryGetValue(p.Id, out var signed)
+                        ? signed
+                        : string.Empty; // §4: unsigned URL omitted; callers must pass signedUrls
+                    return new JobPhotoDto
+                    {
+                        Id               = p.Id,
+                        Url              = url,
+                        OriginalFileName = p.OriginalFileName,
+                    };
+                })
+                .Where(p => !string.IsNullOrEmpty(p.Url)) // hide photos we couldn't sign
+                .ToList(),
         };
     }
 
     /// <summary>
-    /// In production this would generate a read-SAS URL via the blob client.
-    /// For now return a relative path the Flutter client can resolve.
+    /// §4: BuildPhotoUrl is replaced by IPhotoUrlSigner.SignAsync which issues
+    /// real SAS URLs. This stub is retained as a compiler reference target but
+    /// should not be called — callers use SignPhotoUrlsAsync + MapToDto(signedUrls).
     /// </summary>
-    private static string BuildPhotoUrl(string blobKey) =>
-        $"/api/photos/{blobKey}";
+    [Obsolete("Use SignPhotoUrlsAsync then pass signedUrls into MapToDto. This returns an empty string.")]
+    private static string BuildPhotoUrl(string blobKey) => string.Empty;
 }

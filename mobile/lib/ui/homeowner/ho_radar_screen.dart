@@ -153,10 +153,7 @@ class _Searching extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const ThTradieLoader(
-          key: ValueKey('matching-radar'),
-          isLoading: true,
-        ),
+        const ThTradieLoader(key: ValueKey('matching-radar'), isLoading: true),
         const SizedBox(height: Space.s7),
         // Sequential offer progress — "Contacting Tradie 2…" (P3-09).
         Semantics(
@@ -232,7 +229,6 @@ class _Searching extends StatelessWidget {
 }
 
 /// Three expanding rings around a static core, one cycle per animation loop.
-
 
 /// One dot per offer the server has dispatched in this run; the latest is
 /// emphasised.

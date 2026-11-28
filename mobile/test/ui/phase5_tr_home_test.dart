@@ -344,7 +344,7 @@ void main() {
       // the app root, so assert on the provider state here.
       expect(
         ref(tester).read(thNoticeProvider)?.message,
-        'Could not accept this offer — it may have expired.',
+        'Could not accept — please try again.',
       );
     });
 

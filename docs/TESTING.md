@@ -27,7 +27,7 @@ cd mobile && flutter analyze && flutter test --reporter expanded                
 cd web && npx tsc -b && npx oxlint                                                    # web types + lint
 ```
 
-Backend suites include `JobFlowTransitionTests` (one test per v2 edge), `JobMoneyTests`, `JobValidatorTests` and the email renderer/golden tests. Last recorded baseline (2026-11-09): `flutter test` 607/607, `flutter analyze` clean apart from pre-existing infos, `tsc -b` clean. **v1.7 has not been run through CI yet**; do that before flipping `JobFlow:Version`.
+Backend suites include `JobFlowTransitionTests` (one test per v2 edge), `JobMoneyTests`, `JobValidatorTests`, the email renderer/golden tests, **`P0QaFixesTests`** (§7a timeout guard, §7b decline notification, §7d offer-expiry accept guard, §4 photo URL signing — 5 tests), and **`P1OfferLifecycleTests`** (§2A withdraw, atomic accept, sibling `Superseded`/`JobClosed`, §2B re-contact policy). Last recorded backend baseline (2026-11-28): **235/235** passing. Mobile: `flutter analyze` clean (0 issues); targeted P1 + offer-response widget/unit tests (`p1_offer_lifecycle_test`, `phase5_tr_lead_test`, `phase5_tr_home_test`, `test_id_contract_test`) 57/57 passing (full suite has 6 pre-existing failures in `matching_flow_test`, `phase3_auth_test`, `phase4_ho_post_job_test`, `route_contract_test` unrelated to P1); `tsc -b` clean. **v1.7 has not been run through CI yet**; do that before flipping `JobFlow:Version`.
 
 Mocked-font widget tests do not prove actual-font, golden, device, route or live-flow acceptance.
 

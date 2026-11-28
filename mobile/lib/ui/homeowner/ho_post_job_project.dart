@@ -65,11 +65,7 @@ class _HoPostJobProjectState extends ConsumerState<HoPostJobProject> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        THText(
-          'WHO CAN QUOTE?',
-          style: THTextStyle.label,
-          tone: THTone.soft,
-        ),
+        THText('WHO CAN QUOTE?', style: THTextStyle.label, tone: THTone.soft),
         const SizedBox(height: Space.s2),
         ThChoicePills(
           items: [

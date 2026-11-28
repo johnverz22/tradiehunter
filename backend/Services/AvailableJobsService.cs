@@ -30,6 +30,7 @@ public class AvailableJobsService
 {
     private readonly FixoDbContext _context;
     private readonly IConfiguration _config;
+    private readonly IPhotoUrlSigner _photoSigner; // §4: signed photo URLs
     private readonly ILogger<AvailableJobsService> _logger;
 
     private const double MetresPerKm = 1000.0;
@@ -37,10 +38,12 @@ public class AvailableJobsService
     public AvailableJobsService(
         FixoDbContext context,
         IConfiguration config,
+        IPhotoUrlSigner photoSigner,
         ILogger<AvailableJobsService> logger)
     {
         _context = context;
         _config = config;
+        _photoSigner = photoSigner;
         _logger = logger;
     }
 
@@ -186,6 +189,24 @@ public class AvailableJobsService
                 .ToDictionaryAsync(x => x.JobId, x => x.Count, ct)
             : new Dictionary<int, int>();
 
+        // §4: pre-sign photo URLs for all jobs on this page before the sync Select.
+        var signedUrls = new Dictionary<int, string>();
+        foreach (var job in jobs)
+        {
+            foreach (var p in job.Photos)
+            {
+                if (!signedUrls.ContainsKey(p.Id))
+                {
+                    try { signedUrls[p.Id] = await _photoSigner.SignAsync(p.BlobKey); }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Could not sign photo URL for blob {BlobKey} — omitting.", p.BlobKey);
+                    }
+                }
+            }
+        }
+
         var items = jobs.Select(j =>
         {
             var suburb = j.Address?.Split(',').FirstOrDefault()?.Trim() ?? "";
@@ -216,12 +237,15 @@ public class AvailableJobsService
                 QuotesReceived = received,
                 QuotesCloseAtUtc = j.QuotesCloseAtUtc!.Value,
                 CreatedAtUtc = j.CreatedAtUtc,
-                Photos = j.Photos.Select(p => new JobPhotoDto
-                {
-                    Id = p.Id,
-                    Url = $"/api/photos/{p.BlobKey}",
-                    OriginalFileName = p.OriginalFileName,
-                }).ToList(),
+                Photos = j.Photos
+                    .Select(p => new JobPhotoDto
+                    {
+                        Id = p.Id,
+                        Url = signedUrls.TryGetValue(p.Id, out var su) ? su : string.Empty,
+                        OriginalFileName = p.OriginalFileName,
+                    })
+                    .Where(p => !string.IsNullOrEmpty(p.Url))
+                    .ToList(),
             };
         }).ToList();
 

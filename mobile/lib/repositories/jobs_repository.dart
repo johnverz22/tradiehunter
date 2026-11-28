@@ -779,7 +779,33 @@ class JobsRepository {
     }
   }
 
+  // ── POST /api/jobs/:id/offers/:offerId/withdraw ────────────────────────────
+
+  /// Homeowner withdraws their pending direct request (QA plan §2A/2D).
+  /// Leaves the job in `Requested` so another tradie can be picked.
+  Future<bool> withdrawOffer(String jobId, String offerId) async {
+    final token = await _token();
+    if (token == null) return false;
+    try {
+      await _dio.post(
+        '/api/jobs/$jobId/offers/$offerId/withdraw',
+        options: _authOptions(token),
+      );
+      return true;
+    } on DioException catch (e) {
+      debugPrint(
+        '[Jobs] withdrawOffer failed: ${friendlyDioError(e, tag: 'Offers')}',
+      );
+      return false;
+    }
+  }
+
   // ── POST /api/jobs/:id/offers/:offerId/respond ─────────────────────────────
+
+  String? _lastOfferErrorCode;
+
+  /// Machine-readable `code` from the most recent failed [respondToOffer] call.
+  String? get lastOfferErrorCode => _lastOfferErrorCode;
 
   /// Responds to a pending offer with 'Accepted' or 'Declined'. Declining
   /// makes the server dispatch the next ranked tradie (P3-07).
@@ -790,6 +816,7 @@ class JobsRepository {
     String offerId, {
     required String response,
   }) async {
+    _lastOfferErrorCode = null;
     final token = await _token();
     if (token == null) return false;
     try {
@@ -800,8 +827,13 @@ class JobsRepository {
       );
       return true;
     } on DioException catch (e) {
+      final body = e.response?.data;
+      final code = extractServerCode(body);
+      _lastOfferErrorCode = code;
       debugPrint(
-        '[Jobs] respondToOffer failed: ${friendlyDioError(e, tag: 'Offers')}',
+        '[Jobs] respondToOffer failed'
+        '${code != null ? ' ($code)' : ''}: '
+        '${friendlyDioError(e, tag: 'Offers')}',
       );
       return false;
     }

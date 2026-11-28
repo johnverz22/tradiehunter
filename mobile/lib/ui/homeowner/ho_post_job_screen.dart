@@ -147,6 +147,7 @@ class ThPostJobScreen extends ConsumerWidget {
     final state = ref.read(postJobProvider);
     final jobId = await ref.read(postJobProvider.notifier).submit();
     if (jobId != null && context.mounted) {
+      ref.invalidate(postJobProvider);
       if (state.isProject && state.openToBoard) {
         context.push('/jobs/$jobId/quotes');
       } else {

@@ -35,12 +35,13 @@ String thBoardMaterialsLabel(String materialsBy) => switch (materialsBy) {
   _ => 'Undecided',
 };
 
-String thBoardTimingLabel(String timingPreference) => switch (timingPreference) {
-  'Asap' => 'ASAP',
-  'SpecificDate' => 'Specific date',
-  'DateRange' => 'Date range',
-  _ => 'Flexible',
-};
+String thBoardTimingLabel(String timingPreference) =>
+    switch (timingPreference) {
+      'Asap' => 'ASAP',
+      'SpecificDate' => 'Specific date',
+      'DateRange' => 'Date range',
+      _ => 'Flexible',
+    };
 
 String thBoardQuotesCountLabel(int count) {
   if (count <= 0) return 'No quotes yet';
@@ -131,10 +132,8 @@ class _TrAvailableJobsScreenState extends ConsumerState<TrAvailableJobsScreen> {
             return _AvailableJobCard(
               job: job,
               primary: index == 1,
-              onOpen: () => context.push(
-                '/tradie/available-jobs/${job.id}',
-                extra: job,
-              ),
+              onOpen: () =>
+                  context.push('/tradie/available-jobs/${job.id}', extra: job),
             );
           },
         ),

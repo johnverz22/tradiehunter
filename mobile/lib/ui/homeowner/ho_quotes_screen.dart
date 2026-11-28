@@ -15,7 +15,9 @@ import '../feedback/th_notice.dart';
 /// [Job.quotesCloseAtUtc]. Null when no close time is set.
 String? thQuotesCloseLabel(DateTime? closeAtUtc, {DateTime? nowUtc}) {
   if (closeAtUtc == null) return null;
-  final diff = closeAtUtc.toUtc().difference((nowUtc ?? DateTime.now()).toUtc());
+  final diff = closeAtUtc.toUtc().difference(
+    (nowUtc ?? DateTime.now()).toUtc(),
+  );
   if (diff <= Duration.zero) return 'Quotes closed';
   if (diff.inDays >= 1) {
     final days = diff.inDays;
@@ -23,10 +25,14 @@ String? thQuotesCloseLabel(DateTime? closeAtUtc, {DateTime? nowUtc}) {
   }
   if (diff.inHours >= 1) {
     final hours = diff.inHours;
-    return hours == 1 ? 'Quotes close in 1 hour' : 'Quotes close in $hours hours';
+    return hours == 1
+        ? 'Quotes close in 1 hour'
+        : 'Quotes close in $hours hours';
   }
   final mins = diff.inMinutes < 1 ? 1 : diff.inMinutes;
-  return mins == 1 ? 'Quotes close in 1 minute' : 'Quotes close in $mins minutes';
+  return mins == 1
+      ? 'Quotes close in 1 minute'
+      : 'Quotes close in $mins minutes';
 }
 
 /// Job title for the quotes app-bar subtitle. `null` means the fetch failed
@@ -230,7 +236,8 @@ class _HoQuotesScreenState extends ConsumerState<HoQuotesScreen> {
                         ),
                       );
                     }
-                    final quote = quotes[closeLabel != null ? index - 1 : index];
+                    final quote =
+                        quotes[closeLabel != null ? index - 1 : index];
                     return _QuoteCard(
                       quote: quote,
                       accepting: state.acceptingQuoteId == quote.id,
@@ -357,11 +364,7 @@ class _QuoteCard extends StatelessWidget {
                 children: [
                   THText(quote.displayName, style: THTextStyle.title),
                   if (meta.isNotEmpty)
-                    THText(
-                      meta,
-                      style: THTextStyle.meta,
-                      tone: THTone.soft,
-                    ),
+                    THText(meta, style: THTextStyle.meta, tone: THTone.soft),
                   if (quote.verified) ...[
                     const SizedBox(height: Space.s1),
                     const THBadge(

@@ -12,11 +12,14 @@
 // only way to filter, so they stay as a second pill row (`needs-design`, gap
 // G-7). The header subtitle comes from a one-shot job read and is omitted
 // when that fails (gap G-6) — nothing is invented.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/marketplace.dart';
+import '../../repositories/job_hub_client.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../../viewmodels/theme_mode_viewmodel.dart';
 import '../design/th_scope.dart';
@@ -46,6 +49,46 @@ class ThChooseTradieScreen extends ConsumerStatefulWidget {
 
 class _ThChooseTradieScreenState extends ConsumerState<ThChooseTradieScreen> {
   bool _startingMatch = false;
+  StreamSubscription<JobStatusEvent>? _statusSub;
+  StreamSubscription<OfferLifecycleEvent>? _offerSub;
+  late final JobHubClient _hub = ref.read(jobHubClientProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      unawaited(_hub.watchJob(widget.jobId));
+      _statusSub = _hub.onJobStatusChanged.listen((event) {
+        if (event.jobId != widget.jobId || !mounted) return;
+        if (event.status == 'Booked') {
+          context.pushReplacement('/jobs/${widget.jobId}/detail');
+        } else if (event.status == 'Cancelled' || event.status == 'Expired') {
+          THNotice.info(context, 'This job is no longer open.');
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/jobs');
+          }
+        }
+      });
+      _offerSub = _hub.onOfferLifecycle.listen((event) {
+        if (event.jobId != widget.jobId || !mounted) return;
+        if (event.eventType == OfferEventType.accepted ||
+            event.eventType == OfferEventType.superseded) {
+          context.pushReplacement('/jobs/${widget.jobId}/detail');
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusSub?.cancel();
+    _offerSub?.cancel();
+    unawaited(_hub.unwatchJob(widget.jobId));
+    super.dispose();
+  }
 
   void _startQuickMatch() {
     if (_startingMatch) return;

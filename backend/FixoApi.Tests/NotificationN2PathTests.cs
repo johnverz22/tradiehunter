@@ -175,6 +175,7 @@ public class NotificationN2PathTests
             emailSender: null!,
             tokenService: null!,
             blob: new NullBlobStorageService(),
+            photoSigner: null!,
             config,
             Microsoft.Extensions.Options.Options.Create(new LocaleOptions()),
             notifications,

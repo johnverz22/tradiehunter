@@ -230,10 +230,7 @@ void main() {
       await pumpFor(tester);
 
       expect(find.byKey(Key('quote_detail_$quoteId')), findsOneWidget);
-      expect(
-        find.byKey(Key('quote_detail_accept_$quoteId')),
-        findsOneWidget,
-      );
+      expect(find.byKey(Key('quote_detail_accept_$quoteId')), findsOneWidget);
     });
 
     testWidgets('a tradie sees no quote UI on the homeowner route', (

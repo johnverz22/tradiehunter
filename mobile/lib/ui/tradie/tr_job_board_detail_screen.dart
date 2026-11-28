@@ -76,9 +76,7 @@ class _TrJobBoardDetailScreenState
 
     setState(() => _busy = true);
     try {
-      await ref
-          .read(quotesProvider(job.id).notifier)
-          .submitQuote(payload);
+      await ref.read(quotesProvider(job.id).notifier).submitQuote(payload);
       if (!mounted) return;
       ref.read(availableJobsProvider.notifier).removeJob(job.id);
       setState(() {
@@ -112,9 +110,11 @@ class _TrJobBoardDetailScreenState
           body: boardState.isLoading
               ? const Center(child: CircularProgressIndicator())
               : ThStateView.error(
-                  message: boardState.error ??
+                  message:
+                      boardState.error ??
                       'This project is no longer available on the board.',
-                  onRetry: () => ref.read(availableJobsProvider.notifier).load(),
+                  onRetry: () =>
+                      ref.read(availableJobsProvider.notifier).load(),
                 ),
         ),
       );
@@ -208,7 +208,10 @@ class _TrJobBoardDetailScreenState
             ),
             if (job.photoUrls.isNotEmpty) ...[
               const SizedBox(height: Space.s4),
-              const THText('Photos from the homeowner', style: THTextStyle.title),
+              const THText(
+                'Photos from the homeowner',
+                style: THTextStyle.title,
+              ),
               const SizedBox(height: Space.s2),
               TrPhotoStrip(
                 photoUrls: job.photoUrls,
