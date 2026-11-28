@@ -141,6 +141,48 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Warn a user: records a flag and emails them the reason.</summary>
+    [HttpPost("users/{id}/warn")]
+    [ProducesResponseType<UserStatusChangeResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> WarnUser(string id, [FromBody] UserReasonRequest request)
+    {
+        if (id == CurrentUserId)
+            return BadRequest(new { message = "You cannot warn your own account." });
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+            return BadRequest(new { message = "A reason is required." });
+
+        var result = await _admin.WarnUserAsync(id, request.Reason, CurrentUserId);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Suspend a user: locks login and emails them. Reactivate to undo.</summary>
+    [HttpPost("users/{id}/suspend")]
+    [ProducesResponseType<UserStatusChangeResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SuspendUser(string id, [FromBody] UserReasonRequest request)
+    {
+        if (id == CurrentUserId)
+            return BadRequest(new { message = "You cannot suspend your own account." });
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+            return BadRequest(new { message = "A reason is required." });
+
+        var result = await _admin.SuspendUserAsync(id, request.Reason, CurrentUserId);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Resolve all open account flags for a user.</summary>
+    [HttpPost("users/{id}/flags/resolve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResolveUserFlags(string id)
+    {
+        var count = await _admin.ResolveUserFlagsAsync(id, CurrentUserId);
+        return count is null ? NotFound() : NoContent();
+    }
+
     /// <summary>Reactivate a deactivated user — restores login. A staff note is required.</summary>
     [HttpPost("users/{id}/reactivate")]
     [ProducesResponseType<UserStatusChangeResult>(StatusCodes.Status200OK)]

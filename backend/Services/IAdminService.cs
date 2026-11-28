@@ -18,6 +18,15 @@ public interface IAdminService
     /// <summary>Deactivates the user, recording <paramref name="reason"/>; null when the user does not exist.</summary>
     Task<UserStatusChangeResult?> DeactivateUserAsync(string userId, string reason, string? adminUserId = null);
 
+    /// <summary>Records a warning flag and emails the user the reason; false when the user does not exist.</summary>
+    Task<UserStatusChangeResult?> WarnUserAsync(string userId, string reason, string? adminUserId = null);
+
+    /// <summary>Suspends the account (locks login, emails the user); same lockout as deactivation.</summary>
+    Task<UserStatusChangeResult?> SuspendUserAsync(string userId, string reason, string? adminUserId = null);
+
+    /// <summary>Marks every open flag on the user resolved; null when the user does not exist.</summary>
+    Task<int?> ResolveUserFlagsAsync(string userId, string? adminUserId = null);
+
     /// <summary>Restores a deactivated user's access, recording <paramref name="note"/>; null when the user does not exist.</summary>
     Task<UserStatusChangeResult?> ReactivateUserAsync(string userId, string note, string? adminUserId = null);
 

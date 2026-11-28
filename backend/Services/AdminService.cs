@@ -277,6 +277,24 @@ public class AdminService : IAdminService
             RecentReviews = recentReviews.Select(MapReview).ToList(),
         };
 
+        dto.Flags = (await _db.AccountFlags
+                .Where(f => f.UserId == userId)
+                .OrderByDescending(f => f.CreatedAtUtc)
+                .ToListAsync())
+            .Select(f => new AdminAccountFlagDto
+            {
+                Id = f.Id,
+                UserId = f.UserId,
+                Type = f.Type.ToString(),
+                Counter = f.Counter,
+                ThresholdHit = f.ThresholdHit,
+                CreatedBy = f.CreatedBy,
+                CreatedAtUtc = f.CreatedAtUtc,
+                Note = f.Note,
+                Resolved = f.Resolved,
+                ResolvedAtUtc = f.ResolvedAtUtc,
+            }).ToList();
+
         await FillAccountStatusNotesAsync(dto, user);
 
         if (tradieProfile is not null)
@@ -503,6 +521,76 @@ public class AdminService : IAdminService
             new { user.Id, user.IsActive, Reason = note, EmailSent = emailSent });
         _logger.LogInformation("User {UserId} deactivated by admin", userId);
         return new UserStatusChangeResult { EmailSent = emailSent };
+    }
+
+    public async Task<UserStatusChangeResult?> WarnUserAsync(string userId, string reason, string? adminUserId = null)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return null;
+
+        var note = reason.Trim();
+        var flag = await _db.AccountFlags.FirstOrDefaultAsync(f =>
+            f.UserId == userId && f.Type == AccountFlagType.Manual && !f.Resolved);
+        if (flag is null)
+        {
+            flag = new AccountFlag { UserId = userId, Type = AccountFlagType.Manual, Counter = 1, CreatedBy = adminUserId, Note = note };
+            _db.AccountFlags.Add(flag);
+        }
+        else
+        {
+            flag.Counter++;
+            flag.Note = string.IsNullOrEmpty(flag.Note) ? note : $"{flag.Note}\n{note}";
+        }
+        if (flag.Counter >= 3) flag.ThresholdHit = true;
+        await _db.SaveChangesAsync();
+
+        var emailSent = false;
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            try
+            {
+                await _emailSender.SendCriticalNoticeAsync(user.Email!, new CriticalNoticeModel
+                {
+                    Heading = $"A warning about your {_brand.AppName} account",
+                    Preheader = "Please read this message from our team.",
+                    Sections =
+                    [
+                        new EmailSection("What happened", $"Hi {user.FullName}, our team has issued a warning on your account."),
+                        new EmailSection("Reason", note),
+                        new EmailSection("What you can do", $"Repeated issues can lead to suspension. Questions? Contact {_brand.SupportEmail} ({_brand.SupportHoursDisplay})."),
+                    ],
+                    Brand = _brand,
+                });
+                emailSent = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Warning email to {Email} failed.", user.Email);
+            }
+        }
+
+        await _audit.LogAsync(adminUserId, "user.warn", "ApplicationUser", userId, null,
+            new { user.Id, Reason = note, EmailSent = emailSent });
+        return new UserStatusChangeResult { EmailSent = emailSent };
+    }
+
+    public Task<UserStatusChangeResult?> SuspendUserAsync(string userId, string reason, string? adminUserId = null) =>
+        DeactivateUserAsync(userId, $"Suspended: {reason.Trim()}", adminUserId);
+
+    public async Task<int?> ResolveUserFlagsAsync(string userId, string? adminUserId = null)
+    {
+        if (await _db.Users.FindAsync(userId) is null) return null;
+
+        var open = await _db.AccountFlags.Where(f => f.UserId == userId && !f.Resolved).ToListAsync();
+        var now = DateTime.UtcNow;
+        foreach (var f in open)
+        {
+            f.Resolved = true;
+            f.ResolvedAtUtc = now;
+        }
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync(adminUserId, "user.flags.resolve", "ApplicationUser", userId, null, new { Resolved = open.Count });
+        return open.Count;
     }
 
     public async Task<UserStatusChangeResult?> ReactivateUserAsync(string userId, string note, string? adminUserId = null)

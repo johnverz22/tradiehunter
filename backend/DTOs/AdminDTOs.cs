@@ -77,6 +77,8 @@ public class AdminUserDetailDto : AdminUserListItemDto
     /// <summary>Count of reviews per star, keys "1".."5".</summary>
     public Dictionary<string, int> RatingBreakdown { get; set; } = new();
 
+    public List<AdminAccountFlagDto> Flags { get; set; } = new();
+
     public List<AdminJobSummaryDto> RecentJobs { get; set; } = new();
 
     /// <summary>Highest-rated, then newest, reviews (up to 5).</summary>
@@ -143,6 +145,26 @@ public class AdminScheduleSlotDto
     public int Weekday { get; set; }
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;
+}
+
+public class AdminAccountFlagDto
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public int Counter { get; set; }
+    public bool ThresholdHit { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public string? Note { get; set; }
+    public bool Resolved { get; set; }
+    public DateTime? ResolvedAtUtc { get; set; }
+}
+
+public class UserReasonRequest
+{
+    /// <summary>Staff reason, required; recorded in the audit log.</summary>
+    public string Reason { get; set; } = string.Empty;
 }
 
 public class DeactivateUserRequest
