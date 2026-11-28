@@ -74,9 +74,7 @@ void main() async {
     // Channels + tap handling for OS notifications shown while foregrounded.
     unawaited(
       LocalNotifications.instance
-          .init(
-            onTap: (data) => appRouter.go(routeForMessage(data)),
-          )
+          .init(onTap: (data) => appRouter.go(routeForMessage(data)))
           .catchError((Object e) => debugPrint('Local notifications init: $e')),
     );
   }

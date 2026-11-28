@@ -30,8 +30,11 @@ void main() {
       final queue = const IncomingOfferQueue().replaceAll([
         _offer('late', expiresAt: now.add(const Duration(minutes: 20))),
         _offer('soon', expiresAt: now.add(const Duration(minutes: 5))),
-        _offer('done', expiresAt: now.add(const Duration(minutes: 9)),
-            response: 'Declined'),
+        _offer(
+          'done',
+          expiresAt: now.add(const Duration(minutes: 9)),
+          response: 'Declined',
+        ),
         _offer('stale', expiresAt: now.subtract(const Duration(seconds: 1))),
       ], deviceNow: now);
 
@@ -58,7 +61,11 @@ void main() {
     test('offset is kept when a refetch carries no server time', () {
       final device = now.add(const Duration(minutes: 10));
       final first = const IncomingOfferQueue().replaceAll([
-        _offer('a', expiresAt: now.add(const Duration(minutes: 5)), serverNow: now),
+        _offer(
+          'a',
+          expiresAt: now.add(const Duration(minutes: 5)),
+          serverNow: now,
+        ),
       ], deviceNow: device);
       final second = first.replaceAll([
         _offer('b', expiresAt: now.add(const Duration(minutes: 8))),
@@ -101,7 +108,10 @@ void main() {
     });
 
     test('remaining never goes negative', () {
-      final offer = _offer('a', expiresAt: now.subtract(const Duration(minutes: 1)));
+      final offer = _offer(
+        'a',
+        expiresAt: now.subtract(const Duration(minutes: 1)),
+      );
       expect(const IncomingOfferQueue().remaining(offer, now), Duration.zero);
     });
   });
@@ -133,7 +143,10 @@ void main() {
 
   group('incomingCountdownLabel', () {
     test('formats m:ss and clamps at zero', () {
-      expect(incomingCountdownLabel(const Duration(minutes: 14, seconds: 5)), '14:05');
+      expect(
+        incomingCountdownLabel(const Duration(minutes: 14, seconds: 5)),
+        '14:05',
+      );
       expect(incomingCountdownLabel(const Duration(seconds: 59)), '0:59');
       expect(incomingCountdownLabel(const Duration(seconds: -4)), '0:00');
     });
@@ -159,7 +172,10 @@ void main() {
   group('LocalNotifications.channelFor', () {
     test('explicit channel wins, then type, then job updates', () {
       expect(
-        LocalNotifications.channelFor({'channel': 'incoming_requests', 'type': 'chat'}),
+        LocalNotifications.channelFor({
+          'channel': 'incoming_requests',
+          'type': 'chat',
+        }),
         LocalNotifications.incomingRequestsChannel,
       );
       expect(

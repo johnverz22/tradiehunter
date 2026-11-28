@@ -95,9 +95,7 @@ class IncomingOfferQueue {
 
   IncomingOfferQueue _withOffers(Iterable<JobOffer> source, DateTime device) {
     final live =
-        source
-            .where((o) => o.isPending && !isExpired(o, device))
-            .toList()
+        source.where((o) => o.isPending && !isExpired(o, device)).toList()
           ..sort((a, b) => a.expiresAtUtc.compareTo(b.expiresAtUtc));
     return IncomingOfferQueue(offers: live, clockOffset: clockOffset);
   }

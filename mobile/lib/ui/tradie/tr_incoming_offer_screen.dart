@@ -17,7 +17,6 @@ import '../../utils/money.dart';
 import '../../viewmodels/incoming_offer_coordinator.dart';
 import '../../viewmodels/incoming_offer_queue.dart';
 import '../../viewmodels/offer_responder.dart';
-import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 import '../feedback/th_notice.dart';
@@ -109,7 +108,7 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
           // Jump to the booked job unless other offers still need an answer.
           if (ref.read(incomingOfferCoordinatorProvider).isEmpty) {
             _closing = true;
-            unawaited(context.pushReplacement('/tradie/jobs/${offer.jobId}'));
+            context.pushReplacement('/tradie/jobs/${offer.jobId}');
             return;
           }
         }

@@ -32,7 +32,9 @@ class LocalNotifications {
 
   /// Creates the Android channels and wires tap handling. [onTap] receives the
   /// FCM data map that was attached when the notification was shown.
-  Future<void> init({required void Function(Map<String, dynamic>) onTap}) async {
+  Future<void> init({
+    required void Function(Map<String, dynamic>) onTap,
+  }) async {
     if (_ready) return;
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('ic_stat_notification'),
@@ -59,7 +61,8 @@ class LocalNotifications {
       const AndroidNotificationChannel(
         incomingRequestsChannel,
         'Incoming job requests',
-        description: 'New job requests that need a response before they expire.',
+        description:
+            'New job requests that need a response before they expire.',
         importance: Importance.max,
       ),
     );
@@ -144,13 +147,7 @@ class LocalNotifications {
           ? (int.tryParse(data['jobId']?.toString() ?? '') ?? _nextId++) +
                 _chatIdBase
           : _nextId++;
-      await _plugin.show(
-        id,
-        title,
-        body,
-        details,
-        payload: jsonEncode(data),
-      );
+      await _plugin.show(id, title, body, details, payload: jsonEncode(data));
       return true;
     } catch (e) {
       debugPrint('LocalNotifications.show failed: $e');
