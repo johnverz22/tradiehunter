@@ -59,7 +59,7 @@ public class MatchingAccountGateTests
     public async Task Active_verified_tradie_is_suggested_on_every_path()
     {
         var (sut, db, job) = await SetUpAsync();
-        using (db) Assert.Equal([1, 1, 1, 1], await CountsAsync(sut, job));
+        using (db) Assert.Equal(new[] { 1, 1, 1, 1 }, await CountsAsync(sut, job));
     }
 
     [Fact]
@@ -70,11 +70,11 @@ public class MatchingAccountGateTests
         {
             (await db.Users.FindAsync("tr"))!.IsActive = false;
             await db.SaveChangesAsync();
-            Assert.Equal([0, 0, 0, 0], await CountsAsync(sut, job));
+            Assert.Equal(new[] { 0, 0, 0, 0 }, await CountsAsync(sut, job));
 
             (await db.Users.FindAsync("tr"))!.IsActive = true;
             await db.SaveChangesAsync();
-            Assert.Equal([1, 1, 1, 1], await CountsAsync(sut, job));
+            Assert.Equal(new[] { 1, 1, 1, 1 }, await CountsAsync(sut, job));
         }
     }
 
@@ -86,7 +86,7 @@ public class MatchingAccountGateTests
         {
             (await db.TradieProfiles.FindAsync(1))!.IsVerified = false;
             await db.SaveChangesAsync();
-            Assert.Equal([0, 0, 0, 0], await CountsAsync(sut, job));
+            Assert.Equal(new[] { 0, 0, 0, 0 }, await CountsAsync(sut, job));
         }
     }
 }
