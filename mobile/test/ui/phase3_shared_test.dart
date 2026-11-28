@@ -1104,9 +1104,8 @@ void main() {
     for (final dark in [false, true]) {
       await mountSettings(tester, _ProfileRepo(const {'role': 0}), dark: dark);
       for (final label in [
-        'Personal Details',
-        'Payment Methods',
         'Notifications',
+        'Region',
         'Theme',
         'Help Center',
         'Terms',
@@ -1141,12 +1140,15 @@ void main() {
     expect(find.byType(BottomSheet), findsNothing);
   });
 
-  testWidgets('v2 payout row only appears for tradies', (tester) async {
-    await mountSettings(tester, _ProfileRepo(const {'role': 0}));
-    expect(find.text('Payout Details'), findsNothing);
-
-    await mountSettings(tester, _ProfileRepo(const {'role': 1}));
-    expect(find.text('Payout Details'), findsOneWidget);
+  testWidgets('v2 settings carries no account rows (they live on Profile)', (
+    tester,
+  ) async {
+    for (final role in [0, 1]) {
+      await mountSettings(tester, _ProfileRepo({'role': role}));
+      expect(find.text('Payout Details'), findsNothing);
+      expect(find.text('Personal Details'), findsNothing);
+      expect(find.text('Payment Methods'), findsNothing);
+    }
   });
 
   testWidgets('v2 sign out returns to /auth', (tester) async {

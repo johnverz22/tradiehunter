@@ -16,7 +16,6 @@ import '../../services/incoming_alert.dart';
 import '../../utils/money.dart';
 import '../../viewmodels/incoming_offer_coordinator.dart';
 import '../../viewmodels/incoming_offer_queue.dart';
-import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
 
@@ -165,7 +164,9 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    count == 1 ? '1 request waiting' : '$count requests waiting',
+                    count == 1
+                        ? '1 request waiting'
+                        : '$count requests waiting',
                     style: THType.h1.copyWith(color: c.text),
                   ),
                   const SizedBox(height: Space.s1),
