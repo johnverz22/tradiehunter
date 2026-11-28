@@ -1,8 +1,8 @@
 # Brand pack v2: logos, app icons, email logo and the Lottie tradie lookup
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main`
-> **Purpose:** Wire `tradiehunter-assets.zip` (house + hammer emblem, platform icon sets, `tradiehunter_loader.json` Lottie) into `web/`, `mobile/` and the backend email templates (image only), and replace the magnifying glass in the tradie lookup (matching radar) with the Lottie's rippling circles.
-> **Status:** Not started. Decisions D1-D4 (section 3) need owner answers; the defaults are safe to start with. **Prepared:** 2026-11-28
+> **Purpose:** Wire `tradiehunter-assets.zip` (house + hammer emblem, platform icon sets) and the **revised Lottie loader** (`tradiehunter_loader.json`, `tradiehunter_loader_dark.json`, usage guide) into `mobile/`, the logos/icons into `web/`, and the logo as a PNG into the backend email templates (image only). The magnifying glass in the tradie lookup (matching radar) is replaced by the Lottie.
+> **Status:** Ready to implement. All decisions approved by the owner (section 3). **Prepared:** 2026-11-28 (revised for the updated Lottie loader and its usage guide)
 > **Naming rule:** code identifiers stay `Fixo` (`package:fixo/...`, namespace `FixoApi`); user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **History:** this replaces an earlier draft of todo 11 that targeted a previous asset pack (different file names, SVG animation, no Lottie). That draft was removed; nothing else references it.
@@ -30,7 +30,7 @@ Paths are inside the zip (`tradiehunter-assets/`).
 | `ios/AppIcon.appiconset/` | Full iOS set incl. `icon-marketing-1024.png` (verified RGB, no alpha) | no | yes | no |
 | `android/res/` | `mipmap-*` legacy, round, adaptive foreground and monochrome; `mipmap-anydpi-v26/*.xml`; `drawable-*/ic_stat_notification.png`; `values/ic_launcher_background.xml` (`#FFFFFF`) | no | yes | no |
 | `android/play-store-icon-512.png` | Play Console upload only | no | not in repo | no |
-| `animated/tradiehunter_loader.json` (+ `animated/README.md`) | **Lottie for the tradie lookup** | no (D4) | yes | no |
+| `animated/tradiehunter_loader.json`, `animated/tradiehunter_loader_dark.json`, `animated/README.md` (**revised files; they supersede the older loader inside the first zip**) | **Lottie for the tradie lookup**: light file, pre-coloured dark file, usage guide | no (admin only, no Lottie) | yes | no |
 | `expo/*` | Expo/React Native icons | no | **not used** (mobile is Flutter) | no |
 | `brand-colors.css`, `README.md` | Reference | no | no | no |
 | `.DS_Store`, `__MACOSX/` | **Never commit** | | | |
@@ -46,20 +46,20 @@ Paths are inside the zip (`tradiehunter-assets/`).
 | F5 | `mobile/web/manifest.json` is the Flutter default (`"A new Flutter project."`, `#0175C2`). | `mobile/web/manifest.json` |
 | F6 | **Email:** header is text only (`th-header` `<td>`, navy `#1E3A8A` gradient). `BrandOptions.EmailLogoUrl` exists but is deprecated and unused; no CDN exists. `SmtpEmailSender` builds `new BodyBuilder { TextBody, HtmlBody }` (line 415) with no `LinkedResources`. Gmail/Outlook do not render SVG, so the logo must be PNG. 10 golden snapshots (`Goldens/email/*.html`) will change. | `SmtpEmailSender.cs`, `BrandOptions.cs`, goldens |
 | F7 | **Lookup today:** `_Radar` in `ho_radar_screen.dart` draws 3 expanding rings (`_kRadarRings`, one colour) around a filled `Sizes.radarCore` circle holding `Icons.search`. `ho_matching_screen.dart` drives it with `_ctrl` (**2 s** `AnimationController`, hard-coded `Duration(seconds: 2)`), passed as `radar: _animationsEnabled ? _ctrl : null`. `null` means reduced motion. `THDurations.radarCycle` (2000 ms) is defined but unused. | files cited |
-| F8 | **What the Lottie really is.** `tradiehunter_loader.json` (212 KB, 720x720, 60 fps, 312 frames = 5.2 s, no external assets) is a **build animation**: a house assembles piece by piece, a hammer strikes 6 times (frames 54, 84, 114, 144, 174, 204), and each strike emits expanding rings (`fx` layer: 19 ring groups in light blue `#8FA8F2`, orange `#B45309` and gold, plus flash discs and sparks). The last strike adds a large ring (about 584 px of the 720 canvas). Rings run frames 54-261; the assembled logo is on screen from about 3.7 s to 4.4 s (progress 0.71-0.85). So the ripples are **part of** the Lottie; it replaces the whole `_Radar` (core + rings), not just the magnifier. | JSON inspected |
-| F9 | The house fill in the Lottie is navy `#1E3A8A`. On the dark theme's dark surface this has low contrast (see D2 and M3.5). | Lottie fills |
-| F10 | `lottie` is **not** in `pubspec.yaml` (only `flutter_svg ^2.0.17`). Adding it needs owner sign-off per AGENTS.md; the request to use the Lottie is that sign-off, recorded in D1. | `pubspec.yaml` |
+| F8 | **What the Lottie is** (per the revised usage guide): a looping 5.2 s build animation, 720x720 canvas with empty margin, 60 fps, 312 frames, about 212 KB, shape layers only. A hammer strikes six times (0.9, 1.4, 1.9, 2.4, 2.9, 3.4 s); each strike snaps a floating piece of the house logo into place; the finished logo holds from about 3.7 to 4.4 s (0.72 to 0.84 of the timeline), then the pieces drift apart and it loops. It replaces the whole `_Radar` (core + rings), not just the glyph. My earlier read of the first-zip file also found expanding ripple rings on each strike; the revised guide does not mention them, so confirm on device (V3). | usage guide; first-zip JSON |
+| F9 | **Theming is built in.** The house outline is navy `#1E3A8A` and vanishes on dark surfaces; the guide supplies `tradiehunter_loader_dark.json` (white house, same timing). Mobile tokens in dark theme are `brand #8FA8F2` / `onBrand #0A101E` (`th_tokens.dart`), so no token is white and the same colour as the hammer would clash; **choose the file per theme and do not recolour at runtime**. (The guide's `HouseFill` colour delegate is untested on the Flutter `lottie` package, and it would need raw colours in widget code.) | `th_tokens.dart` 302-333; guide |
+| F10 | `lottie` is **not** in `pubspec.yaml` (only `flutter_svg ^2.0.17`). Adding it needs sign-off per AGENTS.md; approved in D1. | `pubspec.yaml` |
 | F11 | The iOS pack's `Contents.json` has 18 entries; the project's has 19 (extra `iphone 29x29 @1x`, an iOS 6 size). Pack filenames (`icon-iphone-60@3x.png`) differ from the project's (`Icon-App-60x60@3x.png`), so the folder is replaced as a whole, not file by file. | both `Contents.json` |
 | F12 | Existing pin-brand files in `mobile/assets/brand/` (`wordmark-*`, `splash-logo*`, `app-icon-*`, `notification-icon-24*`) are unreferenced by Dart. Only `google-g.svg` is used (`auth_common.dart:90`). | `grep -rn "assets/brand" mobile/lib` |
 
-## 3. Decisions to confirm first (defaults are recommendations)
+## 3. Decisions (all approved by the owner)
 
-1. **D1: dependency.** Add `lottie: ^3.1.0` to `mobile/pubspec.yaml` (per the pack's README). Default: **yes**, this is the explicit request. No other new dependencies; icons are copied from the pack, not generated.
-2. **D2: dark theme lookup.** The navy house has weak contrast on dark surfaces (F9). Default: render the Lottie directly in light theme; in dark theme place it on a circular light surface (M3.5). Confirm on device first; if it reads fine, drop the chip.
-3. **D3: email wordmark.** "Image only" is read as: the email carries the logo as a PNG image (no SVG, no Lottie, no web fonts for the mark). Default: PNG emblem **plus the existing live-text wordmark** next to it, so image blocking and plain-text twins keep working. If the owner wants the text removed too, that needs a rendered lockup PNG (the pack has none) and a text alternative.
-4. **D4: web Lottie.** Web is admin only and has no tradie-lookup screen. Default: **no Lottie on web.** (Adding one would need `lottie-react` and a sign-off.)
+1. **D1: dependency.** Add `lottie: ^3.1.0` to `mobile/pubspec.yaml`. Approved. No other new dependencies.
+2. **D2: dark theme.** Use `tradiehunter_loader_dark.json` on the dark theme and `tradiehunter_loader.json` on the light theme. Approved; no light chip behind the animation and no runtime recolour.
+3. **D3: email.** The logo is a PNG image, plus the existing live-text wordmark beside it so image blocking and plain-text twins keep working. Approved.
+4. **D4: web.** No Lottie on web (admin only, no lookup screen). Approved.
 
-Record outcomes in section 9.
+Outcomes are recorded in section 9.
 
 ## 4. Rules for the implementing model
 
@@ -74,7 +74,7 @@ Record outcomes in section 9.
 
 ## Phase A: Canonical copy of the source art
 
-- [ ] **A1** Add `docs/design/brand/` with: `svg/logo.svg`, `svg/logo-white.svg`, `svg/logo-monochrome.svg`, `svg/logo-on-white.svg`, `animated/tradiehunter_loader.json`, `animated/README.md`, and a short `README.md` (the inventory in section 1 plus the colour rules). This is the re-export source when the art changes. Do not copy the platform folders here; they live in their targets. (S)
+- [ ] **A1** Add `docs/design/brand/` with: `svg/logo.svg`, `svg/logo-white.svg`, `svg/logo-monochrome.svg`, `svg/logo-on-white.svg`, `animated/tradiehunter_loader.json`, `animated/tradiehunter_loader_dark.json`, `animated/README.md` (the revised usage guide), and a short `README.md` (the inventory in section 1 plus the colour rules). This is the re-export source when the art changes. Do not copy the platform folders here; they live in their targets. (S)
 
 ## Phase W: Web (`web/`, admin dashboard)
 
@@ -142,52 +142,33 @@ Record outcomes in section 9.
 
 ### M3 Lottie tradie lookup (replaces the magnifying glass)
 
-- [ ] **M3.1 Asset + dependency.** Copy `animated/tradiehunter_loader.json` to `mobile/assets/lottie/tradiehunter_loader.json`. `pubspec.yaml`: add `lottie: ^3.1.0` under `dependencies:` and `- assets/lottie/` under `flutter: assets:`. Run `flutter pub get`. (S)
-- [ ] **M3.2 Tokens** in `th_tokens.dart`:
-  - `THDurations.lookupLoop = Duration(milliseconds: 5200)` (the composition length: 312 frames at 60 fps).
-  - `Sizes.lookupLottie` (start at `Sizes.radarDiameter`, 240; raise to about 280 if the house reads small, since the largest ring is about 81% of the canvas).
-  - A file-level const in `ho_radar_screen.dart`: `_kLookupRestProgress = 0.78` (assembled logo, per the pack README: 0.71-0.85) with a "position in the composition, not a design token" comment.
-  Keep `Sizes.radarCore`/`radarCoreIcon`: `_StatusPanel` (~line 370 of `ho_radar_screen.dart`) still uses them. Retire `THDurations.radarCycle` (unused) or repoint its doc to `lookupLoop`. (S)
-- [ ] **M3.3 Drive it at the right speed.** In `ho_matching_screen.dart`, `_ctrl` is `Duration(seconds: 2)`. Played through Lottie that would run the 5.2 s animation 2.6x too fast. Change it to `THDurations.lookupLoop`. Nothing else uses `_ctrl` besides the `radar:` argument (verify with grep); `didChangeDependencies` already does `_ctrl.repeat()` / `stop()` from `MediaQuery.disableAnimationsOf`. (S)
-- [ ] **M3.4 Replace `_Radar`.** In `ho_radar_screen.dart` delete `_kRadarRings`, `_kRingStartScale`, `_kRingPeakAlpha`, `_kRingStroke`, `_Radar._ring` and the `Icons.search` core. `_Searching` renders a new `_LookupAnimation(animation: radar)`:
-  ```dart
-  class _LookupAnimation extends StatelessWidget {
-    const _LookupAnimation({required this.animation});
+Source: the revised `animated/` files. Behaviour follows the usage guide's `TradieLoader` (loop while loading, then settle on the finished logo, never seeking backwards), adapted to repo rules.
 
-    /// Null means reduced motion: show the assembled logo, no movement.
-    final Animation<double>? animation;
-
-    @override
-    Widget build(BuildContext context) {
-      final anim = animation;
-      return RepaintBoundary(
-        child: SizedBox.square(
-          dimension: Sizes.lookupLottie,
-          child: Lottie.asset(
-            'assets/lottie/tradiehunter_loader.json',
-            key: anim == null ? null : const ValueKey('matching-radar'),
-            controller: anim ?? const AlwaysStoppedAnimation(_kLookupRestProgress),
-            fit: BoxFit.contain,
-            // A bad or missing asset must never break the matching screen.
-            errorBuilder: (_, __, ___) => const ThBrandMark(),
-          ),
-        ),
-      );
-    }
-  }
-  ```
-  Keep the `Semantics`/headline text beneath as is. The animation is decorative: wrap it in `ExcludeSemantics`. Lottie's `controller` takes an `Animation<double>`, so the existing `radar` parameter works unchanged; confirm against the version `pub get` resolves, and if it is typed `AnimationController`, pass `_ctrl` down as that type instead of `Animation<double>`. (M)
-- [ ] **M3.5 Dark theme (D2).** On a dark theme, wrap the Lottie in a circle filled with a light surface token (`c.onBrand` or the closest existing light token; no raw colour) sized `Sizes.lookupLottie`, so the navy house stays readable. Skip if the on-device check (V3) shows it already reads well. (S)
-- [ ] **M3.6 Other searching visuals (D2 scope).** Run `grep -n "CircularProgressIndicator\|THSpinner" mobile/lib/ui/homeowner/ho_browse_tradies_screen.dart mobile/lib/ui/homeowner/ho_choose_tradie_screen.dart`. Use the Lottie only where a full-area "finding tradies" loader is at least 120 px square; leave inline button spinners and text-field `Icons.search` (`ho_home_screen.dart:217`, `ho_categories_screen.dart:115`) untouched, since a ripple in an input would read as loading. (S)
+- [ ] **M3.1 Assets + dependency.** Copy `tradiehunter_loader.json` and `tradiehunter_loader_dark.json` to `mobile/assets/lottie/`. `pubspec.yaml`: add `lottie: ^3.1.0` under `dependencies:` and `- assets/lottie/` under `flutter: assets:`. Run `flutter pub get`. (S)
+- [ ] **M3.2 Tokens** in `th_tokens.dart`: `Sizes.tradieLoader` (start at 240, the same as `Sizes.radarDiameter`; the guide recommends 200 to 260 because the canvas has margin). Keep `Sizes.radarCore`/`radarCoreIcon` (still used by `_StatusPanel`, ~line 370 of `ho_radar_screen.dart`). The hold window (`0.72`, `0.84`) is a position in the composition, so it is a file-level const with a "timeline fraction, not a design token" comment, as `ho_radar_screen.dart` already does for ring counts. (S)
+- [ ] **M3.3 Shared widget `ThTradieLoader`** in new `mobile/lib/ui/design/th_tradie_loader.dart`, exported like the other `th_*` files. Port the guide's `TradieLoader` with these changes:
+  - **No colours in Dart.** Pick the asset by theme: `Theme.of(context).brightness == Brightness.dark` selects the `_dark.json` file (F9). Drop the guide's `LottieDelegates` / `ValueDelegate.color` block and its `Colors.white` / `Color(0xFF1E3A8A)`.
+  - Size defaults to `Sizes.tradieLoader`; the hold fractions come from the file-level consts.
+  - Keep `isLoading`, `onSettled`, the `AnimationController` driven by `composition.duration`, the "stop only inside the hold window and only when `!isLoading`" logic, and "resume looping when a new search starts".
+  - **Reduced motion:** the guide checks `MediaQuery.of(context).disableAnimations` once in `onLoaded`. Use `MediaQuery.disableAnimationsOf(context)` and also react in `didChangeDependencies` (stop the controller and show the mid-hold frame when it turns on, resume when off), because `ho_matching_screen.dart` does this today.
+  - If `isLoading` is already false when the composition loads, show the mid-hold frame instead of looping.
+  - `errorBuilder` returns `ThBrandMark()` so a bad asset never breaks the screen.
+  - Wrap in `RepaintBoundary` and `ExcludeSemantics` (decorative; the headline text beneath keeps the accessible name).
+  - Fixed key `ValueKey('matching-radar')` on the loader at the radar call site.
+  (M)
+- [ ] **M3.4 Replace the radar.** In `ho_radar_screen.dart`: delete `_Radar`, `_ring`, `_kRadarRings`, `_kRingStartScale`, `_kRingPeakAlpha`, `_kRingStroke` and the `Icons.search` core; `_Searching` renders `ThTradieLoader(isLoading: true, key: const ValueKey('matching-radar'))`. The loader owns its animation and reduced-motion handling, so **remove the `radar` (`Animation<double>?`) parameter** from `ThRadarScreen` and `_Searching` (and fix its doc comment that mentions `THDurations.radarCycle`). `_Searching` is only mounted while searching, and the matched / no-tradie / failed states swap to `_StatusPanel`, so `onSettled` is not needed on this screen. (M)
+- [ ] **M3.5 Clean up `ho_matching_screen.dart`.** The 2 s `_ctrl` existed only to feed `radar:`. Remove `_ctrl` (declaration line ~67, `initState` creation ~96, `didChangeDependencies` use ~107-110, `_ctrl.stop()` ~146, `dispose` ~393), `_animationsEnabled` (~77) and the `radar:` argument (~419), and drop `SingleTickerProviderStateMixin` if nothing else needs a ticker (verify with `grep -n "_ctrl\|_animationsEnabled\|vsync" mobile/lib/ui/homeowner/ho_matching_screen.dart`). Delete `THDurations.radarCycle` if it is then unused repo-wide. (S)
+- [ ] **M3.6 Other searching visuals.** Run `grep -n "CircularProgressIndicator\|THSpinner" mobile/lib/ui/homeowner/ho_browse_tradies_screen.dart mobile/lib/ui/homeowner/ho_choose_tradie_screen.dart`. Where a full-area "finding tradies" loader is at least 120 px square, use `ThTradieLoader(isLoading: ..., onSettled: ...)` and use `onSettled` to fade the results in (the guide's intended use). Leave inline button spinners and text-field `Icons.search` (`ho_home_screen.dart:217`, `ho_categories_screen.dart:115`) untouched; a ripple/animation in an input reads as loading. Keep one `ThTradieLoader` instance in the tree per search (a new key restarts the controller). (S)
 - [ ] **M3.7 Mockup.** Update the `ho_radar` frame (still `needs-design`) so design and code match. (S)
 
 ### M4 Tests
 
-- [ ] **M4.1** `mobile/test/ui/phase4_ho_radar_test.dart`:
-  - "animated radar": still finds `ValueKey('matching-radar')`; add `expect(find.byType(Lottie), findsOneWidget)` and `expect(find.byIcon(Icons.search), findsNothing)`. Use `await tester.pump()` (not `pumpAndSettle`) so the repeating animation does not hang; the file already feeds `AlwaysStoppedAnimation(0.3)`.
-  - "reduced motion" (currently expects the static core and `Icons.search`, line 87): change to `findsNothing` for `matching-radar`, `findsNothing` for `Icons.search`, and `findsOneWidget` for `Lottie` (static frame).
-  - Add one test that a failing asset falls back to `ThBrandMark` without throwing (override the bundle or use a wrong path via a test seam; keep it small).
-  Also check `mobile/test/matching_flow_test.dart` (lines 418, 430) still passes. (M)
+- [ ] **M4.1** `mobile/test/ui/phase4_ho_radar_test.dart`: remove the `radar:` argument (and the `_frame` const) from the `_pump` helper and the `ThRadarScreen` call.
+  - "animated radar": finds `ValueKey('matching-radar')`, `find.byType(Lottie)` once, and `find.byIcon(Icons.search)` finds nothing. Use `await tester.pump()` (not `pumpAndSettle`; the loop never settles).
+  - "reduced motion" (currently expects the static core and `Icons.search`, ~line 87): pump inside `MediaQuery(data: MediaQueryData(disableAnimations: true))`; expect `Lottie` present, no `Icons.search`, and that `await tester.pumpAndSettle()` completes (proves nothing is repeating).
+  - Add a small test for `ThTradieLoader` itself: `isLoading` true then false calls `onSettled` once after the controller reaches the hold window (drive time with `tester.pump(Duration(...))`), and a bad asset path renders `ThBrandMark` without throwing.
+  - Check `mobile/test/matching_flow_test.dart` (lines ~418, ~430) still passes.
+  (M)
 - [ ] **M4.2** Grep `integration_test`, `patrol_test`, `.maestro` for `matching-radar` or `Icons.search` in the matching flow and update. (S)
 
 ### M5 Flutter web shell
@@ -233,29 +214,30 @@ SVG and Lottie cannot be used in Gmail/Outlook, so the email logo is a **PNG**. 
 
 - [ ] **V1 Web:** `npm run design:check`, `npm run design:legacy`, `npm run build` in `web/`; `scripts/web/render-probe.py` finds `img.brand-mark-light`/`-dark` in the shell and login; screenshot sidebar in light, dark, rail and phone widths; Playwright specs in `web/e2e` pass (wordmark text unchanged). Check the tab icon and `/site.webmanifest` load (no 404s).
 - [ ] **V2 Mobile build:** `flutter pub get`, `flutter analyze`, `flutter test` in `mobile/`. Android 13+ emulator: adaptive and themed (monochrome) icon, round icon, notification icon via an FCM test message. iOS simulator: icon renders; no-alpha gate from M2.1.
-- [ ] **V3 Lookup on device:** open the matching radar in light, dark and with OS reduce-motion on. Confirm: no magnifier anywhere; house assembles and rings ripple at about 5 s per loop with no jump at the loop point; the Lottie never draws outside its box; dark theme shows the navy house clearly (else M3.5); reduce-motion shows the still assembled logo; no jank (profile mode, `RepaintBoundary` kept). If the first 0.9 s (building, no ripples) feels slow for a waiting screen, note it for the owner (see section 9, loop option).
+- [ ] **V3 Lookup on device** (the guide says the animation was checked in lottie-web only, not yet in the Flutter `lottie` package, so this check is required): open the matching radar in light, dark and with OS reduce-motion on. Confirm: no magnifier anywhere; the light theme uses the navy-house file and the dark theme the white-house file, both clearly visible; pieces snap in on each hammer strike and the loop restarts without a visible jump; with reduce-motion the finished logo is shown still; `ThTradieLoader` in a list screen stops on the finished logo (not mid-scatter) when `isLoading` flips to false and fires `onSettled`; no jank in profile mode. Note whether ripple rings are visible (F8) and tell the owner if they are not.
 - [ ] **V4 Email:** B6 tests green; manual client matrix (B7).
-- [ ] **V5 Size budget:** `web/dist` grows by under 150 KB (icons + mark SVGs); Flutter assets grow by about 220 KB (Lottie 212 KB + two SVGs); email HTML grows by under 1 KB (the PNG is a separate MIME part).
+- [ ] **V5 Size budget:** `web/dist` grows by under 150 KB (icons + mark SVGs); Flutter assets grow by about 430 KB (two Lottie files of about 212 KB each + two SVGs); email HTML grows by under 1 KB (the PNG is a separate MIME part).
 
-## 8. Lottie facts the implementer needs
+## 8. Lottie facts the implementer needs (from the revised usage guide)
 
 | Property | Value |
 |---|---|
-| File | `tradiehunter_loader.json`, 212,095 bytes, Lottie 5.7.0, 720x720, 60 fps, frames 0-312 (5.2 s) |
-| Layers | `fx` (rings, flash, sparks), `hammer`, `piece0`-`piece4` (house). No images or fonts |
-| Ripples | Rings per strike (light blue, orange, gold) at about 0.9 s, 1.4 s, 1.9 s, 2.4 s, 2.9 s and 3.4 s; the last strike adds a wide ring that finishes at about 4.35 s |
-| Rest frame | Assembled logo at progress 0.71-0.85; use 0.78 for the static state |
-| Controller | Duration must equal `THDurations.lookupLoop` (5200 ms) or the speed is wrong (M3.3) |
-| Loop | `_ctrl.repeat()` restarts at frame 0 (house scattered). If a hard cut at the loop point shows in V3, ask for a second export that loops seamlessly; the pack README offers this |
-| Colours | Own artwork (`#8FA8F2`, `#B45309`, `#1E3A8A`, plus gold and bright-orange flash/spark tones); do not recolour with `ValueDelegate` (generic `Fill`/`Stroke` names would recolour everything) |
+| Files | `tradiehunter_loader.json` (navy house), `tradiehunter_loader_dark.json` (white house, same timing and shapes) |
+| Format | 720x720 transparent canvas with margin, 60 fps, 312 frames (5.2 s), about 212 KB each; shape layers and keyframes only |
+| Timeline | 0-0.9 s pieces fade in; strikes at 0.9, 1.4, 1.9, 2.4, 2.9, 3.4 s; finished logo holds 3.7-4.4 s (0.72-0.84); 4.4-5.2 s pieces drift apart, loop restarts |
+| Colours | House `#1E3A8A` (white in the dark file), hammer `#8FA8F2`, accent `#B45309`. Do not recolour at runtime (F9) |
+| Controller | Duration comes from `composition.duration` in `onLoaded`; do not hard-code 5.2 s |
+| Settle | Stop only while inside 0.72-0.84 and `isLoading` is false; never seek backwards (no flicker); fire `onSettled` once |
+| Reduced motion | Show the mid-hold frame (0.78), no looping |
+| Size | 200 to 260 logical px; the canvas margin leaves room for floating pieces |
+| Pitfalls | Keep one widget instance per search (a new key restarts the controller); logo invisible on dark = wrong file for the theme |
 
 ## 9. Decisions and parked items
 
 | Item | Outcome |
 |---|---|
-| D1 `lottie` dependency | _pending_ (default: approved by the request) |
-| D2 dark-theme lookup chip | _pending_ (default: decide after V3) |
-| D3 email: emblem PNG + live-text wordmark | _pending_ (default: yes) |
-| D4 web Lottie | _pending_ (default: none; admin has no lookup screen) |
-| Ripple-only Lottie (no house/hammer) | _not requested_; ask the designer if V3 finds the 0.9 s build too busy for a waiting screen |
-| `web/og-image.png`, `expo/*`, play-store icon | not wired (admin private; Flutter app; upload to Play Console by hand) |
+| D1 `lottie` dependency | **Approved** |
+| D2 dark theme: separate dark file, no runtime recolour | **Approved** |
+| D3 email: emblem PNG + live-text wordmark | **Approved** |
+| D4 web Lottie | **Approved: none** (admin only) |
+| `web/og-image.png`, `expo/*`, Play Store icon | not wired (admin private; Flutter app; upload the Play icon to Play Console by hand) |
