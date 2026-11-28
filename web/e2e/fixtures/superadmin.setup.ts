@@ -6,8 +6,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 export const SUPERADMIN_AUTH_FILE = path.join(dirname, '../.auth/superadmin.json');
 
 // Superadmin defaults mirror scripts/e2e-personas.py and appsettings.Development.json.
-const EMAIL = process.env.FIXO_ADMIN_EMAIL ?? 'admin@fixo.nz';
-const PASSWORD = process.env.FIXO_ADMIN_PASSWORD ?? 'Admin1!Fixo';
+const EMAIL = process.env.FIXO_ADMIN_EMAIL ?? 'admin@tradiehunter.nz';
+const PASSWORD = process.env.FIXO_ADMIN_PASSWORD ?? 'Admin1!TH';
 
 setup('authenticate as superadmin', async ({ page }) => {
   await page.goto('/login');

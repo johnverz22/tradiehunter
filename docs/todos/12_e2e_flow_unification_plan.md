@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main` (there is no `dev` branch on the remote; remote branches are `main`, `feat/admin-user-detail`, `fix/e2e-findings`, and the latter two have no commits ahead of `main`)
 > **Purpose:** Replace today's six overlapping E2E layers with a single set of **demo-grade, independently recordable flows**, one per developed feature (hourly booking, project booking, disputes, extra cost, homeowner search, tradie verification, chat, schedule, sign up, profile setup, and so on). Flows compose into one master tour. Anything that is not a flow is either folded into one or deleted.
-> **Status:** Approved. **U0 done except U0.4 (needs the owner's machine); U1 code done, U1.3 awaiting owner confirmation; U2 not started.** Decisions in section 2 and the former open items (section 7) are owner-confirmed. · **Prepared:** 2026-11-28
+> **Status:** Approved. **U0 done except U0.4 (needs the owner's machine); U1 done; U2 in progress.** Decisions in section 2 and the former open items (section 7) are owner-confirmed. · **Prepared:** 2026-11-28
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** supersedes the runner and layout parts of `03_e2e_realignment_plan.md` and builds on `08_e2e_persona_fabric_plan.md` (persona fabric + manifest stay as the foundation). Update both files' status headers when this lands. Quote scenarios come from `10_homeowner_quotes_visibility_plan.md`.
@@ -156,7 +156,7 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 
 - [x] **U1.1** Create `scripts/e2e/lib/` and move signal server, Show/timeline, captions, `--record`, `--capture-sims`, simulator handling, fabric provisioning and report writing out of `e2e-demo.py` unchanged (M). Done: `lib/{api,asserts,stage,sims,fabric,report}.py`. Small deliberate changes: `pick_simulators` takes udids instead of `args`; `provision_fabric` takes persona counts (defaults = old demo); `start_recording`/`stop_recording`/`start_signal_server` extracted from `main()`; `fabric.record_job` replaces the demo's dependency on `e2e-journey.py`. Not moved yet (belongs with the U2 CLI): simulator build-with-timeout, `preflight`, and the demo-only `prepare_fabric`
 - [x] **U1.2** Move API helpers and decimal/status/audit assertions out of `e2e-journey.py` into `lib/api.py` and `lib/asserts.py` (M). `e2e-journey.py` now imports them (scenarios untouched); `write_junit` moved to `lib/report.py`. Bug fixed on the way: the journey's `--timeout` never reached `poll()` (default bound at definition time); `lib.api.set_poll_timeout` makes it work, covered by a test
-- [ ] **U1.3** Re-point `e2e-demo.py` to the lib; owner confirms the current demo still plays identically (M). Code re-pointed (761 -> 315 lines, `--help` and lint clean). **Owner action:** run `python3 scripts/e2e-demo.py --only-preflight`, then one full `python3 scripts/e2e-demo.py --single-flow` and report pass/fail
+- [x] **U1.3** Re-point `e2e-demo.py` to the lib; owner confirms the current demo still plays identically (M). Owner ran it: preflight PASS, `--single-flow` PASS (25 scenes, 8m28s), `e2e-journey.py --scenario all` PASS (10 scenarios on a fresh manifest). The admin payout scene timed out because `admin_pov.mjs` used the stale selector `#payout-transfer-reference` (`<Field>` generates the id now); fixed to a label locator. Pre-existing, not caused by the refactor. **Re-check on the next demo run** that the payout and later admin scenes play. Also fixed by the owner's run: persona cleanup 415 (deactivate needs a `reason` body) and stale superadmin defaults (`admin@tradiehunter.nz` / `Admin1!TH`)
 - [x] **U1.4** Confirm no new dependency (stdlib only stays true) (S). Confirmed: lib and its tests import stdlib only. Self-tests: `cd scripts && python3 -m unittest discover -s e2e/tests -t .` (15 tests, no stack needed)
 
 ### Phase U2: Flow contract and the single CLI
@@ -165,7 +165,7 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 - [ ] **U2.2** Write `scripts/e2e/run.py` with `<flow>... | --all | --tour | --list`, carrying over every flag listed in section 3 (M)
 - [ ] **U2.3** Per-flow persona sizing: each flow asks the fabric for the minimum (`--homeowners N --tradies N --staff 1|2`). Reuse via `--manifest` still works (S)
 - [ ] **U2.4** Dart side: split `demo_tour_test.dart` into `integration_test/scenes/` and a dispatcher selected by `--dart-define=FLOW=<id>` plus `FIXO_PERSONA`. Keep the `__DEMO_DONE__` marker (L)
-- [ ] **U2.5** Web side: split `admin_pov.mjs` into scene modules under `web/e2e/flows/` (M)
+- [ ] **U2.5** Web side: split `admin_pov.mjs` into scene modules under `web/e2e/flows/` (M). Lesson from U1.3: `scene()` currently swallows a failed UI scene and logs it as an "API fallback", so the run still says PASS. In the split, a failed UI scene must fail the flow unless the scene is a declared, documented fallback
 
 ### Phase U3: Port the existing demo into flows
 

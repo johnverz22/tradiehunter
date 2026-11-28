@@ -21,7 +21,7 @@ array as scenario `demo` (`demo-dispute` for the dispute job).
 - `docker compose up -d` (API + db + **MailHog**: the fabric reads OTP and
   staff-invite emails from it). The script fails fast if the API or MailHog is
   down, or the superadmin login (`FIXO_ADMIN_EMAIL`/`FIXO_ADMIN_PASSWORD`,
-  default `admin@fixo.nz`) fails. Local stack only: a non-localhost
+  default `admin@tradiehunter.nz`) fails. Local stack only: a non-localhost
   `FIXO_API_URL` is refused. No `seed-test-accounts.sh` needed.
 - v2 job flow (the stack default): direct requests need a v2 job.
 - Two booted iOS simulators (`xcrun simctl boot` / open in Simulator.app);
