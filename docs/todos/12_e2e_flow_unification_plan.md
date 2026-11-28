@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main` (there is no `dev` branch on the remote; remote branches are `main`, `feat/admin-user-detail`, `fix/e2e-findings`, and the latter two have no commits ahead of `main`)
 > **Purpose:** Replace today's six overlapping E2E layers with a single set of **demo-grade, independently recordable flows**, one per developed feature (hourly booking, project booking, disputes, extra cost, homeowner search, tradie verification, chat, schedule, sign up, profile setup, and so on). Flows compose into one master tour. Anything that is not a flow is either folded into one or deleted.
-> **Status:** Proposed, not started. Decisions in section 2 are owner-confirmed. · **Prepared:** 2026-11-28
+> **Status:** Approved, not started. Decisions in section 2 and the former open items (section 7) are owner-confirmed. · **Prepared:** 2026-11-28
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** supersedes the runner and layout parts of `03_e2e_realignment_plan.md` and builds on `08_e2e_persona_fabric_plan.md` (persona fabric + manifest stay as the foundation). Update both files' status headers when this lands. Quote scenarios come from `10_homeowner_quotes_visibility_plan.md`.
@@ -52,6 +52,11 @@ Zero or isolated coverage today: **change schedule** (backend `POST/GET /jobs/{i
 2. **Scope of unify:** fold layers B, D, E into flows and retire F. The result is flows plus the unchanged capture suites. No separate fast non-visual tier.
 3. **LINZ key:** available via `.env`; flows use native address entry.
 4. **Granularity:** one flow per feature, **independently recordable**, plus a `tour` that composes them.
+5. **Quote price change** is the extra-cost adjustment mechanism (`/jobs/{id}/adjustments*`). There is no separate quote-revision path.
+6. **Variants are separate flows**, not scenes inside a parent flow. The owner's list is not exhaustive; flows are added wherever developed features lack one (see 4.1-4.3).
+7. **The `tour` includes every flow.**
+8. **CI:** `e2e-mobile.yml` is replaced, not kept, so the repo has one unified suite (U7.7).
+9. **Token rotation:** the owner will rotate the pasted PAT later; not a task here.
 
 ## 3. Target architecture
 
@@ -99,8 +104,9 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 | `booking_hourly_reoffer` | Tradie declines -> re-offer to the next; post with no match -> withdraw -> repost | H T | journey `hourly-decline-reoffer`, `withdraw-no-match-repost` |
 | `booking_project` | Post project (s362F gate visible) -> tradies submit quotes via quote sheet -> homeowner compares, "Compare quotes" -> accepts -> books | H T T | journey `competing-quotes`, `homeowner-quotes-visibility`; `v2_flows_test` accept-quote |
 | `booking_project_board` | Open project board: tradie quotes without invite, suburb masking, one quote per tradie, close window, accept books | H T T | journey `open-board-quotes` |
-| `booking_extra_cost` | Mid-job: tradie adds materials / cost adjustment with evidence -> homeowner approves, rejects or tradie withdraws -> final amount includes it | H T | **new**; `v2_flows_test`; backend `/jobs/{id}/adjustments*` |
-| `booking_quote_change` | Project quote price change after booking (confirm mechanism, see Open item O1) | H T | **new** |
+| `booking_extra_cost` | Hourly job, mid-job: tradie adds materials / cost adjustment with evidence -> homeowner approves, rejects or tradie withdraws -> final amount includes it | H T | **new**; `v2_flows_test`; backend `/jobs/{id}/adjustments*` |
+| `booking_price_change` | Project job booked at the accepted quote; tradie raises an adjustment to change the agreed price (e.g. scope grew), homeowner approves or rejects, final amount and payment reflect it. Same adjustment endpoints as `booking_extra_cost`, project job instead of hourly | H T | **new**; `v2_flows_test`; backend `/jobs/{id}/adjustments*` |
+| `booking_review` | After Completed: rating sheet both ways, blind reviews (hidden until both submit), review appears on the public profile (`/users/:id`, `/tradie/:id`) | H T | journey review steps; `ho_review_screen` / `th_rating_sheet` coverage |
 | `booking_cancel` | Cancel from each side and state (before accept, after accept, active); reason codes, no refund in v2, flag consequences | H T | journey `cancellations`; `cancellation_test` |
 | `booking_dispute` | Dispute from an active job with attachments -> admin resolves to Completed or Cancelled -> blind reviews | H T A | journey `dispute-attachments-reviews`; `dispute_test`; current demo dispute branch; `disputes.spec.ts`, `refunds.spec.ts` |
 | `payment_receipt_resubmit` | Receipt rejected by admin -> `AwaitingPayment` -> homeowner resubmits -> verified | H A | journey `receipt-reject-resubmit`; `payments.spec.ts` |
@@ -121,6 +127,8 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 
 | Flow id | Story | Actors | Absorbs |
 |---|---|---|---|
+| `signin_session` | Splash, sign in, wrong password, sign out, role select for a multi-role account, session restore on relaunch | H T | `auth_test`; Maestro login flows |
+| `profile_settings` | Profile and settings screens (`/profile`, `/settings`), edit details, theme switch, view own public profile | H T | **new** |
 | `tradie_daily` | Availability toggle, available jobs, earnings, job lists | T | **new** |
 | `notifications` | Notification center, deep link from a quote / job push | H T | **new**; see `09` and `10` F5 |
 | `safety_blocks_reports` | Block a user, report, effect on matching and lists | H T A | **new** |
@@ -128,13 +136,13 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 
 ### 4.4 Tour
 
-`tour` order: `signup_homeowner` -> `signup_tradie` -> `tradie_profile_setup` -> `tradie_verification` -> `homeowner_search` -> `booking_hourly` -> `chat` -> `change_schedule` -> `booking_extra_cost` -> `booking_project` -> `booking_dispute` -> `admin_ops`. The tour may skip flows with `--skip`.
+`tour` runs **every** flow in the catalog, in this order: `signup_homeowner`, `signup_tradie`, `signin_session`, `tradie_profile_setup`, `tradie_verification`, `homeowner_search`, `booking_hourly_direct`, `booking_hourly`, `booking_hourly_reoffer`, `chat`, `change_schedule`, `booking_extra_cost`, `booking_project`, `booking_project_board`, `booking_price_change`, `payment_receipt_resubmit`, `booking_cancel`, `booking_dispute`, `booking_review`, `tradie_daily`, `notifications`, `safety_blocks_reports`, `profile_settings`, `admin_ops`. `--skip a,b` and `--only a,b` filter it. Because the tour is long (U8.4), it records as numbered parts if needed; the order above is the contract.
 
 ## 5. Phases
 
 ### Phase U0: Decisions and prep (no behaviour change)
 
-- [ ] **U0.1** Confirm Open items O1-O5 (section 7) with the owner (S)
+- [x] **U0.1** Open items O1-O5 answered by the owner (section 7) (S)
 - [ ] **U0.2** Build the **coverage map**: every test in layers B, D, E, F, listed with the flow that absorbs it (start from section 4). Commit it as an appendix to this file. Nothing is deleted in later phases unless it has a row here (S)
 - [ ] **U0.3** Read `docs/SPECS.md` and record the rules each flow must assert (cancellation, dispute, review eligibility, adjustments, schedule, s362F). Add as an appendix (S)
 - [ ] **U0.4** Record a baseline: owner runs `scripts/run-e2e.sh FABRIC` and `python3 scripts/e2e-demo.py --only-preflight` and pastes pass/fail. Needed so regressions are attributable (S)
@@ -173,7 +181,7 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 ### Phase U5: New-coverage flows
 
 - [ ] **U5.1** `booking_extra_cost`: confirm what the mobile screens expose first (`ho_extra_cost_screen`, `tr_extra_cost_page`); script approve, reject and withdraw paths with evidence (L)
-- [ ] **U5.2** `booking_quote_change` once O1 is answered (M)
+- [ ] **U5.2** `booking_price_change` (project job, adjustment raises the price, approve and reject paths) and `booking_review` (M)
 - [ ] **U5.3** `homeowner_search` (M)
 - [ ] **U5.4** `change_schedule` (M)
 - [ ] **U5.5** `chat` including messages list and reconnect; fold `run-live-chat.sh` (M)
@@ -185,6 +193,8 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 - [ ] **U6.2** `notifications` (M; depends on `09` and the `10` F5 deep-link fix, otherwise document the gap)
 - [ ] **U6.3** `safety_blocks_reports` (M)
 - [ ] **U6.4** `admin_ops` (M)
+- [ ] **U6.5** `signin_session` and `profile_settings` (M)
+- [ ] **U6.6** Gap sweep: walk every route in `mobile/lib/router/app_router.dart` and every `web/src` admin page, list any screen no flow visits, and add a flow or scene for it. Record the result as an appendix (S)
 
 ### Phase U7: Fold, retire, clean up
 
@@ -194,7 +204,7 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 - [ ] **U7.4** Move `web/e2e/responsive.spec.ts` next to the capture suites, or park with a reason (S)
 - [ ] **U7.5** Retire `scripts/run-e2e.sh`, `run-live-chat.sh`, `e2e-journey.py`, `e2e-demo.py`, `e2e-credentials.py` after grep shows no remaining references (docs, CI, other scripts). Leave a one-line shim for `e2e-demo.py` that forwards to `run.py --tour` for one release (S)
 - [ ] **U7.6** Update `docs/TESTING.md`, `docs/QA.md`, `AGENTS.md`, `docs/ai/AI-TOOLING.md` if they reference removed scripts; update `03` and `08` status headers (M)
-- [ ] **U7.7** CI: `e2e-mobile.yml` runs the old configs. Decide with the owner whether it becomes a flow job or is parked (needs iOS runners; see O4) (S)
+- [ ] **U7.7** Replace `.github/workflows/e2e-mobile.yml`: remove the Android job and its nightly `schedule`; add a `workflow_dispatch`-only macOS job that starts the stack and runs `python3 scripts/e2e/run.py --all --fail-fast` on an iOS simulator. Mark it untested on CI in the header, same as today's. Wire a nightly trigger only after the owner has run it green once (S)
 
 ### Phase U8: Hardening
 
@@ -205,7 +215,7 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 
 ### Phase U9: Android (later, not in this plan's scope)
 
-- [~] **U9.1** Parked by owner decision (iOS first). Entry condition: tour green on iOS. Reuse `E2E_TRADIE_DEVICE`, the `10.0.2.2` rewrite and the CI emulator job.
+- [~] **U9.1** Parked by owner decision (iOS first). Entry condition: tour green on iOS. Reuse `E2E_TRADIE_DEVICE`, the `10.0.2.2` rewrite and the Android emulator steps from the old `e2e-mobile.yml` (recover from git history).
 
 ## 6. Risks
 
@@ -218,19 +228,22 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 | Flows grow long and unrecordable | U8.4 budget; split flows rather than add pace. |
 | Backend gaps for schedule, adjustments or notifications deep links | Documented in the run report and this file, not worked around. |
 
-## 7. Open items for the owner
+## 7. Former open items (all resolved by the owner)
 
-- **O1:** "Change of quotation price" after booking: is this the extra-cost adjustment mechanism (`/jobs/{id}/adjustments`), or does a separate quote-revision path exist or is one planned? `booking_quote_change` waits on this.
-- **O2:** Flow granularity for variants (`booking_hourly_reoffer`, `booking_project_board`): separate flows as listed, or scenes inside their parent flow?
-- **O3:** Should the `tour` include every flow, or only the section 4.4 list?
-- **O4:** CI: park `e2e-mobile.yml` for now, or keep a nightly Android job until U9?
-- **O5:** The PAT was pasted in chat with write access. Rotate it after this work.
+| # | Question | Answer | Where it landed |
+|---|---|---|---|
+| O1 | What is "change of quotation price"? | The extra-cost adjustment mechanism | `booking_price_change`, `booking_extra_cost` |
+| O2 | Variants as separate flows or scenes? | Separate; the owner's list is not exhaustive, add more | Section 4 (adds `booking_review`, `signin_session`, `profile_settings`, U6.6 gap sweep) |
+| O3 | Does the tour include every flow? | Yes | Section 4.4 |
+| O4 | CI: park or keep? | Park or replace so there is one unified suite | U7.7 |
+| O5 | Token rotation | Owner will do it later | Decision 9 |
 
 ## 8. Definition of done
 
 - `python3 scripts/e2e/run.py --list` shows every flow in section 4.
 - Each flow runs alone, records alone, asserts through the API at the end, and cleans up after itself.
-- `python3 scripts/e2e/run.py --tour` plays the composed demo on iOS with no duplicated scene code.
+- `python3 scripts/e2e/run.py --tour` plays every flow on iOS with no duplicated scene code.
+- `e2e-mobile.yml` is replaced per U7.7 and no workflow references a removed script.
 - The coverage map has no unabsorbed row; layers B, D (absorbed parts), E (absorbed parts) and F are gone; capture suites untouched.
 - `docs/TESTING.md` describes the new entry point and the capture-suite boundary.
 - Owner has run and recorded every flow at least once.
