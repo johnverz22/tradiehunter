@@ -31,6 +31,7 @@ public sealed class EmailLayoutModel
     public string? Preheader { get; init; }
     public string? FooterNote { get; init; }
     public required BrandOptions Brand { get; init; }
+    public required string MarkSrc { get; init; }
 }
 
 /// <summary>

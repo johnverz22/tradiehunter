@@ -1,10 +1,13 @@
 // N-03: the v2 quick-match radar (ThRadarScreen) mounted directly. The flow
 // behind it (SignalR, dispatch, stall watchdog, cancel) is covered by
 // test/matching_flow_test.dart.
+import 'package:fixo/ui/design/th_tradie_loader.dart';
+import 'package:fixo/ui/design/th_widgets.dart';
 import 'package:fixo/ui/homeowner/ho_radar_screen.dart';
 import 'package:fixo/viewmodels/jobs_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lottie/lottie.dart';
 
 const _starting = MatchingProgressState(jobId: '42');
 
@@ -25,17 +28,14 @@ const _matched = MatchingProgressState(
   phase: MatchingPhase.matched,
 );
 
-/// A fixed point of the ripple, so nothing repeats and `pump` never hangs.
-const _frame = AlwaysStoppedAnimation<double>(0.3);
-
 Future<void> _pump(
   WidgetTester tester, {
   MatchingProgressState progress = _starting,
-  Animation<double>? radar,
   bool reconnecting = false,
   bool stalled = false,
   bool dispatchFailed = false,
   bool busy = false,
+  bool disableAnimations = false,
   VoidCallback? onTryAgain,
   VoidCallback? onCancel,
   ThemeMode themeMode = ThemeMode.light,
@@ -49,13 +49,14 @@ Future<void> _pump(
   await tester.pumpWidget(
     MaterialApp(
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(scale)),
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(scale),
+          disableAnimations: disableAnimations,
+        ),
         child: child!,
       ),
       home: ThRadarScreen(
         progress: progress,
-        radar: radar,
         reconnecting: reconnecting,
         stalled: stalled,
         dispatchFailed: dispatchFailed,
@@ -72,8 +73,10 @@ Future<void> _pump(
 void main() {
   group('searching', () {
     testWidgets('animated radar, headline and Cancel', (tester) async {
-      await _pump(tester, radar: _frame);
+      await _pump(tester);
       expect(find.byKey(const ValueKey('matching-radar')), findsOneWidget);
+      expect(find.byType(Lottie), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsNothing);
       expect(find.text('Finding tradies near you…'), findsOneWidget);
       expect(find.text('Checking availability and distance'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
@@ -81,10 +84,28 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('reduced motion draws only the static core', (tester) async {
-      await _pump(tester);
-      expect(find.byKey(const ValueKey('matching-radar')), findsNothing);
-      expect(find.byIcon(Icons.search), findsOneWidget);
+    testWidgets('reduced motion settles without repeating', (tester) async {
+      await _pump(tester, disableAnimations: true);
+      expect(find.byKey(const ValueKey('matching-radar')), findsOneWidget);
+      expect(find.byType(Lottie), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsNothing);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('bad Lottie asset falls back to ThBrandMark', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ThTradieLoader(
+              isLoading: true,
+              assetOverride: 'assets/lottie/does_not_exist.json',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ThBrandMark), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -92,7 +113,7 @@ void main() {
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      await _pump(tester, progress: _contacting2, radar: _frame);
+      await _pump(tester, progress: _contacting2);
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Contacting Tradie 2…'), findsOneWidget);
       expect(find.bySemanticsLabel('Contacting tradie 2'), findsOneWidget);
@@ -124,7 +145,7 @@ void main() {
     testWidgets('shows the designed failure state, not the radar', (
       tester,
     ) async {
-      await _pump(tester, dispatchFailed: true, radar: _frame);
+      await _pump(tester, dispatchFailed: true);
       expect(
         find.text('Could not start matching for this job.'),
         findsOneWidget,
@@ -207,7 +228,6 @@ void main() {
                 await _pump(
                   tester,
                   progress: entry.value,
-                  radar: _frame,
                   themeMode: mode,
                   width: width,
                   scale: scale,

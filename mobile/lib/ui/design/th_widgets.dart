@@ -7,6 +7,7 @@ import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'th_test_id.dart';
 export 'th_test_id.dart';
@@ -2020,6 +2021,31 @@ class _HuntPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HuntPainter old) => old.color != color;
+}
+
+class ThBrandMark extends StatelessWidget {
+  const ThBrandMark({
+    super.key,
+    this.size = Sizes.brandMark,
+    this.onDark = false,
+  });
+
+  final double size;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = onDark || Theme.of(context).brightness == Brightness.dark;
+    final asset = isDark
+        ? 'assets/brand/logo/logo-white.svg'
+        : 'assets/brand/logo/logo.svg';
+    return SvgPicture.asset(
+      asset,
+      width: size,
+      height: size,
+      excludeFromSemantics: true,
+    );
+  }
 }
 
 class THWordmark extends StatelessWidget {

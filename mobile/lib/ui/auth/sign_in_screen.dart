@@ -122,7 +122,14 @@ class _ThSignInScreenState extends ConsumerState<ThSignInScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: Space.s3,
                   children: [
-                    THWordmark(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: Space.s2,
+                      children: [
+                        const ThBrandMark(),
+                        const THWordmark(),
+                      ],
+                    ),
                     // Mockup spacers (12 column gap + 28 / 4 / 20 spacer divs).
                     const SizedBox(height: _kAfterWordmark),
                     Semantics(

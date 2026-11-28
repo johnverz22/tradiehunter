@@ -10,6 +10,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
+import { BrandMark } from '../features/branding/components/BrandMark';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { UserMenu } from './UserMenu';
@@ -32,7 +33,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ navItems, adminName }) =
   return (
     <aside className="sidebar" aria-label="Admin navigation">
       <div className="sidebar-brand">
-        <BrandWordmark className="wordmark-lg" />
+        <span className="brand-lockup">
+          <BrandMark />
+          <BrandWordmark className="wordmark-lg" />
+        </span>
         <span className="monogram" aria-hidden="true">TH</span>
       </div>
 

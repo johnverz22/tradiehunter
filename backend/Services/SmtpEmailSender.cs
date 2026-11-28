@@ -417,6 +417,11 @@ public class SmtpEmailSender : IEmailSender
                 TextBody = rendered.Text,
                 HtmlBody = rendered.Html,
             };
+            if (rendered.Html.Contains("cid:th-mark", StringComparison.Ordinal))
+            {
+                var img = body.LinkedResources.Add("th-mark.png", Email.EmailAssets.Mark);
+                img.ContentId = "th-mark";
+            }
             message.Body = body.ToMessageBody();
         }
         return message;

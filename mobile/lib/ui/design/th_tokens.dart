@@ -84,6 +84,8 @@ abstract class Sizes {
   static const double quickReplyHeight = 64.0;
   static const double quickReplyWidth = 180.0;
   static const double radarDiameter = 240.0;
+  static const double tradieLoader = 240.0;
+  static const double brandMark = 32.0;
   static const double radarCore = 96.0;
   static const double radarCoreIcon = 48.0;
   static const double radarTextBlock = 88.0;
@@ -101,7 +103,7 @@ abstract class THDurations {
   static const Duration splashRingLate = Duration(milliseconds: 1200);
   static const Duration onboardingPage = Duration(milliseconds: 220);
   static const Duration chatScroll = Duration(milliseconds: 150);
-  static const Duration radarCycle = Duration(milliseconds: 2000);
+
   static const Duration toggle = Duration(milliseconds: 200);
   static const Duration addressDebounce = Duration(milliseconds: 400);
   static const Duration sheetDelay = Duration(milliseconds: 800);

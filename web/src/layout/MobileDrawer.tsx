@@ -14,6 +14,7 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { BrandMark } from '../features/branding/components/BrandMark';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { UserMenu } from './UserMenu';
 import type { NavItem } from './SidebarNav';
@@ -110,7 +111,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
       >
         <div className="sidebar-brand">
           <div className="row between nowrap">
-            <BrandWordmark className="wordmark-lg" />
+            <span className="brand-lockup">
+              <BrandMark />
+              <BrandWordmark className="wordmark-lg" />
+            </span>
             <button
               type="button"
               className="nav-item nav-item-icon"

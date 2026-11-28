@@ -48,6 +48,7 @@
     <None Remove="Email\**\*.cshtml" />
     <Content Remove="Email\**\*.cshtml" />
     <EmbeddedResource Include="Email\**\*.cshtml" />
+    <EmbeddedResource Include="Email\Assets\*.png" />
   </ItemGroup>
 
   <!-- The test project lives under backend/ but must not compile into the API. -->

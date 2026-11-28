@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Lock, Mail } from 'lucide-react';
 import api from '../../services/api';
 import { useAppName } from '../branding/hooks/useBrandConfig';
+import { BrandMark } from '../branding/components/BrandMark';
 import { BrandWordmark } from '../branding/components/BrandWordmark';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -77,7 +78,10 @@ export const AdminLogin: React.FC = () => {
   return (
     <div className="auth">
       <aside className="hero auth-aside">
-        <BrandWordmark className="wordmark-lg" />
+        <span className="brand-lockup">
+          <BrandMark />
+          <BrandWordmark className="wordmark-lg" />
+        </span>
         <div className="stack">
           <p className="t-display">Marketplace operations, in one place.</p>
           <p className="t-body c-onHeroSoft">
@@ -90,7 +94,10 @@ export const AdminLogin: React.FC = () => {
       <main className="auth-main">
         <div className="auth-card">
           {/* The aside is hidden below 1024 px; keep the brand on the card there. */}
-          <BrandWordmark className="wordmark-lg auth-card-brand" />
+          <span className="brand-lockup auth-card-brand">
+            <BrandMark />
+            <BrandWordmark className="wordmark-lg" />
+          </span>
           <h1 className="t-h1">Sign in</h1>
           <p className="t-body c-soft">Use your staff account to continue.</p>
 

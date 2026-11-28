@@ -15,10 +15,10 @@ public class BrandOptions
     public string FrontendBaseUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// Deprecated — the v2 email header renders a text wordmark (Lexend, white
-    /// + hero-gold accent) rather than an image, so no hosted asset is needed.
-    /// Retained so existing configuration binding does not break; a future
-    /// image-wordmark option can revive it after the formal v2 brand pass.
+    /// <summary>
+    /// Optional HTTPS PNG URL for the email header emblem. When empty,
+    /// <see cref="Email.EmailTemplateRenderer"/> embeds <c>cid:th-mark</c>
+    /// as an inline MIME linked resource.
     /// </summary>
     public string EmailLogoUrl { get; set; } = string.Empty;
 

@@ -11,6 +11,7 @@
  */
 import React from 'react';
 import { LogOut, Menu } from 'lucide-react';
+import { BrandMark } from '../features/branding/components/BrandMark';
 import { BrandWordmark } from '../features/branding/components/BrandWordmark';
 import { Button, IconButton } from '../components/Button';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -51,7 +52,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       <Menu size={20} />
     </IconButton>
 
-    <BrandWordmark className="phone-only" />
+    <span className="brand-lockup phone-only">
+      <BrandMark size={24} />
+      <BrandWordmark />
+    </span>
 
     <span className="grow" />
 

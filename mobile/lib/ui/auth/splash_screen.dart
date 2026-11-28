@@ -142,6 +142,8 @@ class _ThSplashScreenState extends ConsumerState<ThSplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const ThBrandMark(onDark: true),
+                        const SizedBox(height: Space.s3),
                         THWordmark(large: true),
                         const SizedBox(height: Space.s3),
                         // Amber rule

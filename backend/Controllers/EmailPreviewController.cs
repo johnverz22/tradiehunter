@@ -39,7 +39,7 @@ public class EmailPreviewController : ControllerBase
         // Sample brand has no FrontendBaseUrl (CTAs omitted, §9 Q1);
         // frontend=true renders the CTA variant for review.
         var model = factory(frontend ? EmailPreviewSamples.WithFrontend : EmailPreviewSamples.SampleBrand);
-        var rendered = await _renderer.RenderAsync(template, model);
+        var rendered = await _renderer.RenderAsync(template, model, inlineDataUriForPreview: true);
 
         if (text)
         {

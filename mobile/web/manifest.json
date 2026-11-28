@@ -3,9 +3,9 @@
     "short_name": "TradieHunter",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#1E3A8A",
+    "description": "TradieHunter — connect with trusted local tradies.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

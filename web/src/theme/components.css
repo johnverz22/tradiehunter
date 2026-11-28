@@ -73,6 +73,13 @@ a { color: var(--ink-brand); }
 .wordmark span { color: var(--accent-ink); }
 .on-dark .wordmark, .sidebar .wordmark, .hero .wordmark { color: var(--on-hero); }
 .on-dark .wordmark span, .sidebar .wordmark span, .hero .wordmark span { color: var(--hero-gold); }
+.brand-mark { display: inline-flex; flex: none; align-items: center; }
+.brand-mark-dark { display: none; }
+.on-dark .brand-mark-light, .sidebar .brand-mark-light, .hero .brand-mark-light,
+:root[data-theme="dark"] .brand-mark-light { display: none; }
+.on-dark .brand-mark-dark, .sidebar .brand-mark-dark, .hero .brand-mark-dark,
+:root[data-theme="dark"] .brand-mark-dark { display: inline; }
+.brand-lockup { display: inline-flex; align-items: center; gap: 10px; }
 .monogram { width: var(--sz-avatar); height: var(--sz-avatar); border-radius: var(--r-card); display: inline-flex; align-items: center; justify-content: center; background: var(--hero-gold); color: var(--hero-start); font: 800 14px/1 var(--ff-display); }
 
 /* ── Surfaces ───────────────────────────────────────────── */

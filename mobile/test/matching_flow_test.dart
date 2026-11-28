@@ -414,8 +414,8 @@ void main() {
         hub: MatchHub(),
         disableAnimations: true,
       );
-      expect(find.byIcon(Icons.search), findsOneWidget);
-      expect(find.byKey(const ValueKey('matching-radar')), findsNothing);
+      expect(find.byIcon(Icons.search), findsNothing);
+      expect(find.byKey(const ValueKey('matching-radar')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

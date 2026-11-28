@@ -31,20 +31,38 @@ public sealed class EmailTemplateRenderer
     /// Render a template from <c>backend/Email/Templates/{name}.cshtml</c> plus
     /// its plain-text twin. Names are stable template keys — "Otp", "StaffInvite", …
     /// </summary>
-    public async Task<RenderedEmail> RenderAsync<TModel>(string templateName, TModel model)
+    public async Task<RenderedEmail> RenderAsync<TModel>(
+        string templateName,
+        TModel model,
+        bool inlineDataUriForPreview = false)
         where TModel : IEmailTextModel
     {
         var bodyHtml = await _engine.CompileRenderAsync($"{TemplatesRoot}.{templateName}", model);
+        var markSrc = ResolveMarkSrc(model.Brand, inlineDataUriForPreview);
         var layoutModel = new EmailLayoutModel
         {
             BodyHtml = bodyHtml.Trim(),
             Preheader = model.TextPreheader,
             FooterNote = model.TextFooterNote,
             Brand = model.Brand,
+            MarkSrc = markSrc,
         };
         var html = await _engine.CompileRenderAsync(LayoutKey, layoutModel);
         var text = PlainTextComposer.Compose(model, model.Brand);
         return new RenderedEmail(html.Trim(), text);
+    }
+
+    private static string ResolveMarkSrc(BrandOptions brand, bool inlineDataUriForPreview)
+    {
+        if (!string.IsNullOrWhiteSpace(brand.EmailLogoUrl))
+        {
+            return brand.EmailLogoUrl.Trim();
+        }
+        if (inlineDataUriForPreview)
+        {
+            return $"data:image/png;base64,{Convert.ToBase64String(EmailAssets.Mark)}";
+        }
+        return "cid:th-mark";
     }
 
     /// <summary>Diagnostic: embedded template resource names as RazorLight resolves them.</summary>

@@ -154,7 +154,14 @@ class _ThSignUpScreenState extends ConsumerState<ThSignUpScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    THWordmark(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: Space.s2,
+                      children: [
+                        const ThBrandMark(),
+                        const THWordmark(),
+                      ],
+                    ),
                     const SizedBox(height: Space.s7),
                     Text(
                       'Create your account',

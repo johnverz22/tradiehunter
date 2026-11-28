@@ -3,18 +3,8 @@ import 'package:flutter/material.dart';
 import '../../viewmodels/jobs_viewmodel.dart';
 import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
+import '../design/th_tradie_loader.dart';
 import '../design/th_widgets.dart';
-
-/// Rings in the ripple. A count, not a size, so it is not a design token.
-const int _kRadarRings = 3;
-
-/// A ring starts at this fraction of [Sizes.radarDiameter] and grows to full.
-const double _kRingStartScale = 0.5;
-
-/// Peak alpha of a ring's stroke; it fades to zero as the ring expands.
-const double _kRingPeakAlpha = 0.45;
-
-const double _kRingStroke = 2.0;
 
 /// The offer-progress dots stop growing after this many contacted tradies.
 const int _kMaxOfferDots = 5;
@@ -32,7 +22,6 @@ class ThRadarScreen extends StatelessWidget {
   const ThRadarScreen({
     super.key,
     required this.progress,
-    required this.radar,
     required this.reconnecting,
     required this.stalled,
     required this.dispatchFailed,
@@ -44,10 +33,6 @@ class ThRadarScreen extends StatelessWidget {
 
   /// Where the server-owned matching run has got to (P3-09).
   final MatchingProgressState progress;
-
-  /// Drives the ripple, one 0 → 1 cycle per [THDurations.radarCycle]. Null
-  /// when the platform asks for reduced motion: a static badge is drawn.
-  final Animation<double>? radar;
 
   /// SignalR is reconnecting (truthful notice, no fake progress).
   final bool reconnecting;
@@ -107,7 +92,6 @@ class ThRadarScreen extends StatelessWidget {
           } else {
             content = _Searching(
               progress: progress,
-              radar: radar,
               reconnecting: reconnecting,
               stalled: stalled,
             );
@@ -153,13 +137,11 @@ class ThRadarScreen extends StatelessWidget {
 class _Searching extends StatelessWidget {
   const _Searching({
     required this.progress,
-    required this.radar,
     required this.reconnecting,
     required this.stalled,
   });
 
   final MatchingProgressState progress;
-  final Animation<double>? radar;
   final bool reconnecting;
   final bool stalled;
 
@@ -171,7 +153,10 @@ class _Searching extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Radar(animation: radar),
+        const ThTradieLoader(
+          key: ValueKey('matching-radar'),
+          isLoading: true,
+        ),
         const SizedBox(height: Space.s7),
         // Sequential offer progress — "Contacting Tradie 2…" (P3-09).
         Semantics(
@@ -247,64 +232,7 @@ class _Searching extends StatelessWidget {
 }
 
 /// Three expanding rings around a static core, one cycle per animation loop.
-/// With no [animation] (reduced motion) only the core is drawn.
-class _Radar extends StatelessWidget {
-  const _Radar({required this.animation});
 
-  final Animation<double>? animation;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.th;
-    final core = Container(
-      width: Sizes.radarCore,
-      height: Sizes.radarCore,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: c.brand),
-      child: Icon(Icons.search, size: Sizes.radarCoreIcon, color: c.onBrand),
-    );
-    final anim = animation;
-    return RepaintBoundary(
-      child: SizedBox(
-        width: Sizes.radarDiameter,
-        height: Sizes.radarDiameter,
-        child: anim == null
-            ? Center(child: core)
-            : AnimatedBuilder(
-                key: const ValueKey('matching-radar'),
-                animation: anim,
-                builder: (context, _) => Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    for (var i = 0; i < _kRadarRings; i++)
-                      _ring(c, (anim.value + i / _kRadarRings) % 1),
-                    core,
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _ring(THColors c, double t) {
-    final scale = _kRingStartScale + t * (1 - _kRingStartScale);
-    final alpha = ((1 - t) * _kRingPeakAlpha).clamp(0.0, 1.0);
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: Sizes.radarDiameter,
-        height: Sizes.radarDiameter,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: c.brand.withValues(alpha: alpha),
-            width: _kRingStroke,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// One dot per offer the server has dispatched in this run; the latest is
 /// emphasised.

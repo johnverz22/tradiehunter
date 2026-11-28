@@ -62,9 +62,7 @@ class ThMatchingScreen extends ConsumerStatefulWidget {
   ConsumerState<ThMatchingScreen> createState() => _ThMatchingScreenState();
 }
 
-class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
+class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen> {
   StreamSubscription<OfferLifecycleEvent>? _offerSub;
   StreamSubscription<JobStatusEvent>? _statusSub;
   StreamSubscription<void>? _reconnectingSub;
@@ -74,7 +72,6 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
   bool _dispatchFailed = false;
   bool _stalled = false;
   bool _reconnecting = false;
-  bool _animationsEnabled = false;
   bool _busy = false;
   bool _isProject = false;
 
@@ -93,23 +90,7 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
     Future.microtask(_start);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final enabled = !MediaQuery.disableAnimationsOf(context);
-    if (enabled != _animationsEnabled) {
-      _animationsEnabled = enabled;
-      if (!_isRequestSent) {
-        enabled ? _ctrl.repeat() : _ctrl.stop();
-      }
-    }
   }
 
   /// Subscribes to hub events once, then dispatches (autoMatch) or seeds the
@@ -143,7 +124,7 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
       final job = await ref.read(jobsRepositoryProvider).getJobById(widget.jobId);
       if (!mounted) return;
       if (job != null && job.isProject) {
-        _ctrl.stop();
+        // no-op: ThTradieLoader owns its animation lifecycle
         setState(() => _isProject = true);
         return;
       }
@@ -390,7 +371,6 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
     _pollTimer?.cancel();
     // Backing out (not just the accept/decline paths) must release the group.
     unawaited(_leave());
-    _ctrl.dispose();
     super.dispose();
   }
 
@@ -416,7 +396,6 @@ class _ThMatchingScreenState extends ConsumerState<ThMatchingScreen>
     final progress = ref.watch(matchingProgressProvider(widget.jobId));
     return ThRadarScreen(
       progress: progress,
-      radar: _animationsEnabled ? _ctrl : null,
       reconnecting: _reconnecting,
       stalled: _stalled,
       dispatchFailed: _dispatchFailed,
