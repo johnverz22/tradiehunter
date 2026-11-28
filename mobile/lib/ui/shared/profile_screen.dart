@@ -394,12 +394,17 @@ class _ThProfileScreenState extends ConsumerState<ThProfileScreen> {
                       row(
                         icon: Icons.credit_card_rounded,
                         title: 'Payments and receipts',
-                        onTap: () => context.push('/settings'),
+                        subtitle: isTradie
+                            ? 'Earnings and payouts'
+                            : 'Payment status and receipts by job',
+                        onTap: () => isTradie
+                            ? context.push('/tradie/earnings')
+                            : context.go('/jobs'),
                       ),
                       row(
                         icon: Icons.notifications_rounded,
                         title: 'Notifications',
-                        onTap: () => context.push('/settings'),
+                        onTap: () => context.push('/notifications'),
                         divider: false,
                       ),
                     ]),

@@ -83,80 +83,81 @@ class TrOnboardingStep0Work extends StatelessWidget {
               ),
             ],
           ),
-        THText('YOUR DETAILS', style: THTextStyle.label, tone: THTone.soft),
-        _OnboardingTextField(
-          label: 'First name',
-          controller: controllers.firstName,
-          errorText: errors['firstName'],
-          onChanged: notifier.setFirstName,
-        ),
-        _OnboardingTextField(
-          label: 'Last name',
-          controller: controllers.lastName,
-          errorText: errors['lastName'],
-          onChanged: notifier.setLastName,
-        ),
-        _OnboardingTextField(
-          label: 'Phone',
-          controller: controllers.phone,
-          errorText: errors['phone'],
-          keyboardType: TextInputType.phone,
-          onChanged: notifier.setPhone,
-        ),
-        _OnboardingTextField(
-          label: 'Base address',
-          controller: controllers.address,
-          errorText: errors['address'],
-          onChanged: notifier.setAddress,
-        ),
-        Row(
-          spacing: Space.s2_5,
+        _SectionCard(
+          title: 'Your details',
           children: [
-            Expanded(
-              child: _OnboardingTextField(
-                label: 'Latitude',
-                controller: controllers.latitude,
-                errorText: errors['latitude'],
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
-                ),
-                onChanged: notifier.setLatitude,
-              ),
+            _OnboardingTextField(
+              label: 'First name',
+              controller: controllers.firstName,
+              errorText: errors['firstName'],
+              onChanged: notifier.setFirstName,
             ),
-            Expanded(
-              child: _OnboardingTextField(
-                label: 'Longitude',
-                controller: controllers.longitude,
-                errorText: errors['longitude'],
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+            _OnboardingTextField(
+              label: 'Last name',
+              controller: controllers.lastName,
+              errorText: errors['lastName'],
+              onChanged: notifier.setLastName,
+            ),
+            _OnboardingTextField(
+              label: 'Phone',
+              controller: controllers.phone,
+              errorText: errors['phone'],
+              keyboardType: TextInputType.phone,
+              onChanged: notifier.setPhone,
+            ),
+            _OnboardingTextField(
+              label: 'Base address',
+              controller: controllers.address,
+              errorText: errors['address'],
+              onChanged: notifier.setAddress,
+            ),
+            Row(
+              spacing: Space.s2_5,
+              children: [
+                Expanded(
+                  child: _OnboardingTextField(
+                    label: 'Latitude',
+                    controller: controllers.latitude,
+                    errorText: errors['latitude'],
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                    onChanged: notifier.setLatitude,
+                  ),
                 ),
-                onChanged: notifier.setLongitude,
-              ),
+                Expanded(
+                  child: _OnboardingTextField(
+                    label: 'Longitude',
+                    controller: controllers.longitude,
+                    errorText: errors['longitude'],
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: true,
+                    ),
+                    onChanged: notifier.setLongitude,
+                  ),
+                ),
+              ],
+            ),
+            _OnboardingTextField(
+              label: 'Service radius (km)',
+              controller: controllers.radius,
+              keyboardType: TextInputType.number,
+              onChanged: (v) {
+                final parsed = Decimal.tryParse(v.trim());
+                if (parsed != null) {
+                  notifier.setServiceRadiusKm(parsed);
+                }
+              },
             ),
           ],
         ),
-        _OnboardingTextField(
-          label: 'Service radius (km)',
-          controller: controllers.radius,
-          keyboardType: TextInputType.number,
-          onChanged: (v) {
-            final parsed = Decimal.tryParse(v.trim());
-            if (parsed != null) {
-              notifier.setServiceRadiusKm(parsed);
-            }
-          },
-        ),
-        THText(
-          'WEEKLY AVAILABILITY',
-          style: THTextStyle.label,
-          tone: THTone.soft,
-        ),
         THCard(
-          padding: Space.s3,
+          padding: Space.s4,
           children: [
+            const THText('Weekly availability', style: THTextStyle.title),
+            const SizedBox(height: Space.s3),
             for (final day in trOnboardingSortedDays(state.schedule)) ...[
               _DayRow(
                 day: day,
@@ -275,30 +276,30 @@ class TrOnboardingStep1Trades extends StatelessWidget {
               ),
             ],
           ),
-        THText('PRIMARY TRADE', style: THTextStyle.label, tone: THTone.soft),
-        Wrap(
-          spacing: Space.s2,
-          runSpacing: Space.s2,
+        _SectionCard(
+          title: 'Primary trade',
           children: [
-            for (final cat in _tradeCategories)
-              ChoiceChip(
-                label: Text(cat),
-                selected: state.tradeType == cat,
-                onSelected: (_) => notifier.setTradeType(cat),
+            Wrap(
+              spacing: Space.s2,
+              runSpacing: Space.s2,
+              children: [
+                for (final cat in _tradeCategories)
+                  ChoiceChip(
+                    label: Text(cat),
+                    selected: state.tradeType == cat,
+                    onSelected: (_) => notifier.setTradeType(cat),
+                  ),
+              ],
+            ),
+            if (errors['tradeType'] != null)
+              THText(
+                errors['tradeType']!,
+                style: THTextStyle.meta,
+                tone: THTone.danger,
               ),
           ],
         ),
-        if (errors['tradeType'] != null)
-          THText(
-            errors['tradeType']!,
-            style: THTextStyle.meta,
-            tone: THTone.danger,
-          ),
-        THText(
-          'SERVICES & HOURLY RATES',
-          style: THTextStyle.label,
-          tone: THTone.soft,
-        ),
+        THText('Services and hourly rates', style: THTextStyle.title),
         if (errors['services'] != null)
           THText(
             errors['services']!,
@@ -402,7 +403,7 @@ class TrOnboardingStep2Verification extends StatelessWidget {
               ),
             ],
           ),
-        THText('DOCUMENTS', style: THTextStyle.label, tone: THTone.soft),
+        THText('Documents', style: THTextStyle.title),
         if (state.credentials.isNotEmpty)
           THCard(
             padding: Space.s1,
@@ -497,18 +498,46 @@ class TrOnboardingStep3Payout extends StatelessWidget {
               ),
             ],
           ),
-        THText('PAYOUT DETAILS', style: THTextStyle.label, tone: THTone.soft),
-        _OnboardingTextField(
-          label: 'Account holder name',
-          controller: controllers.bankAccountName,
-          onChanged: notifier.setBankAccountName,
+        _SectionCard(
+          title: 'Payout details',
+          children: [
+            _OnboardingTextField(
+              label: 'Account holder name',
+              controller: controllers.bankAccountName,
+              onChanged: notifier.setBankAccountName,
+            ),
+            _OnboardingTextField(
+              label: 'NZ bank account number',
+              hintText: '00-0000-0000000-00',
+              controller: controllers.bankAccountNumber,
+              errorText: errors['bankAccountNumber'],
+              onChanged: notifier.setBankAccountNumber,
+            ),
+          ],
         ),
-        _OnboardingTextField(
-          label: 'NZ bank account number',
-          hintText: '00-0000-0000000-00',
-          controller: controllers.bankAccountNumber,
-          errorText: errors['bankAccountNumber'],
-          onChanged: notifier.setBankAccountNumber,
+      ],
+    );
+  }
+}
+
+/// Titled card that groups a step's fields, matching the cards used on the
+/// other screens.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return THCard(
+      children: [
+        THText(title, style: THTextStyle.title),
+        const SizedBox(height: Space.s3),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: Space.s3,
+          children: children,
         ),
       ],
     );

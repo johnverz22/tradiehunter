@@ -1,8 +1,8 @@
 // ThSettingsScreen: v2 settings (migration plan 3.3, id `settings` — no v2
 // mockup, tokens-only composition per D-4).
 //
-// Hand-owned port of views/settings_screen.dart. Same rows and actions:
-// Account (Personal Details / tradie Payout Details / stub Payment Methods),
+// Hand-owned port of views/settings_screen.dart. Account rows (personal
+// details, payout, payments) live on Profile only, so Settings holds
 // Preferences (device-local Notifications toggle, Region from
 // GET /api/config/locale, live Theme picker), Support stubs, a ghost Sign out
 // (S-05: same label and weight as Profile, not a solid red block; key
@@ -51,8 +51,6 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
           final c = context.th;
           final themeMode = ref.watch(themeModeProvider);
           final localeAsync = ref.watch(localeConfigProvider);
-          final isTradie =
-              ref.watch(profileViewModelProvider).profile?['role'] == 1;
 
           Widget card(List<Widget> children) => Container(
             decoration: BoxDecoration(
@@ -121,29 +119,6 @@ class _ThSettingsScreenState extends ConsumerState<ThSettingsScreen> {
                 thDockClearance(context),
               ),
               children: [
-                sectionLabel('Account'),
-                card([
-                  tile(
-                    label: 'Personal Details',
-                    onTap: () => context.go('/profile'),
-                  ),
-                  // Tradie payout details live on the self-profile form (PUT
-                  // /api/profile) — no separate settings endpoint exists.
-                  if (isTradie)
-                    tile(
-                      label: 'Payout Details',
-                      onTap: () => context.go('/profile'),
-                    ),
-                  // Payments are V1.1+ / out of MVP scope per MVP-SPEC — no
-                  // backend endpoint exists. Row stays as an explicit
-                  // coming-soon placeholder.
-                  tile(
-                    label: 'Payment Methods',
-                    onTap: () => _stub('Payment methods (V1.1)'),
-                    showDivider: false,
-                  ),
-                ]),
-                const SizedBox(height: Space.s4),
                 sectionLabel('Preferences'),
                 card([
                   // Device-local toggle — no persistence exists on the
