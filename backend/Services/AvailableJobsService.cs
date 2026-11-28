@@ -17,6 +17,7 @@ namespace FixoApi.Services;
 ///   • Status == Requested
 ///   • OpenToBoard == true
 ///   • QuotesCloseAtUtc &gt; now (window still open)
+///   • The tradie is verified and their account is active
 ///   • The tradie offers the job's service (has a TradieRate row)
 ///   • The tradie is within radius of the job
 ///   • The tradie's licence credential is approved when the service RequiresLicence
@@ -60,8 +61,16 @@ public class AvailableJobsService
         var profile = await _context.TradieProfiles
             .AsNoTracking()
             .Where(p => p.UserId == tradieId)
-            .Select(p => new { p.Location, p.UserId })
+            .Select(p => new { p.Location, p.UserId, p.IsVerified, IsActive = p.User.IsActive })
             .FirstOrDefaultAsync(ct);
+
+        // Only verified tradies on active accounts may browse the open board.
+        if (profile is { IsVerified: false } or { IsActive: false })
+        {
+            _logger.LogInformation(
+                "AvailableJobsService: tradie {TradieId} is unverified or deactivated — returning empty board.", tradieId);
+            return new AvailableJobsResponse { Page = page, PageSize = pageSize };
+        }
 
         if (profile?.Location == null)
         {

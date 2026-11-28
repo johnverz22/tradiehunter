@@ -2,6 +2,9 @@ using FixoApi.Data;
 using FixoApi.DTOs;
 using FixoApi.Enums;
 using FixoApi.Models;
+using FixoApi.Email;
+using FixoApi.Options;
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +30,7 @@ public class AdminService : IAdminService
     private readonly IJobStatusService _jobStatusService;
     private readonly IAuditLogService _audit;
     private readonly ILogger<AdminService> _logger;
+    private readonly BrandOptions _brand;
 
     public AdminService(
         FixoDbContext db,
@@ -39,7 +43,8 @@ public class AdminService : IAdminService
         INotificationService notifications,
         IJobStatusService jobStatusService,
         IAuditLogService audit,
-        ILogger<AdminService> logger)
+        ILogger<AdminService> logger,
+        IOptions<BrandOptions>? brand = null)
     {
         _db = db;
         _userManager = userManager;
@@ -52,6 +57,7 @@ public class AdminService : IAdminService
         _jobStatusService = jobStatusService;
         _audit = audit;
         _logger = logger;
+        _brand = brand?.Value ?? new BrandOptions();
     }
 
     // ── Stats ──────────────────────────────────────────────────────────────────
@@ -187,24 +193,52 @@ public class AdminService : IAdminService
         if (user is null) return null;
 
         var tradieProfile = await _db.TradieProfiles.FirstOrDefaultAsync(tp => tp.UserId == userId);
+        var isTradie = user.Role == UserRole.Tradie;
+
+        // Jobs the user took part in, whichever side they were on.
+        var involved = _db.Jobs.Where(j => j.HomeownerId == userId || j.MatchedTradieId == userId);
 
         var jobCount = await _db.Jobs.CountAsync(j => j.HomeownerId == userId);
+        var completedCount = await involved.CountAsync(j =>
+            j.Status == JobStatus.Completed &&
+            (isTradie ? j.MatchedTradieId == userId : j.HomeownerId == userId));
+        var disputeCount = await involved.CountAsync(j => j.IsFlagged);
 
-        var recentJobs = await _db.Jobs
+        var recentJobs = await involved
+            .Include(j => j.Homeowner)
             .Include(j => j.MatchedTradie)
-            .Where(j => j.HomeownerId == userId || j.MatchedTradieId == userId)
             .OrderByDescending(j => j.CreatedAtUtc)
             .Take(10)
             .ToListAsync();
 
-        var recentReviews = await _db.Reviews
+        // Reviews the user received that are visible to the public (same rules as the app profile).
+        var now = DateTime.UtcNow;
+        var visibleReviews = _db.Reviews
+            .Where(r => r.RevieweeId == userId
+                        && r.Status == ReviewStatus.Visible
+                        && (!r.RevealAfterUtc.HasValue || r.RevealAfterUtc.Value <= now));
+
+        var ratingCounts = await visibleReviews
+            .GroupBy(r => r.Rating)
+            .Select(g => new { Rating = g.Key, Count = g.Count() })
+            .ToListAsync();
+        var reviewCount = ratingCounts.Sum(x => x.Count);
+        var avgRating = reviewCount > 0
+            ? ratingCounts.Sum(x => x.Rating * x.Count) / (double)reviewCount
+            : 0;
+
+        var recentReviews = await visibleReviews
             .Include(r => r.Reviewer)
-            .Where(r => r.RevieweeId == userId)
             .OrderByDescending(r => r.CreatedAtUtc)
             .Take(10)
             .ToListAsync();
 
-        var avgRating = recentReviews.Count > 0 ? recentReviews.Average(r => r.Rating) : 0;
+        var topReviews = await visibleReviews
+            .Include(r => r.Reviewer)
+            .OrderByDescending(r => r.Rating)
+            .ThenByDescending(r => r.CreatedAtUtc)
+            .Take(5)
+            .ToListAsync();
 
         var dto = new AdminUserDetailDto
         {
@@ -216,33 +250,177 @@ public class AdminService : IAdminService
             IsVerified = tradieProfile?.IsVerified ?? false,
             CreatedAtUtc = user.CreatedAtUtc,
             JobCount = jobCount,
+            CompletedJobCount = completedCount,
+            DisputeCount = disputeCount,
+            PhoneNumber = user.PhoneNumber,
+            EmailVerified = user.EmailVerified,
+            EmailBouncedAtUtc = user.EmailBouncedAtUtc,
             TradeType = tradieProfile?.TradeType,
             BusinessName = tradieProfile?.BusinessName,
             AverageRating = Math.Round(avgRating, 1),
-            ReviewCount = recentReviews.Count,
+            ReviewCount = reviewCount,
+            RatingBreakdown = Enumerable.Range(1, 5).ToDictionary(
+                star => star.ToString(),
+                star => ratingCounts.FirstOrDefault(x => x.Rating == star)?.Count ?? 0),
             RecentJobs = recentJobs.Select(j => new AdminJobSummaryDto
             {
                 Id = j.Id,
                 Title = j.Title,
                 Category = j.Category.ToString(),
                 Status = j.Status.ToString(),
-                HomeownerName = user.FullName,
+                HomeownerName = j.Homeowner?.FullName ?? string.Empty,
                 TradeName = j.MatchedTradie?.FullName,
                 CreatedAtUtc = j.CreatedAtUtc,
                 UpdatedAtUtc = j.UpdatedAtUtc,
             }).ToList(),
-            RecentReviews = recentReviews.Select(r => new AdminReviewSummaryDto
-            {
-                Id = r.Id,
-                JobId = r.JobId,
-                ReviewerName = r.Reviewer.FullName,
-                Rating = r.Rating,
-                Comment = r.Comment,
-                CreatedAtUtc = r.CreatedAtUtc,
-            }).ToList(),
+            TopReviews = topReviews.Select(MapReview).ToList(),
+            RecentReviews = recentReviews.Select(MapReview).ToList(),
         };
 
+        await FillAccountStatusNotesAsync(dto, user);
+
+        if (tradieProfile is not null)
+            dto.TradieDetails = await BuildTradieDetailsAsync(user, tradieProfile);
+
         return dto;
+    }
+
+    private static AdminReviewSummaryDto MapReview(Review r) => new()
+    {
+        Id = r.Id,
+        JobId = r.JobId,
+        ReviewerName = r.Reviewer.FullName,
+        Rating = r.Rating,
+        Comment = r.Comment,
+        CreatedAtUtc = r.CreatedAtUtc,
+    };
+
+    /// <summary>
+    /// The deactivation/reactivation notes live in the audit log (append-only), so the page
+    /// shows exactly what staff recorded without a schema change.
+    /// </summary>
+    private async Task FillAccountStatusNotesAsync(AdminUserDetailDto dto, ApplicationUser user)
+    {
+        var entries = await _db.AuditLogs
+            .Where(a => a.EntityType == "ApplicationUser" && a.EntityId == user.Id
+                        && (a.Action == "user.deactivate" || a.Action == "user.reactivate"))
+            .OrderByDescending(a => a.CreatedAtUtc)
+            .Take(10)
+            .ToListAsync();
+
+        async Task<AdminAccountStatusNoteDto?> ToNoteAsync(AuditLog? entry, string field)
+        {
+            if (entry is null) return null;
+            string? note = null;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(entry.NewValues))
+                {
+                    using var doc = JsonDocument.Parse(entry.NewValues);
+                    foreach (var prop in doc.RootElement.EnumerateObject())
+                        if (string.Equals(prop.Name, field, StringComparison.OrdinalIgnoreCase))
+                            note = prop.Value.GetString();
+                }
+            }
+            catch (JsonException) { /* legacy entry without a note */ }
+
+            string? byName = null;
+            if (!string.IsNullOrEmpty(entry.UserId))
+                byName = (await _db.Users.FindAsync(entry.UserId))?.FullName;
+
+            return new AdminAccountStatusNoteDto
+            {
+                Note = note ?? string.Empty,
+                ByName = byName,
+                AtUtc = entry.CreatedAtUtc,
+            };
+        }
+
+        var lastDeactivation = entries.FirstOrDefault(e => e.Action == "user.deactivate");
+        var lastReactivation = entries.FirstOrDefault(e => e.Action == "user.reactivate");
+
+        if (!user.IsActive)
+            dto.Deactivation = await ToNoteAsync(lastDeactivation, "reason");
+        dto.Reactivation = await ToNoteAsync(lastReactivation, "note");
+    }
+
+    private async Task<AdminTradieDetailsDto> BuildTradieDetailsAsync(ApplicationUser user, TradieProfile tp)
+    {
+        var credentials = await _db.TradieCredentials
+            .Where(c => c.TradieProfileId == tp.Id)
+            .OrderByDescending(c => c.Id)
+            .ToListAsync();
+
+        var rates = await _db.TradieRates
+            .Include(r => r.Service)
+            .Where(r => r.TradieProfileId == tp.Id)
+            .OrderBy(r => r.Service.Name)
+            .ToListAsync();
+
+        var schedule = await _db.TradieSchedules
+            .Where(s => s.TradieProfileId == tp.Id)
+            .OrderBy(s => s.Weekday).ThenBy(s => s.StartTime)
+            .ToListAsync();
+
+        var hasApprovedLicence = credentials.Any(c =>
+            c.Type == CredentialType.License && c.Status == CredentialStatus.Approved);
+
+        // Mirrors the gates in MatchingService so staff can see why a tradie is not suggested.
+        var issues = new List<string>();
+        if (!user.IsActive) issues.Add("Account is deactivated.");
+        if (!tp.IsVerified) issues.Add("Not verified: no approved credential and not verified by staff.");
+        if (!tp.IsAvailable) issues.Add("Tradie has switched availability off in the app.");
+        if (tp.Location is null) issues.Add("No service location set.");
+        if (rates.Count == 0) issues.Add("No services/rates listed.");
+        var licenceServices = rates.Where(r => r.Service.RequiresLicence).Select(r => r.Service.Name).ToList();
+        if (licenceServices.Count > 0 && !hasApprovedLicence)
+            issues.Add($"Licence-gated services ({string.Join(", ", licenceServices)}) are hidden until a licence credential is approved.");
+
+        string? masked = null;
+        if (!string.IsNullOrWhiteSpace(tp.BankAccountNumber))
+        {
+            var digits = new string(tp.BankAccountNumber.Where(char.IsDigit).ToArray());
+            masked = digits.Length >= 4 ? $"••••{digits[^4..]}" : "••••";
+        }
+
+        return new AdminTradieDetailsDto
+        {
+            Bio = tp.Bio,
+            RegistrationNumber = tp.RegistrationNumber,
+            IsAvailable = tp.IsAvailable,
+            HasInsurance = tp.HasInsurance,
+            IsGstRegistered = tp.IsGstRegistered,
+            Address = tp.Address,
+            ServiceRadiusKm = tp.ServiceRadiusKm,
+            CancellationCount = tp.CancellationCount,
+            BankAccountName = tp.BankAccountName,
+            BankAccountMasked = masked,
+            BankAccountVerified = tp.BankAccountVerified,
+            Credentials = credentials.Select(c => new AdminCredentialDto
+            {
+                Id = c.Id,
+                Type = c.Type.ToString(),
+                Status = c.Status.ToString(),
+                OriginalFileName = c.OriginalFileName,
+                RejectReason = c.RejectReason,
+                ReviewedAtUtc = c.ReviewedAtUtc,
+            }).ToList(),
+            Rates = rates.Select(r => new AdminTradieRateDto
+            {
+                ServiceId = r.ServiceId,
+                ServiceName = r.Service.Name,
+                RequiresLicence = r.Service.RequiresLicence,
+                HourlyRate = r.HourlyRate,
+            }).ToList(),
+            Schedule = schedule.Select(s => new AdminScheduleSlotDto
+            {
+                Weekday = s.Weekday,
+                StartTime = s.StartTime.ToString(@"hh\:mm"),
+                EndTime = s.EndTime.ToString(@"hh\:mm"),
+            }).ToList(),
+            IsOfferable = issues.Count == 0,
+            EligibilityIssues = issues,
+        };
     }
 
     public async Task<bool> VerifyUserAsync(string userId, string? adminUserId = null)
@@ -280,35 +458,95 @@ public class AdminService : IAdminService
         return true;
     }
 
-    public async Task<bool> DeactivateUserAsync(string userId, string? adminUserId = null)
+    public async Task<UserStatusChangeResult?> DeactivateUserAsync(string userId, string reason, string? adminUserId = null)
     {
         var user = await _db.Users.FindAsync(userId);
-        if (user is null) return false;
+        if (user is null) return null;
 
+        var note = reason.Trim();
         var before = new { user.Id, user.IsActive };
         user.IsActive = false;
 
-        // Revoke all refresh tokens by locking the account via ASP.NET Identity
+        // Block login by locking the account via ASP.NET Identity
         await _userManager.SetLockoutEnabledAsync(user, true);
         await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
         await _db.SaveChangesAsync();
-        await _audit.LogAsync(adminUserId, "user.deactivate", "ApplicationUser", userId, before, new { user.Id, user.IsActive });
 
+        // Refresh tokens would otherwise keep the session alive until they expire.
+        var liveTokens = await _db.RefreshTokens
+            .Where(t => t.UserId == userId && t.ConsumedAtUtc == null)
+            .ToListAsync();
+        if (liveTokens.Count > 0)
+        {
+            var revokedAt = DateTime.UtcNow;
+            foreach (var t in liveTokens) t.ConsumedAtUtc = revokedAt;
+            await _db.SaveChangesAsync();
+        }
+
+        var emailSent = false;
         // P8-06: account suspension is critical — email fallback even without push.
         if (!string.IsNullOrWhiteSpace(user.Email))
         {
             try
             {
                 await _emailSender.SendAccountSuspendedAsync(user.Email!, user.FullName);
+                emailSent = true;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Suspension email to {Email} failed.", user.Email);
             }
         }
+
+        await _audit.LogAsync(adminUserId, "user.deactivate", "ApplicationUser", userId, before,
+            new { user.Id, user.IsActive, Reason = note, EmailSent = emailSent });
         _logger.LogInformation("User {UserId} deactivated by admin", userId);
-        return true;
+        return new UserStatusChangeResult { EmailSent = emailSent };
+    }
+
+    public async Task<UserStatusChangeResult?> ReactivateUserAsync(string userId, string note, string? adminUserId = null)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return null;
+
+        var before = new { user.Id, user.IsActive };
+        user.IsActive = true;
+
+        // Undo the lockout applied on deactivation so login works again.
+        await _userManager.SetLockoutEndDateAsync(user, null);
+        await _userManager.ResetAccessFailedCountAsync(user);
+        await _db.SaveChangesAsync();
+
+        var emailSent = false;
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            try
+            {
+                await _emailSender.SendCriticalNoticeAsync(user.Email!, new CriticalNoticeModel
+                {
+                    Heading = $"Your {_brand.AppName} account has been reactivated",
+                    Preheader = "You can log in again.",
+                    Sections =
+                    [
+                        new EmailSection("What happened", $"Hi {user.FullName}, our team has reactivated your {_brand.AppName} account."),
+                        new EmailSection("What you can do", "Log in again as usual. If anything looks wrong, contact " +
+                            $"{_brand.SupportEmail} ({_brand.SupportHoursDisplay})."),
+                    ],
+                    Brand = _brand,
+                });
+                emailSent = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Reactivation email to {Email} failed.", user.Email);
+            }
+        }
+
+        await _audit.LogAsync(adminUserId, "user.reactivate", "ApplicationUser", userId, before,
+            new { user.Id, user.IsActive, Note = note.Trim(), EmailSent = emailSent });
+        _logger.LogInformation("User {UserId} reactivated by admin", userId);
+        return new UserStatusChangeResult { EmailSent = emailSent };
     }
 
     // ── Staff invites (P1-05) ─────────────────────────────────────────────────

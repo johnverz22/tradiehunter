@@ -95,6 +95,7 @@ public class MatchingService : IMatchingService
             .Where(t =>
                 t.IsAvailable &&
                 t.IsVerified &&
+                t.User.IsActive &&
                 t.Location != null &&
                 t.TradeType.ToLower() == categoryString.ToLower() &&
                 !excluded.Contains(t.UserId) &&
@@ -167,6 +168,7 @@ public class MatchingService : IMatchingService
                 .ThenInclude(profile => profile.User)
             .Where(rate => rate.ServiceId == serviceId
                 && rate.TradieProfile.IsVerified
+                && rate.TradieProfile.User.IsActive
                 && rate.TradieProfile.IsAvailable
                 && rate.TradieProfile.Location != null
                 && rate.TradieProfile.Location.Intersects(searchArea))
@@ -212,6 +214,7 @@ public class MatchingService : IMatchingService
             .Where(rate => rate.ServiceId == job.ServiceId
                 && rate.TradieProfile.IsAvailable
                 && rate.TradieProfile.IsVerified
+                && rate.TradieProfile.User.IsActive
                 && rate.TradieProfile.Location != null
                 && rate.TradieProfile.TradeType.ToLower() == categoryString.ToLower()
                 && !excluded.Contains(rate.TradieProfile.UserId)
@@ -329,6 +332,7 @@ public class MatchingService : IMatchingService
             .Where(t =>
                 t.IsAvailable &&
                 t.IsVerified &&
+                t.User.IsActive &&
                 t.Location != null &&
                 t.TradeType.ToLower() == categoryStr.ToLower() &&
                 !excluded.Contains(t.UserId) &&

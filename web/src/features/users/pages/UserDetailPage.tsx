@@ -14,12 +14,22 @@ import { useBreakpoint } from '../../../hooks/useBreakpoint';
 import {
   useUserDetail,
   useVerifyUser,
-  useDeactivateUser,
   useWarnUser,
   useSuspendUser,
   useResolveUserFlags,
 } from '../hooks/useUsers';
 import type { AccountFlag, AdminJobSummary } from '../../../services/adminApi';
+import { AccountStatusModal, type AccountStatusAction } from '../components/AccountStatusModal';
+import {
+  AccountNotices,
+  CredentialsCard,
+  EligibilityCard,
+  ProfileDetailsCard,
+  RatingsCard,
+  RatesCard,
+  ScheduleCard,
+  TopReviewsCard,
+} from '../components/UserProfileSections';
 
 function describeUserError(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -47,14 +57,14 @@ export const UserDetailPage: React.FC = () => {
   const { isPhone } = useBreakpoint();
   const { data: user, isLoading, isError, error, refetch } = useUserDetail(id ?? '');
   const verifyMutation = useVerifyUser();
-  const deactivateMutation = useDeactivateUser();
   const warnMutation = useWarnUser();
   const suspendMutation = useSuspendUser();
   const resolveFlagsMutation = useResolveUserFlags();
 
   const [confirmModal, setConfirmModal] = useState<
-    'verify' | 'deactivate' | 'warn' | 'suspend' | 'resolveFlags' | null
+    'verify' | 'warn' | 'suspend' | 'resolveFlags' | null
   >(null);
+  const [statusAction, setStatusAction] = useState<AccountStatusAction | null>(null);
   const [actionReason, setActionReason] = useState('');
 
   if (!id) {
@@ -94,10 +104,7 @@ export const UserDetailPage: React.FC = () => {
 
   const handleAction = async () => {
     if (confirmModal === 'verify') await verifyMutation.mutateAsync(user.id);
-    else if (confirmModal === 'deactivate') {
-      await deactivateMutation.mutateAsync(user.id);
-      navigate('/users');
-    } else if (confirmModal === 'warn') {
+    else if (confirmModal === 'warn') {
       await warnMutation.mutateAsync({ id: user.id, reason: actionReason });
     } else if (confirmModal === 'suspend') {
       await suspendMutation.mutateAsync({ id: user.id, reason: actionReason });
@@ -144,13 +151,21 @@ export const UserDetailPage: React.FC = () => {
       key: 'id',
       header: 'Job ID',
       priority: 'secondary',
-      cell: (j) => <span className="mono">JOB-{String(j.id).padStart(5, '0')}</span>,
+      cell: (j) => (
+        <Link to={`/jobs/${j.id}`} className="cell-link mono">
+          JOB-{String(j.id).padStart(5, '0')}
+        </Link>
+      ),
     },
     {
       key: 'title',
       header: 'Description',
       priority: 'primary',
-      cell: (j) => j.title,
+      cell: (j) => (
+        <Link to={`/jobs/${j.id}`} className="cell-link">
+          {j.title}
+        </Link>
+      ),
     },
     {
       key: 'homeowner',
@@ -195,17 +210,23 @@ export const UserDetailPage: React.FC = () => {
           <Button kind="danger-outline" onClick={() => setConfirmModal('suspend')}>
             Suspend
           </Button>
-          <Button kind="danger-outline" onClick={() => setConfirmModal('deactivate')}>
+          <Button kind="danger-outline" onClick={() => setStatusAction('deactivate')}>
             Deactivate
           </Button>
         </>
+      )}
+      {!user.isActive && (
+        <Button kind="primary" onClick={() => setStatusAction('reactivate')}>
+          Reactivate
+        </Button>
       )}
     </>
   );
 
   /** Opens a confirm dialog from the phone "More" menu and closes the menu. */
-  const openFromMenu = (kind: 'warn' | 'suspend' | 'deactivate' | 'resolveFlags') => {
-    setConfirmModal(kind);
+  const openFromMenu = (kind: 'warn' | 'suspend' | 'deactivate' | 'reactivate' | 'resolveFlags') => {
+    if (kind === 'deactivate' || kind === 'reactivate') setStatusAction(kind);
+    else setConfirmModal(kind);
     (document.activeElement as HTMLElement)?.closest('details')?.removeAttribute('open');
   };
 
@@ -218,6 +239,8 @@ export const UserDetailPage: React.FC = () => {
         badge={<StatusBadge status={user.isVerified ? 'Verified' : 'Unverified'} size="lg" />}
         actions={!isPhone ? actionButtons : undefined}
       />
+
+      <AccountNotices user={user} onReactivate={() => setStatusAction('reactivate')} />
 
       <div className="grid side">
         <div className="stack">
@@ -245,6 +268,16 @@ export const UserDetailPage: React.FC = () => {
             </div>
           </section>
 
+          <ProfileDetailsCard user={user} />
+
+          {user.tradieDetails && (
+            <>
+              <CredentialsCard credentials={user.tradieDetails.credentials} />
+              <RatesCard rates={user.tradieDetails.rates} />
+              <ScheduleCard schedule={user.tradieDetails.schedule} />
+            </>
+          )}
+
           {user.flags && user.flags.length > 0 && (
             <section className="card flush">
               <div className="card-head">
@@ -260,9 +293,17 @@ export const UserDetailPage: React.FC = () => {
             <section className="card flush">
               <div className="card-head">
                 <h2>Recent jobs</h2>
+                <Link to="/jobs" className="btn btn-ghost btn-sm">
+                  All jobs
+                </Link>
               </div>
               <div className="card-body">
-                <DataTable columns={recentJobColumns} rows={user.recentJobs} getRowKey={(j) => j.id} />
+                <DataTable
+                  columns={recentJobColumns}
+                  rows={user.recentJobs}
+                  getRowKey={(j) => j.id}
+                  onRowClick={(j) => navigate(`/jobs/${j.id}`)}
+                />
               </div>
             </section>
           )}
@@ -281,15 +322,22 @@ export const UserDetailPage: React.FC = () => {
                     : 'No reviews yet'}
                 </InfoRow>
                 <InfoRow label="Jobs Completed" valueClassName="money">
+                  {user.completedJobCount}
+                </InfoRow>
+                <InfoRow label="Jobs Posted" valueClassName="money">
                   {user.jobCount}
                 </InfoRow>
                 <InfoRow label="Role">{user.role}</InfoRow>
                 <InfoRow label="Disputes" valueClassName="money">
-                  0
+                  {user.disputeCount}
                 </InfoRow>
               </DescriptionList>
             </div>
           </section>
+
+          {user.tradieDetails && <EligibilityCard details={user.tradieDetails} />}
+          <RatingsCard user={user} />
+          <TopReviewsCard reviews={user.topReviews ?? []} />
         </div>
       </div>
 
@@ -309,7 +357,11 @@ export const UserDetailPage: React.FC = () => {
             <Button kind="primary" block onClick={() => setConfirmModal('warn')}>
               Warn User
             </Button>
-          ) : null}
+          ) : (
+            <Button kind="primary" block onClick={() => setStatusAction('reactivate')}>
+              Reactivate
+            </Button>
+          )}
 
           {/* More menu for destructive / secondary operations */}
           <details className="more-menu">
@@ -335,10 +387,22 @@ export const UserDetailPage: React.FC = () => {
                   </button>
                 </>
               )}
+              {!user.isActive && (
+                <button type="button" onClick={() => openFromMenu('reactivate')}>
+                  Reactivate
+                </button>
+              )}
             </div>
           </details>
         </div>
       )}
+
+      {/* Deactivate / reactivate with required note */}
+      <AccountStatusModal
+        action={statusAction}
+        user={{ id: user.id, name: user.fullName }}
+        onClose={() => setStatusAction(null)}
+      />
 
       {/* Confirm modal */}
       <ConfirmModal
@@ -346,41 +410,35 @@ export const UserDetailPage: React.FC = () => {
         title={
           confirmModal === 'verify'
             ? `Verify ${user.fullName}?`
-            : confirmModal === 'deactivate'
-              ? `Deactivate ${user.fullName}?`
-              : confirmModal === 'warn'
-                ? `Warn ${user.fullName}?`
-                : confirmModal === 'suspend'
-                  ? `Suspend ${user.fullName}?`
-                  : confirmModal === 'resolveFlags'
-                    ? `Resolve flags for ${user.fullName}?`
-                    : ''
+            : confirmModal === 'warn'
+              ? `Warn ${user.fullName}?`
+              : confirmModal === 'suspend'
+                ? `Suspend ${user.fullName}?`
+                : confirmModal === 'resolveFlags'
+                  ? `Resolve flags for ${user.fullName}?`
+                  : ''
         }
         message={
           confirmModal === 'verify'
             ? 'This will mark the tradie as verified and make them eligible for job matches.'
-            : confirmModal === 'deactivate'
-              ? 'This will disable login for this user. You will be redirected to the user list.'
-              : confirmModal === 'resolveFlags'
-                ? 'This will mark all open flags as resolved for this user.'
-                : confirmModal === 'warn' || confirmModal === 'suspend'
-                  ? 'Please provide a reason for this action. It will be recorded.'
-                  : ''
+            : confirmModal === 'resolveFlags'
+              ? 'This will mark all open flags as resolved for this user.'
+              : confirmModal === 'warn' || confirmModal === 'suspend'
+                ? 'Please provide a reason for this action. It will be recorded.'
+                : ''
         }
         confirmLabel={
           confirmModal === 'verify'
             ? 'Verify'
-            : confirmModal === 'deactivate'
-              ? 'Deactivate'
-              : confirmModal === 'warn'
-                ? 'Send Warning'
-                : confirmModal === 'suspend'
-                  ? 'Suspend Account'
-                  : confirmModal === 'resolveFlags'
-                    ? 'Resolve Flags'
-                    : ''
+            : confirmModal === 'warn'
+              ? 'Send Warning'
+              : confirmModal === 'suspend'
+                ? 'Suspend Account'
+                : confirmModal === 'resolveFlags'
+                  ? 'Resolve Flags'
+                  : ''
         }
-        destructive={['deactivate', 'warn', 'suspend'].includes(confirmModal || '')}
+        destructive={['warn', 'suspend'].includes(confirmModal || '')}
         confirmDisabled={
           (confirmModal === 'warn' || confirmModal === 'suspend') &&
           actionReason.trim().length === 0

@@ -122,19 +122,38 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Deactivate a user — disables login via Identity lockout.</summary>
+    /// <summary>Deactivate a user — disables login via Identity lockout. A staff note is required.</summary>
     [HttpPost("users/{id}/deactivate")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<UserStatusChangeResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeactivateUser(string id)
+    public async Task<IActionResult> DeactivateUser(string id, [FromBody] DeactivateUserRequest request)
     {
         // Prevent self-deactivation
         if (id == CurrentUserId)
             return BadRequest(new { message = "You cannot deactivate your own account." });
 
-        var success = await _admin.DeactivateUserAsync(id, CurrentUserId);
-        if (!success) return NotFound();
-        return NoContent();
+        if (string.IsNullOrWhiteSpace(request?.Reason))
+            return BadRequest(new { message = "A note is required when deactivating a user." });
+
+        var result = await _admin.DeactivateUserAsync(id, request.Reason, CurrentUserId);
+        if (result is null) return NotFound();
+        return Ok(result);
+    }
+
+    /// <summary>Reactivate a deactivated user — restores login. A staff note is required.</summary>
+    [HttpPost("users/{id}/reactivate")]
+    [ProducesResponseType<UserStatusChangeResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivateUser(string id, [FromBody] ReactivateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Note))
+            return BadRequest(new { message = "A note is required when reactivating a user." });
+
+        var result = await _admin.ReactivateUserAsync(id, request.Note, CurrentUserId);
+        if (result is null) return NotFound();
+        return Ok(result);
     }
 
     // ══════════════════════════════════════════════════════════════════════════

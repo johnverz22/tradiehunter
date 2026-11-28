@@ -71,6 +71,7 @@ public class BoardJobNotifyJob
             .Where(r =>
                 r.ServiceId == job.ServiceId &&
                 r.TradieProfile.IsVerified &&
+                r.TradieProfile.User.IsActive &&
                 r.TradieProfile.IsAvailable &&
                 r.TradieProfile.Location != null &&
                 !blockedIds.Contains(r.TradieProfile.UserId) &&

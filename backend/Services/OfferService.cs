@@ -101,6 +101,7 @@ public class OfferService
             .Where(r => r.ServiceId == job.ServiceId
                         && r.TradieProfile.UserId == request.TradieId
                         && r.TradieProfile.IsVerified
+                        && r.TradieProfile.User.IsActive
                         && r.TradieProfile.IsAvailable)
             .Select(r => (decimal?)r.HourlyRate)
             .FirstOrDefaultAsync()

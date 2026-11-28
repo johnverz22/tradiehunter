@@ -81,10 +81,16 @@ public class QuoteService
         // cannot charge GST at all (NZ: under $60k turnover must not register).
         var profile = await _context.TradieProfiles
             .Where(p => p.UserId == tradieId)
-            .Select(p => new { p.IsGstRegistered, p.BusinessName, p.IsVerified, p.Location })
+            .Select(p => new { p.IsGstRegistered, p.BusinessName, p.IsVerified, p.Location, IsActive = p.User.IsActive })
             .FirstOrDefaultAsync();
         if (profile == null)
             throw new InvalidOperationException("Tradie profile not found.");
+
+        // Credential verification and account status gate quoting, not just suggestions.
+        if (!profile.IsActive)
+            throw new InvalidOperationException("Your account is deactivated.");
+        if (!profile.IsVerified)
+            throw new InvalidOperationException("Your profile must be verified before you can quote.");
 
         // Plan 10 (Q7.5): a tradie may quote without an invite when the job is
         // open to the board and within its accepting window.

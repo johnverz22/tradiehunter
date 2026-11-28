@@ -7,7 +7,8 @@ import { DataTable, type ColumnDef, type RowAction } from '../../../components/D
 import { StatusBadge } from '../../../components/StatusBadge';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { Pagination } from '../../../components/Pagination';
-import { useUserList, useVerifyUser, useDeactivateUser } from '../hooks/useUsers';
+import { useUserList, useVerifyUser } from '../hooks/useUsers';
+import { AccountStatusModal, type AccountStatusAction } from '../components/AccountStatusModal';
 import type { AdminUserListItem } from '../../../services/adminApi';
 
 const PAGE_SIZE = 20;
@@ -24,7 +25,12 @@ export const UserListPage: React.FC = () => {
   const [sortDesc, setSortDesc] = useState(true);
 
   const [confirmAction, setConfirmAction] = useState<{
-    type: 'verify' | 'deactivate';
+    type: 'verify';
+    id: string;
+    name: string;
+  } | null>(null);
+  const [statusChange, setStatusChange] = useState<{
+    action: AccountStatusAction;
     id: string;
     name: string;
   } | null>(null);
@@ -39,7 +45,6 @@ export const UserListPage: React.FC = () => {
     sortDesc,
   });
   const verifyMutation = useVerifyUser();
-  const deactivateMutation = useDeactivateUser();
 
   const toggleSort = (key: string) => {
     const k = key as SortKey;
@@ -52,8 +57,7 @@ export const UserListPage: React.FC = () => {
 
   const handleConfirm = async () => {
     if (!confirmAction) return;
-    if (confirmAction.type === 'verify') await verifyMutation.mutateAsync(confirmAction.id);
-    else await deactivateMutation.mutateAsync(confirmAction.id);
+    await verifyMutation.mutateAsync(confirmAction.id);
     setConfirmAction(null);
   };
 
@@ -125,8 +129,14 @@ export const UserListPage: React.FC = () => {
     if (user.isActive) {
       actions.push({
         label: 'Deactivate',
-        onClick: () => setConfirmAction({ type: 'deactivate', id: user.id, name: user.fullName }),
+        onClick: () => setStatusChange({ action: 'deactivate', id: user.id, name: user.fullName }),
         variant: 'danger',
+      });
+    } else {
+      actions.push({
+        label: 'Reactivate',
+        onClick: () => setStatusChange({ action: 'reactivate', id: user.id, name: user.fullName }),
+        variant: 'ghost',
       });
     }
     return actions;
@@ -215,23 +225,21 @@ export const UserListPage: React.FC = () => {
         }
       />
 
-      {/* Confirm modal */}
+      {/* Verify confirm */}
       <ConfirmModal
         open={confirmAction !== null}
-        title={
-          confirmAction?.type === 'verify'
-            ? `Verify ${confirmAction?.name}?`
-            : `Deactivate ${confirmAction?.name}?`
-        }
-        message={
-          confirmAction?.type === 'verify'
-            ? 'This will mark the tradie as verified. They will be eligible for job matches.'
-            : 'This will disable the user\'s login access. This action can be reversed by re-activating the account.'
-        }
-        confirmLabel={confirmAction?.type === 'verify' ? 'Verify' : 'Deactivate'}
-        destructive={confirmAction?.type === 'deactivate'}
+        title={`Verify ${confirmAction?.name ?? ''}?`}
+        message="This will mark the tradie as verified. They will be eligible for job matches."
+        confirmLabel="Verify"
         onConfirm={handleConfirm}
         onCancel={() => setConfirmAction(null)}
+      />
+
+      {/* Deactivate / reactivate with required note */}
+      <AccountStatusModal
+        action={statusChange?.action ?? null}
+        user={statusChange ? { id: statusChange.id, name: statusChange.name } : null}
+        onClose={() => setStatusChange(null)}
       />
     </>
   );

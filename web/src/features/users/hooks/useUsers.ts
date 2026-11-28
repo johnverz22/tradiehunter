@@ -4,6 +4,7 @@ import {
   fetchUserDetail,
   verifyUser,
   deactivateUser,
+  reactivateUser,
   warnUser,
   suspendUser,
   resolveUserFlags,
@@ -48,7 +49,15 @@ export const useVerifyUser = () => {
 export const useDeactivateUser = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deactivateUser(id),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => deactivateUser(id, reason),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+};
+
+export const useReactivateUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string }) => reactivateUser(id, note),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
 };

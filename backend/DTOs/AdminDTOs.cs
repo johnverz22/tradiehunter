@@ -47,10 +47,119 @@ public class AdminUserDetailDto : AdminUserListItemDto
 {
     public string? TradeType { get; set; }
     public string? BusinessName { get; set; }
+
+    /// <summary>Average over every visible review the user has received (not just the page shown).</summary>
     public double AverageRating { get; set; }
     public int ReviewCount { get; set; }
+
+    /// <summary>Jobs the user finished: as tradie for tradies, as homeowner otherwise.</summary>
+    public int CompletedJobCount { get; set; }
+
+    /// <summary>Disputed (flagged) jobs the user took part in; real count, never a placeholder.</summary>
+    public int DisputeCount { get; set; }
+
+    /// <summary>Phone the user entered in the app; null when they never supplied one.</summary>
+    public string? PhoneNumber { get; set; }
+    public bool EmailVerified { get; set; }
+
+    /// <summary>Set when the SMTP relay reported a permanent failure; emails to this user will not arrive.</summary>
+    public DateTime? EmailBouncedAtUtc { get; set; }
+
+    /// <summary>Latest staff deactivation, present only while the account is deactivated.</summary>
+    public AdminAccountStatusNoteDto? Deactivation { get; set; }
+
+    /// <summary>Latest staff reactivation, if the account was ever reactivated.</summary>
+    public AdminAccountStatusNoteDto? Reactivation { get; set; }
+
+    /// <summary>Everything the tradie supplied from the app; null for non-tradies.</summary>
+    public AdminTradieDetailsDto? TradieDetails { get; set; }
+
+    /// <summary>Count of reviews per star, keys "1".."5".</summary>
+    public Dictionary<string, int> RatingBreakdown { get; set; } = new();
+
     public List<AdminJobSummaryDto> RecentJobs { get; set; } = new();
+
+    /// <summary>Highest-rated, then newest, reviews (up to 5).</summary>
+    public List<AdminReviewSummaryDto> TopReviews { get; set; } = new();
+
     public List<AdminReviewSummaryDto> RecentReviews { get; set; } = new();
+}
+
+public class AdminAccountStatusNoteDto
+{
+    public string Note { get; set; } = string.Empty;
+    public string? ByName { get; set; }
+    public DateTime AtUtc { get; set; }
+}
+
+public class AdminTradieDetailsDto
+{
+    public string? Bio { get; set; }
+    public string? RegistrationNumber { get; set; }
+    public bool IsAvailable { get; set; }
+    public bool HasInsurance { get; set; }
+    public bool IsGstRegistered { get; set; }
+    public string? Address { get; set; }
+    public decimal ServiceRadiusKm { get; set; }
+    public int CancellationCount { get; set; }
+    public string? BankAccountName { get; set; }
+
+    /// <summary>Masked (last 4 digits); staff never see the full number here.</summary>
+    public string? BankAccountMasked { get; set; }
+    public bool BankAccountVerified { get; set; }
+
+    public List<AdminCredentialDto> Credentials { get; set; } = new();
+    public List<AdminTradieRateDto> Rates { get; set; } = new();
+    public List<AdminScheduleSlotDto> Schedule { get; set; } = new();
+
+    /// <summary>True when this tradie would currently be offered to homeowners; see <see cref="EligibilityIssues"/> if not.</summary>
+    public bool IsOfferable { get; set; }
+
+    /// <summary>Plain-language reasons the tradie is excluded from suggestions (empty when offerable).</summary>
+    public List<string> EligibilityIssues { get; set; } = new();
+}
+
+public class AdminCredentialDto
+{
+    public int Id { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string? RejectReason { get; set; }
+    public DateTime? ReviewedAtUtc { get; set; }
+}
+
+public class AdminTradieRateDto
+{
+    public int ServiceId { get; set; }
+    public string ServiceName { get; set; } = string.Empty;
+    public bool RequiresLicence { get; set; }
+    public decimal HourlyRate { get; set; }
+}
+
+public class AdminScheduleSlotDto
+{
+    /// <summary>0 = Sunday … 6 = Saturday.</summary>
+    public int Weekday { get; set; }
+    public string StartTime { get; set; } = string.Empty;
+    public string EndTime { get; set; } = string.Empty;
+}
+
+public class DeactivateUserRequest
+{
+    /// <summary>Staff note, required; recorded in the audit log and shown on the user page.</summary>
+    public string Reason { get; set; } = string.Empty;
+}
+
+public class ReactivateUserRequest
+{
+    public string Note { get; set; } = string.Empty;
+}
+
+public class UserStatusChangeResult
+{
+    /// <summary>True when the notification email was handed to the mail relay.</summary>
+    public bool EmailSent { get; set; }
 }
 
 public class AdminReviewSummaryDto

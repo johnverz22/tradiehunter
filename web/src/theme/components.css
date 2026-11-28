@@ -294,6 +294,8 @@ a.stat:hover { border-color: var(--line-strong); }
 :where(h1, h2, h3, p) { margin: 0; }
 .c-soft { color: var(--ink-soft); } .c-brand { color: var(--ink-brand); } .c-accent { color: var(--accent-ink); } .c-ok { color: var(--success-ink); } .c-danger { color: var(--danger); } .c-onHeroSoft { color: var(--on-sidebar-soft); }
 .card .table-wrap { border: 0; border-radius: 0; box-shadow: none; }
+/* A flush card clips its table so header and last row follow the card's rounded corners. */
+.card.flush { overflow: hidden; }
 .card.flush > .card-body { padding: 0; gap: 0; }
 .wordmark-lg { font-size: 28px; }
 .nav-label small { display: block; font: var(--ty-meta); color: var(--on-sidebar-soft); }

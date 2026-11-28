@@ -130,6 +130,8 @@ Net           = Gross − Commission
 - **Private storage:** credentials, receipts, evidence and proofs are never public; reads use short-lived SAS URLs (15 min).
 - **Push with email fallback:** critical notifications always email; non-critical status/offer/quote/adjustment/receipt notifications fall back to email when push is unavailable or fails; time-sensitive reminders and review events are push-only. Staff alerts persist as `StaffNotification` rows (polled in the admin bell) and always email. Source of truth: `backend/Services/Notifications/NotificationPolicy.cs`.
   - **Accepted non-goals (MVP):** account deactivation is email-only (user is locked out); chat messages are push + SignalR only with no email fallback.
+- **Deactivate / reactivate:** staff must enter a note for both; it is stored in the audit log (`user.deactivate` / `user.reactivate`), shown on the admin user page, and never included in the email to the user. Deactivation locks the account and revokes live refresh tokens; reactivation clears the lockout and emails the user. The admin page flags a user whose email has bounced.
+- **Tradie eligibility:** a tradie is suggested, offered, notified of board jobs, shown the open board, or allowed to quote only when `IsVerified`, the account `IsActive` and (for matching) `IsAvailable`; licence-gated services also need an approved licence credential. The admin user page lists the reasons a tradie is excluded.
 
 ## 9. Admin web (React, Staff + Superadmin)
 

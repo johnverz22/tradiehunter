@@ -93,14 +93,77 @@ export interface AccountFlag {
   resolvedAtUtc?: string;
 }
 
+export interface AdminAccountStatusNote {
+  note: string;
+  byName?: string;
+  atUtc: string;
+}
+
+export interface AdminCredential {
+  id: number;
+  type: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | string;
+  originalFileName: string;
+  rejectReason?: string;
+  reviewedAtUtc?: string;
+}
+
+export interface AdminTradieRate {
+  serviceId: number;
+  serviceName: string;
+  requiresLicence: boolean;
+  hourlyRate: number;
+}
+
+export interface AdminScheduleSlot {
+  /** 0 = Sunday … 6 = Saturday. */
+  weekday: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface AdminTradieDetails {
+  bio?: string;
+  registrationNumber?: string;
+  isAvailable: boolean;
+  hasInsurance: boolean;
+  isGstRegistered: boolean;
+  address?: string;
+  serviceRadiusKm: number;
+  cancellationCount: number;
+  bankAccountName?: string;
+  bankAccountMasked?: string;
+  bankAccountVerified: boolean;
+  credentials: AdminCredential[];
+  rates: AdminTradieRate[];
+  schedule: AdminScheduleSlot[];
+  isOfferable: boolean;
+  eligibilityIssues: string[];
+}
+
 export interface AdminUserDetail extends AdminUserListItem {
   flags: AccountFlag[];
   tradeType?: string;
   businessName?: string;
   averageRating: number;
   reviewCount: number;
+  completedJobCount: number;
+  disputeCount: number;
+  phoneNumber?: string;
+  emailVerified: boolean;
+  emailBouncedAtUtc?: string;
+  deactivation?: AdminAccountStatusNote;
+  reactivation?: AdminAccountStatusNote;
+  tradieDetails?: AdminTradieDetails;
+  /** Star ("1".."5") → number of reviews. */
+  ratingBreakdown: Record<string, number>;
   recentJobs: AdminJobSummary[];
+  topReviews: AdminReviewSummary[];
   recentReviews: AdminReviewSummary[];
+}
+
+export interface UserStatusChangeResult {
+  emailSent: boolean;
 }
 
 export interface UserListParams {
@@ -123,8 +186,11 @@ export const fetchUserDetail = (id: string): Promise<AdminUserDetail> =>
 export const verifyUser = (id: string): Promise<void> =>
   api.post(`/admin/users/${id}/verify`).then(() => undefined);
 
-export const deactivateUser = (id: string): Promise<void> =>
-  api.post(`/admin/users/${id}/deactivate`).then(() => undefined);
+export const deactivateUser = (id: string, reason: string): Promise<UserStatusChangeResult> =>
+  api.post(`/admin/users/${id}/deactivate`, { reason }).then((r) => r.data);
+
+export const reactivateUser = (id: string, note: string): Promise<UserStatusChangeResult> =>
+  api.post(`/admin/users/${id}/reactivate`, { note }).then((r) => r.data);
 
 export const warnUser = (id: string, reason: string): Promise<void> =>
   api.post(`/admin/users/${id}/warn`, { reason }).then(() => undefined);
