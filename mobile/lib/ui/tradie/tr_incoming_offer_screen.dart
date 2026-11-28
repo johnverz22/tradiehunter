@@ -1,9 +1,9 @@
 // Full-screen incoming job request alert (QA plan §3).
 //
 // Pushed over whatever the tradie is doing when a live offer arrives (see
-// IncomingOfferHost). One card per offer, earliest expiry first, with a pager
-// when several are waiting. Accept / Decline answer through
-// IncomingOfferCoordinator; View details opens the full request.
+// IncomingOfferHost). Lists every waiting request as a card, earliest expiry
+// first. Cards carry no actions: tapping one opens the full request, where
+// the tradie accepts or declines.
 import 'dart:async';
 
 import 'package:decimal/decimal.dart';
@@ -16,10 +16,9 @@ import '../../services/incoming_alert.dart';
 import '../../utils/money.dart';
 import '../../viewmodels/incoming_offer_coordinator.dart';
 import '../../viewmodels/incoming_offer_queue.dart';
-import '../../viewmodels/offer_responder.dart';
+import '../design/th_scope.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
-import '../feedback/th_notice.dart';
 
 /// `m:ss` countdown label, never negative.
 String incomingCountdownLabel(Duration remaining) {
@@ -45,10 +44,13 @@ class TrIncomingOfferScreen extends ConsumerStatefulWidget {
 class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
   final IncomingAlert _alert = IncomingAlert();
   Timer? _clock;
-  int _index = 0;
   bool _booted = false;
   bool _closing = false;
-  bool _responding = false;
+
+  /// True while a request's detail page is on top. The queue can empty there
+  /// (the tradie accepts or declines), and popping now would pop the detail
+  /// page instead of this one, so closing waits until it returns.
+  bool _detailsOpen = false;
 
   @override
   void initState() {
@@ -91,43 +93,19 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
     }
   }
 
-  Future<void> _respond(JobOffer offer, {required bool accept}) async {
-    if (_responding) return;
-    setState(() => _responding = true);
-    _alert.stop();
-    final result = await ref
-        .read(incomingOfferCoordinatorProvider.notifier)
-        .respond(offer, accept: accept);
-    if (!mounted) return;
-    setState(() => _responding = false);
-
-    switch (result.outcome) {
-      case OfferResponseOutcome.success:
-        if (accept) {
-          THNotice.success(context, NoticeCopy.offerAccepted);
-          // Jump to the booked job unless other offers still need an answer.
-          if (ref.read(incomingOfferCoordinatorProvider).isEmpty) {
-            _closing = true;
-            context.pushReplacement('/tradie/jobs/${offer.jobId}');
-            return;
-          }
-        }
-      case OfferResponseOutcome.rejected:
-        THNotice.error(
-          context,
-          NoticeCopy.forOfferError(result.errorCode, accept: accept),
-        );
-      case OfferResponseOutcome.alreadyInFlight:
-        break;
-    }
-    if (ref.read(incomingOfferCoordinatorProvider).isNotEmpty) _alert.start();
-  }
-
+  /// Opens the full request. The ring pauses while the tradie reads it and
+  /// resumes on return if other requests are still waiting.
   Future<void> _openDetails(JobOffer offer) async {
     _alert.stop();
+    _detailsOpen = true;
     await context.push('/tradie/requests/${offer.jobId}');
+    _detailsOpen = false;
     if (!mounted || _closing) return;
-    if (ref.read(incomingOfferCoordinatorProvider).isNotEmpty) _alert.start();
+    if (ref.read(incomingOfferCoordinatorProvider).isEmpty) {
+      _close();
+    } else {
+      _alert.start();
+    }
   }
 
   @override
@@ -137,12 +115,7 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
       previous,
       next,
     ) {
-      if (!_booted) return;
-      if (next.isEmpty) {
-        _close();
-      } else if (_index >= next.length) {
-        setState(() => _index = next.length - 1);
-      }
+      if (_booted && next.isEmpty && !_detailsOpen) _close();
     });
 
     final queue = ref.watch(incomingOfferCoordinatorProvider);
@@ -153,126 +126,182 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
       );
     }
 
-    final index = _index.clamp(0, queue.length - 1);
-    final offer = queue.offers[index];
-    final remaining = queue.remaining(offer);
-    final urgent = remaining <= incomingUrgentThreshold;
-    final rate = offer.hourlyRateSnapshot;
-    final message = offer.message?.trim();
-
+    final count = queue.length;
     return Scaffold(
       backgroundColor: c.paper,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(Space.s4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Sizes.gutter,
+                Space.s2,
+                Space.s2,
+                0,
+              ),
+              child: Row(
                 children: [
-                  const THBadge('New request', kind: THBadgeKind.accent),
+                  const THBadge('New requests', kind: THBadgeKind.accent),
                   const Spacer(),
-                  if (queue.length > 1) ...[
-                    IconButton(
-                      tooltip: 'Previous request',
-                      onPressed: index > 0
-                          ? () => setState(() => _index = index - 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Text(
-                      '${index + 1} of ${queue.length}',
-                      style: THType.label.copyWith(color: c.textSoft),
-                    ),
-                    IconButton(
-                      tooltip: 'Next request',
-                      onPressed: index < queue.length - 1
-                          ? () => setState(() => _index = index + 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
+                  IconButton(
+                    key: const Key('incoming_close'),
+                    tooltip: 'Close',
+                    onPressed: _close,
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
-              const SizedBox(height: Space.s4),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: THCard(
-                    tone: urgent ? THCardTone.danger : THCardTone.defaultTone,
-                    padding: Space.s5,
-                    children: [
-                      Text(
-                        offer.jobTitle?.isNotEmpty == true
-                            ? offer.jobTitle!
-                            : 'New job request',
-                        style: THType.h1.copyWith(color: c.text),
-                      ),
-                      const SizedBox(height: Space.s3),
-                      Wrap(
-                        spacing: Space.s2,
-                        runSpacing: Space.s2,
-                        children: [
-                          THBadge(
-                            offer.isQuoteRequest
-                                ? 'Quote request'
-                                : 'Hourly job',
-                            kind: THBadgeKind.brand,
-                          ),
-                          THBadge(
-                            'Respond in ${incomingCountdownLabel(remaining)}',
-                            kind: urgent
-                                ? THBadgeKind.danger
-                                : THBadgeKind.glass,
-                            icon: Icons.timer_outlined,
-                          ),
-                        ],
-                      ),
-                      // Rate is shown only when the server supplied a real one.
-                      if (rate != null && rate > Decimal.zero) ...[
-                        const SizedBox(height: Space.s4),
-                        Text(
-                          formatRate(rate),
-                          style: THType.moneyLg.copyWith(color: c.text),
-                        ),
-                      ],
-                      if (message != null && message.isNotEmpty) ...[
-                        const SizedBox(height: Space.s4),
-                        Text(
-                          '“$message”',
-                          style: THType.body.copyWith(color: c.textSoft),
-                        ),
-                      ],
-                    ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Sizes.gutter,
+                Space.s2,
+                Sizes.gutter,
+                Space.s4,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    count == 1 ? '1 request waiting' : '$count requests waiting',
+                    style: THType.h1.copyWith(color: c.text),
                   ),
+                  const SizedBox(height: Space.s1),
+                  Text(
+                    'Open a request to review it, then accept or decline.',
+                    style: THType.body.copyWith(color: c.textSoft),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(
+                  Sizes.gutter,
+                  0,
+                  Sizes.gutter,
+                  Space.s4,
                 ),
+                itemCount: count,
+                separatorBuilder: (_, _) => const SizedBox(height: Space.s3),
+                itemBuilder: (context, i) {
+                  final offer = queue.offers[i];
+                  return _RequestCard(
+                    key: ValueKey('incoming_${offer.id}'),
+                    offer: offer,
+                    remaining: queue.remaining(offer),
+                    onTap: () => _openDetails(offer),
+                  );
+                },
               ),
-              const SizedBox(height: Space.s4),
-              THButton(
-                key: const Key('incoming_accept'),
-                label: 'Accept',
-                kind: THButtonKind.accent,
-                icon: Icons.check,
-                loading: _responding,
-                onPressed: _responding
-                    ? null
-                    : () => _respond(offer, accept: true),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: THStickyBar(
+        children: [
+          THButton(
+            key: const Key('incoming_later'),
+            label: 'Later',
+            kind: THButtonKind.secondary,
+            onPressed: _close,
+          ),
+          THButton(
+            key: const Key('incoming_review'),
+            label: count == 1 ? 'Review request' : 'Review first',
+            kind: THButtonKind.accent,
+            onPressed: () => _openDetails(queue.offers.first),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One waiting request. Display only: the whole card is the tap target.
+class _RequestCard extends StatelessWidget {
+  const _RequestCard({
+    super.key,
+    required this.offer,
+    required this.remaining,
+    required this.onTap,
+  });
+
+  final JobOffer offer;
+  final Duration remaining;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    final urgent = remaining <= incomingUrgentThreshold;
+    final rate = offer.hourlyRateSnapshot;
+    final message = offer.message?.trim();
+    final title = offer.jobTitle?.isNotEmpty == true
+        ? offer.jobTitle!
+        : 'New job request';
+
+    return Semantics(
+      button: true,
+      onTap: onTap,
+      label: '$title, respond in ${incomingCountdownLabel(remaining)}',
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: THCard(
+            tone: urgent ? THCardTone.danger : THCardTone.defaultTone,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: THType.title.copyWith(color: c.text),
+                    ),
+                  ),
+                  const SizedBox(width: Space.s2),
+                  Icon(Icons.chevron_right, color: c.textSoft),
+                ],
               ),
-              const SizedBox(height: Space.s2),
-              THButton(
-                key: const Key('incoming_decline'),
-                label: 'Decline',
-                kind: THButtonKind.secondary,
-                onPressed: _responding
-                    ? null
-                    : () => _respond(offer, accept: false),
+              const SizedBox(height: Space.s2_5),
+              Wrap(
+                spacing: Space.s2,
+                runSpacing: Space.s2,
+                children: [
+                  THBadge(
+                    offer.isQuoteRequest ? 'Quote request' : 'Hourly job',
+                    kind: THBadgeKind.brand,
+                  ),
+                  THBadge(
+                    'Respond in ${incomingCountdownLabel(remaining)}',
+                    kind: urgent ? THBadgeKind.danger : THBadgeKind.glass,
+                    icon: Icons.timer_outlined,
+                  ),
+                ],
               ),
-              const SizedBox(height: Space.s1),
-              THButton(
-                key: const Key('incoming_details'),
-                label: 'View details',
-                kind: THButtonKind.ghost,
-                onPressed: _responding ? null : () => _openDetails(offer),
-              ),
+              // Rate is shown only when the server supplied a real one.
+              if (rate != null && rate > Decimal.zero) ...[
+                const SizedBox(height: Space.s3),
+                Text(
+                  formatRate(rate),
+                  style: THType.money.copyWith(color: c.text),
+                ),
+              ],
+              if (message != null && message.isNotEmpty) ...[
+                const SizedBox(height: Space.s2),
+                Text(
+                  '“$message”',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: THType.body.copyWith(color: c.textSoft),
+                ),
+              ],
             ],
           ),
         ),
