@@ -35,7 +35,7 @@ Environment
   FIXO_API_URL         API base, default http://localhost:5000  (a trailing /api is tolerated)
   MAILHOG_URL          default http://localhost:8025
   FIXO_ADMIN_EMAIL / FIXO_ADMIN_PASSWORD   superadmin used to invite staff
-                       (default: the AdminSeed values admin@fixo.nz / Admin1!Fixo)
+                       (default: the AdminSeed values admin@tradiehunter.nz / Admin1!TH)
 
 Safety: refuses any non-localhost FIXO_API_URL / MAILHOG_URL.  Only real API
 routes are used.  Money is parsed as Decimal and rates are sent as whole-dollar
@@ -306,8 +306,8 @@ def staff_token_for_review(admin_token: str, staff: list) -> str:
 
 
 def admin_login() -> str:
-    email_addr = os.environ.get("FIXO_ADMIN_EMAIL", "admin@fixo.nz")
-    password = os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!Fixo")
+    email_addr = os.environ.get("FIXO_ADMIN_EMAIL", "admin@tradiehunter.nz")
+    password = os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!TH")
     try:
         return login(email_addr, password)
     except StepFailed as e:
@@ -549,7 +549,8 @@ def cleanup(manifest_path: str) -> int:
             print("  skip     %s (no userId recorded)" % p["email"])
             continue
         try:
-            call("POST", "/admin/users/%s/deactivate" % urllib.parse.quote(p["userId"]), admin)
+            call("POST", "/admin/users/%s/deactivate" % urllib.parse.quote(p["userId"]), admin,
+                 body={"reason": "e2e persona cleanup (run %s)" % manifest.get("runId", "?")})
             print("  deactivated %s" % p["email"])
         except StepFailed as e:
             failed += 1

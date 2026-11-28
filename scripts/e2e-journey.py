@@ -73,8 +73,8 @@ TRADIE = ("tradie-verified@fixo.test", "Test1234!")
 STAFF = ("staff@fixo.test", "Test1234!")
 DEMO_TRADIE = ("tradie@fixo.nz", "Demo1!Fixo")  # competes for offers; parked
 # Superadmin for the admin quote-settings scenario (same defaults as e2e-personas.py).
-SUPERADMIN = (os.environ.get("FIXO_ADMIN_EMAIL", "admin@fixo.nz"),
-              os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!Fixo"))
+SUPERADMIN = (os.environ.get("FIXO_ADMIN_EMAIL", "admin@tradiehunter.nz"),
+              os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!TH"))
 
 # Real-looking street address for fixture jobs (the API path bypasses the LINZ
 # lookup, so any well-formed string works; keep it realistic for the demo).
@@ -1131,7 +1131,7 @@ def run_quote_settings(rec):
     except Unreachable as e:
         raise Unreachable(
             "quote-settings needs a superadmin login: %s — set FIXO_ADMIN_EMAIL / "
-            "FIXO_ADMIN_PASSWORD (demo seed defaults: admin@fixo.nz / Admin1!Fixo)" % e
+            "FIXO_ADMIN_PASSWORD (demo seed defaults: admin@tradiehunter.nz / Admin1!TH)" % e
         )
     ho = rec.step("login homeowner", lambda: login(HOMEOWNER))
     tr = rec.step("login tradie", lambda: login(TRADIE))

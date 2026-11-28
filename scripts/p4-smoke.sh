@@ -95,7 +95,7 @@ restart_api
 
 HO=$(login homeowner@fixo.nz 'Demo1!Fixo')
 TR=$(login tradie@fixo.nz 'Demo1!Fixo')
-AD=$(login admin@fixo.nz 'Admin1!Fixo')
+AD=$(login admin@tradiehunter.nz 'Admin1!TH')
 [ -n "$HO" ] && [ -n "$TR" ] && [ -n "$AD" ] || fail "could not acquire demo tokens"
 echo "tokens acquired (homeowner / tradie / admin)"
 

@@ -113,7 +113,7 @@ Auto-seeded on API startup in Development (`DemoSeedService`, `AdminSeedService`
 |---|---|---|
 | `homeowner@fixo.nz` | `Demo1!Fixo` | Homeowner "Sarah Mitchell" with jobs, chat, reviews |
 | `tradie@fixo.nz` | `Demo1!Fixo` | Tradie "James Ruru" / Ruru Plumbing Ltd, verified, Auckland CBD |
-| `admin@fixo.nz` | `Admin1!Fixo` | Superadmin |
+| `admin@tradiehunter.nz` | `Admin1!TH` | Superadmin |
 
 From `seed-test-accounts.sh` (all password `Test1234!`): `homeowner-a@fixo.test` (verified), `tradie-verified@fixo.test` (verified, approved licence, $85.50/hr, **no bank details**), `unverified@fixo.test` (OTP gate), `staff@fixo.test`. Create by hand: a second verified tradie, a paused tradie (`POST /api/profile/availability {"available": false}`), and bank details via `PUT /api/profile` for payout tests. The `@fixo.*` domains are test identifiers and stay.
 

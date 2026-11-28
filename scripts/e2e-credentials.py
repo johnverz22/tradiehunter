@@ -37,8 +37,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_API = os.environ.get("FIXO_API_URL", "http://localhost:5000/api").rstrip("/")
-DEFAULT_EMAIL = os.environ.get("FIXO_ADMIN_EMAIL", "admin@fixo.nz")
-DEFAULT_PASSWORD = os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!Fixo")
+DEFAULT_EMAIL = os.environ.get("FIXO_ADMIN_EMAIL", "admin@tradiehunter.nz")
+DEFAULT_PASSWORD = os.environ.get("FIXO_ADMIN_PASSWORD", "Admin1!TH")
 PG_USER = os.environ.get("POSTGRES_USER", "fixo")
 PG_DB = os.environ.get("POSTGRES_DB", "fixo")
 

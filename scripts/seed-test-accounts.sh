@@ -21,8 +21,8 @@ set -euo pipefail
 
 API="${FIXO_API_URL:-http://localhost:5000}/api"
 PASS="Test1234!"
-ADMIN_EMAIL="admin@fixo.nz"
-ADMIN_PASS="Admin1!Fixo"
+ADMIN_EMAIL="admin@tradiehunter.nz"
+ADMIN_PASS="Admin1!TH"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -160,7 +160,7 @@ else
   # Staff accounts are created via the superadmin invite endpoint.
   ADMIN_TOKEN=$(get_token "$ADMIN_EMAIL" "$ADMIN_PASS")
   if [ -z "$ADMIN_TOKEN" ]; then
-    fail "Could not get superadmin token — is the stack running? (admin@fixo.nz / Admin1!Fixo)"
+    fail "Could not get superadmin token — is the stack running? (admin@tradiehunter.nz / Admin1!TH)"
   fi
 
   STATUS=$(post "/admin/staff/invite" "{\"email\":\"$EMAIL\",\"firstName\":\"Staff\",\"lastName\":\"User\"}" "$ADMIN_TOKEN")
