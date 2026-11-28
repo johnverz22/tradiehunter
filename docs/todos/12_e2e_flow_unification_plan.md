@@ -2,7 +2,7 @@
 
 > **Repo / branch:** `johnverz22/tradiehunter` @ `main` (there is no `dev` branch on the remote; remote branches are `main`, `feat/admin-user-detail`, `fix/e2e-findings`, and the latter two have no commits ahead of `main`)
 > **Purpose:** Replace today's six overlapping E2E layers with a single set of **demo-grade, independently recordable flows**, one per developed feature (hourly booking, project booking, disputes, extra cost, homeowner search, tradie verification, chat, schedule, sign up, profile setup, and so on). Flows compose into one master tour. Anything that is not a flow is either folded into one or deleted.
-> **Status:** Approved. **U0 done except U0.4 (needs the owner's machine); U1 not started.** Decisions in section 2 and the former open items (section 7) are owner-confirmed. · **Prepared:** 2026-11-28
+> **Status:** Approved. **U0 done except U0.4 (needs the owner's machine); U1 code done, U1.3 awaiting owner confirmation; U2 not started.** Decisions in section 2 and the former open items (section 7) are owner-confirmed. · **Prepared:** 2026-11-28
 > **Naming rule:** code identifiers stay `Fixo`; user-facing text is TradieHunter. Do not rename.
 > **Convention:** `[ ]` todo, `[x]` done, `[~]` parked (add why). Size: S <= 1h, M <= half a day, L >= 1 day.
 > **Relationship to other plans:** supersedes the runner and layout parts of `03_e2e_realignment_plan.md` and builds on `08_e2e_persona_fabric_plan.md` (persona fabric + manifest stay as the foundation). Update both files' status headers when this lands. Quote scenarios come from `10_homeowner_quotes_visibility_plan.md`.
@@ -154,10 +154,10 @@ Actors: **H** homeowner (iOS sim), **T** tradie (iOS sim), **A** admin (headed C
 
 ### Phase U1: Extract the shared lib (behaviour-preserving)
 
-- [ ] **U1.1** Create `scripts/e2e/lib/` and move signal server, Show/timeline, captions, `--record`, `--capture-sims`, simulator handling, fabric provisioning and report writing out of `e2e-demo.py` unchanged (M)
-- [ ] **U1.2** Move API helpers and decimal/status/audit assertions out of `e2e-journey.py` into `lib/api.py` and `lib/asserts.py` (M)
-- [ ] **U1.3** Re-point `e2e-demo.py` to the lib; owner confirms the current demo still plays identically (M)
-- [ ] **U1.4** Confirm no new dependency (stdlib only stays true) (S)
+- [x] **U1.1** Create `scripts/e2e/lib/` and move signal server, Show/timeline, captions, `--record`, `--capture-sims`, simulator handling, fabric provisioning and report writing out of `e2e-demo.py` unchanged (M). Done: `lib/{api,asserts,stage,sims,fabric,report}.py`. Small deliberate changes: `pick_simulators` takes udids instead of `args`; `provision_fabric` takes persona counts (defaults = old demo); `start_recording`/`stop_recording`/`start_signal_server` extracted from `main()`; `fabric.record_job` replaces the demo's dependency on `e2e-journey.py`. Not moved yet (belongs with the U2 CLI): simulator build-with-timeout, `preflight`, and the demo-only `prepare_fabric`
+- [x] **U1.2** Move API helpers and decimal/status/audit assertions out of `e2e-journey.py` into `lib/api.py` and `lib/asserts.py` (M). `e2e-journey.py` now imports them (scenarios untouched); `write_junit` moved to `lib/report.py`. Bug fixed on the way: the journey's `--timeout` never reached `poll()` (default bound at definition time); `lib.api.set_poll_timeout` makes it work, covered by a test
+- [ ] **U1.3** Re-point `e2e-demo.py` to the lib; owner confirms the current demo still plays identically (M). Code re-pointed (761 -> 315 lines, `--help` and lint clean). **Owner action:** run `python3 scripts/e2e-demo.py --only-preflight`, then one full `python3 scripts/e2e-demo.py --single-flow` and report pass/fail
+- [x] **U1.4** Confirm no new dependency (stdlib only stays true) (S). Confirmed: lib and its tests import stdlib only. Self-tests: `cd scripts && python3 -m unittest discover -s e2e/tests -t .` (15 tests, no stack needed)
 
 ### Phase U2: Flow contract and the single CLI
 

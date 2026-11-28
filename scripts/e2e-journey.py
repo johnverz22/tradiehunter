@@ -41,7 +41,6 @@ refused) with either the seeded *@fixo.test accounts or a persona manifest
 """
 
 import argparse
-import base64
 import json
 import os
 import re
@@ -52,10 +51,21 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 from decimal import Decimal
-from xml.sax.saxutils import quoteattr
 
-API_BASE = os.environ.get("FIXO_API_URL", "http://localhost:5000").rstrip("/")
-API = API_BASE + "/api"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # scripts/ -> `e2e` package
+
+# Shared helpers live in scripts/e2e/lib (plan 12 U1.2); re-exported here so every scenario
+# below keeps using the bare names it always did.
+from e2e.lib import api as _api  # noqa: E402
+from e2e.lib.api import (  # noqa: E402
+    API, API_BASE, HTTP_TIMEOUT, StepFailed, Unreachable, _json_default, _request, delete, get,
+    login, poll, post, require_local, status_of, upload_photo, upload_receipt, wait_status,
+)
+from e2e.lib.asserts import (  # noqa: E402
+    assert_audit_trail, assert_booked, assert_completion_money, assert_payment_open,
+    assert_payment_verified, dec, need,
+)
+from e2e.lib.report import write_junit  # noqa: E402
 
 # Mirrors mobile/integration_test/helpers/test_config.dart.
 HOMEOWNER = ("homeowner-a@fixo.test", "Test1234!")
@@ -69,35 +79,11 @@ SUPERADMIN = (os.environ.get("FIXO_ADMIN_EMAIL", "admin@fixo.nz"),
 # Real-looking street address for fixture jobs (the API path bypasses the LINZ
 # lookup, so any well-formed string works; keep it realistic for the demo).
 DEMO_ADDRESS = "1 Queen Street, Auckland CBD, Auckland 1010"
-HTTP_TIMEOUT = 15
-POLL_TIMEOUT = 45
-POLL_INTERVAL = 2
-
-# Smallest valid PNG; a unique suffix defeats the server's receipt dedupe.
-_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-)
-
-
-class StepFailed(Exception):
-    pass
-
-
-class Unreachable(Exception):
-    pass
-
-
 # ── Persona manifest (scripts/e2e-personas.py) ───────────────────────────────
 
 MANIFEST_PATH = None
 TRADIES = []  # every tradie persona of the manifest (first one is TRADIE)
 MATCH_MODE = "auto"  # auto | quick | direct (see --match-mode)
-
-
-def require_local():
-    host = (urllib.parse.urlparse(API_BASE).hostname or "").lower()
-    if host not in ("localhost", "127.0.0.1", "::1"):
-        raise Unreachable("refusing FIXO_API_URL %r: not localhost (local docker stack only)" % API_BASE)
 
 
 def _read_manifest(path):
@@ -140,125 +126,6 @@ def record_job(job_id, scenario):
     os.replace(tmp, MANIFEST_PATH)  # atomic
 
 
-# ── HTTP ─────────────────────────────────────────────────────────────────────
-
-
-def _json_default(o):
-    """Request bodies may carry Decimal amounts: integral values go out as ints
-    (exact), others as floats (fine for the 2dp test amounts used here)."""
-    if isinstance(o, Decimal):
-        return int(o) if o == o.to_integral_value() else float(o)
-    raise TypeError("cannot serialise %r" % (o,))
-
-
-def _request(method, path, token=None, body=None, raw=None, content_type=None):
-    headers = {}
-    data = None
-    if token:
-        headers["Authorization"] = "Bearer " + token
-    if raw is not None:
-        data, headers["Content-Type"] = raw, content_type
-    elif body is not None:
-        data, headers["Content-Type"] = json.dumps(body, default=_json_default).encode(), "application/json"
-    req = urllib.request.Request(API + path, data=data, headers=headers, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
-            status, text = r.status, r.read().decode("utf-8", "replace")
-    except urllib.error.HTTPError as e:
-        status, text = e.code, e.read().decode("utf-8", "replace")
-    except (urllib.error.URLError, OSError) as e:
-        raise Unreachable("%s %s: %s" % (method, path, e))
-    if status >= 400:
-        raise StepFailed("%s %s -> HTTP %d: %s" % (method, path, status, text[:300]))
-    if status == 204 or not text.strip():
-        return None
-    try:
-        # Money is a JSON number server-side; parse it as Decimal so amounts
-        # are compared exactly (never through binary floats).
-        return json.loads(text, parse_float=Decimal)
-    except ValueError:
-        return {"_raw": text}
-
-
-def get(path, token=None):
-    return _request("GET", path, token)
-
-
-def post(path, token=None, body=None):
-    return _request("POST", path, token, body if body is not None else {})
-
-
-def delete(path, token=None):
-    return _request("DELETE", path, token)
-
-
-def _upload_png(path, field_name, filename, token):
-    boundary = "fixojourney%d" % int(time.time() * 1000)
-    payload = _PNG + ("|fixo-journey-%d" % time.time_ns()).encode()
-    head = (
-        '--%s\r\nContent-Disposition: form-data; name="%s"; '
-        'filename="%s"\r\nContent-Type: image/png\r\n\r\n' % (boundary, field_name, filename)
-    ).encode()
-    tail = ("\r\n--%s--\r\n" % boundary).encode()
-    return _request(
-        "POST",
-        path,
-        token,
-        raw=head + payload + tail,
-        content_type="multipart/form-data; boundary=" + boundary,
-    )
-
-
-def upload_receipt(job_id, token):
-    return _upload_png("/jobs/%d/payment/upload-receipt" % job_id, "receipt", "receipt.png", token)
-
-
-def upload_photo(job_id, token):
-    return _upload_png("/jobs/%d/photos" % job_id, "files", "issue.png", token)
-
-
-def login(creds):
-    try:
-        body = post("/auth/login", body={"email": creds[0], "password": creds[1]})
-    except StepFailed as e:
-        raise Unreachable(
-            "cannot log in as %s (%s) — run: bash scripts/seed-test-accounts.sh"
-            % (creds[0], str(e)[:160].replace("\n", " "))
-        )
-    token = (body or {}).get("token")
-    if not token:
-        raise Unreachable("login for %s returned no token: %r" % (creds[0], body))
-    return token
-
-
-def poll(desc, fn, timeout=POLL_TIMEOUT):
-    end = time.time() + timeout
-    last = None
-    while time.time() < end:
-        last = fn()
-        if last:
-            return last
-        time.sleep(POLL_INTERVAL)
-    raise StepFailed("timed out after %ds waiting for: %s" % (timeout, desc))
-
-
-def status_of(job_id, token):
-    return (get("/jobs/%d" % job_id, token) or {}).get("status")
-
-
-def wait_status(job_id, token, expected):
-    def check():
-        s = status_of(job_id, token)
-        return s == expected
-
-    try:
-        poll("job %d status == %s" % (job_id, expected), check)
-    except StepFailed:
-        raise StepFailed(
-            "job %d never reached %s (now %s)" % (job_id, expected, status_of(job_id, token))
-        )
-
-
 # ── Competing tradie ─────────────────────────────────────────────────────────
 
 
@@ -297,101 +164,6 @@ class Recorder:
         self.rows.append((name, dt, None))
         print("ok   (%.1fs)" % dt)
         return out
-
-
-# ── Response assertions (plan 08 P2.2) ───────────────────────────────────────
-# Field names come from backend/DTOs/JobDTOs.cs (JobDto) and AdminDTOs.cs
-# (admin job detail: statusHistory, chatTranscript).
-
-# Order the v2 and v1 happy paths must pass through (subsequence check, so
-# extra intermediate states do not fail the run).
-PATH_V2 = ["Booked", "InProgress", "AwaitingConfirmation", "AwaitingPayment", "PaymentReview", "Completed"]
-PATH_V1 = ["AwaitingPayment", "PaymentReview", "Booked", "InProgress", "AwaitingConfirmation", "Completed"]
-
-
-def dec(v):
-    """JSON number -> Decimal. .NET writes 85m as `85` and 85.5m as `85.5`, so a
-    money field may arrive as int or Decimal; None/other stays None."""
-    if isinstance(v, bool) or not isinstance(v, (int, Decimal)):
-        return None
-    return Decimal(v)
-
-
-def need(cond, msg):
-    if not cond:
-        raise StepFailed(msg)
-
-
-def is_subsequence(wanted, actual):
-    it = iter(actual)
-    return all(w in it for w in wanted)
-
-
-def assert_booked(job, ho, tradie_id, flow):
-    j = get("/jobs/%d" % job, ho) or {}
-    need(j.get("status") == "Booked", "status is %r, expected Booked" % j.get("status"))
-    need(int(j.get("flowVersion") or 1) == flow, "flowVersion changed to %r" % j.get("flowVersion"))
-    need(j.get("matchedTradieId") == tradie_id,
-         "matchedTradieId %r is not the persona tradie %r" % (j.get("matchedTradieId"), tradie_id))
-    need(j.get("matchedTradieName"), "matchedTradieName missing on a Booked job")
-    rate = dec(j.get("hourlyRate"))
-    need(rate is not None and rate > 0, "hourlyRate snapshot missing/zero: %r" % j.get("hourlyRate"))
-    return rate
-
-
-def assert_completion_money(job, ho, rate, hours):
-    j = get("/jobs/%d" % job, ho) or {}
-    need(dec(j.get("finalHours")) == Decimal(hours), "finalHours %r != %s" % (j.get("finalHours"), hours))
-    labour, final = dec(j.get("labourAmount")), dec(j.get("finalAmount"))
-    adj = dec(j.get("adjustmentsTotal")) or Decimal(0)
-    need(labour is not None and labour > 0, "labourAmount missing/zero: %r" % j.get("labourAmount"))
-    # JobDto: FinalAmount = LabourAmount + AdjustmentsTotal (exact decimal maths).
-    need(final == labour + adj, "finalAmount %r != labour %r + adjustments %r" % (final, labour, adj))
-    need(dec(j.get("totalAmount")) == final, "totalAmount alias %r != finalAmount %r" % (j.get("totalAmount"), final))
-    # Labour should be the rate snapshot x hours; reported rather than assumed
-    # because rounding rules are the backend's call (SPECS.md).
-    if labour != rate * Decimal(hours):
-        print("    note: labourAmount %s != hourlyRate %s x %sh (rounding/min-charge rule?)" % (labour, rate, hours))
-
-
-def assert_payment_open(job, ho, flow):
-    """GET /jobs/{id}/payment right after approval (fields: backend PaymentDTOs;
-    shape captured live from job 401 in plan 08's results log)."""
-    pay = get("/jobs/%d/payment" % job, ho) or {}
-    need(pay.get("jobId") == job, "payment.jobId %r != %d" % (pay.get("jobId"), job))
-    need(pay.get("paymentId") is not None, "payment has no paymentId")
-    amount = dec(pay.get("amount"))
-    need(amount is not None and amount > 0, "payment.amount missing/zero: %r" % pay.get("amount"))
-    if flow >= 2:
-        # v2 pay-at-completion: the homeowner pays exactly the approved FinalAmount.
-        j = get("/jobs/%d" % job, ho) or {}
-        final = dec(j.get("finalAmount"))
-        need(amount == final, "payment.amount %s != job.finalAmount %s" % (amount, final))
-    need(pay.get("status") == "Pending", "payment.status %r before upload, expected Pending (seen live, job 402)" % pay.get("status"))
-    need(str(job) in str(pay.get("reference") or ""), "payment.reference %r does not carry job id %d" % (pay.get("reference"), job))
-    print("    (payment %s %s, status %r, canUploadReceipt=%r)" % (amount, pay.get("currency"), pay.get("status"), pay.get("canUploadReceipt")))
-    return pay
-
-
-def assert_payment_verified(job, ho, opened):
-    pay = get("/jobs/%d/payment" % job, ho) or {}
-    need(pay.get("paymentId") == opened.get("paymentId"), "paymentId changed during verification")
-    need(dec(pay.get("amount")) == dec(opened.get("amount")), "payment.amount changed: %r -> %r" % (opened.get("amount"), pay.get("amount")))
-    need(pay.get("status") == "Verified", "payment.status %r, expected Verified" % pay.get("status"))
-    need(pay.get("canUploadReceipt") is False, "canUploadReceipt should be false once verified, got %r" % pay.get("canUploadReceipt"))
-    need(pay.get("submittedAtUtc"), "submittedAtUtc not set after receipt upload")
-    need(pay.get("verifiedAtUtc"), "verifiedAtUtc not set after verification")
-    need(pay.get("reference") == opened.get("reference"), "payment.reference changed")
-
-
-def assert_audit_trail(job, st, flow, markers):
-    a = get("/admin/jobs/%d" % job, st) or {}
-    seen = [h.get("toStatus") for h in sorted(a.get("statusHistory") or [], key=lambda h: h.get("changedAtUtc") or "")]
-    wanted = PATH_V2 if flow >= 2 else PATH_V1
-    need(is_subsequence(wanted, seen), "statusHistory %r does not contain %r in order" % (seen, wanted))
-    texts = [m.get("content") for m in (a.get("chatTranscript") or [])]
-    for marker in markers:
-        need(marker in texts, "chat message %r missing from the admin transcript (%d messages)" % (marker, len(texts)))
 
 
 def run_journey(rec):
@@ -1456,25 +1228,8 @@ SCENARIOS = {
 }
 
 
-def write_junit(path, rows, total):
-    fails = sum(1 for _, _, e in rows if e)
-    lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<testsuite name="e2e-journey" tests="%d" failures="%d" time="%.2f">' % (len(rows), fails, total),
-    ]
-    for name, dt, err in rows:
-        lines.append('  <testcase classname="journey" name=%s time="%.2f"%s' % (
-            quoteattr(name), dt, ">" if err else "/>"))
-        if err:
-            lines.append("    <failure message=%s/>" % quoteattr(err))
-            lines.append("  </testcase>")
-    lines.append("</testsuite>")
-    with open(path, "w") as f:
-        f.write("\n".join(lines) + "\n")
-
-
 def main():
-    global MATCH_MODE, POLL_TIMEOUT
+    global MATCH_MODE
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--junit", help="write JUnit XML to this path")
     ap.add_argument("--restore-tradies", action="store_true", help="un-park the demo tradie and exit")
@@ -1495,11 +1250,11 @@ def main():
     ap.add_argument("--manifest", help="persona manifest from scripts/e2e-personas.py (default: seeded *@fixo.test accounts)")
     ap.add_argument("--fail-fast", action="store_true", help="stop on first failed scenario (default)")
     ap.add_argument("--retry", type=int, default=0, help="retry a failed scenario up to N times")
-    ap.add_argument("--timeout", type=int, help="poll timeout in seconds (default: %d)" % POLL_TIMEOUT)
+    ap.add_argument("--timeout", type=int, help="poll timeout in seconds (default: %d)" % _api.POLL_TIMEOUT)
     args = ap.parse_args()
     MATCH_MODE = args.match_mode
     if args.timeout:
-        POLL_TIMEOUT = args.timeout
+        _api.set_poll_timeout(args.timeout)
 
     try:
         require_local()
