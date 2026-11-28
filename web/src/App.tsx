@@ -70,7 +70,7 @@ import api from './services/api';
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 
-export function isAdminAuthenticated(): Promise<boolean> {
+function isAdminAuthenticated(): Promise<boolean> {
   return api.get('/auth/admin-me')
     .then(() => true)
     .catch(() => false);
