@@ -5,6 +5,7 @@
 // first. Cards carry no actions: tapping one opens the full request, where
 // the tradie accepts or declines.
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
@@ -120,105 +121,181 @@ class _TrIncomingOfferScreenState extends ConsumerState<TrIncomingOfferScreen> {
     final queue = ref.watch(incomingOfferCoordinatorProvider);
     if (!_booted || queue.isEmpty) {
       return Scaffold(
-        backgroundColor: c.paper,
-        body: const Center(child: CircularProgressIndicator.adaptive()),
+        backgroundColor: c.heroStart,
+        body: Center(child: CircularProgressIndicator(color: c.onHero)),
       );
     }
 
     final count = queue.length;
     return Scaffold(
-      backgroundColor: c.paper,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Sizes.gutter,
-                Space.s2,
-                Space.s2,
-                0,
-              ),
-              child: Row(
-                children: [
-                  const THBadge('New requests', kind: THBadgeKind.accent),
-                  const Spacer(),
-                  IconButton(
-                    key: const Key('incoming_close'),
-                    tooltip: 'Close',
-                    onPressed: _close,
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Sizes.gutter,
-                Space.s2,
-                Sizes.gutter,
-                Space.s4,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    count == 1
-                        ? '1 request waiting'
-                        : '$count requests waiting',
-                    style: THType.h1.copyWith(color: c.text),
-                  ),
-                  const SizedBox(height: Space.s1),
-                  Text(
-                    'Open a request to review it, then accept or decline.',
-                    style: THType.body.copyWith(color: c.textSoft),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  Sizes.gutter,
-                  0,
-                  Sizes.gutter,
-                  Space.s4,
-                ),
-                itemCount: count,
-                separatorBuilder: (_, _) => const SizedBox(height: Space.s3),
-                itemBuilder: (context, i) {
-                  final offer = queue.offers[i];
-                  return _RequestCard(
-                    key: ValueKey('incoming_${offer.id}'),
-                    offer: offer,
-                    remaining: queue.remaining(offer),
-                    onTap: () => _openDetails(offer),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: THStickyBar(
+      backgroundColor: c.heroStart,
+      body: Stack(
         children: [
-          THButton(
-            key: const Key('incoming_later'),
-            label: 'Later',
-            kind: THButtonKind.secondary,
-            onPressed: _close,
-          ),
-          THButton(
-            key: const Key('incoming_review'),
-            label: count == 1 ? 'Review request' : 'Review first',
-            kind: THButtonKind.accent,
-            onPressed: () => _openDetails(queue.offers.first),
+          const Positioned.fill(child: _IncomingBackdrop()),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Sizes.gutter,
+                    Space.s3,
+                    Sizes.gutter,
+                    Space.s5,
+                  ),
+                  child: Row(
+                    children: [
+                      const _RequestMedallion(),
+                      const SizedBox(width: Space.s3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            THText(
+                              count == 1
+                                  ? '1 request waiting'
+                                  : '$count requests waiting',
+                              style: THTextStyle.h1,
+                              tone: THTone.onHero,
+                            ),
+                            const SizedBox(height: Space.s1),
+                            THText(
+                              'Open a request to review it, then accept or decline.',
+                              style: THTextStyle.meta,
+                              tone: THTone.onHeroSoft,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      Sizes.gutter,
+                      0,
+                      Sizes.gutter,
+                      Space.s4,
+                    ),
+                    itemCount: count,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: Space.s3),
+                    itemBuilder: (context, i) {
+                      final offer = queue.offers[i];
+                      return _RequestCard(
+                        key: ValueKey('incoming_${offer.id}'),
+                        offer: offer,
+                        remaining: queue.remaining(offer),
+                        onTap: () => _openDetails(offer),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Sizes.gutter,
+                    Space.s2,
+                    Sizes.gutter,
+                    Space.s3,
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: THButton(
+                      key: const Key('incoming_close'),
+                      label: 'Close',
+                      kind: THButtonKind.inverse,
+                      onPressed: _close,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+/// On-hero medallion carrying the "new request" hunt glyph.
+class _RequestMedallion extends StatelessWidget {
+  const _RequestMedallion();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    return Container(
+      padding: const EdgeInsets.all(Space.s3),
+      decoration: BoxDecoration(color: c.heroGlow, shape: BoxShape.circle),
+      child: THHuntGlyph(size: Sizes.iconLg, color: c.heroGold),
+    );
+  }
+}
+
+/// Brand gradient plus corner artwork behind the incoming-request list.
+class _IncomingBackdrop extends StatelessWidget {
+  const _IncomingBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.th;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [c.heroStart, c.heroEnd],
+        ),
+      ),
+      child: CustomPaint(
+        painter: _IncomingArtwork(glow: c.heroGlow, ring: c.heroGold),
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+}
+
+class _IncomingArtwork extends CustomPainter {
+  _IncomingArtwork({required this.glow, required this.ring});
+
+  final Color glow;
+  final Color ring;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final origin = Offset(size.width * 0.98, size.height * 0.02);
+
+    canvas.drawCircle(origin, size.width * 0.4, Paint()..color = glow);
+
+    final arc = Paint()
+      ..color = glow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = Sizes.borderStrong;
+
+    for (final factor in const [0.28, 0.42, 0.56]) {
+      canvas.drawArc(
+        Rect.fromCircle(center: origin, radius: size.width * factor),
+        math.pi * 0.5,
+        math.pi * 0.5,
+        false,
+        arc,
+      );
+    }
+
+    final dot = Paint()..color = ring;
+    canvas.drawCircle(origin, Space.s1, dot);
+    canvas.drawCircle(
+      Offset(size.width * 0.08, size.height * 0.46),
+      Space.s1_5,
+      dot,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_IncomingArtwork old) =>
+      old.glow != glow || old.ring != ring;
 }
 
 /// One waiting request. Display only: the whole card is the tap target.

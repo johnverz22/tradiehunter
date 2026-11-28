@@ -16,9 +16,13 @@ public static class PlatformSettingKeys
 {
     public const string QuotesBoardWindowHours = "Quotes.BoardWindowHours";
     public const string QuotesValidityHours = "Quotes.ValidityHours";
+    public const string PresenceGraceMinutes = "Presence.GraceMinutes";
 
     public const int MinHours = 1;
     public const int MaxHours = 720; // 30 days
+    public const int DefaultPresenceGraceMinutes = 3;
+    public const int MinPresenceGraceMinutes = 1;
+    public const int MaxPresenceGraceMinutes = 60;
 }
 
 /// <summary>
@@ -33,6 +37,8 @@ public interface IPlatformSettings
     /// <exception cref="ArgumentOutOfRangeException">A value is outside 1-720 hours.</exception>
     Task<QuoteWindowSettings> SetQuoteWindowsAsync(
         int boardWindowHours, int validityHours, string? userId, CancellationToken ct = default);
+
+    Task<int> GetPresenceGraceMinutesAsync(CancellationToken ct = default);
 }
 
 public class PlatformSettings : IPlatformSettings
@@ -88,6 +94,21 @@ public class PlatformSettings : IPlatformSettings
         await _audit.LogAsync(userId, "settings.quotes.update", "PlatformSettings", null,
             before, after, ct: ct);
         return after;
+    }
+
+    public async Task<int> GetPresenceGraceMinutesAsync(CancellationToken ct = default)
+    {
+        var row = await _context.PlatformSettings
+            .AsNoTracking()
+            .Where(s => s.Key == PlatformSettingKeys.PresenceGraceMinutes)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync(ct);
+
+        return int.TryParse(row, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v)
+            && v >= PlatformSettingKeys.MinPresenceGraceMinutes
+            && v <= PlatformSettingKeys.MaxPresenceGraceMinutes
+                ? v
+                : PlatformSettingKeys.DefaultPresenceGraceMinutes;
     }
 
     private async Task UpsertAsync(string key, int hours, string? userId, CancellationToken ct)

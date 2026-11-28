@@ -220,3 +220,112 @@ HoAttentionHero? thAttentionHero(List<Job> attention) {
     amountLabel: amount == null ? null : formatMoney(amount),
   );
 }
+
+/// Why the always-on home hero is showing. Presentation uses it only to pick
+/// the eyebrow; the copy itself is already in [HoHomeHero].
+enum HoHomeHeroKind { attention, booked, active, welcome }
+
+/// Content of the navy home hero. Unlike [HoAttentionHero] this always exists:
+/// when nothing needs attention it surfaces the next job, the job being
+/// matched, or a browse/post prompt instead of hiding the card.
+class HoHomeHero {
+  const HoHomeHero({
+    required this.kind,
+    required this.eyebrow,
+    required this.headline,
+    required this.subtitle,
+    required this.actionLabel,
+    this.job,
+    this.amountLabel,
+    this.scheduledStartUtc,
+  });
+
+  final HoHomeHeroKind kind;
+  final String eyebrow;
+  final String headline;
+  final String subtitle;
+  final String actionLabel;
+
+  /// Null only for the welcome variant, whose action opens tradie browse.
+  final Job? job;
+
+  /// Attention amount, when the API has priced the job.
+  final String? amountLabel;
+
+  /// Next appointment for the booked variant; formatted at the client.
+  final DateTime? scheduledStartUtc;
+}
+
+/// Picks the most useful thing to show in the home hero, always returning one.
+HoHomeHero thHomeHero(HoHomeGroups groups) {
+  final attention = thAttentionHero(groups.attention);
+  if (attention != null) {
+    return HoHomeHero(
+      kind: HoHomeHeroKind.attention,
+      eyebrow: 'NEEDS YOUR ATTENTION',
+      headline: attention.headline,
+      subtitle: attention.subtitle,
+      actionLabel: attention.actionLabel,
+      job: attention.job,
+      amountLabel: attention.amountLabel,
+    );
+  }
+
+  final inProgress = groups.booked.where((j) => j.status == 'InProgress');
+  final upcoming = groups.booked.where((j) => j.status == 'Booked').toList()
+    ..sort((a, b) {
+      final aT = a.scheduledStartUtc;
+      final bT = b.scheduledStartUtc;
+      if (aT != null && bT != null) return aT.compareTo(bT);
+      if (aT != null) return -1;
+      if (bT != null) return 1;
+      return 0;
+    });
+  final booked = inProgress.isNotEmpty
+      ? inProgress.first
+      : (upcoming.isNotEmpty ? upcoming.first : null);
+  if (booked != null) {
+    final tradie = booked.matchedTradieName?.trim();
+    return HoHomeHero(
+      kind: HoHomeHeroKind.booked,
+      eyebrow: booked.status == 'InProgress' ? 'IN PROGRESS' : 'UP NEXT',
+      headline: booked.title,
+      subtitle: (tradie == null || tradie.isEmpty)
+          ? booked.suburb
+          : '$tradie · ${booked.suburb}',
+      actionLabel: 'View job',
+      job: booked,
+      scheduledStartUtc: booked.scheduledStartUtc,
+    );
+  }
+
+  if (groups.active.isNotEmpty) {
+    final job = groups.active.first;
+    return HoHomeHero(
+      kind: HoHomeHeroKind.active,
+      eyebrow: 'YOUR JOB',
+      headline: thHomeJobSubtitle(job),
+      subtitle: '${job.title} · ${job.suburb}',
+      actionLabel: 'View job',
+      job: job,
+    );
+  }
+
+  if (groups.past.isNotEmpty) {
+    return const HoHomeHero(
+      kind: HoHomeHeroKind.welcome,
+      eyebrow: 'READY FOR THE NEXT ONE?',
+      headline: 'Book your next tradie',
+      subtitle: 'Browse verified locals or post a new job.',
+      actionLabel: 'Find a tradie',
+    );
+  }
+
+  return const HoHomeHero(
+    kind: HoHomeHeroKind.welcome,
+    eyebrow: 'WELCOME',
+    headline: 'Your home, sorted',
+    subtitle: 'Browse verified local tradies or post a job to get matched.',
+    actionLabel: 'Find a tradie',
+  );
+}

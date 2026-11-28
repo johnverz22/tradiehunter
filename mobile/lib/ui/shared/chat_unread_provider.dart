@@ -8,15 +8,27 @@
 // The shell refreshes it whenever the current location changes (i.e. every
 // navigation rebuilds the shell), and the v2 messages list refreshes it after
 // a thread is popped, since reading a thread clears its unread count.
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/marketplace.dart';
 import '../../repositories/chat_reviews_repository.dart' show ChatRepository;
 import '../../viewmodels/jobs_viewmodel.dart';
 
 class ChatUnreadNotifier extends StateNotifier<AsyncValue<int>> {
-  ChatUnreadNotifier(this._repo) : super(const AsyncValue.data(0));
+  ChatUnreadNotifier(this._repo) : super(const AsyncValue.data(0)) {
+    _sub = _repo.onUserMessage.listen((_) => unawaited(refresh()));
+  }
 
   final ChatRepository _repo;
+  StreamSubscription<ChatMessage>? _sub;
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
 
   /// Total unread messages across conversations. Failures surface as
   /// [AsyncValue.error]; the dock renders no badge for them (a missing badge

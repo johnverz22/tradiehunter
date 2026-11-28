@@ -19,13 +19,20 @@ public class ProfileController : ControllerBase
     private readonly IValidator<ProfileUpdateDto> _validator;
     private readonly FixoDbContext _context;
     private readonly IAccountFlagService _flags;
+    private readonly ITradiePresenceService? _presence;
 
-    public ProfileController(IProfileService profileService, IValidator<ProfileUpdateDto> validator, FixoDbContext context, IAccountFlagService flags)
+    public ProfileController(
+        IProfileService profileService,
+        IValidator<ProfileUpdateDto> validator,
+        FixoDbContext context,
+        IAccountFlagService flags,
+        ITradiePresenceService? presence = null)
     {
         _profileService = profileService;
         _validator = validator;
         _context = context;
         _flags = flags;
+        _presence = presence;
     }
 
     [HttpGet]
@@ -94,6 +101,44 @@ public class ProfileController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok();
+    }
+
+    /// <summary>
+    /// Unregister FCM device token(s) on logout so a logged-out or shared device
+    /// stops receiving pushes for the previous user (QA §1, §6).
+    /// </summary>
+    [HttpDelete("device-token")]
+    public async Task<IActionResult> UnregisterDeviceToken([FromQuery] string? token = null)
+    {
+        var userId = User.FindFirstValue("sub");
+        if (userId == null) return Unauthorized();
+
+        var query = _context.DeviceTokens.Where(dt => dt.UserId == userId);
+        if (!string.IsNullOrWhiteSpace(token))
+            query = query.Where(dt => dt.Token == token);
+
+        var tokens = await query.ToListAsync();
+        if (tokens.Count > 0)
+        {
+            _context.DeviceTokens.RemoveRange(tokens);
+            await _context.SaveChangesAsync();
+        }
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Explicitly mark the current tradie offline on logout (QA §1).
+    /// </summary>
+    [HttpPost("presence/offline")]
+    public async Task<IActionResult> SetPresenceOffline()
+    {
+        var userId = User.FindFirstValue("sub");
+        if (userId == null) return Unauthorized();
+
+        if (_presence != null)
+            await _presence.SetOfflineAsync(userId);
+
+        return NoContent();
     }
 
     // ── P8-02: Block & report ────────────────────────────────────────────────
@@ -201,6 +246,8 @@ public class ProfileController : ControllerBase
         if (tradie == null) return Forbid();
 
         tradie.IsAvailable = request.Available;
+        if (request.Available)
+            tradie.LastSeenAtUtc = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         var updatedProfile = await _profileService.GetProfileAsync(userId, false);

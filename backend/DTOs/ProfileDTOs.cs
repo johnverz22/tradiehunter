@@ -26,6 +26,8 @@ public class ProfileDto
     public bool? IsVerified { get; set; }
     public bool? HasInsurance { get; set; }
     public bool? IsAvailable { get; set; }
+    public bool? Online { get; set; }
+    public DateTime? LastSeenAtUtc { get; set; }
     public string? Address { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }

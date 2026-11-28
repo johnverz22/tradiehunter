@@ -261,6 +261,20 @@ class AuthRepository {
   // ── Logout ──────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    // QA §1 & §6: mark tradie presence offline and unregister FCM device tokens
+    // before revoking/clearing auth so a logged-out phone stops receiving offers/pushes.
+    try {
+      final jwt = await _storage.read(key: 'jwt_token');
+      if (jwt != null && jwt.isNotEmpty) {
+        final authOpts = Options(headers: {'Authorization': 'Bearer $jwt'});
+        await Future.wait([
+          _dio.post('/api/profile/presence/offline', options: authOpts),
+          _dio.delete('/api/profile/device-token', options: authOpts),
+        ]);
+      }
+    } catch (_) {
+      // Non-fatal — proceed with local sign-out regardless of network state.
+    }
     // P9-06: revoke the refresh token server-side before clearing local
     // storage so a stolen token cannot be used after explicit logout.
     try {

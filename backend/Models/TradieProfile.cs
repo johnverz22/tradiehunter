@@ -31,7 +31,15 @@ public class TradieProfile
     public bool IsVerified { get; set; } = false;
     
     public bool IsAvailable { get; set; } = true;
-    
+
+    /// <summary>
+    /// Last UTC timestamp when the tradie's app was confirmed reachable (JobHub
+    /// connect, heartbeat, or last disconnect). Used with <see cref="IsAvailable"/>
+    /// and active SignalR connections to compute effective online presence (QA §1).
+    /// Cleared to null on explicit logout.
+    /// </summary>
+    public DateTime? LastSeenAtUtc { get; set; }
+
     public bool HasInsurance { get; set; } = false;
 
     [Column(TypeName = "geometry (Point, 4326)")]

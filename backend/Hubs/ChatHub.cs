@@ -75,16 +75,29 @@ public class ChatHub : Hub
     }
 
     /// <summary>
-    /// Persist the message and broadcast to all job-group members.
+    /// Refreshes the connection's presence heartbeat for a joined job chat (~30-60 s cadence).
+    /// </summary>
+    public async Task PingChat(string jobId)
+    {
+        if (!int.TryParse(jobId, out var id)) return;
+        var userId = Context.UserIdentifier;
+        if (userId == null) return;
+
+        await SetOnlineAsync(id, userId, online: true);
+    }
+
+    /// <summary>
+    /// Persist the message, broadcast to all job-group members, and return the
+    /// persisted DTO as a server ack so the sender confirms its optimistic row.
     /// Content is trimmed and capped at 2000 chars server-side.
     /// Throws HubException when the job's chat is closed (P5-08).
     /// </summary>
-    public async Task SendMessage(string jobId, string content)
+    public async Task<ChatMessageDto?> SendMessage(string jobId, string content)
     {
-        if (!int.TryParse(jobId, out var id)) return;
+        if (!int.TryParse(jobId, out var id)) return null;
 
         var userId = Context.UserIdentifier;
-        if (userId == null) return;
+        if (userId == null) return null;
 
         if (!await _chatService.IsParticipantAsync(id, userId))
         {
@@ -98,11 +111,11 @@ public class ChatHub : Hub
         }
 
         content = content.Trim();
-        if (string.IsNullOrEmpty(content)) return;
+        if (string.IsNullOrEmpty(content)) return null;
         if (content.Length > 2000) content = content[..2000];
 
-        // Persist + broadcast (ChatService handles both).
-        await _chatService.SaveMessageAsync(id, userId, content);
+        // Persist + broadcast (ChatService handles both) and return ack.
+        return await _chatService.SaveMessageAsync(id, userId, content);
     }
 
     /// <summary>
@@ -129,9 +142,7 @@ public class ChatHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Redis presence cleanup is job-scoped, so we can't clear here without knowing
-        // which jobs the user was in. The LeaveJob call handles it for clean disconnects;
-        // stale presence keys expire via TTL in ChatService.
+        await ClearConnectionPresenceAsync(Context.ConnectionId);
         _logger.LogInformation("ChatHub disconnected: {Conn}", Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
@@ -141,8 +152,16 @@ public class ChatHub : Hub
     public static string GroupName(int jobId) => $"chat-{jobId}";
     public static string GroupName(string jobId) => $"chat-{jobId}";
 
-    /// <summary>Redis set key for tracking which users are online in a job chat.</summary>
+    /// <summary>Redis sorted-set key for tracking live connections in a job chat.</summary>
     public static string OnlineSetKey(int jobId) => $"chat:online:{jobId}";
+
+    /// <summary>Member format in <see cref="OnlineSetKey"/>: "{userId}:{connectionId}".</summary>
+    public static string OnlineMember(string userId, string connectionId) => $"{userId}:{connectionId}";
+
+    private static string ConnUserKey(string connectionId) => $"chat:conn:user:{connectionId}";
+    private static string ConnJobsKey(string connectionId) => $"chat:conn:jobs:{connectionId}";
+
+    private static readonly TimeSpan PresenceWindowTtl = TimeSpan.FromHours(2);
 
     private async Task SetOnlineAsync(int jobId, string userId, bool online)
     {
@@ -151,17 +170,62 @@ public class ChatHub : Hub
         {
             var db = _redis.GetDatabase();
             var key = OnlineSetKey(jobId);
-            if (online)
-                await db.SetAddAsync(key, userId);
-            else
-                await db.SetRemoveAsync(key, userId);
+            var member = OnlineMember(userId, Context.ConnectionId);
+            var connUserKey = ConnUserKey(Context.ConnectionId);
+            var connJobsKey = ConnJobsKey(Context.ConnectionId);
 
-            // Expire the presence set after 24 h to avoid stale keys.
-            await db.KeyExpireAsync(key, TimeSpan.FromHours(24));
+            if (online)
+            {
+                var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                await db.SortedSetAddAsync(key, member, nowUnix);
+                await db.KeyExpireAsync(key, PresenceWindowTtl);
+
+                await db.StringSetAsync(connUserKey, userId, PresenceWindowTtl);
+                await db.SetAddAsync(connJobsKey, jobId.ToString());
+                await db.KeyExpireAsync(connJobsKey, PresenceWindowTtl);
+            }
+            else
+            {
+                await db.SortedSetRemoveAsync(key, member);
+                await db.SetRemoveAsync(connJobsKey, jobId.ToString());
+            }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Redis presence update failed for job {Job} user {User}", jobId, userId);
+        }
+    }
+
+    private async Task ClearConnectionPresenceAsync(string connectionId)
+    {
+        if (_redis == null) return;
+        try
+        {
+            var db = _redis.GetDatabase();
+            var connUserKey = ConnUserKey(connectionId);
+            var connJobsKey = ConnJobsKey(connectionId);
+
+            var userId = await db.StringGetAsync(connUserKey);
+            var jobIds = await db.SetMembersAsync(connJobsKey);
+
+            if (!userId.IsNullOrEmpty && jobIds.Length > 0)
+            {
+                var uid = userId.ToString();
+                var member = OnlineMember(uid, connectionId);
+                foreach (var j in jobIds)
+                {
+                    if (int.TryParse(j.ToString(), out var jobId))
+                    {
+                        await db.SortedSetRemoveAsync(OnlineSetKey(jobId), member);
+                    }
+                }
+            }
+
+            await db.KeyDeleteAsync(new RedisKey[] { connUserKey, connJobsKey });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Redis disconnect cleanup failed for connection {Conn}", connectionId);
         }
     }
 }

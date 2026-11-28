@@ -894,6 +894,8 @@ class TradieListEntry {
   final bool verified;
   final bool insured;
   final bool available;
+  final bool online;
+  final DateTime? lastSeenAtUtc;
   final double? rating;
   final int? reviewCount;
   final int? completedJobs;
@@ -915,6 +917,8 @@ class TradieListEntry {
     this.verified = false,
     this.insured = false,
     this.available = false,
+    this.online = false,
+    this.lastSeenAtUtc,
     this.rating,
     this.reviewCount,
     this.completedJobs,
@@ -947,6 +951,10 @@ class TradieListEntry {
       verified: json['verified'] as bool? ?? false,
       insured: json['insured'] as bool? ?? false,
       available: json['available'] as bool? ?? false,
+      online: json['online'] as bool? ?? false,
+      lastSeenAtUtc: json['lastSeenAtUtc'] != null
+          ? DateTime.tryParse(json['lastSeenAtUtc'].toString())?.toUtc()
+          : null,
       rating: (json['rating'] as num?)?.toDouble(),
       reviewCount: (json['reviewCount'] as num?)?.toInt(),
       completedJobs: (json['completedJobs'] as num?)?.toInt(),

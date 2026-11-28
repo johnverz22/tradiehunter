@@ -43,8 +43,7 @@ void main() {
         lastName: 'Lee',
         phone: '021123456',
         address: '10 Queen St',
-        latitude: '-36.8485',
-        longitude: '174.7633',
+        addressResolved: true,
         serviceRadiusKm: Decimal.fromInt(25),
       ),
     );

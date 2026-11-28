@@ -39,6 +39,7 @@ public class OfferService
     private readonly IBackgroundJobClient _hangfire;
     private readonly IOptions<JobFlowOptions> _flowOptions;
     private readonly ILogger<OfferService> _logger;
+    private readonly ITradiePresenceService? _presence;
 
     public OfferService(
         FixoDbContext context,
@@ -47,7 +48,8 @@ public class OfferService
         INotificationService notifications,
         IBackgroundJobClient hangfire,
         IOptions<JobFlowOptions> flowOptions,
-        ILogger<OfferService> logger)
+        ILogger<OfferService> logger,
+        ITradiePresenceService? presence = null)
     {
         _context = context;
         _jobStatusService = jobStatusService;
@@ -56,6 +58,7 @@ public class OfferService
         _hangfire = hangfire;
         _flowOptions = flowOptions;
         _logger = logger;
+        _presence = presence;
     }
 
     /// <summary>
@@ -132,6 +135,11 @@ public class OfferService
             ?? throw new BusinessRuleException(
                 "tradie_unreachable",
                 "That tradie is not available for this service — pick another tradie from the list.");
+
+        if (_presence != null && !await _presence.IsOnlineAsync(request.TradieId))
+            throw new BusinessRuleException(
+                "tradie_unreachable",
+                "That tradie just went offline — pick another.");
 
         // D7: urgency-aware, configurable expiry window.
         var windowMinutes = job.Urgency is JobUrgency.High or JobUrgency.Emergency

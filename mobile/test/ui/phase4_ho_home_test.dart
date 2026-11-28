@@ -35,6 +35,7 @@ Job _job(
   String? tradie,
   String? tradieId,
   DateTime? created,
+  DateTime? scheduled,
   Decimal? total,
 }) => Job(
   id: id,
@@ -47,6 +48,7 @@ Job _job(
   matchedTradieName: tradie,
   matchedTradieId: tradieId,
   createdAtUtc: created,
+  scheduledStartUtc: scheduled,
   finalAmount: total,
 );
 
@@ -151,6 +153,84 @@ void main() {
       final hero = thAttentionHero([_job('j1', 'AwaitingPayment')])!;
       expect(hero.amountLabel, isNull);
       expect(hero.headline, 'Payment due');
+    });
+  });
+
+  group('always-on home hero', () {
+    test('attention job wins over booked and active jobs', () {
+      final hero = thHomeHero(
+        HoHomeGroups.from([
+          _job('pay', 'AwaitingPayment', title: 'Invoice'),
+          _job(
+            'booked',
+            'Booked',
+            title: 'Hallway',
+            scheduled: DateTime.utc(2026, 12, 2, 9),
+          ),
+          _job('req', 'Requested', title: 'Fence'),
+        ]),
+      );
+      expect(hero.kind, HoHomeHeroKind.attention);
+      expect(hero.eyebrow, 'NEEDS YOUR ATTENTION');
+      expect(hero.job?.id, 'pay');
+    });
+
+    test('booked job surfaces the next appointment', () {
+      final hero = thHomeHero(
+        HoHomeGroups.from([
+          _job(
+            'booked',
+            'Booked',
+            title: 'Hallway',
+            tradie: 'Kiri',
+            scheduled: DateTime.utc(2026, 12, 2, 9),
+          ),
+        ]),
+      );
+      expect(hero.kind, HoHomeHeroKind.booked);
+      expect(hero.eyebrow, 'UP NEXT');
+      expect(hero.headline, 'Hallway');
+      expect(hero.subtitle, 'Kiri · Ponsonby');
+      expect(hero.actionLabel, 'View job');
+      expect(hero.scheduledStartUtc, DateTime.utc(2026, 12, 2, 9));
+    });
+
+    test('in-progress job beats an upcoming booking', () {
+      final hero = thHomeHero(
+        HoHomeGroups.from([
+          _job('later', 'Booked', scheduled: DateTime.utc(2026, 12, 2, 9)),
+          _job('now', 'InProgress'),
+        ]),
+      );
+      expect(hero.kind, HoHomeHeroKind.booked);
+      expect(hero.eyebrow, 'IN PROGRESS');
+      expect(hero.job?.id, 'now');
+    });
+
+    test('active job describes the matching stage', () {
+      final hero = thHomeHero(
+        HoHomeGroups.from([_job('req', 'Requested', title: 'Fence')]),
+      );
+      expect(hero.kind, HoHomeHeroKind.active);
+      expect(hero.eyebrow, 'YOUR JOB');
+      expect(hero.headline, 'Finding a tradie');
+      expect(hero.subtitle, 'Fence · Ponsonby');
+      expect(hero.actionLabel, 'View job');
+    });
+
+    test('welcome hero when nothing is in flight', () {
+      final hero = thHomeHero(HoHomeGroups.from(const []));
+      expect(hero.kind, HoHomeHeroKind.welcome);
+      expect(hero.job, isNull);
+      expect(hero.eyebrow, 'WELCOME');
+      expect(hero.actionLabel, 'Find a tradie');
+    });
+
+    test('past-only account gets the next-job prompt', () {
+      final hero = thHomeHero(HoHomeGroups.from([_job('done', 'Completed')]));
+      expect(hero.kind, HoHomeHeroKind.welcome);
+      expect(hero.eyebrow, 'READY FOR THE NEXT ONE?');
+      expect(hero.job, isNull);
     });
   });
 

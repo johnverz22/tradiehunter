@@ -66,6 +66,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       // Optimistically update local state so UI responds immediately
       final updated = Map<String, dynamic>.from(state.profile ?? {});
       updated['isAvailable'] = isAvailable;
+      updated['online'] = isAvailable;
       state = state.copyWith(profile: updated);
     } catch (e) {
       state = state.copyWith(error: e.toString());

@@ -26,7 +26,7 @@ public class ChatService : IChatService
     private readonly IConnectionMultiplexer? _redis;
     private readonly ILogger<ChatService> _logger;
 
-    private const int FcmRateLimitSeconds = 30;
+    private const int PresenceFreshSeconds = 90;
 
     public ChatService(
         FixoDbContext context,
@@ -105,6 +105,16 @@ public class ChatService : IChatService
         await _chatHub.Clients
             .Group(ChatHub.GroupName(jobId))
             .SendAsync("NewChatMessage", dto);
+
+        // User-level event so inbox badges/unread counts update outside the chat screen (QA §6).
+        var (homeownerId, tradieId) = await GetParticipantIdsAsync(jobId);
+        var recipientId = senderId == homeownerId ? tradieId : homeownerId;
+        if (!string.IsNullOrEmpty(recipientId) && recipientId != senderId)
+        {
+            await _chatHub.Clients
+                .User(recipientId)
+                .SendAsync("ChatMessageReceived", dto);
+        }
 
         // FCM push to the offline recipient (fire-and-forget).
         _ = SendChatPushAsync(jobId, senderId, content);
@@ -269,8 +279,9 @@ public class ChatService : IChatService
 
     /// <summary>
     /// Send a FCM push to the offline recipient.
-    /// Only fires when the recipient has no active hub connections (tracked via Redis).
-    /// Rate-limited to 1 push per 30 s per (jobId, recipientId).
+    /// Only skips when the recipient has ≥ 1 fresh hub connection (&lt; 90 s heartbeat)
+    /// in the job's Redis sorted set. Uses per-job collapse key / tag so bursts
+    /// update one notification instead of being rate-limited/dropped.
     /// Failures are logged, never thrown.
     /// </summary>
     private async Task SendChatPushAsync(int jobId, string senderId, string content)
@@ -281,25 +292,20 @@ public class ChatService : IChatService
             var recipientId = senderId == homeownerId ? tradieId : homeownerId;
             if (recipientId == null || recipientId == senderId) return;
 
-            // Check online presence via Redis (set by ChatHub on connect/disconnect).
-            // If Redis is not available we fall back to always-push to avoid silent failure.
+            // Check per-connection presence via Redis sorted set (pruning stale > 90 s).
             if (_redis != null)
             {
                 var db = _redis.GetDatabase();
-                var isOnline = await db.SetContainsAsync(ChatHub.OnlineSetKey(jobId), recipientId);
-                if (isOnline)
-                {
-                    _logger.LogDebug("Chat push skipped — recipient {R} online on job {J}", recipientId, jobId);
-                    return;
-                }
+                var key = ChatHub.OnlineSetKey(jobId);
+                var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var cutoff = nowUnix - PresenceFreshSeconds;
 
-                // Rate limit: max 1 push per 30 s per (job, recipient).
-                var rateLimitKey = $"chat:push:rl:{jobId}:{recipientId}";
-                var set = await db.StringSetAsync(rateLimitKey, "1",
-                    TimeSpan.FromSeconds(FcmRateLimitSeconds), When.NotExists);
-                if (!set)
+                await db.SortedSetRemoveRangeByScoreAsync(key, double.NegativeInfinity, cutoff);
+                var activeMembers = await db.SortedSetRangeByScoreAsync(key, cutoff, double.PositiveInfinity);
+                var prefix = $"{recipientId}:";
+                if (activeMembers.Any(m => m.ToString().StartsWith(prefix, StringComparison.Ordinal)))
                 {
-                    _logger.LogDebug("Chat push rate-limited for job {J} recipient {R}", jobId, recipientId);
+                    _logger.LogDebug("Chat push skipped — recipient {R} has fresh connection on job {J}", recipientId, jobId);
                     return;
                 }
             }
@@ -310,6 +316,10 @@ public class ChatService : IChatService
                 .ToListAsync();
 
             if (tokens.Count == 0) return;
+
+            var unreadCount = await _context.ChatMessages
+                .AsNoTracking()
+                .CountAsync(m => m.JobId == jobId && m.SenderId != recipientId && m.ReadAtUtc == null);
 
             var preview = content.Length > 100 ? content[..100] + "…" : content;
 
@@ -324,8 +334,11 @@ public class ChatService : IChatService
                 body: preview,
                 data: new Dictionary<string, string>
                 {
-                    { "type",  "chat" },
+                    { "type", "chat" },
                     { "jobId", jobId.ToString() },
+                    { "unreadCount", unreadCount.ToString() },
+                    { PushNotificationService.ChannelKey, PushNotificationService.ChatChannel },
+                    { PushNotificationService.CollapseKey, $"chat-{jobId}" },
                 });
 
             await CleanStaleTokensAsync(recipientId, staleTokens);

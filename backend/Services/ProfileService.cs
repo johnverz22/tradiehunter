@@ -17,20 +17,26 @@ public class ProfileService : IProfileService
     private readonly IBlobStorageService _blob;
     private readonly string _credentialsContainer;
     private readonly INotificationService? _notifications;
+    private readonly IAddressResolver _addressResolver;
     private readonly ILogger<ProfileService>? _logger;
+    private readonly ITradiePresenceService? _presence;
 
     public ProfileService(
         FixoDbContext context,
         IBlobStorageService blob,
         IConfiguration config,
+        IAddressResolver addressResolver,
         INotificationService? notifications = null,
-        ILogger<ProfileService>? logger = null)
+        ILogger<ProfileService>? logger = null,
+        ITradiePresenceService? presence = null)
     {
         _context = context;
         _blob = blob;
         _credentialsContainer = config["AzureBlob:CredentialsContainer"] ?? "th-credentials";
+        _addressResolver = addressResolver;
         _notifications = notifications;
         _logger = logger;
+        _presence = presence;
     }
 
     public async Task<ProfileDto?> GetProfileAsync(string userId, bool isPublicView)
@@ -78,6 +84,10 @@ public class ProfileService : IProfileService
                 dto.IsVerified      = tradie.IsVerified;
                 dto.HasInsurance    = tradie.HasInsurance;
                 dto.IsAvailable     = tradie.IsAvailable;
+                dto.LastSeenAtUtc   = tradie.LastSeenAtUtc;
+                dto.Online          = _presence != null
+                    ? await _presence.IsOnlineAsync(userId)
+                    : tradie.IsAvailable;
                 dto.ServiceRadiusKm = tradie.ServiceRadiusKm;
                 dto.Bio              = tradie.Bio;
                 dto.RegistrationNumber = tradie.RegistrationNumber;
@@ -123,9 +133,21 @@ public class ProfileService : IProfileService
             if (dto.RegistrationNumber != null) tradie.RegistrationNumber = dto.RegistrationNumber;
             if (dto.IsAvailable.HasValue)    tradie.IsAvailable     = dto.IsAvailable.Value;
             if (dto.ServiceRadiusKm.HasValue) tradie.ServiceRadiusKm = dto.ServiceRadiusKm.Value;
-            if (dto.Address         != null) tradie.Address         = dto.Address;
-            
-            if (dto.Latitude.HasValue && dto.Longitude.HasValue)
+            if (dto.Address != null)
+            {
+                var address = dto.Address.Trim();
+                var addressChanged = !string.Equals(address, tradie.Address, StringComparison.Ordinal);
+                tradie.Address = address;
+                if (address.Length == 0)
+                {
+                    tradie.Location = null;
+                }
+                else if (addressChanged || tradie.Location == null)
+                {
+                    await TryGeocodeAsync(tradie, userId, address);
+                }
+            }
+            else if (dto.Latitude.HasValue && dto.Longitude.HasValue)
             {
                 tradie.Location = new Point(dto.Longitude.Value, dto.Latitude.Value) { SRID = 4326 };
             }
@@ -357,6 +379,29 @@ public class ProfileService : IProfileService
                 Category = s.Category.ToString(),
             })
             .ToListAsync();
+    }
+
+    private async Task TryGeocodeAsync(TradieProfile tradie, string userId, string address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return;
+
+        try
+        {
+            var result = await _addressResolver.SearchAsync(address, CancellationToken.None);
+            if (result.Items.Count > 0)
+            {
+                var candidate = result.Items[0];
+                tradie.Location = new Point(candidate.Longitude, candidate.Latitude) { SRID = 4326 };
+            }
+        }
+        catch (AddressResolutionUnavailableException)
+        {
+            _logger?.LogWarning("Address resolution unavailable while geocoding tradie {UserId}.", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Geocoding failed for tradie {UserId}.", userId);
+        }
     }
 
     /// <summary>

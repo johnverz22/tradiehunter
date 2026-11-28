@@ -23,19 +23,22 @@ class TradieOnboardingState {
   final String? error;
 
   /// Inline validation messages keyed by field: `'firstName'`, `'lastName'`,
-  /// `'phone'`, `'address'`, `'latitude'`, `'longitude'`, `'tradeType'`,
-  /// `'services'`, `'rate:<serviceId>'`, `'day:<weekday>'` and
-  /// `'bankAccountNumber'`. Set only by local validation — server failures
-  /// keep using the per-step error banners.
+  /// `'phone'`, `'address'`, `'tradeType'`, `'services'`, `'rate:<serviceId>'`,
+  /// `'day:<weekday>'` and `'bankAccountNumber'`. Set only by local
+  /// validation — server failures keep using the per-step error banners.
   final Map<String, String> fieldErrors;
 
   // ── Step 1: where you work ──────────────────────────────────────────────
   final String firstName;
   final String lastName;
   final String phone;
+
+  /// Confirmed base address. Latitude/longitude are resolved server-side.
   final String address;
-  final String latitude;
-  final String longitude;
+
+  /// True once [address] came from an address-search result, so the wizard
+  /// only saves a location the backend can geocode.
+  final bool addressResolved;
 
   /// Must match a `TradeCategory` name — matching compares it against the
   /// job's category, so a tradie left on `"General"` never gets matched.
@@ -79,8 +82,7 @@ class TradieOnboardingState {
     this.lastName = '',
     this.phone = '',
     this.address = '',
-    this.latitude = '',
-    this.longitude = '',
+    this.addressResolved = false,
     this.tradeType = '',
     Decimal? serviceRadiusKm,
     this.bankAccountName = '',
@@ -134,8 +136,7 @@ class TradieOnboardingState {
     String? lastName,
     String? phone,
     String? address,
-    String? latitude,
-    String? longitude,
+    bool? addressResolved,
     String? tradeType,
     Decimal? serviceRadiusKm,
     String? bankAccountName,
@@ -166,8 +167,7 @@ class TradieOnboardingState {
       lastName: lastName ?? this.lastName,
       phone: phone ?? this.phone,
       address: address ?? this.address,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      addressResolved: addressResolved ?? this.addressResolved,
       tradeType: tradeType ?? this.tradeType,
       serviceRadiusKm: serviceRadiusKm ?? this.serviceRadiusKm,
       bankAccountName: bankAccountName ?? this.bankAccountName,
@@ -222,8 +222,9 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
         lastName: (profile['lastName'] as String?) ?? '',
         phone: (profile['phoneNumber'] as String?) ?? '',
         address: (profile['address'] as String?) ?? '',
-        latitude: _coordToInput(profile['latitude']),
-        longitude: _coordToInput(profile['longitude']),
+        addressResolved: ((profile['address'] as String?) ?? '')
+            .trim()
+            .isNotEmpty,
         tradeType: (profile['tradeType'] as String?) ?? '',
         serviceRadiusKm:
             parseDecimal(profile['serviceRadiusKm']) ??
@@ -277,19 +278,16 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
 
   void setAddress(String value) => state = state.copyWith(
     address: value,
+    addressResolved: false,
     fieldErrors: _withoutField('address'),
     clearStep1Error: true,
   );
 
-  void setLatitude(String value) => state = state.copyWith(
-    latitude: value,
-    fieldErrors: _withoutField('latitude'),
-    clearStep1Error: true,
-  );
-
-  void setLongitude(String value) => state = state.copyWith(
-    longitude: value,
-    fieldErrors: _withoutField('longitude'),
+  /// Confirms an address-search result. The backend derives the coordinates.
+  void selectAddress(String value) => state = state.copyWith(
+    address: value,
+    addressResolved: true,
+    fieldErrors: _withoutField('address'),
     clearStep1Error: true,
   );
 
@@ -473,29 +471,13 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
     }
     if (state.address.trim().isEmpty) {
       errors['address'] = 'Enter the address you work from.';
+    } else if (!state.addressResolved) {
+      errors['address'] = 'Select your base address from the suggestions.';
     }
     final phone = state.phone.trim();
     if (phone.isNotEmpty && !_looksLikePhone(phone)) {
       errors['phone'] =
           'Enter a valid phone number — digits, spaces and + only.';
-    }
-
-    final latText = state.latitude.trim();
-    final lngText = state.longitude.trim();
-    final double? lat = latText.isEmpty ? null : double.tryParse(latText);
-    final double? lng = lngText.isEmpty ? null : double.tryParse(lngText);
-    if (latText.isEmpty != lngText.isEmpty) {
-      errors['latitude'] =
-          'Enter both latitude and longitude, or leave both blank.';
-      errors['longitude'] =
-          'Enter both latitude and longitude, or leave both blank.';
-    } else {
-      if (latText.isNotEmpty && (lat == null || lat < -90 || lat > 90)) {
-        errors['latitude'] = 'Latitude must be between -90 and 90.';
-      }
-      if (lngText.isNotEmpty && (lng == null || lng < -180 || lng > 180)) {
-        errors['longitude'] = 'Longitude must be between -180 and 180.';
-      }
     }
 
     for (final slot in state.schedule.values) {
@@ -639,8 +621,6 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
   /// that touches profile fields re-sends them all — the endpoint replaces
   /// the record, and re-sending is what keeps earlier answers intact.
   Map<String, dynamic> _profilePayload() {
-    final latText = state.latitude.trim();
-    final lngText = state.longitude.trim();
     final phone = state.phone.trim();
     final bankAccountName = state.bankAccountName.trim();
     final bankAccountNumber = state.bankAccountNumber.trim();
@@ -650,8 +630,6 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
       'phoneNumber': phone.isEmpty ? null : phone,
       'tradeType': state.tradeType.trim(),
       'address': state.address.trim(),
-      'latitude': latText.isEmpty ? null : double.tryParse(latText),
-      'longitude': lngText.isEmpty ? null : double.tryParse(lngText),
       'serviceRadiusKm': state.serviceRadiusKm.toDouble(),
       'bankAccountName': bankAccountName.isEmpty ? null : bankAccountName,
       'bankAccountNumber': bankAccountNumber.isEmpty ? null : bankAccountNumber,
@@ -685,14 +663,6 @@ class TradieOnboardingNotifier extends StateNotifier<TradieOnboardingState> {
       };
       return false;
     }
-  }
-
-  static String _coordToInput(Object? value) {
-    if (value is! num) return '';
-    // Avoid a trailing ".0" for whole-number coordinates.
-    return value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toString();
   }
 
   static bool _looksLikePhone(String value) =>

@@ -324,6 +324,8 @@ public class TradieListDto
     public bool Verified { get; set; }
     public bool Insured { get; set; }
     public bool Available { get; set; }
+    public bool Online { get; set; }
+    public DateTime? LastSeenAtUtc { get; set; }
     public double Rating { get; set; }
     public int ReviewCount { get; set; }
     public int CompletedJobs { get; set; }

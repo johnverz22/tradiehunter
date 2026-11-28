@@ -1503,6 +1503,9 @@ namespace FixoApi.Migrations
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LastSeenAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Point>("Location")
                         .HasColumnType("geometry (Point, 4326)");
 

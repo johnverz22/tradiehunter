@@ -126,6 +126,8 @@ export interface AdminTradieDetails {
   bio?: string;
   registrationNumber?: string;
   isAvailable: boolean;
+  online: boolean;
+  lastSeenAtUtc: string | null;
   hasInsurance: boolean;
   isGstRegistered: boolean;
   address?: string;

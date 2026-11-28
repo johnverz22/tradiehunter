@@ -99,6 +99,8 @@ public class AdminTradieDetailsDto
     public string? Bio { get; set; }
     public string? RegistrationNumber { get; set; }
     public bool IsAvailable { get; set; }
+    public bool Online { get; set; }
+    public DateTime? LastSeenAtUtc { get; set; }
     public bool HasInsurance { get; set; }
     public bool IsGstRegistered { get; set; }
     public string? Address { get; set; }

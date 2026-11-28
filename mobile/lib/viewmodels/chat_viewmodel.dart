@@ -66,6 +66,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   StreamSubscription<ChatMessage>? _hubSub;
   StreamSubscription<void>? _reconnectSub;
   bool _hubReady = false;
+  bool _disposed = false;
 
   ChatNotifier({
     required this.jobId,
@@ -136,13 +137,31 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> _connectHub(String baseUrl) async {
     try {
       await _repo.connectHub(baseUrl);
+      if (_disposed) return;
       await _repo.joinJob(jobId);
+      if (_disposed) return;
       _hubReady = true;
 
       _hubSub = _repo.onNewMessage.listen(_onHubMessage);
       _reconnectSub = _repo.onReconnected.listen((_) => _onReconnected());
     } catch (_) {
       // Hub failure is non-fatal — REST history and REST send still work.
+    }
+  }
+
+  /// Handles app background/foreground transitions: leaves the job group when
+  /// paused so FCM pushes resume, and re-joins + reconciles on resume (QA §6).
+  Future<void> onAppLifecycleChanged(bool resumed) async {
+    if (resumed) {
+      try {
+        await _repo.joinJob(jobId);
+        _hubReady = true;
+      } catch (_) {
+        _hubReady = false;
+      }
+      await _reconcile();
+    } else {
+      _repo.leaveJob(jobId).catchError((_) {});
     }
   }
 
@@ -279,35 +298,46 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   Future<void> _deliver(ChatMessage local) async {
     try {
+      ChatMessage? confirmed;
       if (_hubReady) {
-        await _repo.sendMessageViaHub(jobId, local.text ?? '');
-        // The server broadcasts the row back to the group; _onHubMessage
-        // swaps the optimistic bubble for it. If the broadcast never arrives
-        // the bubble stays (truthfully unconfirmed but sent).
+        confirmed = await _repo.sendMessageViaHub(jobId, local.text ?? '');
       } else {
-        final saved = await _repo.sendMessageViaRest(jobId, local.text ?? '');
-        // No group membership when the hub is down, so no echo will arrive —
-        // replace the optimistic bubble with the returned server row now.
-        final idx = state.messages.indexWhere((m) => m.id == local.id);
-        if (idx >= 0) {
-          final updated = [...state.messages];
-          updated[idx] = ChatMessage(
-            id: saved.id,
-            jobId: saved.jobId,
-            senderId: saved.senderId,
-            senderName: saved.senderName,
-            sentByMe: true,
-            text: saved.text,
-            imageUrl: saved.imageUrl,
-            sentAtUtc: saved.sentAtUtc,
-            readAtUtc: saved.readAtUtc,
-          );
-          state = state.copyWith(messages: _sorted(updated));
-        }
+        confirmed = await _repo.sendMessageViaRest(jobId, local.text ?? '');
+      }
+      if (confirmed != null) {
+        _confirmLocalMessage(local.id, confirmed);
       }
     } catch (_) {
       state = state.copyWith(failedIds: {...state.failedIds, local.id});
     }
+  }
+
+  void _confirmLocalMessage(String localId, ChatMessage saved) {
+    if (state.messages.any((m) => m.id == saved.id)) {
+      state = state.copyWith(
+        messages: state.messages.where((m) => m.id != localId).toList(),
+        failedIds: {...state.failedIds}..remove(localId),
+      );
+      return;
+    }
+    final idx = state.messages.indexWhere((m) => m.id == localId);
+    if (idx < 0) return;
+    final updated = [...state.messages];
+    updated[idx] = ChatMessage(
+      id: saved.id,
+      jobId: saved.jobId,
+      senderId: saved.senderId,
+      senderName: saved.senderName,
+      sentByMe: true,
+      text: saved.text,
+      imageUrl: saved.imageUrl,
+      sentAtUtc: saved.sentAtUtc,
+      readAtUtc: saved.readAtUtc,
+    );
+    state = state.copyWith(
+      messages: _sorted(updated),
+      failedIds: {...state.failedIds}..remove(localId),
+    );
   }
 
   /// Load older messages (scroll-back). Prepends them to the top of the list.
@@ -349,6 +379,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   @override
   void dispose() {
+    _disposed = true;
     _hubSub?.cancel();
     _reconnectSub?.cancel();
     _repo.leaveJob(jobId);

@@ -27,6 +27,9 @@ class JobHubClient {
   /// deep link) share one connection attempt instead of building two.
   Future<void>? _connecting;
 
+  Timer? _heartbeatTimer;
+  bool _heartbeatEnabled = false;
+
   /// Job groups screens currently want live updates for, with a reference
   /// count so two screens watching the same job don't undo each other.
   /// Server-side group membership is per connection, so this is the source of
@@ -156,13 +159,44 @@ class JobHubClient {
 
     await conn.start();
     await _syncWatched();
+    if (_heartbeatEnabled) {
+      unawaited(sendHeartbeat());
+    }
   }
 
   /// Re-joins every watched job group (membership is lost on reconnect) and
   /// only then tells listeners, so their state re-read can't race the join.
   Future<void> _afterReconnect() async {
     await _syncWatched();
+    if (_heartbeatEnabled) {
+      unawaited(sendHeartbeat());
+    }
     if (!_reconnectedController.isClosed) _reconnectedController.add(null);
+  }
+
+  /// Enables or pauses the 30-second tradie presence heartbeat (QA §1).
+  /// Immediately sends a heartbeat when enabled while connected.
+  void setHeartbeatEnabled(bool enabled) {
+    _heartbeatEnabled = enabled;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    if (!enabled) return;
+    unawaited(sendHeartbeat());
+    _heartbeatTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => unawaited(sendHeartbeat()),
+    );
+  }
+
+  /// Sends one presence heartbeat to JobHub if currently connected.
+  Future<void> sendHeartbeat() async {
+    final conn = _connection;
+    if (conn == null || conn.state != HubConnectionState.Connected) return;
+    try {
+      await conn.invoke('Heartbeat');
+    } catch (e) {
+      debugPrint('JobHub heartbeat failed (ignored): $e');
+    }
   }
 
   /// Starts receiving `JobStatusChanged` for [jobId]. Ref-counted: every call
@@ -244,6 +278,8 @@ class JobHubClient {
   }
 
   Future<void> disconnect() async {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
     await _connection?.stop();
     _connection = null;
   }

@@ -32,6 +32,7 @@ public class AdminService : IAdminService
     private readonly IAuditLogService _audit;
     private readonly ILogger<AdminService> _logger;
     private readonly BrandOptions _brand;
+    private readonly ITradiePresenceService? _presence;
 
     public AdminService(
         FixoDbContext db,
@@ -46,7 +47,8 @@ public class AdminService : IAdminService
         IJobStatusService jobStatusService,
         IAuditLogService audit,
         ILogger<AdminService> logger,
-        IOptions<BrandOptions>? brand = null)
+        IOptions<BrandOptions>? brand = null,
+        ITradiePresenceService? presence = null)
     {
         _db = db;
         _userManager = userManager;
@@ -61,6 +63,7 @@ public class AdminService : IAdminService
         _audit = audit;
         _logger = logger;
         _brand = brand?.Value ?? new BrandOptions();
+        _presence = presence;
     }
 
     // ── Stats ──────────────────────────────────────────────────────────────────
@@ -386,11 +389,16 @@ public class AdminService : IAdminService
         var hasApprovedLicence = credentials.Any(c =>
             c.Type == CredentialType.License && c.Status == CredentialStatus.Approved);
 
+        var presenceStatus = _presence != null
+            ? (await _presence.GetPresenceAsync([tp.UserId])).GetValueOrDefault(tp.UserId)
+            : new TradiePresenceStatus(tp.IsAvailable, tp.LastSeenAtUtc);
+
         // Mirrors the gates in MatchingService so staff can see why a tradie is not suggested.
         var issues = new List<string>();
         if (!user.IsActive) issues.Add("Account is deactivated.");
         if (!tp.IsVerified) issues.Add("Not verified: no approved credential and not verified by staff.");
         if (!tp.IsAvailable) issues.Add("Tradie has switched availability off in the app.");
+        else if (!presenceStatus.Online) issues.Add("Tradie is marked available but app is currently offline.");
         if (tp.Location is null) issues.Add("No service location set.");
         if (rates.Count == 0) issues.Add("No services/rates listed.");
         var licenceServices = rates.Where(r => r.Service.RequiresLicence).Select(r => r.Service.Name).ToList();
@@ -409,6 +417,8 @@ public class AdminService : IAdminService
             Bio = tp.Bio,
             RegistrationNumber = tp.RegistrationNumber,
             IsAvailable = tp.IsAvailable,
+            Online = presenceStatus.Online,
+            LastSeenAtUtc = presenceStatus.LastSeenAtUtc,
             HasInsurance = tp.HasInsurance,
             IsGstRegistered = tp.IsGstRegistered,
             Address = tp.Address,

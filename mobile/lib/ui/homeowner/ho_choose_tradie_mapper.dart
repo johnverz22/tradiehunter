@@ -67,6 +67,17 @@ class ThTradieBadge {
   final bool dot;
 }
 
+/// Positive presence label for a tradie returned by the server (QA §1).
+/// Returns null when presence is unknown — never fabricated.
+String? thTradiePresenceLabel(TradieListEntry e, DateTime now) {
+  if (!e.online) return null;
+  final seen = e.lastSeenAtUtc;
+  if (seen == null) return 'Online now';
+  final mins = now.toUtc().difference(seen.toUtc()).inMinutes;
+  if (mins < 2) return 'Online now';
+  return 'Active $mins min ago';
+}
+
 /// Real server booleans only; no badge is shown for an unknown value.
 List<ThTradieBadge> thTradieBadges(TradieListEntry e) => [
   if (e.verified)
@@ -76,9 +87,9 @@ List<ThTradieBadge> thTradieBadges(TradieListEntry e) => [
       icon: Icons.verified_user_rounded,
     ),
   if (e.insured) const ThTradieBadge('Insured', ThTradieBadgeKind.insured),
-  if (e.available)
-    const ThTradieBadge(
-      'Available now',
+  if (e.online || e.available)
+    ThTradieBadge(
+      thTradiePresenceLabel(e, DateTime.now()) ?? 'Available now',
       ThTradieBadgeKind.available,
       dot: true,
     ),

@@ -114,9 +114,10 @@ class _ChatRepo extends ChatRepository {
   }
 
   @override
-  Future<void> sendMessageViaHub(String jobId, String text) async {
+  Future<ChatMessage?> sendMessageViaHub(String jobId, String text) async {
     if (hubSendThrows) throw StateError('send failed');
     hubSends.add(text);
+    return null;
   }
 
   @override

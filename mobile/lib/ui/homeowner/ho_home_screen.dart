@@ -8,9 +8,10 @@
 // same card navigation (see ho_job_navigation.dart) and the same Key
 // `homeowner_dashboard`. Hosted inside ThShell, which supplies the dock.
 //
-// API gaps (plan §4.1, G-3 / G-5 / G-13): the "Needs your attention" hero is
-// derived client-side from job statuses. The mockup's "Top rated near you"
-// list is still omitted, not invented: `GET /api/services/search`
+// API gaps (plan §4.1, G-3 / G-5 / G-13): the navy home hero is derived
+// client-side from job statuses and is always shown — attention job first, then
+// the next booked/active job, then a browse prompt. The mockup's "Top rated
+// near you" list is still omitted, not invented: `GET /api/services/search`
 // (ServiceSearchResultDto) returns name, rate and distance but no rating or
 // review count, needs a serviceId, and the home screen has no search location.
 // The fix-plan default for D-7 assumed a rating in that DTO; see G-13.
@@ -19,6 +20,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/marketplace.dart';
 import '../../repositories/job_hub_client.dart';
@@ -108,7 +110,7 @@ class _ThHomeScreenState extends ConsumerState<ThHomeScreen> {
     final profile = ref.watch(profileViewModelProvider).profile;
     final firstName = (profile?['firstName'] as String? ?? '').trim();
     final groups = HoHomeGroups.from(jobsState.jobs);
-    final hero = thAttentionHero(groups.attention);
+    final hero = thHomeHero(groups);
     final unreadNotifications = ref.watch(
       notificationCenterProvider.select((c) => c.unreadCount),
     );
@@ -187,7 +189,7 @@ class _Content extends StatelessWidget {
   final bool hasUnread;
   final bool hasRefreshError;
   final Future<void> Function() onRetry;
-  final HoAttentionHero? hero;
+  final HoHomeHero hero;
   final HoHomeGroups groups;
   final bool isEmpty;
   final bool showPast;
@@ -201,7 +203,7 @@ class _Content extends StatelessWidget {
       children: [
         _Greeting(firstName: firstName, hasUnread: hasUnread),
         if (hasRefreshError) _RefreshNotice(onRetry: onRetry),
-        if (hero != null) _AttentionHero(hero: hero!),
+        _HomeHero(hero: hero),
         Semantics(
           identifier: 'home_search',
           child: InkWell(
@@ -347,19 +349,23 @@ class _RefreshNotice extends StatelessWidget {
   }
 }
 
-class _AttentionHero extends StatelessWidget {
-  const _AttentionHero({required this.hero});
-  final HoAttentionHero hero;
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({required this.hero});
+  final HoHomeHero hero;
 
   @override
   Widget build(BuildContext context) {
+    final scheduled = hero.scheduledStartUtc?.toLocal();
+    final value =
+        hero.amountLabel ??
+        (scheduled == null ? null : DateFormat.MMMEd().format(scheduled));
+    final note = hero.amountLabel != null
+        ? 'Incl. GST'
+        : (scheduled == null ? null : DateFormat.jm().format(scheduled));
+
     return THHero(
       children: [
-        const THText(
-          'NEEDS YOUR ATTENTION',
-          style: THTextStyle.label,
-          tone: THTone.gold,
-        ),
+        THText(hero.eyebrow, style: THTextStyle.label, tone: THTone.gold),
         const SizedBox(height: Space.s2),
         THText(hero.headline, style: THTextStyle.h2, tone: THTone.onHero),
         THText(hero.subtitle, style: THTextStyle.meta, tone: THTone.onHeroSoft),
@@ -368,22 +374,23 @@ class _AttentionHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: hero.amountLabel == null
+              child: value == null
                   ? const SizedBox.shrink()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         THText(
-                          hero.amountLabel!,
+                          value,
                           style: THTextStyle.moneyLg,
                           tone: THTone.onHero,
                         ),
-                        const THText(
-                          'Incl. GST',
-                          style: THTextStyle.meta,
-                          tone: THTone.onHeroSoft,
-                          size: 11.5,
-                        ),
+                        if (note != null)
+                          THText(
+                            note,
+                            style: THTextStyle.meta,
+                            tone: THTone.onHeroSoft,
+                            size: 11.5,
+                          ),
                       ],
                     ),
             ),
@@ -393,7 +400,14 @@ class _AttentionHero extends StatelessWidget {
               kind: THButtonKind.inverse,
               size: THButtonSize.sm,
               fullWidth: false,
-              onPressed: () => thOpenHomeownerJob(context, hero.job),
+              onPressed: () {
+                final job = hero.job;
+                if (job == null) {
+                  context.push('/find-tradie');
+                } else {
+                  thOpenHomeownerJob(context, job);
+                }
+              },
             ),
           ],
         ),

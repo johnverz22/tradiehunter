@@ -134,6 +134,9 @@ class _JobRequestBarState extends ConsumerState<_JobRequestBar> {
       context.push('/jobs/${widget.jobId}/request', extra: gstLabel);
     } on ProfileApiException catch (e) {
       if (!mounted) return;
+      if (e.message.toLowerCase().contains('offline')) {
+        ref.invalidate(tradieListProvider(widget.jobId));
+      }
       THNotice.errorDynamic(context, e.message);
     } catch (_) {
       if (!mounted) return;

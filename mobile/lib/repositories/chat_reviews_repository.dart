@@ -18,13 +18,19 @@ class ChatRepository {
   final FlutterSecureStorage _storage;
 
   HubConnection? _connection;
+  final Map<String, Timer> _pingTimers = {};
   final _messageController = StreamController<ChatMessage>.broadcast();
+  final _userMessageController = StreamController<ChatMessage>.broadcast();
   final _reconnectingController = StreamController<void>.broadcast();
   final _reconnectedController = StreamController<void>.broadcast();
   bool _hubConnected = false;
 
   /// Stream of real-time messages pushed from the server via SignalR.
   Stream<ChatMessage> get onNewMessage => _messageController.stream;
+
+  /// Stream of user-level chat notifications (`ChatMessageReceived`) for inbox
+  /// unread badge updates outside the active chat screen (QA §6).
+  Stream<ChatMessage> get onUserMessage => _userMessageController.stream;
 
   /// Fires when the automatic-reconnect policy drops the live connection.
   /// Server-side group membership does not survive reconnect — listeners must
@@ -62,6 +68,14 @@ class ChatRepository {
       }
     });
 
+    _connection!.on('ChatMessageReceived', (args) {
+      if (args == null || args.isEmpty) return;
+      final data = args[0] as Map<String, dynamic>?;
+      if (data != null) {
+        _userMessageController.add(ChatMessage.fromJson(data));
+      }
+    });
+
     _connection!.onreconnecting(({error}) => _reconnectingController.add(null));
     _connection!.onreconnected(
       ({connectionId}) => _reconnectedController.add(null),
@@ -73,12 +87,18 @@ class ChatRepository {
 
   Future<void> joinJob(String jobId) async {
     await _connection?.invoke('JoinJob', args: [jobId]);
+    _pingTimers[jobId]?.cancel();
+    _pingTimers[jobId] = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => pingChat(jobId).catchError((_) {}),
+    );
   }
 
   /// Leaves the job's chat group. The hub connection itself stays alive —
   /// other screens may still be subscribed, and the next screen only needs to
   /// join its own group.
   Future<void> leaveJob(String jobId) async {
+    _pingTimers.remove(jobId)?.cancel();
     await _connection?.invoke('LeaveJob', args: [jobId]);
   }
 
@@ -86,7 +106,18 @@ class ChatRepository {
     await _connection?.invoke('MarkRead', args: [jobId, messageId]);
   }
 
+  /// Refreshes connection-scoped presence in Redis for [jobId] (QA §6).
+  Future<void> pingChat(String jobId) async {
+    final conn = _connection;
+    if (conn == null || conn.state != HubConnectionState.Connected) return;
+    await conn.invoke('PingChat', args: [jobId]);
+  }
+
   Future<void> disconnectHub() async {
+    for (final t in _pingTimers.values) {
+      t.cancel();
+    }
+    _pingTimers.clear();
     await _connection?.stop();
     _connection = null;
     _hubConnected = false;
@@ -94,6 +125,7 @@ class ChatRepository {
 
   void dispose() {
     _messageController.close();
+    _userMessageController.close();
     _reconnectingController.close();
     _reconnectedController.close();
     disconnectHub();
@@ -168,12 +200,17 @@ class ChatRepository {
 
   /// Throws when the hub is not connected — a silent no-op would leave the
   /// optimistic bubble looking sent when nothing reached the server.
-  Future<void> sendMessageViaHub(String jobId, String text) async {
+  /// Returns the server-acknowledged [ChatMessage] when available (QA §6).
+  Future<ChatMessage?> sendMessageViaHub(String jobId, String text) async {
     final conn = _connection;
     if (conn == null || conn.state != HubConnectionState.Connected) {
       throw StateError('Chat connection is not available.');
     }
-    await conn.invoke('SendMessage', args: [jobId, text]);
+    final ack = await conn.invoke('SendMessage', args: [jobId, text]);
+    if (ack is Map) {
+      return ChatMessage.fromJson(Map<String, dynamic>.from(ack));
+    }
+    return null;
   }
 
   /// Fallback REST send when the hub is not connected.

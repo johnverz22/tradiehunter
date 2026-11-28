@@ -5,15 +5,13 @@ import '../../models/tradie_onboarding.dart';
 import '../../viewmodels/tradie_onboarding_viewmodel.dart';
 import '../design/th_tokens.dart';
 import '../design/th_widgets.dart';
+import '../shared/th_address_lookup.dart';
 import 'tr_onboarding_mapper.dart';
 
 class TrOnboardingControllers {
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final phone = TextEditingController();
-  final address = TextEditingController();
-  final latitude = TextEditingController();
-  final longitude = TextEditingController();
   final radius = TextEditingController();
   final bankAccountName = TextEditingController();
   final bankAccountNumber = TextEditingController();
@@ -29,9 +27,6 @@ class TrOnboardingControllers {
     firstName.text = state.firstName;
     lastName.text = state.lastName;
     phone.text = state.phone;
-    address.text = state.address;
-    latitude.text = state.latitude;
-    longitude.text = state.longitude;
     radius.text = state.serviceRadiusKm.toStringAsFixed(0);
     bankAccountName.text = state.bankAccountName;
     bankAccountNumber.text = state.bankAccountNumber;
@@ -41,9 +36,6 @@ class TrOnboardingControllers {
     firstName.dispose();
     lastName.dispose();
     phone.dispose();
-    address.dispose();
-    latitude.dispose();
-    longitude.dispose();
     radius.dispose();
     bankAccountName.dispose();
     bankAccountNumber.dispose();
@@ -105,40 +97,19 @@ class TrOnboardingStep0Work extends StatelessWidget {
               keyboardType: TextInputType.phone,
               onChanged: notifier.setPhone,
             ),
-            _OnboardingTextField(
-              label: 'Base address',
-              controller: controllers.address,
+            ThAddressLookup(
+              value: state.address,
+              fieldKey: const Key('tradie_address_search_field'),
+              eyebrow: 'WHERE DO YOU WORK FROM?',
+              label: 'BASE ADDRESS',
+              hint: 'Start with the street number and road name',
+              helper: 'Select a result so we can match jobs near you.',
+              selectedLabel: 'Base address selected',
+              selected: state.addressResolved,
               errorText: errors['address'],
               onChanged: notifier.setAddress,
-            ),
-            Row(
-              spacing: Space.s2_5,
-              children: [
-                Expanded(
-                  child: _OnboardingTextField(
-                    label: 'Latitude',
-                    controller: controllers.latitude,
-                    errorText: errors['latitude'],
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    onChanged: notifier.setLatitude,
-                  ),
-                ),
-                Expanded(
-                  child: _OnboardingTextField(
-                    label: 'Longitude',
-                    controller: controllers.longitude,
-                    errorText: errors['longitude'],
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    onChanged: notifier.setLongitude,
-                  ),
-                ),
-              ],
+              onSelected: (address, _) =>
+                  notifier.selectAddress(address.address),
             ),
             _OnboardingTextField(
               label: 'Service radius (km)',

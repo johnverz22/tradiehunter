@@ -84,12 +84,19 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshJobsAndOffers();
+    if (state == AppLifecycleState.resumed) {
+      _hub.setHeartbeatEnabled(true);
+      _refreshJobsAndOffers();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _hub.setHeartbeatEnabled(false);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _hub.setHeartbeatEnabled(false);
     _matchSub?.cancel();
     _offerSub?.cancel();
     _statusSub?.cancel();
@@ -143,6 +150,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
     final hub = ref.read(jobHubClientProvider);
     await hub.connect(baseUrl: resolveBaseUrl());
     if (!mounted) return;
+    hub.setHeartbeatEnabled(true);
 
     _matchSub = hub.onNewJobMatch.listen((event) {
       if (!mounted) return;
@@ -255,7 +263,7 @@ class _TradieHomeScreenState extends ConsumerState<TradieHomeScreen>
     final profileState = ref.watch(profileViewModelProvider);
     final earningsState = ref.watch(tradieEarningsProvider);
     final profile = profileState.profile;
-    final online = profile?['isAvailable'] as bool? ?? true;
+    final online = profile?['online'] as bool? ?? false;
     final groups = TrHomeGroups.from(jobsState.jobs, DateTime.now());
 
     return ThScope(

@@ -97,6 +97,7 @@ class _ProfileRepo extends ProfileRepository {
     'role': 1,
     'isVerified': verified,
     'isAvailable': true,
+    'online': true,
     'averageRating': 4.9,
     'reviewCount': 128,
   };
@@ -357,6 +358,8 @@ void main() {
         [_job('r1', 'Requested')],
         offers: {'r1': _offer('r1', expires)},
       );
+      await ref(tester).read(profileViewModelProvider.notifier).loadProfile();
+      await tester.pump();
       await tester.tap(find.byKey(const Key('availability_button')));
       await tester.pumpAndSettle();
       expect(find.text('Go offline?'), findsOneWidget);
@@ -379,6 +382,8 @@ void main() {
 
     testWidgets('going offline with no work needs no confirm', (tester) async {
       await pump(tester, [_job('c', 'Completed')]);
+      await ref(tester).read(profileViewModelProvider.notifier).loadProfile();
+      await tester.pump();
       await tester.tap(find.byKey(const Key('availability_button')));
       await tester.pumpAndSettle();
       expect(find.text('Go offline?'), findsNothing);

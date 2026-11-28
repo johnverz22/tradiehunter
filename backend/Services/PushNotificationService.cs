@@ -143,6 +143,12 @@ public class PushNotificationService : IPushSender
     /// <summary>Channel for incoming job requests: heads-up, sound, full-screen intent.</summary>
     public const string IncomingRequestsChannel = "incoming_requests";
 
+    /// <summary>Channel for chat messages.</summary>
+    public const string ChatChannel = "chat";
+
+    /// <summary>Data key carrying an optional collapse/tag key (e.g. "chat-42").</summary>
+    public const string CollapseKey = "collapseKey";
+
     /// <summary>
     /// Android config: always high priority; routes to the named channel when the
     /// payload carries <see cref="ChannelKey"/> so the device plays the channel's
@@ -151,11 +157,24 @@ public class PushNotificationService : IPushSender
     public static AndroidConfig BuildAndroid(Dictionary<string, string>? data)
     {
         var android = new AndroidConfig { Priority = Priority.High };
-        if (data is not null
+        var hasChannel = data is not null
             && data.TryGetValue(ChannelKey, out var channel)
-            && !string.IsNullOrWhiteSpace(channel))
+            && !string.IsNullOrWhiteSpace(channel);
+        var hasCollapse = data is not null
+            && data.TryGetValue(CollapseKey, out var collapse)
+            && !string.IsNullOrWhiteSpace(collapse);
+
+        if (hasChannel || hasCollapse)
         {
-            android.Notification = new AndroidNotification { ChannelId = channel };
+            android.Notification = new AndroidNotification
+            {
+                ChannelId = hasChannel ? data![ChannelKey] : null,
+                Tag = hasCollapse ? data![CollapseKey] : null,
+            };
+        }
+        if (hasCollapse)
+        {
+            android.CollapseKey = data![CollapseKey];
         }
         return android;
     }
@@ -176,7 +195,17 @@ public class PushNotificationService : IPushSender
                 ["interruption-level"] = "time-sensitive",
             };
         }
-        return new ApnsConfig { Aps = aps };
+        var apns = new ApnsConfig { Aps = aps };
+        if (data is not null
+            && data.TryGetValue(CollapseKey, out var collapse)
+            && !string.IsNullOrWhiteSpace(collapse))
+        {
+            apns.Headers = new Dictionary<string, string>
+            {
+                ["apns-collapse-id"] = collapse,
+            };
+        }
+        return apns;
     }
 
     /// <summary>

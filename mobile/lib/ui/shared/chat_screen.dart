@@ -86,7 +86,8 @@ class ThChatScreen extends ConsumerStatefulWidget {
   ConsumerState<ThChatScreen> createState() => _ThChatScreenState();
 }
 
-class _ThChatScreenState extends ConsumerState<ThChatScreen> {
+class _ThChatScreenState extends ConsumerState<ThChatScreen>
+    with WidgetsBindingObserver {
   final _inputCtrl = TextEditingController();
   final _inputFocus = FocusNode();
   final _scrollCtrl = ScrollController();
@@ -99,8 +100,19 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollCtrl.addListener(_onScroll);
     Future.microtask(_fetchMissingJob);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.paused) {
+      ref
+          .read(chatNotifierProvider(widget.jobId).notifier)
+          .onAppLifecycleChanged(state == AppLifecycleState.resumed);
+    }
   }
 
   /// Jump to the newest message. Called after the first history load and
@@ -249,6 +261,7 @@ class _ThChatScreenState extends ConsumerState<ThChatScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _inputCtrl.dispose();
     _inputFocus.dispose();
     _scrollCtrl.dispose();

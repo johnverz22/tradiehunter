@@ -25,19 +25,22 @@ public class BoardJobNotifyJob
     private readonly IConfiguration _config;
     private readonly BrandOptions _brand;
     private readonly ILogger<BoardJobNotifyJob> _logger;
+    private readonly ITradiePresenceService? _presence;
 
     public BoardJobNotifyJob(
         FixoDbContext context,
         INotificationService notifications,
         IConfiguration config,
         IOptions<BrandOptions> brand,
-        ILogger<BoardJobNotifyJob> logger)
+        ILogger<BoardJobNotifyJob> logger,
+        ITradiePresenceService? presence = null)
     {
         _context = context;
         _notifications = notifications;
         _config = config;
         _brand = brand.Value;
         _logger = logger;
+        _presence = presence;
     }
 
     public async Task ExecuteAsync(int jobId, CancellationToken ct = default)
@@ -98,6 +101,12 @@ public class BoardJobNotifyJob
             .Distinct()
             .Take(cap)
             .ToList();
+
+        if (_presence != null && recipientIds.Count > 0)
+        {
+            var onlineIds = await _presence.FilterOnlineAsync(recipientIds, ct);
+            recipientIds = recipientIds.Where(id => onlineIds.Contains(id)).ToList();
+        }
 
         if (recipientIds.Count == 0)
         {

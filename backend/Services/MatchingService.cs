@@ -39,6 +39,7 @@ public class MatchingService : IMatchingService
     private readonly IBackgroundJobClient _hangfire;
     private readonly IJobStatusService _jobStatusService;
     private readonly ILogger<MatchingService> _logger;
+    private readonly ITradiePresenceService? _presence;
 
     private readonly double _radiusKm;
     private readonly double _broadenedRadiusKm;
@@ -58,7 +59,8 @@ public class MatchingService : IMatchingService
         IBackgroundJobClient hangfire,
         IJobStatusService jobStatusService,
         IConfiguration config,
-        ILogger<MatchingService> logger)
+        ILogger<MatchingService> logger,
+        ITradiePresenceService? presence = null)
     {
         _context          = context;
         _jobHub           = jobHub;
@@ -66,6 +68,7 @@ public class MatchingService : IMatchingService
         _hangfire         = hangfire;
         _jobStatusService = jobStatusService;
         _logger           = logger;
+        _presence         = presence;
         _radiusKm         = config.GetValue<double>("Matching:RadiusKm", 25.0);
         _broadenedRadiusKm = config.GetValue<double>("Matching:BroadenedRadiusKm", 50.0);
         _offerWindowMinutes = config.GetValue<int>("Matching:OfferWindowMinutes", 10);
@@ -118,6 +121,12 @@ public class MatchingService : IMatchingService
             .Where(t => Geo.HaversineMetres(t.Location!, jobLocation) <= radiusMetres)
             .OrderBy(t => Geo.HaversineMetres(t.Location!, jobLocation))
             .ToList();
+
+        if (_presence != null && tradies.Count > 0)
+        {
+            var onlineIds = await _presence.FilterOnlineAsync(tradies.Select(t => t.UserId));
+            tradies = tradies.Where(t => onlineIds.Contains(t.UserId)).ToList();
+        }
 
         if (tradies.Count == 0)
             return new List<TradieMatchDto>();
@@ -174,9 +183,18 @@ public class MatchingService : IMatchingService
                 && rate.TradieProfile.Location.Intersects(searchArea))
             .ToListAsync();
 
-        return candidates
+        var withinRadius = candidates
             .Where(rate => Geo.HaversineMetres(rate.TradieProfile.Location!, location) <= radiusMetres)
             .OrderBy(rate => Geo.HaversineMetres(rate.TradieProfile.Location!, location))
+            .ToList();
+
+        if (_presence != null && withinRadius.Count > 0)
+        {
+            var onlineIds = await _presence.FilterOnlineAsync(withinRadius.Select(r => r.TradieProfile.UserId));
+            withinRadius = withinRadius.Where(r => onlineIds.Contains(r.TradieProfile.UserId)).ToList();
+        }
+
+        return withinRadius
             .Select(rate => new ServiceSearchResultDto
             {
                 TradieId     = rate.TradieProfile.UserId,
@@ -240,6 +258,16 @@ public class MatchingService : IMatchingService
             .Where(r => Geo.HaversineMetres(r.TradieProfile.Location!, jobLocation) <= radiusMetres)
             .ToList();
 
+        Dictionary<string, TradiePresenceStatus>? presenceMap = null;
+        if (_presence != null && candidates.Count > 0)
+        {
+            presenceMap = await _presence.GetPresenceAsync(
+                candidates.Select(r => r.TradieProfile.UserId));
+            candidates = candidates
+                .Where(r => presenceMap.TryGetValue(r.TradieProfile.UserId, out var p) && p.Online)
+                .ToList();
+        }
+
         if (candidates.Count == 0)
             return new List<TradieListDto>();
 
@@ -271,6 +299,9 @@ public class MatchingService : IMatchingService
             scoreById.TryGetValue(t.UserId, out var score);
             if (score == 0) score = rate.HourlyRate == 0 ? 0 : 0.5; // sane fallback for unrated tradies
 
+            TradiePresenceStatus pStatus = default;
+            var hasPresence = presenceMap != null && presenceMap.TryGetValue(t.UserId, out pStatus);
+
             return new TradieListDto
             {
                 TradieId       = t.UserId,
@@ -280,6 +311,8 @@ public class MatchingService : IMatchingService
                 Verified       = t.IsVerified,
                 Insured        = t.HasInsurance,
                 Available      = t.IsAvailable,
+                Online         = hasPresence ? pStatus.Online : t.IsAvailable,
+                LastSeenAtUtc  = hasPresence ? pStatus.LastSeenAtUtc : t.LastSeenAtUtc,
                 Rating         = hasStats ? Math.Round(stats.AvgRating, 1) : 0,
                 ReviewCount    = hasStats ? stats.ReviewCount : 0,
                 CompletedJobs  = completedCounts.TryGetValue(t.UserId, out var c) ? c : 0,
@@ -354,6 +387,12 @@ public class MatchingService : IMatchingService
         var tradies = inBox
             .Where(t => Geo.HaversineMetres(t.Location!, jobLocation) <= radiusMetres)
             .ToList();
+
+        if (_presence != null && tradies.Count > 0)
+        {
+            var onlineIds = await _presence.FilterOnlineAsync(tradies.Select(t => t.UserId));
+            tradies = tradies.Where(t => onlineIds.Contains(t.UserId)).ToList();
+        }
 
         if (tradies.Count == 0)
             return new List<RankedTradieDto>();

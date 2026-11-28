@@ -54,6 +54,10 @@ export const ProfileDetailsCard: React.FC<{ user: AdminUserDetail }> = ({ user }
               <InfoRow label="Base address">{t.address || MISSING}</InfoRow>
               <InfoRow label="Service radius">{`${t.serviceRadiusKm} km`}</InfoRow>
               <InfoRow label="Available for work">{yesNo(t.isAvailable)}</InfoRow>
+              <InfoRow label="Online now">
+                {t.online ? 'Yes' : 'No'}
+                {t.lastSeenAtUtc ? ` (last seen ${new Date(t.lastSeenAtUtc).toLocaleString()})` : ''}
+              </InfoRow>
               <InfoRow label="Insurance">{yesNo(t.hasInsurance)}</InfoRow>
               <InfoRow label="GST registered">{yesNo(t.isGstRegistered)}</InfoRow>
               <InfoRow label="Cancellations">{t.cancellationCount}</InfoRow>

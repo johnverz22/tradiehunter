@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using FixoApi.Data;
 using FixoApi.Enums;
 using FixoApi.DTOs;
+using FixoApi.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace FixoApi.Hubs;
@@ -29,11 +30,16 @@ public class JobHub : Hub
 {
     private readonly FixoDbContext _context;
     private readonly ILogger<JobHub> _logger;
+    private readonly ITradiePresenceService? _presence;
 
-    public JobHub(FixoDbContext context, ILogger<JobHub> logger)
+    public JobHub(
+        FixoDbContext context,
+        ILogger<JobHub> logger,
+        ITradiePresenceService? presence = null)
     {
         _context = context;
         _logger = logger;
+        _presence = presence;
     }
 
     /// <summary>
@@ -90,16 +96,42 @@ public class JobHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(jobId));
     }
 
+    /// <summary>
+    /// Refreshes the tradie's live presence TTL in Redis (~30 s client cadence).
+    /// </summary>
+    public async Task Heartbeat()
+    {
+        var userId = Context.UserIdentifier;
+        if (userId != null && _presence != null && Context.User?.IsInRole(nameof(UserRole.Tradie)) == true)
+        {
+            await _presence.RecordHeartbeatAsync(userId, Context.ConnectionId);
+        }
+    }
+
     public override async Task OnConnectedAsync()
     {
+        var userId = Context.UserIdentifier;
         _logger.LogInformation("SignalR connected: {ConnectionId} user={User}",
-            Context.ConnectionId, Context.UserIdentifier);
+            Context.ConnectionId, userId);
+
+        if (userId != null && _presence != null && Context.User?.IsInRole(nameof(UserRole.Tradie)) == true)
+        {
+            await _presence.RecordConnectAsync(userId, Context.ConnectionId);
+        }
+
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        var userId = Context.UserIdentifier;
         _logger.LogInformation("SignalR disconnected: {ConnectionId}", Context.ConnectionId);
+
+        if (userId != null && _presence != null && Context.User?.IsInRole(nameof(UserRole.Tradie)) == true)
+        {
+            await _presence.RecordDisconnectAsync(userId, Context.ConnectionId);
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 
